@@ -1,0 +1,52 @@
+name: q_vox_lab
+description: "AI audio middleware and dubbing workstation"
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # State management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Local database (Drift = type-safe SQLite)
+  drift: ^2.25.0
+  sqlite3_flutter_libs: ^0.5.28
+
+  # Local HTTP server
+  shelf: ^1.4.2
+  shelf_router: ^1.1.4
+
+  # Networking (for upstream TTS provider calls)
+  dio: ^5.7.0
+
+  # Data classes
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # Utilities
+  uuid: ^4.5.1
+  path_provider: ^2.1.5
+  path: ^1.9.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+  # Code generation
+  build_runner: ^2.4.14
+  freezed: ^2.5.7
+  json_serializable: ^6.9.4
+  riverpod_generator: ^2.6.3
+  drift_dev: ^2.25.0
+
+flutter:
+  uses-material-design: true

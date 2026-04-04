@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /tmp/voicebox/landing/public/assets/app-screenshot*)"
+    ]
+  }
+}

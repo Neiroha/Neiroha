@@ -60,6 +60,18 @@ class $TtsProvidersTable extends TtsProviders
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _defaultModelNameMeta = const VerificationMeta(
+    'defaultModelName',
+  );
+  @override
+  late final GeneratedColumn<String> defaultModelName = GeneratedColumn<String>(
+    'default_model_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('tts-1'),
+  );
   static const VerificationMeta _enabledMeta = const VerificationMeta(
     'enabled',
   );
@@ -82,6 +94,7 @@ class $TtsProvidersTable extends TtsProviders
     adapterType,
     baseUrl,
     apiKey,
+    defaultModelName,
     enabled,
   ];
   @override
@@ -134,6 +147,15 @@ class $TtsProvidersTable extends TtsProviders
         apiKey.isAcceptableOrUnknown(data['api_key']!, _apiKeyMeta),
       );
     }
+    if (data.containsKey('default_model_name')) {
+      context.handle(
+        _defaultModelNameMeta,
+        defaultModelName.isAcceptableOrUnknown(
+          data['default_model_name']!,
+          _defaultModelNameMeta,
+        ),
+      );
+    }
     if (data.containsKey('enabled')) {
       context.handle(
         _enabledMeta,
@@ -169,6 +191,10 @@ class $TtsProvidersTable extends TtsProviders
         DriftSqlType.string,
         data['${effectivePrefix}api_key'],
       )!,
+      defaultModelName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}default_model_name'],
+      )!,
       enabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}enabled'],
@@ -188,6 +214,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
   final String adapterType;
   final String baseUrl;
   final String apiKey;
+  final String defaultModelName;
   final bool enabled;
   const TtsProvider({
     required this.id,
@@ -195,6 +222,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     required this.adapterType,
     required this.baseUrl,
     required this.apiKey,
+    required this.defaultModelName,
     required this.enabled,
   });
   @override
@@ -205,6 +233,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     map['adapter_type'] = Variable<String>(adapterType);
     map['base_url'] = Variable<String>(baseUrl);
     map['api_key'] = Variable<String>(apiKey);
+    map['default_model_name'] = Variable<String>(defaultModelName);
     map['enabled'] = Variable<bool>(enabled);
     return map;
   }
@@ -216,6 +245,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
       adapterType: Value(adapterType),
       baseUrl: Value(baseUrl),
       apiKey: Value(apiKey),
+      defaultModelName: Value(defaultModelName),
       enabled: Value(enabled),
     );
   }
@@ -231,6 +261,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
       adapterType: serializer.fromJson<String>(json['adapterType']),
       baseUrl: serializer.fromJson<String>(json['baseUrl']),
       apiKey: serializer.fromJson<String>(json['apiKey']),
+      defaultModelName: serializer.fromJson<String>(json['defaultModelName']),
       enabled: serializer.fromJson<bool>(json['enabled']),
     );
   }
@@ -243,6 +274,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
       'adapterType': serializer.toJson<String>(adapterType),
       'baseUrl': serializer.toJson<String>(baseUrl),
       'apiKey': serializer.toJson<String>(apiKey),
+      'defaultModelName': serializer.toJson<String>(defaultModelName),
       'enabled': serializer.toJson<bool>(enabled),
     };
   }
@@ -253,6 +285,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     String? adapterType,
     String? baseUrl,
     String? apiKey,
+    String? defaultModelName,
     bool? enabled,
   }) => TtsProvider(
     id: id ?? this.id,
@@ -260,6 +293,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     adapterType: adapterType ?? this.adapterType,
     baseUrl: baseUrl ?? this.baseUrl,
     apiKey: apiKey ?? this.apiKey,
+    defaultModelName: defaultModelName ?? this.defaultModelName,
     enabled: enabled ?? this.enabled,
   );
   TtsProvider copyWithCompanion(TtsProvidersCompanion data) {
@@ -271,6 +305,9 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
           : this.adapterType,
       baseUrl: data.baseUrl.present ? data.baseUrl.value : this.baseUrl,
       apiKey: data.apiKey.present ? data.apiKey.value : this.apiKey,
+      defaultModelName: data.defaultModelName.present
+          ? data.defaultModelName.value
+          : this.defaultModelName,
       enabled: data.enabled.present ? data.enabled.value : this.enabled,
     );
   }
@@ -283,14 +320,22 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
           ..write('adapterType: $adapterType, ')
           ..write('baseUrl: $baseUrl, ')
           ..write('apiKey: $apiKey, ')
+          ..write('defaultModelName: $defaultModelName, ')
           ..write('enabled: $enabled')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, adapterType, baseUrl, apiKey, enabled);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    adapterType,
+    baseUrl,
+    apiKey,
+    defaultModelName,
+    enabled,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -300,6 +345,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
           other.adapterType == this.adapterType &&
           other.baseUrl == this.baseUrl &&
           other.apiKey == this.apiKey &&
+          other.defaultModelName == this.defaultModelName &&
           other.enabled == this.enabled);
 }
 
@@ -309,6 +355,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
   final Value<String> adapterType;
   final Value<String> baseUrl;
   final Value<String> apiKey;
+  final Value<String> defaultModelName;
   final Value<bool> enabled;
   final Value<int> rowid;
   const TtsProvidersCompanion({
@@ -317,6 +364,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     this.adapterType = const Value.absent(),
     this.baseUrl = const Value.absent(),
     this.apiKey = const Value.absent(),
+    this.defaultModelName = const Value.absent(),
     this.enabled = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -326,6 +374,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     required String adapterType,
     required String baseUrl,
     this.apiKey = const Value.absent(),
+    this.defaultModelName = const Value.absent(),
     this.enabled = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -338,6 +387,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     Expression<String>? adapterType,
     Expression<String>? baseUrl,
     Expression<String>? apiKey,
+    Expression<String>? defaultModelName,
     Expression<bool>? enabled,
     Expression<int>? rowid,
   }) {
@@ -347,6 +397,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
       if (adapterType != null) 'adapter_type': adapterType,
       if (baseUrl != null) 'base_url': baseUrl,
       if (apiKey != null) 'api_key': apiKey,
+      if (defaultModelName != null) 'default_model_name': defaultModelName,
       if (enabled != null) 'enabled': enabled,
       if (rowid != null) 'rowid': rowid,
     });
@@ -358,6 +409,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     Value<String>? adapterType,
     Value<String>? baseUrl,
     Value<String>? apiKey,
+    Value<String>? defaultModelName,
     Value<bool>? enabled,
     Value<int>? rowid,
   }) {
@@ -367,6 +419,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
       adapterType: adapterType ?? this.adapterType,
       baseUrl: baseUrl ?? this.baseUrl,
       apiKey: apiKey ?? this.apiKey,
+      defaultModelName: defaultModelName ?? this.defaultModelName,
       enabled: enabled ?? this.enabled,
       rowid: rowid ?? this.rowid,
     );
@@ -390,6 +443,9 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     if (apiKey.present) {
       map['api_key'] = Variable<String>(apiKey.value);
     }
+    if (defaultModelName.present) {
+      map['default_model_name'] = Variable<String>(defaultModelName.value);
+    }
     if (enabled.present) {
       map['enabled'] = Variable<bool>(enabled.value);
     }
@@ -407,6 +463,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
           ..write('adapterType: $adapterType, ')
           ..write('baseUrl: $baseUrl, ')
           ..write('apiKey: $apiKey, ')
+          ..write('defaultModelName: $defaultModelName, ')
           ..write('enabled: $enabled, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -765,6 +822,17 @@ class $VoiceAssetsTable extends VoiceAssets
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _providerIdMeta = const VerificationMeta(
     'providerId',
   );
@@ -786,12 +854,20 @@ class $VoiceAssetsTable extends VoiceAssets
   late final GeneratedColumn<String> modelBindingId = GeneratedColumn<String>(
     'model_binding_id',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES model_bindings (id)',
-    ),
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _modelNameMeta = const VerificationMeta(
+    'modelName',
+  );
+  @override
+  late final GeneratedColumn<String> modelName = GeneratedColumn<String>(
+    'model_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _taskModeMeta = const VerificationMeta(
     'taskMode',
@@ -813,6 +889,29 @@ class $VoiceAssetsTable extends VoiceAssets
     aliasedName,
     true,
     type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _refAudioTrimStartMeta = const VerificationMeta(
+    'refAudioTrimStart',
+  );
+  @override
+  late final GeneratedColumn<double> refAudioTrimStart =
+      GeneratedColumn<double>(
+        'ref_audio_trim_start',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _refAudioTrimEndMeta = const VerificationMeta(
+    'refAudioTrimEnd',
+  );
+  @override
+  late final GeneratedColumn<double> refAudioTrimEnd = GeneratedColumn<double>(
+    'ref_audio_trim_end',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
   static const VerificationMeta _promptTextMeta = const VerificationMeta(
@@ -888,10 +987,14 @@ class $VoiceAssetsTable extends VoiceAssets
   List<GeneratedColumn> get $columns => [
     id,
     name,
+    description,
     providerId,
     modelBindingId,
+    modelName,
     taskMode,
     refAudioPath,
+    refAudioTrimStart,
+    refAudioTrimEnd,
     promptText,
     promptLang,
     voiceInstruction,
@@ -924,6 +1027,15 @@ class $VoiceAssetsTable extends VoiceAssets
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
     if (data.containsKey('provider_id')) {
       context.handle(
         _providerIdMeta,
@@ -940,8 +1052,12 @@ class $VoiceAssetsTable extends VoiceAssets
           _modelBindingIdMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_modelBindingIdMeta);
+    }
+    if (data.containsKey('model_name')) {
+      context.handle(
+        _modelNameMeta,
+        modelName.isAcceptableOrUnknown(data['model_name']!, _modelNameMeta),
+      );
     }
     if (data.containsKey('task_mode')) {
       context.handle(
@@ -957,6 +1073,24 @@ class $VoiceAssetsTable extends VoiceAssets
         refAudioPath.isAcceptableOrUnknown(
           data['ref_audio_path']!,
           _refAudioPathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ref_audio_trim_start')) {
+      context.handle(
+        _refAudioTrimStartMeta,
+        refAudioTrimStart.isAcceptableOrUnknown(
+          data['ref_audio_trim_start']!,
+          _refAudioTrimStartMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ref_audio_trim_end')) {
+      context.handle(
+        _refAudioTrimEndMeta,
+        refAudioTrimEnd.isAcceptableOrUnknown(
+          data['ref_audio_trim_end']!,
+          _refAudioTrimEndMeta,
         ),
       );
     }
@@ -1019,6 +1153,10 @@ class $VoiceAssetsTable extends VoiceAssets
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
       providerId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}provider_id'],
@@ -1026,7 +1164,11 @@ class $VoiceAssetsTable extends VoiceAssets
       modelBindingId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}model_binding_id'],
-      )!,
+      ),
+      modelName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model_name'],
+      ),
       taskMode: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}task_mode'],
@@ -1034,6 +1176,14 @@ class $VoiceAssetsTable extends VoiceAssets
       refAudioPath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}ref_audio_path'],
+      ),
+      refAudioTrimStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}ref_audio_trim_start'],
+      ),
+      refAudioTrimEnd: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}ref_audio_trim_end'],
       ),
       promptText: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -1071,10 +1221,14 @@ class $VoiceAssetsTable extends VoiceAssets
 class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
   final String id;
   final String name;
+  final String? description;
   final String providerId;
-  final String modelBindingId;
+  final String? modelBindingId;
+  final String? modelName;
   final String taskMode;
   final String? refAudioPath;
+  final double? refAudioTrimStart;
+  final double? refAudioTrimEnd;
   final String? promptText;
   final String? promptLang;
   final String? voiceInstruction;
@@ -1084,10 +1238,14 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
   const VoiceAsset({
     required this.id,
     required this.name,
+    this.description,
     required this.providerId,
-    required this.modelBindingId,
+    this.modelBindingId,
+    this.modelName,
     required this.taskMode,
     this.refAudioPath,
+    this.refAudioTrimStart,
+    this.refAudioTrimEnd,
     this.promptText,
     this.promptLang,
     this.voiceInstruction,
@@ -1100,11 +1258,25 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['name'] = Variable<String>(name);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
     map['provider_id'] = Variable<String>(providerId);
-    map['model_binding_id'] = Variable<String>(modelBindingId);
+    if (!nullToAbsent || modelBindingId != null) {
+      map['model_binding_id'] = Variable<String>(modelBindingId);
+    }
+    if (!nullToAbsent || modelName != null) {
+      map['model_name'] = Variable<String>(modelName);
+    }
     map['task_mode'] = Variable<String>(taskMode);
     if (!nullToAbsent || refAudioPath != null) {
       map['ref_audio_path'] = Variable<String>(refAudioPath);
+    }
+    if (!nullToAbsent || refAudioTrimStart != null) {
+      map['ref_audio_trim_start'] = Variable<double>(refAudioTrimStart);
+    }
+    if (!nullToAbsent || refAudioTrimEnd != null) {
+      map['ref_audio_trim_end'] = Variable<double>(refAudioTrimEnd);
     }
     if (!nullToAbsent || promptText != null) {
       map['prompt_text'] = Variable<String>(promptText);
@@ -1127,12 +1299,26 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     return VoiceAssetsCompanion(
       id: Value(id),
       name: Value(name),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
       providerId: Value(providerId),
-      modelBindingId: Value(modelBindingId),
+      modelBindingId: modelBindingId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(modelBindingId),
+      modelName: modelName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(modelName),
       taskMode: Value(taskMode),
       refAudioPath: refAudioPath == null && nullToAbsent
           ? const Value.absent()
           : Value(refAudioPath),
+      refAudioTrimStart: refAudioTrimStart == null && nullToAbsent
+          ? const Value.absent()
+          : Value(refAudioTrimStart),
+      refAudioTrimEnd: refAudioTrimEnd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(refAudioTrimEnd),
       promptText: promptText == null && nullToAbsent
           ? const Value.absent()
           : Value(promptText),
@@ -1158,10 +1344,16 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     return VoiceAsset(
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String?>(json['description']),
       providerId: serializer.fromJson<String>(json['providerId']),
-      modelBindingId: serializer.fromJson<String>(json['modelBindingId']),
+      modelBindingId: serializer.fromJson<String?>(json['modelBindingId']),
+      modelName: serializer.fromJson<String?>(json['modelName']),
       taskMode: serializer.fromJson<String>(json['taskMode']),
       refAudioPath: serializer.fromJson<String?>(json['refAudioPath']),
+      refAudioTrimStart: serializer.fromJson<double?>(
+        json['refAudioTrimStart'],
+      ),
+      refAudioTrimEnd: serializer.fromJson<double?>(json['refAudioTrimEnd']),
       promptText: serializer.fromJson<String?>(json['promptText']),
       promptLang: serializer.fromJson<String?>(json['promptLang']),
       voiceInstruction: serializer.fromJson<String?>(json['voiceInstruction']),
@@ -1176,10 +1368,14 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String?>(description),
       'providerId': serializer.toJson<String>(providerId),
-      'modelBindingId': serializer.toJson<String>(modelBindingId),
+      'modelBindingId': serializer.toJson<String?>(modelBindingId),
+      'modelName': serializer.toJson<String?>(modelName),
       'taskMode': serializer.toJson<String>(taskMode),
       'refAudioPath': serializer.toJson<String?>(refAudioPath),
+      'refAudioTrimStart': serializer.toJson<double?>(refAudioTrimStart),
+      'refAudioTrimEnd': serializer.toJson<double?>(refAudioTrimEnd),
       'promptText': serializer.toJson<String?>(promptText),
       'promptLang': serializer.toJson<String?>(promptLang),
       'voiceInstruction': serializer.toJson<String?>(voiceInstruction),
@@ -1192,10 +1388,14 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
   VoiceAsset copyWith({
     String? id,
     String? name,
+    Value<String?> description = const Value.absent(),
     String? providerId,
-    String? modelBindingId,
+    Value<String?> modelBindingId = const Value.absent(),
+    Value<String?> modelName = const Value.absent(),
     String? taskMode,
     Value<String?> refAudioPath = const Value.absent(),
+    Value<double?> refAudioTrimStart = const Value.absent(),
+    Value<double?> refAudioTrimEnd = const Value.absent(),
     Value<String?> promptText = const Value.absent(),
     Value<String?> promptLang = const Value.absent(),
     Value<String?> voiceInstruction = const Value.absent(),
@@ -1205,10 +1405,20 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
   }) => VoiceAsset(
     id: id ?? this.id,
     name: name ?? this.name,
+    description: description.present ? description.value : this.description,
     providerId: providerId ?? this.providerId,
-    modelBindingId: modelBindingId ?? this.modelBindingId,
+    modelBindingId: modelBindingId.present
+        ? modelBindingId.value
+        : this.modelBindingId,
+    modelName: modelName.present ? modelName.value : this.modelName,
     taskMode: taskMode ?? this.taskMode,
     refAudioPath: refAudioPath.present ? refAudioPath.value : this.refAudioPath,
+    refAudioTrimStart: refAudioTrimStart.present
+        ? refAudioTrimStart.value
+        : this.refAudioTrimStart,
+    refAudioTrimEnd: refAudioTrimEnd.present
+        ? refAudioTrimEnd.value
+        : this.refAudioTrimEnd,
     promptText: promptText.present ? promptText.value : this.promptText,
     promptLang: promptLang.present ? promptLang.value : this.promptLang,
     voiceInstruction: voiceInstruction.present
@@ -1224,16 +1434,26 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     return VoiceAsset(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
       providerId: data.providerId.present
           ? data.providerId.value
           : this.providerId,
       modelBindingId: data.modelBindingId.present
           ? data.modelBindingId.value
           : this.modelBindingId,
+      modelName: data.modelName.present ? data.modelName.value : this.modelName,
       taskMode: data.taskMode.present ? data.taskMode.value : this.taskMode,
       refAudioPath: data.refAudioPath.present
           ? data.refAudioPath.value
           : this.refAudioPath,
+      refAudioTrimStart: data.refAudioTrimStart.present
+          ? data.refAudioTrimStart.value
+          : this.refAudioTrimStart,
+      refAudioTrimEnd: data.refAudioTrimEnd.present
+          ? data.refAudioTrimEnd.value
+          : this.refAudioTrimEnd,
       promptText: data.promptText.present
           ? data.promptText.value
           : this.promptText,
@@ -1256,10 +1476,14 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     return (StringBuffer('VoiceAsset(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('description: $description, ')
           ..write('providerId: $providerId, ')
           ..write('modelBindingId: $modelBindingId, ')
+          ..write('modelName: $modelName, ')
           ..write('taskMode: $taskMode, ')
           ..write('refAudioPath: $refAudioPath, ')
+          ..write('refAudioTrimStart: $refAudioTrimStart, ')
+          ..write('refAudioTrimEnd: $refAudioTrimEnd, ')
           ..write('promptText: $promptText, ')
           ..write('promptLang: $promptLang, ')
           ..write('voiceInstruction: $voiceInstruction, ')
@@ -1274,10 +1498,14 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
   int get hashCode => Object.hash(
     id,
     name,
+    description,
     providerId,
     modelBindingId,
+    modelName,
     taskMode,
     refAudioPath,
+    refAudioTrimStart,
+    refAudioTrimEnd,
     promptText,
     promptLang,
     voiceInstruction,
@@ -1291,10 +1519,14 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
       (other is VoiceAsset &&
           other.id == this.id &&
           other.name == this.name &&
+          other.description == this.description &&
           other.providerId == this.providerId &&
           other.modelBindingId == this.modelBindingId &&
+          other.modelName == this.modelName &&
           other.taskMode == this.taskMode &&
           other.refAudioPath == this.refAudioPath &&
+          other.refAudioTrimStart == this.refAudioTrimStart &&
+          other.refAudioTrimEnd == this.refAudioTrimEnd &&
           other.promptText == this.promptText &&
           other.promptLang == this.promptLang &&
           other.voiceInstruction == this.voiceInstruction &&
@@ -1306,10 +1538,14 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
 class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
   final Value<String> id;
   final Value<String> name;
+  final Value<String?> description;
   final Value<String> providerId;
-  final Value<String> modelBindingId;
+  final Value<String?> modelBindingId;
+  final Value<String?> modelName;
   final Value<String> taskMode;
   final Value<String?> refAudioPath;
+  final Value<double?> refAudioTrimStart;
+  final Value<double?> refAudioTrimEnd;
   final Value<String?> promptText;
   final Value<String?> promptLang;
   final Value<String?> voiceInstruction;
@@ -1320,10 +1556,14 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
   const VoiceAssetsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
+    this.description = const Value.absent(),
     this.providerId = const Value.absent(),
     this.modelBindingId = const Value.absent(),
+    this.modelName = const Value.absent(),
     this.taskMode = const Value.absent(),
     this.refAudioPath = const Value.absent(),
+    this.refAudioTrimStart = const Value.absent(),
+    this.refAudioTrimEnd = const Value.absent(),
     this.promptText = const Value.absent(),
     this.promptLang = const Value.absent(),
     this.voiceInstruction = const Value.absent(),
@@ -1335,10 +1575,14 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
   VoiceAssetsCompanion.insert({
     required String id,
     required String name,
+    this.description = const Value.absent(),
     required String providerId,
-    required String modelBindingId,
+    this.modelBindingId = const Value.absent(),
+    this.modelName = const Value.absent(),
     required String taskMode,
     this.refAudioPath = const Value.absent(),
+    this.refAudioTrimStart = const Value.absent(),
+    this.refAudioTrimEnd = const Value.absent(),
     this.promptText = const Value.absent(),
     this.promptLang = const Value.absent(),
     this.voiceInstruction = const Value.absent(),
@@ -1349,15 +1593,18 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
   }) : id = Value(id),
        name = Value(name),
        providerId = Value(providerId),
-       modelBindingId = Value(modelBindingId),
        taskMode = Value(taskMode);
   static Insertable<VoiceAsset> custom({
     Expression<String>? id,
     Expression<String>? name,
+    Expression<String>? description,
     Expression<String>? providerId,
     Expression<String>? modelBindingId,
+    Expression<String>? modelName,
     Expression<String>? taskMode,
     Expression<String>? refAudioPath,
+    Expression<double>? refAudioTrimStart,
+    Expression<double>? refAudioTrimEnd,
     Expression<String>? promptText,
     Expression<String>? promptLang,
     Expression<String>? voiceInstruction,
@@ -1369,10 +1616,14 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
+      if (description != null) 'description': description,
       if (providerId != null) 'provider_id': providerId,
       if (modelBindingId != null) 'model_binding_id': modelBindingId,
+      if (modelName != null) 'model_name': modelName,
       if (taskMode != null) 'task_mode': taskMode,
       if (refAudioPath != null) 'ref_audio_path': refAudioPath,
+      if (refAudioTrimStart != null) 'ref_audio_trim_start': refAudioTrimStart,
+      if (refAudioTrimEnd != null) 'ref_audio_trim_end': refAudioTrimEnd,
       if (promptText != null) 'prompt_text': promptText,
       if (promptLang != null) 'prompt_lang': promptLang,
       if (voiceInstruction != null) 'voice_instruction': voiceInstruction,
@@ -1386,10 +1637,14 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
   VoiceAssetsCompanion copyWith({
     Value<String>? id,
     Value<String>? name,
+    Value<String?>? description,
     Value<String>? providerId,
-    Value<String>? modelBindingId,
+    Value<String?>? modelBindingId,
+    Value<String?>? modelName,
     Value<String>? taskMode,
     Value<String?>? refAudioPath,
+    Value<double?>? refAudioTrimStart,
+    Value<double?>? refAudioTrimEnd,
     Value<String?>? promptText,
     Value<String?>? promptLang,
     Value<String?>? voiceInstruction,
@@ -1401,10 +1656,14 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     return VoiceAssetsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
+      description: description ?? this.description,
       providerId: providerId ?? this.providerId,
       modelBindingId: modelBindingId ?? this.modelBindingId,
+      modelName: modelName ?? this.modelName,
       taskMode: taskMode ?? this.taskMode,
       refAudioPath: refAudioPath ?? this.refAudioPath,
+      refAudioTrimStart: refAudioTrimStart ?? this.refAudioTrimStart,
+      refAudioTrimEnd: refAudioTrimEnd ?? this.refAudioTrimEnd,
       promptText: promptText ?? this.promptText,
       promptLang: promptLang ?? this.promptLang,
       voiceInstruction: voiceInstruction ?? this.voiceInstruction,
@@ -1424,17 +1683,29 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
     if (providerId.present) {
       map['provider_id'] = Variable<String>(providerId.value);
     }
     if (modelBindingId.present) {
       map['model_binding_id'] = Variable<String>(modelBindingId.value);
     }
+    if (modelName.present) {
+      map['model_name'] = Variable<String>(modelName.value);
+    }
     if (taskMode.present) {
       map['task_mode'] = Variable<String>(taskMode.value);
     }
     if (refAudioPath.present) {
       map['ref_audio_path'] = Variable<String>(refAudioPath.value);
+    }
+    if (refAudioTrimStart.present) {
+      map['ref_audio_trim_start'] = Variable<double>(refAudioTrimStart.value);
+    }
+    if (refAudioTrimEnd.present) {
+      map['ref_audio_trim_end'] = Variable<double>(refAudioTrimEnd.value);
     }
     if (promptText.present) {
       map['prompt_text'] = Variable<String>(promptText.value);
@@ -1465,10 +1736,14 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     return (StringBuffer('VoiceAssetsCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('description: $description, ')
           ..write('providerId: $providerId, ')
           ..write('modelBindingId: $modelBindingId, ')
+          ..write('modelName: $modelName, ')
           ..write('taskMode: $taskMode, ')
           ..write('refAudioPath: $refAudioPath, ')
+          ..write('refAudioTrimStart: $refAudioTrimStart, ')
+          ..write('refAudioTrimEnd: $refAudioTrimEnd, ')
           ..write('promptText: $promptText, ')
           ..write('promptLang: $promptLang, ')
           ..write('voiceInstruction: $voiceInstruction, ')
@@ -2039,6 +2314,7 @@ typedef $$TtsProvidersTableCreateCompanionBuilder =
       required String adapterType,
       required String baseUrl,
       Value<String> apiKey,
+      Value<String> defaultModelName,
       Value<bool> enabled,
       Value<int> rowid,
     });
@@ -2049,6 +2325,7 @@ typedef $$TtsProvidersTableUpdateCompanionBuilder =
       Value<String> adapterType,
       Value<String> baseUrl,
       Value<String> apiKey,
+      Value<String> defaultModelName,
       Value<bool> enabled,
       Value<int> rowid,
     });
@@ -2131,6 +2408,11 @@ class $$TtsProvidersTableFilterComposer
 
   ColumnFilters<String> get apiKey => $composableBuilder(
     column: $table.apiKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get defaultModelName => $composableBuilder(
+    column: $table.defaultModelName,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2224,6 +2506,11 @@ class $$TtsProvidersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get defaultModelName => $composableBuilder(
+    column: $table.defaultModelName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get enabled => $composableBuilder(
     column: $table.enabled,
     builder: (column) => ColumnOrderings(column),
@@ -2255,6 +2542,11 @@ class $$TtsProvidersTableAnnotationComposer
 
   GeneratedColumn<String> get apiKey =>
       $composableBuilder(column: $table.apiKey, builder: (column) => column);
+
+  GeneratedColumn<String> get defaultModelName => $composableBuilder(
+    column: $table.defaultModelName,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get enabled =>
       $composableBuilder(column: $table.enabled, builder: (column) => column);
@@ -2343,6 +2635,7 @@ class $$TtsProvidersTableTableManager
                 Value<String> adapterType = const Value.absent(),
                 Value<String> baseUrl = const Value.absent(),
                 Value<String> apiKey = const Value.absent(),
+                Value<String> defaultModelName = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TtsProvidersCompanion(
@@ -2351,6 +2644,7 @@ class $$TtsProvidersTableTableManager
                 adapterType: adapterType,
                 baseUrl: baseUrl,
                 apiKey: apiKey,
+                defaultModelName: defaultModelName,
                 enabled: enabled,
                 rowid: rowid,
               ),
@@ -2361,6 +2655,7 @@ class $$TtsProvidersTableTableManager
                 required String adapterType,
                 required String baseUrl,
                 Value<String> apiKey = const Value.absent(),
+                Value<String> defaultModelName = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TtsProvidersCompanion.insert(
@@ -2369,6 +2664,7 @@ class $$TtsProvidersTableTableManager
                 adapterType: adapterType,
                 baseUrl: baseUrl,
                 apiKey: apiKey,
+                defaultModelName: defaultModelName,
                 enabled: enabled,
                 rowid: rowid,
               ),
@@ -2498,27 +2794,6 @@ final class $$ModelBindingsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
-
-  static MultiTypedResultKey<$VoiceAssetsTable, List<VoiceAsset>>
-  _voiceAssetsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.voiceAssets,
-    aliasName: $_aliasNameGenerator(
-      db.modelBindings.id,
-      db.voiceAssets.modelBindingId,
-    ),
-  );
-
-  $$VoiceAssetsTableProcessedTableManager get voiceAssetsRefs {
-    final manager = $$VoiceAssetsTableTableManager(
-      $_db,
-      $_db.voiceAssets,
-    ).filter((f) => f.modelBindingId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_voiceAssetsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
 }
 
 class $$ModelBindingsTableFilterComposer
@@ -2566,31 +2841,6 @@ class $$ModelBindingsTableFilterComposer
           ),
     );
     return composer;
-  }
-
-  Expression<bool> voiceAssetsRefs(
-    Expression<bool> Function($$VoiceAssetsTableFilterComposer f) f,
-  ) {
-    final $$VoiceAssetsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.voiceAssets,
-      getReferencedColumn: (t) => t.modelBindingId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$VoiceAssetsTableFilterComposer(
-            $db: $db,
-            $table: $db.voiceAssets,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
   }
 }
 
@@ -2684,31 +2934,6 @@ class $$ModelBindingsTableAnnotationComposer
     );
     return composer;
   }
-
-  Expression<T> voiceAssetsRefs<T extends Object>(
-    Expression<T> Function($$VoiceAssetsTableAnnotationComposer a) f,
-  ) {
-    final $$VoiceAssetsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.voiceAssets,
-      getReferencedColumn: (t) => t.modelBindingId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$VoiceAssetsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.voiceAssets,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
 }
 
 class $$ModelBindingsTableTableManager
@@ -2724,7 +2949,7 @@ class $$ModelBindingsTableTableManager
           $$ModelBindingsTableUpdateCompanionBuilder,
           (ModelBinding, $$ModelBindingsTableReferences),
           ModelBinding,
-          PrefetchHooks Function({bool providerId, bool voiceAssetsRefs})
+          PrefetchHooks Function({bool providerId})
         > {
   $$ModelBindingsTableTableManager(_$AppDatabase db, $ModelBindingsTable table)
     : super(
@@ -2773,74 +2998,47 @@ class $$ModelBindingsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback:
-              ({providerId = false, voiceAssetsRefs = false}) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [
-                    if (voiceAssetsRefs) db.voiceAssets,
-                  ],
-                  addJoins:
-                      <
-                        T extends TableManagerState<
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic
-                        >
-                      >(state) {
-                        if (providerId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.providerId,
-                                    referencedTable:
-                                        $$ModelBindingsTableReferences
-                                            ._providerIdTable(db),
-                                    referencedColumn:
-                                        $$ModelBindingsTableReferences
-                                            ._providerIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
-                        }
+          prefetchHooksCallback: ({providerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (providerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.providerId,
+                                referencedTable: $$ModelBindingsTableReferences
+                                    ._providerIdTable(db),
+                                referencedColumn: $$ModelBindingsTableReferences
+                                    ._providerIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
 
-                        return state;
-                      },
-                  getPrefetchedDataCallback: (items) async {
-                    return [
-                      if (voiceAssetsRefs)
-                        await $_getPrefetchedData<
-                          ModelBinding,
-                          $ModelBindingsTable,
-                          VoiceAsset
-                        >(
-                          currentTable: table,
-                          referencedTable: $$ModelBindingsTableReferences
-                              ._voiceAssetsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$ModelBindingsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).voiceAssetsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.modelBindingId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                    ];
+                    return state;
                   },
-                );
+              getPrefetchedDataCallback: (items) async {
+                return [];
               },
+            );
+          },
         ),
       );
 }
@@ -2857,16 +3055,20 @@ typedef $$ModelBindingsTableProcessedTableManager =
       $$ModelBindingsTableUpdateCompanionBuilder,
       (ModelBinding, $$ModelBindingsTableReferences),
       ModelBinding,
-      PrefetchHooks Function({bool providerId, bool voiceAssetsRefs})
+      PrefetchHooks Function({bool providerId})
     >;
 typedef $$VoiceAssetsTableCreateCompanionBuilder =
     VoiceAssetsCompanion Function({
       required String id,
       required String name,
+      Value<String?> description,
       required String providerId,
-      required String modelBindingId,
+      Value<String?> modelBindingId,
+      Value<String?> modelName,
       required String taskMode,
       Value<String?> refAudioPath,
+      Value<double?> refAudioTrimStart,
+      Value<double?> refAudioTrimEnd,
       Value<String?> promptText,
       Value<String?> promptLang,
       Value<String?> voiceInstruction,
@@ -2879,10 +3081,14 @@ typedef $$VoiceAssetsTableUpdateCompanionBuilder =
     VoiceAssetsCompanion Function({
       Value<String> id,
       Value<String> name,
+      Value<String?> description,
       Value<String> providerId,
-      Value<String> modelBindingId,
+      Value<String?> modelBindingId,
+      Value<String?> modelName,
       Value<String> taskMode,
       Value<String?> refAudioPath,
+      Value<double?> refAudioTrimStart,
+      Value<double?> refAudioTrimEnd,
       Value<String?> promptText,
       Value<String?> promptLang,
       Value<String?> voiceInstruction,
@@ -2909,28 +3115,6 @@ final class $$VoiceAssetsTableReferences
       $_db.ttsProviders,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_providerIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static $ModelBindingsTable _modelBindingIdTable(_$AppDatabase db) =>
-      db.modelBindings.createAlias(
-        $_aliasNameGenerator(
-          db.voiceAssets.modelBindingId,
-          db.modelBindings.id,
-        ),
-      );
-
-  $$ModelBindingsTableProcessedTableManager get modelBindingId {
-    final $_column = $_itemColumn<String>('model_binding_id')!;
-
-    final manager = $$ModelBindingsTableTableManager(
-      $_db,
-      $_db.modelBindings,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_modelBindingIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -2976,6 +3160,21 @@ class $$VoiceAssetsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modelBindingId => $composableBuilder(
+    column: $table.modelBindingId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modelName => $composableBuilder(
+    column: $table.modelName,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get taskMode => $composableBuilder(
     column: $table.taskMode,
     builder: (column) => ColumnFilters(column),
@@ -2983,6 +3182,16 @@ class $$VoiceAssetsTableFilterComposer
 
   ColumnFilters<String> get refAudioPath => $composableBuilder(
     column: $table.refAudioPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get refAudioTrimStart => $composableBuilder(
+    column: $table.refAudioTrimStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get refAudioTrimEnd => $composableBuilder(
+    column: $table.refAudioTrimEnd,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3039,29 +3248,6 @@ class $$VoiceAssetsTableFilterComposer
     return composer;
   }
 
-  $$ModelBindingsTableFilterComposer get modelBindingId {
-    final $$ModelBindingsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.modelBindingId,
-      referencedTable: $db.modelBindings,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ModelBindingsTableFilterComposer(
-            $db: $db,
-            $table: $db.modelBindings,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
   Expression<bool> ttsJobsRefs(
     Expression<bool> Function($$TtsJobsTableFilterComposer f) f,
   ) {
@@ -3107,6 +3293,21 @@ class $$VoiceAssetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modelBindingId => $composableBuilder(
+    column: $table.modelBindingId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modelName => $composableBuilder(
+    column: $table.modelName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get taskMode => $composableBuilder(
     column: $table.taskMode,
     builder: (column) => ColumnOrderings(column),
@@ -3114,6 +3315,16 @@ class $$VoiceAssetsTableOrderingComposer
 
   ColumnOrderings<String> get refAudioPath => $composableBuilder(
     column: $table.refAudioPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get refAudioTrimStart => $composableBuilder(
+    column: $table.refAudioTrimStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get refAudioTrimEnd => $composableBuilder(
+    column: $table.refAudioTrimEnd,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3169,29 +3380,6 @@ class $$VoiceAssetsTableOrderingComposer
     );
     return composer;
   }
-
-  $$ModelBindingsTableOrderingComposer get modelBindingId {
-    final $$ModelBindingsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.modelBindingId,
-      referencedTable: $db.modelBindings,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ModelBindingsTableOrderingComposer(
-            $db: $db,
-            $table: $db.modelBindings,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
 }
 
 class $$VoiceAssetsTableAnnotationComposer
@@ -3209,11 +3397,34 @@ class $$VoiceAssetsTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get modelBindingId => $composableBuilder(
+    column: $table.modelBindingId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get modelName =>
+      $composableBuilder(column: $table.modelName, builder: (column) => column);
+
   GeneratedColumn<String> get taskMode =>
       $composableBuilder(column: $table.taskMode, builder: (column) => column);
 
   GeneratedColumn<String> get refAudioPath => $composableBuilder(
     column: $table.refAudioPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get refAudioTrimStart => $composableBuilder(
+    column: $table.refAudioTrimStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get refAudioTrimEnd => $composableBuilder(
+    column: $table.refAudioTrimEnd,
     builder: (column) => column,
   );
 
@@ -3266,29 +3477,6 @@ class $$VoiceAssetsTableAnnotationComposer
     return composer;
   }
 
-  $$ModelBindingsTableAnnotationComposer get modelBindingId {
-    final $$ModelBindingsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.modelBindingId,
-      referencedTable: $db.modelBindings,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ModelBindingsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.modelBindings,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
   Expression<T> ttsJobsRefs<T extends Object>(
     Expression<T> Function($$TtsJobsTableAnnotationComposer a) f,
   ) {
@@ -3328,11 +3516,7 @@ class $$VoiceAssetsTableTableManager
           $$VoiceAssetsTableUpdateCompanionBuilder,
           (VoiceAsset, $$VoiceAssetsTableReferences),
           VoiceAsset,
-          PrefetchHooks Function({
-            bool providerId,
-            bool modelBindingId,
-            bool ttsJobsRefs,
-          })
+          PrefetchHooks Function({bool providerId, bool ttsJobsRefs})
         > {
   $$VoiceAssetsTableTableManager(_$AppDatabase db, $VoiceAssetsTable table)
     : super(
@@ -3349,10 +3533,14 @@ class $$VoiceAssetsTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<String?> description = const Value.absent(),
                 Value<String> providerId = const Value.absent(),
-                Value<String> modelBindingId = const Value.absent(),
+                Value<String?> modelBindingId = const Value.absent(),
+                Value<String?> modelName = const Value.absent(),
                 Value<String> taskMode = const Value.absent(),
                 Value<String?> refAudioPath = const Value.absent(),
+                Value<double?> refAudioTrimStart = const Value.absent(),
+                Value<double?> refAudioTrimEnd = const Value.absent(),
                 Value<String?> promptText = const Value.absent(),
                 Value<String?> promptLang = const Value.absent(),
                 Value<String?> voiceInstruction = const Value.absent(),
@@ -3363,10 +3551,14 @@ class $$VoiceAssetsTableTableManager
               }) => VoiceAssetsCompanion(
                 id: id,
                 name: name,
+                description: description,
                 providerId: providerId,
                 modelBindingId: modelBindingId,
+                modelName: modelName,
                 taskMode: taskMode,
                 refAudioPath: refAudioPath,
+                refAudioTrimStart: refAudioTrimStart,
+                refAudioTrimEnd: refAudioTrimEnd,
                 promptText: promptText,
                 promptLang: promptLang,
                 voiceInstruction: voiceInstruction,
@@ -3379,10 +3571,14 @@ class $$VoiceAssetsTableTableManager
               ({
                 required String id,
                 required String name,
+                Value<String?> description = const Value.absent(),
                 required String providerId,
-                required String modelBindingId,
+                Value<String?> modelBindingId = const Value.absent(),
+                Value<String?> modelName = const Value.absent(),
                 required String taskMode,
                 Value<String?> refAudioPath = const Value.absent(),
+                Value<double?> refAudioTrimStart = const Value.absent(),
+                Value<double?> refAudioTrimEnd = const Value.absent(),
                 Value<String?> promptText = const Value.absent(),
                 Value<String?> promptLang = const Value.absent(),
                 Value<String?> voiceInstruction = const Value.absent(),
@@ -3393,10 +3589,14 @@ class $$VoiceAssetsTableTableManager
               }) => VoiceAssetsCompanion.insert(
                 id: id,
                 name: name,
+                description: description,
                 providerId: providerId,
                 modelBindingId: modelBindingId,
+                modelName: modelName,
                 taskMode: taskMode,
                 refAudioPath: refAudioPath,
+                refAudioTrimStart: refAudioTrimStart,
+                refAudioTrimEnd: refAudioTrimEnd,
                 promptText: promptText,
                 promptLang: promptLang,
                 voiceInstruction: voiceInstruction,
@@ -3413,91 +3613,69 @@ class $$VoiceAssetsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback:
-              ({
-                providerId = false,
-                modelBindingId = false,
-                ttsJobsRefs = false,
-              }) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [if (ttsJobsRefs) db.ttsJobs],
-                  addJoins:
-                      <
-                        T extends TableManagerState<
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic
-                        >
-                      >(state) {
-                        if (providerId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.providerId,
-                                    referencedTable:
-                                        $$VoiceAssetsTableReferences
-                                            ._providerIdTable(db),
-                                    referencedColumn:
-                                        $$VoiceAssetsTableReferences
-                                            ._providerIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
-                        }
-                        if (modelBindingId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.modelBindingId,
-                                    referencedTable:
-                                        $$VoiceAssetsTableReferences
-                                            ._modelBindingIdTable(db),
-                                    referencedColumn:
-                                        $$VoiceAssetsTableReferences
-                                            ._modelBindingIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
-                        }
+          prefetchHooksCallback: ({providerId = false, ttsJobsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (ttsJobsRefs) db.ttsJobs],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (providerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.providerId,
+                                referencedTable: $$VoiceAssetsTableReferences
+                                    ._providerIdTable(db),
+                                referencedColumn: $$VoiceAssetsTableReferences
+                                    ._providerIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
 
-                        return state;
-                      },
-                  getPrefetchedDataCallback: (items) async {
-                    return [
-                      if (ttsJobsRefs)
-                        await $_getPrefetchedData<
-                          VoiceAsset,
-                          $VoiceAssetsTable,
-                          TtsJob
-                        >(
-                          currentTable: table,
-                          referencedTable: $$VoiceAssetsTableReferences
-                              ._ttsJobsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$VoiceAssetsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).ttsJobsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.voiceAssetId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                    ];
+                    return state;
                   },
-                );
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (ttsJobsRefs)
+                    await $_getPrefetchedData<
+                      VoiceAsset,
+                      $VoiceAssetsTable,
+                      TtsJob
+                    >(
+                      currentTable: table,
+                      referencedTable: $$VoiceAssetsTableReferences
+                          ._ttsJobsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$VoiceAssetsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).ttsJobsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.voiceAssetId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
               },
+            );
+          },
         ),
       );
 }
@@ -3514,11 +3692,7 @@ typedef $$VoiceAssetsTableProcessedTableManager =
       $$VoiceAssetsTableUpdateCompanionBuilder,
       (VoiceAsset, $$VoiceAssetsTableReferences),
       VoiceAsset,
-      PrefetchHooks Function({
-        bool providerId,
-        bool modelBindingId,
-        bool ttsJobsRefs,
-      })
+      PrefetchHooks Function({bool providerId, bool ttsJobsRefs})
     >;
 typedef $$TtsJobsTableCreateCompanionBuilder =
     TtsJobsCompanion Function({

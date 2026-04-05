@@ -16,7 +16,20 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          // Development: drop and recreate in reverse FK order
+          await m.drop(ttsJobs);
+          await m.drop(voiceAssets);
+          await m.drop(modelBindings);
+          await m.drop(ttsProviders);
+          await m.createAll();
+        },
+      );
 
   // --- Provider CRUD ---
 
@@ -46,7 +59,7 @@ class AppDatabase extends _$AppDatabase {
   Future<int> deleteBinding(String id) =>
       (delete(modelBindings)..where((t) => t.id.equals(id))).go();
 
-  // --- VoiceAsset CRUD ---
+  // --- VoiceAsset / Character CRUD ---
 
   Future<List<VoiceAsset>> getAllVoiceAssets() => select(voiceAssets).get();
 
@@ -54,7 +67,8 @@ class AppDatabase extends _$AppDatabase {
       select(voiceAssets).watch();
 
   Future<VoiceAsset?> getVoiceAssetByName(String name) =>
-      (select(voiceAssets)..where((t) => t.name.equals(name))).getSingleOrNull();
+      (select(voiceAssets)..where((t) => t.name.equals(name)))
+          .getSingleOrNull();
 
   Future<int> insertVoiceAsset(VoiceAssetsCompanion asset) =>
       into(voiceAssets).insert(asset);

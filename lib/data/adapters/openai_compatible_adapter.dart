@@ -5,9 +5,14 @@ import 'tts_adapter.dart';
 class OpenAiCompatibleAdapter extends TtsAdapter {
   final String baseUrl;
   final String apiKey;
+  final String modelName;
   late final Dio _dio;
 
-  OpenAiCompatibleAdapter({required this.baseUrl, required this.apiKey}) {
+  OpenAiCompatibleAdapter({
+    required this.baseUrl,
+    required this.apiKey,
+    this.modelName = 'tts-1',
+  }) {
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl.endsWith('/') ? baseUrl : '$baseUrl/',
       headers: {
@@ -20,9 +25,9 @@ class OpenAiCompatibleAdapter extends TtsAdapter {
   @override
   Future<TtsResult> synthesize(TtsRequest request) async {
     final response = await _dio.post(
-      'v1/audio/speech',
+      'audio/speech',
       data: {
-        'model': 'tts-1',
+        'model': modelName,
         'input': request.text,
         'voice': request.presetVoiceName ?? request.voice,
         if (request.speed != 1.0) 'speed': request.speed,
@@ -33,15 +38,14 @@ class OpenAiCompatibleAdapter extends TtsAdapter {
 
     return TtsResult(
       audioBytes: Uint8List.fromList(response.data as List<int>),
-      contentType:
-          response.headers.value('content-type') ?? 'audio/mpeg',
+      contentType: response.headers.value('content-type') ?? 'audio/mpeg',
     );
   }
 
   @override
   Future<bool> healthCheck() async {
     try {
-      final response = await _dio.get('v1/models');
+      final response = await _dio.get('models');
       return response.statusCode == 200;
     } catch (_) {
       return false;

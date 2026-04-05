@@ -14,9 +14,17 @@ class Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Split tabs: main tabs at top, settings at bottom
-    final mainTabs =
-        NavTab.values.where((t) => t != NavTab.settings).toList();
+    // Tabs shown in main area (top)
+    const mainTabs = [
+      NavTab.quickTts,
+      NavTab.phaseTts,
+      NavTab.dialogTts,
+      NavTab.voiceCharacters,
+      NavTab.voiceBank,
+      NavTab.voiceDesign,
+      NavTab.providerTest,
+      NavTab.providers,
+    ];
 
     return Container(
       width: AppTheme.sidebarWidth,
@@ -24,7 +32,7 @@ class Sidebar extends StatelessWidget {
       child: Column(
         children: [
           const SizedBox(height: 12),
-          // Logo / brand
+          // Logo
           Container(
             width: 42,
             height: 42,
@@ -56,22 +64,23 @@ class Sidebar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          const Divider(indent: 16, endIndent: 16),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          const Divider(indent: 12, endIndent: 12),
+          const SizedBox(height: 4),
 
           // Main nav tabs
-          for (final tab in mainTabs) ...[
+          for (final tab in mainTabs)
             _SidebarButton(
               tab: tab,
               isSelected: selected == tab,
               onTap: () => onTabChanged(tab),
             ),
-          ],
 
           const Spacer(),
 
-          // Settings at bottom
+          // Settings pinned at bottom
+          const Divider(indent: 12, endIndent: 12),
+          const SizedBox(height: 4),
           _SidebarButton(
             tab: NavTab.settings,
             isSelected: selected == NavTab.settings,
@@ -109,7 +118,7 @@ class _SidebarButton extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             width: 48,
-            height: 48,
+            height: 44,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: isSelected
@@ -124,10 +133,10 @@ class _SidebarButton extends StatelessWidget {
             ),
             child: Icon(
               tab.icon,
-              size: 22,
+              size: 20,
               color: isSelected
                   ? AppTheme.accentColor
-                  : Colors.white.withValues(alpha: 0.45),
+                  : Colors.white.withValues(alpha: 0.4),
             ),
           ),
         ),

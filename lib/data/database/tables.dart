@@ -6,6 +6,8 @@ class TtsProviders extends Table {
   TextColumn get adapterType => text()(); // AdapterType enum name
   TextColumn get baseUrl => text()();
   TextColumn get apiKey => text().withDefault(const Constant(''))();
+  TextColumn get defaultModelName =>
+      text().withDefault(const Constant('tts-1'))();
   BoolColumn get enabled => boolean().withDefault(const Constant(true))();
 
   @override
@@ -16,8 +18,8 @@ class ModelBindings extends Table {
   TextColumn get id => text()();
   TextColumn get providerId => text().references(TtsProviders, #id)();
   TextColumn get modelKey => text()();
-  // Stored as comma-separated TaskMode enum names
-  TextColumn get supportedTaskModes => text().withDefault(const Constant(''))();
+  TextColumn get supportedTaskModes =>
+      text().withDefault(const Constant(''))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -26,10 +28,15 @@ class ModelBindings extends Table {
 class VoiceAssets extends Table {
   TextColumn get id => text()();
   TextColumn get name => text().withLength(min: 1)();
+  TextColumn get description => text().nullable()();
   TextColumn get providerId => text().references(TtsProviders, #id)();
-  TextColumn get modelBindingId => text().references(ModelBindings, #id)();
+  // Nullable: characters can be created without a formal model binding
+  TextColumn get modelBindingId => text().nullable()();
+  TextColumn get modelName => text().nullable()(); // Direct model name override
   TextColumn get taskMode => text()(); // TaskMode enum name
   TextColumn get refAudioPath => text().nullable()();
+  RealColumn get refAudioTrimStart => real().nullable()();
+  RealColumn get refAudioTrimEnd => real().nullable()();
   TextColumn get promptText => text().nullable()();
   TextColumn get promptLang => text().nullable()();
   TextColumn get voiceInstruction => text().nullable()();

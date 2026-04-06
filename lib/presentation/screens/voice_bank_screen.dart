@@ -127,6 +127,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                         await database.setActiveBank(bank.id);
                       }
                     },
+                    onRename: () => _renameBank(bank, banks),
                   );
                 },
               );
@@ -275,6 +276,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
   // ───────────────── Actions ─────────────────
 
   void _createBank() async {
+    final banks = ref.read(voiceBanksStreamProvider).valueOrNull ?? [];
     final nameCtrl = TextEditingController();
     final result = await showDialog<String>(
       context: context,
@@ -296,6 +298,13 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
       ),
     );
     if (result != null && result.isNotEmpty) {
+      if (banks.any((b) => b.name == result)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('A bank with this name already exists')));
+        }
+        return;
+      }
       final id = const Uuid().v4();
       await ref.read(databaseProvider).insertBank(db.VoiceBanksCompanion(
             id: Value(id),
@@ -303,6 +312,41 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
             createdAt: Value(DateTime.now()),
           ));
       setState(() => _selectedBankId = id);
+    }
+  }
+
+  void _renameBank(db.VoiceBank bank, List<db.VoiceBank> allBanks) async {
+    final nameCtrl = TextEditingController(text: bank.name);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rename Voice Bank'),
+        content: TextField(
+          controller: nameCtrl,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Bank name'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, nameCtrl.text),
+              child: const Text('Rename')),
+        ],
+      ),
+    );
+    if (result != null && result.isNotEmpty && result != bank.name) {
+      if (allBanks.any((b) => b.name == result && b.id != bank.id)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('A bank with this name already exists')));
+        }
+        return;
+      }
+      await ref.read(databaseProvider).updateBank(
+            bank.copyWith(name: result),
+          );
     }
   }
 
@@ -401,6 +445,7 @@ class _BankTile extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onDuplicate;
   final VoidCallback onToggleActive;
+  final VoidCallback onRename;
 
   const _BankTile({
     required this.bank,
@@ -409,6 +454,7 @@ class _BankTile extends StatelessWidget {
     required this.onDelete,
     required this.onDuplicate,
     required this.onToggleActive,
+    required this.onRename,
   });
 
   @override
@@ -455,6 +501,8 @@ class _BankTile extends StatelessWidget {
                     switch (v) {
                       case 'activate':
                         onToggleActive();
+                      case 'rename':
+                        onRename();
                       case 'duplicate':
                         onDuplicate();
                       case 'delete':
@@ -466,6 +514,10 @@ class _BankTile extends StatelessWidget {
                       value: 'activate',
                       child: Text(
                           bank.isActive ? 'Deactivate' : 'Set Active'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'rename',
+                      child: Text('Rename'),
                     ),
                     const PopupMenuItem(
                       value: 'duplicate',

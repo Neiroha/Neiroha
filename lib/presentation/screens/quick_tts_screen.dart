@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:drift/drift.dart' show Value;
@@ -28,6 +29,7 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
   bool _generating = false;
   final _player = AudioPlayer();
   String? _playingId;
+  bool _deleteAllConfirm = false;
 
   @override
   void initState() {
@@ -48,15 +50,40 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
   Widget build(BuildContext context) {
     final assetsAsync = ref.watch(voiceAssetsStreamProvider);
     final historyAsync = ref.watch(quickTtsHistoryStreamProvider);
+    final activeBankAsync = ref.watch(activeBankStreamProvider);
+
+    // Build the list of voices from the active bank only
+    final activeBankVoices = activeBankAsync.when<AsyncValue<List<db.VoiceAsset>>>(
+      loading: () => const AsyncValue.loading(),
+      error: (e, s) => AsyncValue.error(e, s),
+      data: (activeBank) {
+        if (activeBank == null) {
+          return const AsyncValue.data([]);
+        }
+        final membersAsync = ref.watch(bankMembersStreamProvider(activeBank.id));
+        return membersAsync.when(
+          loading: () => const AsyncValue.loading(),
+          error: (e, s) => AsyncValue.error(e, s),
+          data: (members) {
+            final allAssets = assetsAsync.valueOrNull ?? [];
+            final memberAssetIds = members.map((m) => m.voiceAssetId).toSet();
+            final bankAssets = allAssets
+                .where((a) => memberAssetIds.contains(a.id) && a.enabled)
+                .toList();
+            return AsyncValue.data(bankAssets);
+          },
+        );
+      },
+    );
 
     return Column(
       children: [
-        _buildHeader(context),
+        _buildHeader(context, historyAsync),
         Expanded(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(width: 280, child: _buildVoiceSelector(assetsAsync)),
+              SizedBox(width: 280, child: _buildVoiceSelector(activeBankVoices)),
               const VerticalDivider(width: 1),
               Expanded(child: _buildHistory(historyAsync, assetsAsync)),
             ],
@@ -67,7 +94,8 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, AsyncValue<List<db.QuickTtsHistory>> historyAsync) {
+    final hasHistory = (historyAsync.valueOrNull ?? []).isNotEmpty;
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
       child: Row(
@@ -81,6 +109,29 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
           Text('Test voices with short text',
               style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.5), fontSize: 14)),
+          const Spacer(),
+          if (hasHistory)
+            _deleteAllConfirm
+                ? FilledButton.icon(
+                    onPressed: () async {
+                      await ref.read(databaseProvider).clearQuickTtsHistory();
+                      setState(() => _deleteAllConfirm = false);
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                    ),
+                    icon: const Icon(Icons.delete_forever_rounded, size: 18),
+                    label: const Text('Confirm Delete All'),
+                  )
+                : OutlinedButton.icon(
+                    onPressed: () => setState(() => _deleteAllConfirm = true),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.redAccent,
+                      side: const BorderSide(color: Colors.redAccent, width: 1),
+                    ),
+                    icon: const Icon(Icons.delete_sweep_rounded, size: 18),
+                    label: const Text('Delete All'),
+                  ),
         ],
       ),
     );
@@ -115,12 +166,12 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
                             size: 48,
                             color: Colors.white.withValues(alpha: 0.2)),
                         const SizedBox(height: 12),
-                        Text('No voices yet',
+                        Text('No voices in active bank',
                             style: TextStyle(
                                 color:
                                     Colors.white.withValues(alpha: 0.4))),
                         const SizedBox(height: 8),
-                        Text('Create a Voice Character first',
+                        Text('Activate a Voice Bank with characters',
                             style: TextStyle(
                                 fontSize: 12,
                                 color:
@@ -130,12 +181,11 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
                   ),
                 );
               }
-              final enabled = assets.where((a) => a.enabled).toList();
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: enabled.length,
+                itemCount: assets.length,
                 itemBuilder: (context, index) {
-                  final a = enabled[index];
+                  final a = assets[index];
                   final isSelected = _selectedVoiceId == a.id;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 4),
@@ -216,72 +266,79 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
           padding: const EdgeInsets.all(12),
           itemCount: history.length,
           itemBuilder: (ctx, i) {
-            final entry = history[i]; // already sorted newest first
+            final entry = history[i];
+            final isPlaying = _playingId == entry.id;
+            final hasAudio = entry.audioPath != null;
+            final hasError = entry.error != null;
+
             return Card(
               margin: const EdgeInsets.only(bottom: 8),
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: Row(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor:
-                          AppTheme.accentColor.withValues(alpha: 0.2),
-                      child: Text(
-                          entry.voiceName.isNotEmpty
-                              ? entry.voiceName[0].toUpperCase()
-                              : '?',
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 13)),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(entry.voiceName,
+                    // Line 1: Character name + delete button
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 12,
+                          backgroundColor:
+                              AppTheme.accentColor.withValues(alpha: 0.2),
+                          child: Text(
+                              entry.voiceName.isNotEmpty
+                                  ? entry.voiceName[0].toUpperCase()
+                                  : '?',
                               style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 2),
-                          Text(entry.inputText,
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white
-                                      .withValues(alpha: 0.7)),
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    if (entry.error != null)
-                      Tooltip(
-                        message: entry.error!,
-                        child: const Icon(Icons.error_rounded,
-                            color: Colors.redAccent, size: 20),
-                      )
-                    else if (entry.audioPath != null)
-                      IconButton(
-                        onPressed: () async {
-                          if (_playingId == entry.id) {
-                            await _player.stop();
-                            setState(() => _playingId = null);
-                          } else {
-                            await _player
-                                .play(DeviceFileSource(entry.audioPath!));
-                            setState(() => _playingId = entry.id);
-                          }
-                        },
-                        icon: Icon(
-                          _playingId == entry.id
-                              ? Icons.stop_rounded
-                              : Icons.play_arrow_rounded,
-                          size: 20,
+                                  color: Colors.white, fontSize: 10)),
                         ),
-                        tooltip: 'Play',
-                      ),
+                        const SizedBox(width: 8),
+                        Text(entry.voiceName,
+                            style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600)),
+                        const Spacer(),
+                        if (hasError)
+                          Tooltip(
+                            message: entry.error!,
+                            child: const Icon(Icons.error_rounded,
+                                color: Colors.redAccent, size: 16),
+                          ),
+                        IconButton(
+                          onPressed: () async {
+                            // Delete audio file if exists
+                            if (entry.audioPath != null) {
+                              final file = File(entry.audioPath!);
+                              if (file.existsSync()) {
+                                await file.delete();
+                              }
+                            }
+                            await ref
+                                .read(databaseProvider)
+                                .deleteQuickTtsHistory(entry.id);
+                          },
+                          icon: Icon(Icons.close_rounded,
+                              size: 14,
+                              color: Colors.white.withValues(alpha: 0.3)),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          tooltip: 'Delete',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    // Line 2: Text content
+                    Text(entry.inputText,
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withValues(alpha: 0.7)),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis),
+                    // Line 3: Waveform + time (if audio exists)
+                    if (hasAudio) ...[
+                      const SizedBox(height: 8),
+                      _buildAudioRow(entry, isPlaying),
+                    ],
                   ],
                 ),
               ),
@@ -289,6 +346,93 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildAudioRow(db.QuickTtsHistory entry, bool isPlaying) {
+    // Format duration as mm:ss
+    String durationText = '--:--';
+    if (entry.audioDuration != null) {
+      final totalSecs = entry.audioDuration!;
+      final mins = (totalSecs / 60).floor();
+      final secs = (totalSecs % 60).floor();
+      durationText =
+          '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+    }
+
+    return Row(
+      children: [
+        // Play/stop button
+        GestureDetector(
+          onTap: () async {
+            if (isPlaying) {
+              await _player.stop();
+              setState(() => _playingId = null);
+            } else {
+              await _player.play(DeviceFileSource(entry.audioPath!));
+              setState(() => _playingId = entry.id);
+            }
+          },
+          child: Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: isPlaying
+                  ? AppTheme.accentColor
+                  : AppTheme.accentColor.withValues(alpha: 0.8),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
+              size: 14,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Waveform bars — 30% width
+        SizedBox(
+          width: 120,
+          height: 24,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: List.generate(20, (i) {
+              final progress = i / 20.0;
+              final wave1 = math.sin(progress * math.pi * 4).abs();
+              final wave2 = math.sin(progress * math.pi * 7 + 1.2).abs();
+              final wave3 = math.sin(progress * math.pi * 2.5 + 0.5).abs();
+              final h =
+                  3.0 + (wave1 * 0.4 + wave2 * 0.35 + wave3 * 0.25) * 18.0;
+              return Expanded(
+                child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                    height: h,
+                    decoration: BoxDecoration(
+                      color: isPlaying
+                          ? AppTheme.accentColor.withValues(alpha: 0.7)
+                          : Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(1.5),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Duration
+        Text(
+          durationText,
+          style: TextStyle(
+            fontSize: 11,
+            fontFamily: 'monospace',
+            color: isPlaying
+                ? AppTheme.accentColor
+                : Colors.white.withValues(alpha: 0.4),
+          ),
+        ),
+      ],
     );
   }
 
@@ -379,6 +523,8 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
     if (text.isEmpty) return;
 
     setState(() => _generating = true);
+    // Reset delete-all confirm state
+    if (_deleteAllConfirm) setState(() => _deleteAllConfirm = false);
     final database = ref.read(databaseProvider);
     final entryId = const Uuid().v4();
 
@@ -406,6 +552,18 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
           outDir.path, '${DateTime.now().millisecondsSinceEpoch}.$ext');
       await File(filePath).writeAsBytes(result.audioBytes);
 
+      // Detect audio duration
+      double? duration;
+      try {
+        final durationPlayer = AudioPlayer();
+        await durationPlayer.setSource(DeviceFileSource(filePath));
+        final d = await durationPlayer.getDuration();
+        if (d != null) {
+          duration = d.inMilliseconds / 1000.0;
+        }
+        durationPlayer.dispose();
+      } catch (_) {}
+
       // Persist to DB
       await database.insertQuickTtsHistory(
         db.QuickTtsHistoriesCompanion(
@@ -414,6 +572,7 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
           voiceName: Value(asset.name),
           inputText: Value(text),
           audioPath: Value(filePath),
+          audioDuration: Value(duration),
           createdAt: Value(DateTime.now()),
         ),
       );

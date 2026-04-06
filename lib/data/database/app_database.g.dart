@@ -3042,6 +3042,17 @@ class $QuickTtsHistoriesTable extends QuickTtsHistories
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _audioDurationMeta = const VerificationMeta(
+    'audioDuration',
+  );
+  @override
+  late final GeneratedColumn<double> audioDuration = GeneratedColumn<double>(
+    'audio_duration',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _errorMeta = const VerificationMeta('error');
   @override
   late final GeneratedColumn<String> error = GeneratedColumn<String>(
@@ -3069,6 +3080,7 @@ class $QuickTtsHistoriesTable extends QuickTtsHistories
     voiceName,
     inputText,
     audioPath,
+    audioDuration,
     error,
     createdAt,
   ];
@@ -3122,6 +3134,15 @@ class $QuickTtsHistoriesTable extends QuickTtsHistories
         audioPath.isAcceptableOrUnknown(data['audio_path']!, _audioPathMeta),
       );
     }
+    if (data.containsKey('audio_duration')) {
+      context.handle(
+        _audioDurationMeta,
+        audioDuration.isAcceptableOrUnknown(
+          data['audio_duration']!,
+          _audioDurationMeta,
+        ),
+      );
+    }
     if (data.containsKey('error')) {
       context.handle(
         _errorMeta,
@@ -3165,6 +3186,10 @@ class $QuickTtsHistoriesTable extends QuickTtsHistories
         DriftSqlType.string,
         data['${effectivePrefix}audio_path'],
       ),
+      audioDuration: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}audio_duration'],
+      ),
       error: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}error'],
@@ -3188,6 +3213,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
   final String voiceName;
   final String inputText;
   final String? audioPath;
+  final double? audioDuration;
   final String? error;
   final DateTime createdAt;
   const QuickTtsHistory({
@@ -3196,6 +3222,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
     required this.voiceName,
     required this.inputText,
     this.audioPath,
+    this.audioDuration,
     this.error,
     required this.createdAt,
   });
@@ -3208,6 +3235,9 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
     map['input_text'] = Variable<String>(inputText);
     if (!nullToAbsent || audioPath != null) {
       map['audio_path'] = Variable<String>(audioPath);
+    }
+    if (!nullToAbsent || audioDuration != null) {
+      map['audio_duration'] = Variable<double>(audioDuration);
     }
     if (!nullToAbsent || error != null) {
       map['error'] = Variable<String>(error);
@@ -3225,6 +3255,9 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
       audioPath: audioPath == null && nullToAbsent
           ? const Value.absent()
           : Value(audioPath),
+      audioDuration: audioDuration == null && nullToAbsent
+          ? const Value.absent()
+          : Value(audioDuration),
       error: error == null && nullToAbsent
           ? const Value.absent()
           : Value(error),
@@ -3243,6 +3276,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
       voiceName: serializer.fromJson<String>(json['voiceName']),
       inputText: serializer.fromJson<String>(json['inputText']),
       audioPath: serializer.fromJson<String?>(json['audioPath']),
+      audioDuration: serializer.fromJson<double?>(json['audioDuration']),
       error: serializer.fromJson<String?>(json['error']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -3256,6 +3290,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
       'voiceName': serializer.toJson<String>(voiceName),
       'inputText': serializer.toJson<String>(inputText),
       'audioPath': serializer.toJson<String?>(audioPath),
+      'audioDuration': serializer.toJson<double?>(audioDuration),
       'error': serializer.toJson<String?>(error),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -3267,6 +3302,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
     String? voiceName,
     String? inputText,
     Value<String?> audioPath = const Value.absent(),
+    Value<double?> audioDuration = const Value.absent(),
     Value<String?> error = const Value.absent(),
     DateTime? createdAt,
   }) => QuickTtsHistory(
@@ -3275,6 +3311,9 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
     voiceName: voiceName ?? this.voiceName,
     inputText: inputText ?? this.inputText,
     audioPath: audioPath.present ? audioPath.value : this.audioPath,
+    audioDuration: audioDuration.present
+        ? audioDuration.value
+        : this.audioDuration,
     error: error.present ? error.value : this.error,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -3287,6 +3326,9 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
       voiceName: data.voiceName.present ? data.voiceName.value : this.voiceName,
       inputText: data.inputText.present ? data.inputText.value : this.inputText,
       audioPath: data.audioPath.present ? data.audioPath.value : this.audioPath,
+      audioDuration: data.audioDuration.present
+          ? data.audioDuration.value
+          : this.audioDuration,
       error: data.error.present ? data.error.value : this.error,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -3300,6 +3342,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
           ..write('voiceName: $voiceName, ')
           ..write('inputText: $inputText, ')
           ..write('audioPath: $audioPath, ')
+          ..write('audioDuration: $audioDuration, ')
           ..write('error: $error, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -3313,6 +3356,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
     voiceName,
     inputText,
     audioPath,
+    audioDuration,
     error,
     createdAt,
   );
@@ -3325,6 +3369,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
           other.voiceName == this.voiceName &&
           other.inputText == this.inputText &&
           other.audioPath == this.audioPath &&
+          other.audioDuration == this.audioDuration &&
           other.error == this.error &&
           other.createdAt == this.createdAt);
 }
@@ -3335,6 +3380,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
   final Value<String> voiceName;
   final Value<String> inputText;
   final Value<String?> audioPath;
+  final Value<double?> audioDuration;
   final Value<String?> error;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
@@ -3344,6 +3390,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
     this.voiceName = const Value.absent(),
     this.inputText = const Value.absent(),
     this.audioPath = const Value.absent(),
+    this.audioDuration = const Value.absent(),
     this.error = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -3354,6 +3401,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
     required String voiceName,
     required String inputText,
     this.audioPath = const Value.absent(),
+    this.audioDuration = const Value.absent(),
     this.error = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
@@ -3368,6 +3416,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
     Expression<String>? voiceName,
     Expression<String>? inputText,
     Expression<String>? audioPath,
+    Expression<double>? audioDuration,
     Expression<String>? error,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
@@ -3378,6 +3427,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
       if (voiceName != null) 'voice_name': voiceName,
       if (inputText != null) 'input_text': inputText,
       if (audioPath != null) 'audio_path': audioPath,
+      if (audioDuration != null) 'audio_duration': audioDuration,
       if (error != null) 'error': error,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
@@ -3390,6 +3440,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
     Value<String>? voiceName,
     Value<String>? inputText,
     Value<String?>? audioPath,
+    Value<double?>? audioDuration,
     Value<String?>? error,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
@@ -3400,6 +3451,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
       voiceName: voiceName ?? this.voiceName,
       inputText: inputText ?? this.inputText,
       audioPath: audioPath ?? this.audioPath,
+      audioDuration: audioDuration ?? this.audioDuration,
       error: error ?? this.error,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
@@ -3424,6 +3476,9 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
     if (audioPath.present) {
       map['audio_path'] = Variable<String>(audioPath.value);
     }
+    if (audioDuration.present) {
+      map['audio_duration'] = Variable<double>(audioDuration.value);
+    }
     if (error.present) {
       map['error'] = Variable<String>(error.value);
     }
@@ -3444,6 +3499,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
           ..write('voiceName: $voiceName, ')
           ..write('inputText: $inputText, ')
           ..write('audioPath: $audioPath, ')
+          ..write('audioDuration: $audioDuration, ')
           ..write('error: $error, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
@@ -8242,6 +8298,7 @@ typedef $$QuickTtsHistoriesTableCreateCompanionBuilder =
       required String voiceName,
       required String inputText,
       Value<String?> audioPath,
+      Value<double?> audioDuration,
       Value<String?> error,
       required DateTime createdAt,
       Value<int> rowid,
@@ -8253,6 +8310,7 @@ typedef $$QuickTtsHistoriesTableUpdateCompanionBuilder =
       Value<String> voiceName,
       Value<String> inputText,
       Value<String?> audioPath,
+      Value<double?> audioDuration,
       Value<String?> error,
       Value<DateTime> createdAt,
       Value<int> rowid,
@@ -8323,6 +8381,11 @@ class $$QuickTtsHistoriesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get audioDuration => $composableBuilder(
+    column: $table.audioDuration,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get error => $composableBuilder(
     column: $table.error,
     builder: (column) => ColumnFilters(column),
@@ -8386,6 +8449,11 @@ class $$QuickTtsHistoriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get audioDuration => $composableBuilder(
+    column: $table.audioDuration,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get error => $composableBuilder(
     column: $table.error,
     builder: (column) => ColumnOrderings(column),
@@ -8440,6 +8508,11 @@ class $$QuickTtsHistoriesTableAnnotationComposer
 
   GeneratedColumn<String> get audioPath =>
       $composableBuilder(column: $table.audioPath, builder: (column) => column);
+
+  GeneratedColumn<double> get audioDuration => $composableBuilder(
+    column: $table.audioDuration,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get error =>
       $composableBuilder(column: $table.error, builder: (column) => column);
@@ -8509,6 +8582,7 @@ class $$QuickTtsHistoriesTableTableManager
                 Value<String> voiceName = const Value.absent(),
                 Value<String> inputText = const Value.absent(),
                 Value<String?> audioPath = const Value.absent(),
+                Value<double?> audioDuration = const Value.absent(),
                 Value<String?> error = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -8518,6 +8592,7 @@ class $$QuickTtsHistoriesTableTableManager
                 voiceName: voiceName,
                 inputText: inputText,
                 audioPath: audioPath,
+                audioDuration: audioDuration,
                 error: error,
                 createdAt: createdAt,
                 rowid: rowid,
@@ -8529,6 +8604,7 @@ class $$QuickTtsHistoriesTableTableManager
                 required String voiceName,
                 required String inputText,
                 Value<String?> audioPath = const Value.absent(),
+                Value<double?> audioDuration = const Value.absent(),
                 Value<String?> error = const Value.absent(),
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
@@ -8538,6 +8614,7 @@ class $$QuickTtsHistoriesTableTableManager
                 voiceName: voiceName,
                 inputText: inputText,
                 audioPath: audioPath,
+                audioDuration: audioDuration,
                 error: error,
                 createdAt: createdAt,
                 rowid: rowid,

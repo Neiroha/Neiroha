@@ -51,4 +51,40 @@ class OpenAiCompatibleAdapter extends TtsAdapter {
       return false;
     }
   }
+
+  @override
+  Future<List<String>> getSpeakers() async {
+    // Try OpenAI-style /audio/voices first (e.g. CosyVoice under /v1/)
+    try {
+      final response = await _dio.get(
+        'audio/voices',
+        options: Options(responseType: ResponseType.json),
+      );
+      if (response.statusCode == 200 && response.data is Map) {
+        final data = response.data as Map<String, dynamic>;
+        if (data['voices'] is List) {
+          return (data['voices'] as List)
+              .map((e) =>
+                  e is Map ? (e['name'] ?? e.toString()) : e.toString())
+              .cast<String>()
+              .toList();
+        }
+      }
+    } catch (_) {}
+
+    // Fallback: try /speakers (SillyTavern-compatible)
+    try {
+      final response = await _dio.get(
+        'speakers',
+        options: Options(responseType: ResponseType.json),
+      );
+      if (response.statusCode == 200 && response.data is List) {
+        return (response.data as List)
+            .map((e) => e is Map ? (e['name'] ?? e.toString()) : e.toString())
+            .cast<String>()
+            .toList();
+      }
+    } catch (_) {}
+    return [];
+  }
 }

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:drift/drift.dart' show Value;
@@ -622,9 +623,25 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
             'line_${line.orderIndex}_${DateTime.now().millisecondsSinceEpoch}.$ext');
         await File(filePath).writeAsBytes(result.audioBytes);
 
+        // Detect audio duration
+        final durationPlayer = AudioPlayer();
+        double? duration;
+        try {
+          await durationPlayer.setSource(DeviceFileSource(filePath));
+          final d = await durationPlayer.getDuration();
+          if (d != null) {
+            duration = d.inMilliseconds / 1000.0;
+          }
+        } catch (_) {
+          // Duration detection failed, leave as null
+        } finally {
+          durationPlayer.dispose();
+        }
+
         await database.updateDialogTtsLine(
           line.copyWith(
             audioPath: Value(filePath),
+            audioDuration: Value(duration),
             error: const Value(null),
           ),
         );
@@ -760,16 +777,27 @@ class _ChatBubble extends StatelessWidget {
         ],
       );
     }
+    // Format duration as mm:ss
+    String durationText = '--:--';
+    if (line.audioDuration != null) {
+      final totalSecs = line.audioDuration!;
+      final mins = (totalSecs / 60).floor();
+      final secs = (totalSecs % 60).floor();
+      durationText = '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+    }
+
     return Row(
       children: [
         // Play/stop button
         GestureDetector(
           onTap: onPlay,
           child: Container(
-            width: 30,
-            height: 30,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
-              color: AppTheme.accentColor,
+              color: isPlaying
+                  ? AppTheme.accentColor
+                  : AppTheme.accentColor.withValues(alpha: 0.8),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -780,34 +808,49 @@ class _ChatBubble extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        // Waveform bars (simplified visual)
+        // Waveform bars — smooth wave pattern
         Expanded(
-          child: Row(
-            children: List.generate(20, (i) {
-              final h = 6.0 + (i * 7 % 14).toDouble();
-              return Expanded(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 1),
-                  height: h,
-                  decoration: BoxDecoration(
-                    color: isPlaying
-                        ? AppTheme.accentColor.withValues(alpha: 0.6)
-                        : Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(2),
+          child: SizedBox(
+            height: 28,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: List.generate(40, (i) {
+                // Generate a smooth wave-like pattern
+                final progress = i / 40.0;
+                final wave1 = math.sin(progress * math.pi * 4).abs();
+                final wave2 = math.sin(progress * math.pi * 7 + 1.2).abs();
+                final wave3 = math.sin(progress * math.pi * 2.5 + 0.5).abs();
+                final h = 3.0 + (wave1 * 0.4 + wave2 * 0.35 + wave3 * 0.25) * 22.0;
+                return Expanded(
+                  child: Center(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                      height: h,
+                      decoration: BoxDecoration(
+                        color: isPlaying
+                            ? AppTheme.accentColor.withValues(alpha: 0.7)
+                            : Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(1.5),
+                      ),
+                    ),
                   ),
-                ),
-              );
-            }),
+                );
+              }),
+            ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         // Duration
-        if (line.audioDuration != null)
-          Text(
-            '${line.audioDuration!.toStringAsFixed(1)}s',
-            style: TextStyle(
-                fontSize: 11, color: Colors.white.withValues(alpha: 0.4)),
+        Text(
+          durationText,
+          style: TextStyle(
+            fontSize: 12,
+            fontFamily: 'monospace',
+            color: isPlaying
+                ? AppTheme.accentColor
+                : Colors.white.withValues(alpha: 0.4),
           ),
+        ),
       ],
     );
   }

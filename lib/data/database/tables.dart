@@ -91,6 +91,7 @@ class QuickTtsHistories extends Table {
   TextColumn get voiceName => text()();
   TextColumn get inputText => text()();
   TextColumn get audioPath => text().nullable()();
+  RealColumn get audioDuration => real().nullable()();
   TextColumn get error => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
 

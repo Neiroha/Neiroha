@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:q_vox_lab/data/adapters/tts_adapter.dart';
 import 'package:q_vox_lab/data/database/app_database.dart' as db;
 import 'package:q_vox_lab/domain/enums/task_mode.dart';
 import 'package:q_vox_lab/presentation/theme/app_theme.dart';
@@ -130,11 +131,13 @@ class VoiceCharacterScreen extends ConsumerWidget {
               Text('Add a Provider first (Providers tab)')));
       return;
     }
+    final existingAssets = ref.read(voiceAssetsStreamProvider).valueOrNull ?? [];
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => _CreateCharacterDialog(
         providers: providers,
+        existingAssets: existingAssets,
         onSave: (companion) async {
           await ref.read(databaseProvider).insertVoiceAsset(companion);
         },
@@ -457,12 +460,14 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
           const SnackBar(content: Text('No providers available')));
       return;
     }
+    final existingAssets = ref.read(voiceAssetsStreamProvider).valueOrNull ?? [];
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => _EditCharacterDialog(
         asset: asset,
         providers: providers,
+        existingAssets: existingAssets,
         onSave: (updated) async {
           await ref.read(databaseProvider).updateVoiceAsset(updated);
         },
@@ -500,10 +505,12 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
 class _CreateCharacterDialog extends StatefulWidget {
   final List<db.TtsProvider> providers;
   final Future<void> Function(db.VoiceAssetsCompanion) onSave;
+  final List<db.VoiceAsset> existingAssets;
 
   const _CreateCharacterDialog({
     required this.providers,
     required this.onSave,
+    this.existingAssets = const [],
   });
 
   @override
@@ -524,17 +531,26 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   TaskMode _taskMode = TaskMode.presetVoice;
   late String _selectedProviderId;
   String? _refAudioPath;
+  String? _avatarPath;
   bool _saving = false;
 
   final _refPlayer = AudioPlayer();
   bool _refPlaying = false;
 
+  // Speaker list fetched from provider
+  List<String> _speakers = [];
+  bool _loadingSpeakers = false;
+  String? _selectedSpeaker;
+
+  // CosyVoice mode
+  String? _cosyVoiceMode;
+
   @override
   void initState() {
     super.initState();
     _selectedProviderId = widget.providers.first.id;
-    _modelCtrl.text =
-        widget.providers.first.defaultModelName;
+    _modelCtrl.text = widget.providers.first.defaultModelName;
+    _fetchSpeakers();
   }
 
   @override
@@ -555,13 +571,99 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   db.TtsProvider get _selectedProvider =>
       widget.providers.firstWhere((p) => p.id == _selectedProviderId);
 
+  bool get _isCosyVoice => _selectedProvider.adapterType == 'cosyvoice';
+  bool get _isSpeakerOnly =>
+      _selectedProvider.adapterType == 'chatCompletionsTts' ||
+      _selectedProvider.adapterType == 'openaiCompatible';
+
+  Future<void> _fetchSpeakers() async {
+    setState(() {
+      _loadingSpeakers = true;
+      _speakers = [];
+      _selectedSpeaker = null;
+    });
+    try {
+      final adapter = createAdapter(_selectedProvider,
+          modelName: _modelCtrl.text.trim().isEmpty
+              ? null
+              : _modelCtrl.text.trim());
+      final speakers = await adapter.getSpeakers();
+      if (mounted) {
+        setState(() {
+          _speakers = speakers;
+          _loadingSpeakers = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingSpeakers = false);
+    }
+  }
+
+  /// Reusable speaker dropdown + loading indicator.
+  List<Widget> _buildSpeakerPicker() {
+    if (_loadingSpeakers) {
+      return [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 16, height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 10),
+              Text('Fetching speakers...'),
+            ],
+          ),
+        ),
+      ];
+    }
+    if (_speakers.isNotEmpty) {
+      return [
+        DropdownButtonFormField<String>(
+          decoration: const InputDecoration(labelText: 'Select Speaker'),
+          isExpanded: true,
+          items: _speakers
+              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+              .toList(),
+          initialValue: _selectedSpeaker,
+          onChanged: (v) {
+            setState(() {
+              _selectedSpeaker = v;
+              _voiceNameCtrl.text = v ?? '';
+            });
+          },
+        ),
+        const SizedBox(height: 8),
+      ];
+    }
+    return [];
+  }
+
+  Future<void> _pickAvatarForCreate() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+    );
+    if (result == null || result.files.single.path == null) return;
+    setState(() => _avatarPath = result.files.single.path!);
+  }
+
+  void _autoFillName() {
+    final providerName = _selectedProvider.name;
+    final speaker = _voiceNameCtrl.text.trim().isNotEmpty
+        ? _voiceNameCtrl.text.trim()
+        : (_selectedSpeaker ?? 'voice');
+    _nameCtrl.text = '${providerName}_$speaker';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: SizedBox(
         width: 560,
-        height: 680,
+        height: 720,
         child: Column(
           children: [
             // Title bar
@@ -587,31 +689,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 children: [
-                  // Name + description
-                  TextField(
-                    controller: _nameCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Character Name *'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _descCtrl,
-                    maxLines: 2,
-                    decoration: const InputDecoration(
-                        labelText: 'Description (optional)'),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Task mode selector
-                  _SectionLabel('VOICE TYPE'),
-                  const SizedBox(height: 8),
-                  _ModeSelector(
-                    selected: _taskMode,
-                    onChanged: (m) => setState(() => _taskMode = m),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Provider + model
+                  // ── PROVIDER (first) ──
                   _SectionLabel('PROVIDER'),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
@@ -639,7 +717,13 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                         _selectedProviderId = v;
                         _modelCtrl.text =
                             _selectedProvider.defaultModelName;
+                        _cosyVoiceMode = null;
+                        // Force presetVoice for speaker-only providers
+                        if (_isSpeakerOnly) {
+                          _taskMode = TaskMode.presetVoice;
+                        }
                       });
+                      _fetchSpeakers();
                     },
                   ),
                   const SizedBox(height: 10),
@@ -650,10 +734,12 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Conditional fields per mode
-                  if (_taskMode == TaskMode.presetVoice) ...[
+                  // ── BACKEND-SPECIFIC OPTIONS ──
+                  if (_isSpeakerOnly) ...[
+                    // chatCompletionsTts / openaiCompatible: only speakers
                     _SectionLabel('PRESET VOICE'),
                     const SizedBox(height: 8),
+                    ..._buildSpeakerPicker(),
                     TextField(
                       controller: _voiceNameCtrl,
                       decoration: const InputDecoration(
@@ -661,84 +747,266 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                         hintText: 'e.g. alloy, mimo_default, default_zh',
                       ),
                     ),
-                  ],
-
-                  if (_taskMode == TaskMode.cloneWithPrompt) ...[
-                    _SectionLabel('REFERENCE AUDIO'),
+                  ] else if (_isCosyVoice) ...[
+                    // ── CosyVoice: 3 modes with mode-specific fields ──
+                    _SectionLabel('COSYVOICE MODE'),
                     const SizedBox(height: 8),
-                    _RefAudioPicker(
-                      path: _refAudioPath,
-                      player: _refPlayer,
-                      isPlaying: _refPlaying,
-                      onPick: (path) =>
-                          setState(() => _refAudioPath = path),
-                      onPlayToggle: (playing) =>
-                          setState(() => _refPlaying = playing),
+                    _CosyVoiceModeSelector(
+                      selected: _cosyVoiceMode,
+                      onChanged: (mode) {
+                        setState(() {
+                          _cosyVoiceMode = mode;
+                          if (mode == 'zero_shot') {
+                            _taskMode = TaskMode.cloneWithPrompt;
+                          } else if (mode == 'instruct') {
+                            _taskMode = TaskMode.voiceDesign;
+                          } else {
+                            // cross_lingual
+                            _taskMode = TaskMode.presetVoice;
+                          }
+                        });
+                      },
                     ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _trimStartCtrl,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                                labelText: 'Trim start (s)',
-                                hintText: '0'),
+                    const SizedBox(height: 20),
+
+                    // CosyVoice mode-specific fields
+                    if (_cosyVoiceMode != null) ...[
+                      // All modes: profile/speaker picker
+                      _SectionLabel('SPEAKER / PROFILE'),
+                      const SizedBox(height: 8),
+                      ..._buildSpeakerPicker(),
+                      TextField(
+                        controller: _voiceNameCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Profile Name',
+                          hintText: 'e.g. 哆啦A梦正常',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // zero_shot: ref audio + prompt text
+                      if (_cosyVoiceMode == 'zero_shot') ...[
+                        _SectionLabel('REFERENCE AUDIO'),
+                        const SizedBox(height: 8),
+                        _RefAudioPicker(
+                          path: _refAudioPath,
+                          player: _refPlayer,
+                          isPlaying: _refPlaying,
+                          onPick: (path) =>
+                              setState(() => _refAudioPath = path),
+                          onPlayToggle: (playing) =>
+                              setState(() => _refPlaying = playing),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _promptTextCtrl,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            labelText: 'Prompt Text (spoken in ref audio)',
+                            hintText: 'Transcript of the reference audio',
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _trimEndCtrl,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                                labelText: 'Trim end (s)',
-                                hintText: 'leave blank = full'),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _promptLangCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Language Code',
+                            hintText: 'zh / en / ja / ko ...',
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _promptTextCtrl,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: 'Reference Transcript',
-                        hintText: 'Text spoken in the reference audio',
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: _promptLangCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Language Code',
-                        hintText: 'zh / en / ja / ko ...',
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: _instructionCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Style Instruction (optional)',
-                        hintText: 'e.g. "speak slowly and gently"',
-                      ),
-                    ),
-                  ],
 
-                  if (_taskMode == TaskMode.voiceDesign) ...[
-                    _SectionLabel('VOICE DESIGN'),
+                      // instruct: instruct text
+                      if (_cosyVoiceMode == 'instruct') ...[
+                        _SectionLabel('INSTRUCT'),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _instructionCtrl,
+                          maxLines: 4,
+                          decoration: const InputDecoration(
+                            labelText: 'Instruct Text',
+                            hintText:
+                                'e.g. "用轻柔的声音说话" or "speak with excitement"',
+                          ),
+                        ),
+                      ],
+
+                      // cross_lingual: just speaker (already shown above)
+                    ],
+                  ] else ...[
+                    // ── VOICE TYPE (for other providers like gptSovits, qwen3) ──
+                    _SectionLabel('VOICE TYPE'),
                     const SizedBox(height: 8),
-                    TextField(
-                      controller: _instructionCtrl,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        labelText: 'Voice Instruction',
-                        hintText:
-                            'Describe the voice...\ne.g. "A warm female voice with slight breathiness"',
+                    _ModeSelector(
+                      selected: _taskMode,
+                      onChanged: (m) => setState(() => _taskMode = m),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Generic mode-specific fields
+                    if (_taskMode == TaskMode.presetVoice) ...[
+                      _SectionLabel('PRESET VOICE'),
+                      const SizedBox(height: 8),
+                      ..._buildSpeakerPicker(),
+                      TextField(
+                        controller: _voiceNameCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Voice / Speaker Name',
+                          hintText: 'e.g. alloy, mimo_default, default_zh',
+                        ),
+                      ),
+                    ],
+
+                    if (_taskMode == TaskMode.cloneWithPrompt) ...[
+                      _SectionLabel('REFERENCE AUDIO'),
+                      const SizedBox(height: 8),
+                      _RefAudioPicker(
+                        path: _refAudioPath,
+                        player: _refPlayer,
+                        isPlaying: _refPlaying,
+                        onPick: (path) =>
+                            setState(() => _refAudioPath = path),
+                        onPlayToggle: (playing) =>
+                            setState(() => _refPlaying = playing),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _trimStartCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                  labelText: 'Trim start (s)',
+                                  hintText: '0'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: _trimEndCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                  labelText: 'Trim end (s)',
+                                  hintText: 'leave blank = full'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _promptTextCtrl,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Reference Transcript',
+                          hintText: 'Text spoken in the reference audio',
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _promptLangCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Language Code',
+                          hintText: 'zh / en / ja / ko ...',
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _instructionCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Style Instruction (optional)',
+                          hintText: 'e.g. "speak slowly and gently"',
+                        ),
+                      ),
+                    ],
+
+                    if (_taskMode == TaskMode.voiceDesign) ...[
+                      _SectionLabel('VOICE DESIGN'),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _instructionCtrl,
+                        maxLines: 4,
+                        decoration: const InputDecoration(
+                          labelText: 'Voice Instruction',
+                          hintText:
+                              'Describe the voice...\ne.g. "A warm female voice with slight breathiness"',
+                        ),
+                      ),
+                    ],
+                  ],
+                  const SizedBox(height: 20),
+
+                  // ── NAME + DESCRIPTION ──
+                  _SectionLabel('CHARACTER INFO'),
+                  const SizedBox(height: 8),
+                  // Avatar picker
+                  Center(
+                    child: GestureDetector(
+                      onTap: _pickAvatarForCreate,
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 36,
+                            backgroundColor: AppTheme.accentColor.withValues(alpha: 0.15),
+                            backgroundImage: _avatarPath != null
+                                ? FileImage(File(_avatarPath!))
+                                : null,
+                            child: _avatarPath == null
+                                ? Icon(Icons.person_rounded,
+                                    size: 36,
+                                    color: Colors.white.withValues(alpha: 0.3))
+                                : null,
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: AppTheme.surfaceBright,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: AppTheme.surfaceDim, width: 2),
+                              ),
+                              child: const Icon(Icons.camera_alt_rounded,
+                                  size: 14, color: Colors.white),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _nameCtrl,
+                          decoration: const InputDecoration(
+                              labelText: 'Character Name *'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Tooltip(
+                        message: 'Auto-fill: Provider + Speaker',
+                        child: IconButton(
+                          onPressed: _autoFillName,
+                          icon: const Icon(Icons.auto_fix_high_rounded, size: 20),
+                          style: IconButton.styleFrom(
+                            backgroundColor:
+                                AppTheme.accentColor.withValues(alpha: 0.15),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _descCtrl,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                        labelText: 'Description (optional)'),
+                  ),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -778,9 +1046,16 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   }
 
   Future<void> _save() async {
-    if (_nameCtrl.text.trim().isEmpty) {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Name is required')));
+      return;
+    }
+    // Uniqueness check
+    if (widget.existingAssets.any((a) => a.name == name)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('A character with this name already exists')));
       return;
     }
     if (_taskMode == TaskMode.cloneWithPrompt && _refAudioPath == null) {
@@ -793,10 +1068,25 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
 
     final trimEnd = double.tryParse(_trimEndCtrl.text);
     final trimStart = double.tryParse(_trimStartCtrl.text) ?? 0;
+    final assetId = const Uuid().v4();
+
+    // Copy avatar to persistent location if picked
+    String? persistedAvatarPath;
+    if (_avatarPath != null) {
+      try {
+        final appDir = await getApplicationSupportDirectory();
+        final avatarDir = Directory(p.join(appDir.path, 'avatars'));
+        if (!avatarDir.existsSync()) avatarDir.createSync(recursive: true);
+        final ext = p.extension(_avatarPath!);
+        final dest = p.join(avatarDir.path, '$assetId$ext');
+        await File(_avatarPath!).copy(dest);
+        persistedAvatarPath = dest;
+      } catch (_) {}
+    }
 
     await widget.onSave(db.VoiceAssetsCompanion(
-      id: Value(const Uuid().v4()),
-      name: Value(_nameCtrl.text.trim()),
+      id: Value(assetId),
+      name: Value(name),
       description: Value(_descCtrl.text.trim().isEmpty
           ? null
           : _descCtrl.text.trim()),
@@ -822,6 +1112,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       presetVoiceName: Value(_voiceNameCtrl.text.trim().isEmpty
           ? null
           : _voiceNameCtrl.text.trim()),
+      avatarPath: Value(persistedAvatarPath),
     ));
 
     if (mounted) Navigator.pop(context);
@@ -855,6 +1146,83 @@ class _ModeSelector extends StatelessWidget {
           child: Padding(
             padding:
                 EdgeInsets.only(right: mode != TaskMode.voiceDesign ? 8 : 0),
+            child: InkWell(
+              onTap: () => onChanged(mode),
+              borderRadius: BorderRadius.circular(10),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: isSelected
+                      ? AppTheme.accentColor.withValues(alpha: 0.15)
+                      : AppTheme.surfaceDim,
+                  border: Border.all(
+                    color: isSelected
+                        ? AppTheme.accentColor.withValues(alpha: 0.5)
+                        : Colors.transparent,
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(icon,
+                        size: 20,
+                        color: isSelected
+                            ? AppTheme.accentColor
+                            : Colors.white.withValues(alpha: 0.5)),
+                    const SizedBox(height: 6),
+                    Text(label,
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.7))),
+                    const SizedBox(height: 4),
+                    Text(hint,
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.white.withValues(alpha: 0.4))),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _CosyVoiceModeSelector extends StatelessWidget {
+  final String? selected;
+  final ValueChanged<String> onChanged;
+
+  const _CosyVoiceModeSelector({
+    required this.selected,
+    required this.onChanged,
+  });
+
+  static const _modes = [
+    ('zero_shot', Icons.mic_rounded, 'Zero Shot',
+        'Clone voice from\nreference audio'),
+    ('cross_lingual', Icons.translate_rounded, 'Cross Lingual',
+        'Cross-language\nvoice synthesis'),
+    ('instruct', Icons.text_fields_rounded, 'Instruct',
+        'Control voice via\ntext instructions'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: _modes.map((rec) {
+        final (mode, icon, label, hint) = rec;
+        final isSelected = selected == mode;
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(right: mode != 'instruct' ? 8 : 0),
             child: InkWell(
               onTap: () => onChanged(mode),
               borderRadius: BorderRadius.circular(10),
@@ -1010,11 +1378,13 @@ class _EditCharacterDialog extends StatefulWidget {
   final db.VoiceAsset asset;
   final List<db.TtsProvider> providers;
   final Future<void> Function(db.VoiceAsset) onSave;
+  final List<db.VoiceAsset> existingAssets;
 
   const _EditCharacterDialog({
     required this.asset,
     required this.providers,
     required this.onSave,
+    this.existingAssets = const [],
   });
 
   @override
@@ -1223,16 +1593,24 @@ class _EditCharacterDialogState extends State<_EditCharacterDialog> {
   }
 
   Future<void> _save() async {
-    if (_nameCtrl.text.trim().isEmpty) {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Name is required')));
+      return;
+    }
+    // Uniqueness check (exclude self)
+    if (widget.existingAssets
+        .any((a) => a.name == name && a.id != widget.asset.id)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('A character with this name already exists')));
       return;
     }
     setState(() => _saving = true);
 
     final speed = double.tryParse(_speedCtrl.text) ?? 1.0;
     final updated = widget.asset.copyWith(
-      name: _nameCtrl.text.trim(),
+      name: name,
       description: Value(_descCtrl.text.trim().isEmpty
           ? null
           : _descCtrl.text.trim()),

@@ -74,4 +74,20 @@ class ChatCompletionsTtsAdapter extends TtsAdapter {
       return false;
     }
   }
+
+  @override
+  Future<List<String>> getSpeakers() async {
+    try {
+      final response = await _dio.get('speakers');
+      if (response.statusCode == 200 && response.data is List) {
+        return (response.data as List)
+            .map((e) => e is Map ? (e['name'] ?? e.toString()) : e.toString())
+            .cast<String>()
+            .toList();
+      }
+    } catch (_) {
+      // Speakers endpoint not available
+    }
+    return [];
+  }
 }

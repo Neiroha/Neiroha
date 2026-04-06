@@ -958,6 +958,17 @@ class $VoiceAssetsTable extends VoiceAssets
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _avatarPathMeta = const VerificationMeta(
+    'avatarPath',
+  );
+  @override
+  late final GeneratedColumn<String> avatarPath = GeneratedColumn<String>(
+    'avatar_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _speedMeta = const VerificationMeta('speed');
   @override
   late final GeneratedColumn<double> speed = GeneratedColumn<double>(
@@ -999,6 +1010,7 @@ class $VoiceAssetsTable extends VoiceAssets
     promptLang,
     voiceInstruction,
     presetVoiceName,
+    avatarPath,
     speed,
     enabled,
   ];
@@ -1124,6 +1136,12 @@ class $VoiceAssetsTable extends VoiceAssets
         ),
       );
     }
+    if (data.containsKey('avatar_path')) {
+      context.handle(
+        _avatarPathMeta,
+        avatarPath.isAcceptableOrUnknown(data['avatar_path']!, _avatarPathMeta),
+      );
+    }
     if (data.containsKey('speed')) {
       context.handle(
         _speedMeta,
@@ -1201,6 +1219,10 @@ class $VoiceAssetsTable extends VoiceAssets
         DriftSqlType.string,
         data['${effectivePrefix}preset_voice_name'],
       ),
+      avatarPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}avatar_path'],
+      ),
       speed: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}speed'],
@@ -1233,6 +1255,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
   final String? promptLang;
   final String? voiceInstruction;
   final String? presetVoiceName;
+  final String? avatarPath;
   final double speed;
   final bool enabled;
   const VoiceAsset({
@@ -1250,6 +1273,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     this.promptLang,
     this.voiceInstruction,
     this.presetVoiceName,
+    this.avatarPath,
     required this.speed,
     required this.enabled,
   });
@@ -1289,6 +1313,9 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     }
     if (!nullToAbsent || presetVoiceName != null) {
       map['preset_voice_name'] = Variable<String>(presetVoiceName);
+    }
+    if (!nullToAbsent || avatarPath != null) {
+      map['avatar_path'] = Variable<String>(avatarPath);
     }
     map['speed'] = Variable<double>(speed);
     map['enabled'] = Variable<bool>(enabled);
@@ -1331,6 +1358,9 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
       presetVoiceName: presetVoiceName == null && nullToAbsent
           ? const Value.absent()
           : Value(presetVoiceName),
+      avatarPath: avatarPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(avatarPath),
       speed: Value(speed),
       enabled: Value(enabled),
     );
@@ -1358,6 +1388,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
       promptLang: serializer.fromJson<String?>(json['promptLang']),
       voiceInstruction: serializer.fromJson<String?>(json['voiceInstruction']),
       presetVoiceName: serializer.fromJson<String?>(json['presetVoiceName']),
+      avatarPath: serializer.fromJson<String?>(json['avatarPath']),
       speed: serializer.fromJson<double>(json['speed']),
       enabled: serializer.fromJson<bool>(json['enabled']),
     );
@@ -1380,6 +1411,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
       'promptLang': serializer.toJson<String?>(promptLang),
       'voiceInstruction': serializer.toJson<String?>(voiceInstruction),
       'presetVoiceName': serializer.toJson<String?>(presetVoiceName),
+      'avatarPath': serializer.toJson<String?>(avatarPath),
       'speed': serializer.toJson<double>(speed),
       'enabled': serializer.toJson<bool>(enabled),
     };
@@ -1400,6 +1432,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     Value<String?> promptLang = const Value.absent(),
     Value<String?> voiceInstruction = const Value.absent(),
     Value<String?> presetVoiceName = const Value.absent(),
+    Value<String?> avatarPath = const Value.absent(),
     double? speed,
     bool? enabled,
   }) => VoiceAsset(
@@ -1427,6 +1460,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     presetVoiceName: presetVoiceName.present
         ? presetVoiceName.value
         : this.presetVoiceName,
+    avatarPath: avatarPath.present ? avatarPath.value : this.avatarPath,
     speed: speed ?? this.speed,
     enabled: enabled ?? this.enabled,
   );
@@ -1466,6 +1500,9 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
       presetVoiceName: data.presetVoiceName.present
           ? data.presetVoiceName.value
           : this.presetVoiceName,
+      avatarPath: data.avatarPath.present
+          ? data.avatarPath.value
+          : this.avatarPath,
       speed: data.speed.present ? data.speed.value : this.speed,
       enabled: data.enabled.present ? data.enabled.value : this.enabled,
     );
@@ -1488,6 +1525,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
           ..write('promptLang: $promptLang, ')
           ..write('voiceInstruction: $voiceInstruction, ')
           ..write('presetVoiceName: $presetVoiceName, ')
+          ..write('avatarPath: $avatarPath, ')
           ..write('speed: $speed, ')
           ..write('enabled: $enabled')
           ..write(')'))
@@ -1510,6 +1548,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     promptLang,
     voiceInstruction,
     presetVoiceName,
+    avatarPath,
     speed,
     enabled,
   );
@@ -1531,6 +1570,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
           other.promptLang == this.promptLang &&
           other.voiceInstruction == this.voiceInstruction &&
           other.presetVoiceName == this.presetVoiceName &&
+          other.avatarPath == this.avatarPath &&
           other.speed == this.speed &&
           other.enabled == this.enabled);
 }
@@ -1550,6 +1590,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
   final Value<String?> promptLang;
   final Value<String?> voiceInstruction;
   final Value<String?> presetVoiceName;
+  final Value<String?> avatarPath;
   final Value<double> speed;
   final Value<bool> enabled;
   final Value<int> rowid;
@@ -1568,6 +1609,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     this.promptLang = const Value.absent(),
     this.voiceInstruction = const Value.absent(),
     this.presetVoiceName = const Value.absent(),
+    this.avatarPath = const Value.absent(),
     this.speed = const Value.absent(),
     this.enabled = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1587,6 +1629,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     this.promptLang = const Value.absent(),
     this.voiceInstruction = const Value.absent(),
     this.presetVoiceName = const Value.absent(),
+    this.avatarPath = const Value.absent(),
     this.speed = const Value.absent(),
     this.enabled = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1609,6 +1652,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     Expression<String>? promptLang,
     Expression<String>? voiceInstruction,
     Expression<String>? presetVoiceName,
+    Expression<String>? avatarPath,
     Expression<double>? speed,
     Expression<bool>? enabled,
     Expression<int>? rowid,
@@ -1628,6 +1672,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
       if (promptLang != null) 'prompt_lang': promptLang,
       if (voiceInstruction != null) 'voice_instruction': voiceInstruction,
       if (presetVoiceName != null) 'preset_voice_name': presetVoiceName,
+      if (avatarPath != null) 'avatar_path': avatarPath,
       if (speed != null) 'speed': speed,
       if (enabled != null) 'enabled': enabled,
       if (rowid != null) 'rowid': rowid,
@@ -1649,6 +1694,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     Value<String?>? promptLang,
     Value<String?>? voiceInstruction,
     Value<String?>? presetVoiceName,
+    Value<String?>? avatarPath,
     Value<double>? speed,
     Value<bool>? enabled,
     Value<int>? rowid,
@@ -1668,6 +1714,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
       promptLang: promptLang ?? this.promptLang,
       voiceInstruction: voiceInstruction ?? this.voiceInstruction,
       presetVoiceName: presetVoiceName ?? this.presetVoiceName,
+      avatarPath: avatarPath ?? this.avatarPath,
       speed: speed ?? this.speed,
       enabled: enabled ?? this.enabled,
       rowid: rowid ?? this.rowid,
@@ -1719,6 +1766,9 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     if (presetVoiceName.present) {
       map['preset_voice_name'] = Variable<String>(presetVoiceName.value);
     }
+    if (avatarPath.present) {
+      map['avatar_path'] = Variable<String>(avatarPath.value);
+    }
     if (speed.present) {
       map['speed'] = Variable<double>(speed.value);
     }
@@ -1748,8 +1798,650 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
           ..write('promptLang: $promptLang, ')
           ..write('voiceInstruction: $voiceInstruction, ')
           ..write('presetVoiceName: $presetVoiceName, ')
+          ..write('avatarPath: $avatarPath, ')
           ..write('speed: $speed, ')
           ..write('enabled: $enabled, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $VoiceBanksTable extends VoiceBanks
+    with TableInfo<$VoiceBanksTable, VoiceBank> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VoiceBanksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(minTextLength: 1),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    description,
+    isActive,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'voice_banks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VoiceBank> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  VoiceBank map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VoiceBank(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $VoiceBanksTable createAlias(String alias) {
+    return $VoiceBanksTable(attachedDatabase, alias);
+  }
+}
+
+class VoiceBank extends DataClass implements Insertable<VoiceBank> {
+  final String id;
+  final String name;
+  final String? description;
+  final bool isActive;
+  final DateTime createdAt;
+  const VoiceBank({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.isActive,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['is_active'] = Variable<bool>(isActive);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  VoiceBanksCompanion toCompanion(bool nullToAbsent) {
+    return VoiceBanksCompanion(
+      id: Value(id),
+      name: Value(name),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      isActive: Value(isActive),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory VoiceBank.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VoiceBank(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String?>(json['description']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String?>(description),
+      'isActive': serializer.toJson<bool>(isActive),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  VoiceBank copyWith({
+    String? id,
+    String? name,
+    Value<String?> description = const Value.absent(),
+    bool? isActive,
+    DateTime? createdAt,
+  }) => VoiceBank(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    description: description.present ? description.value : this.description,
+    isActive: isActive ?? this.isActive,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  VoiceBank copyWithCompanion(VoiceBanksCompanion data) {
+    return VoiceBank(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VoiceBank(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, description, isActive, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VoiceBank &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.isActive == this.isActive &&
+          other.createdAt == this.createdAt);
+}
+
+class VoiceBanksCompanion extends UpdateCompanion<VoiceBank> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> description;
+  final Value<bool> isActive;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const VoiceBanksCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VoiceBanksCompanion.insert({
+    required String id,
+    required String name,
+    this.description = const Value.absent(),
+    this.isActive = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       createdAt = Value(createdAt);
+  static Insertable<VoiceBank> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<bool>? isActive,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (isActive != null) 'is_active': isActive,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VoiceBanksCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String?>? description,
+    Value<bool>? isActive,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return VoiceBanksCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VoiceBanksCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $VoiceBankMembersTable extends VoiceBankMembers
+    with TableInfo<$VoiceBankMembersTable, VoiceBankMember> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VoiceBankMembersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bankIdMeta = const VerificationMeta('bankId');
+  @override
+  late final GeneratedColumn<String> bankId = GeneratedColumn<String>(
+    'bank_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES voice_banks (id)',
+    ),
+  );
+  static const VerificationMeta _voiceAssetIdMeta = const VerificationMeta(
+    'voiceAssetId',
+  );
+  @override
+  late final GeneratedColumn<String> voiceAssetId = GeneratedColumn<String>(
+    'voice_asset_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES voice_assets (id)',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, bankId, voiceAssetId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'voice_bank_members';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VoiceBankMember> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('bank_id')) {
+      context.handle(
+        _bankIdMeta,
+        bankId.isAcceptableOrUnknown(data['bank_id']!, _bankIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bankIdMeta);
+    }
+    if (data.containsKey('voice_asset_id')) {
+      context.handle(
+        _voiceAssetIdMeta,
+        voiceAssetId.isAcceptableOrUnknown(
+          data['voice_asset_id']!,
+          _voiceAssetIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_voiceAssetIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  VoiceBankMember map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VoiceBankMember(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      bankId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank_id'],
+      )!,
+      voiceAssetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}voice_asset_id'],
+      )!,
+    );
+  }
+
+  @override
+  $VoiceBankMembersTable createAlias(String alias) {
+    return $VoiceBankMembersTable(attachedDatabase, alias);
+  }
+}
+
+class VoiceBankMember extends DataClass implements Insertable<VoiceBankMember> {
+  final String id;
+  final String bankId;
+  final String voiceAssetId;
+  const VoiceBankMember({
+    required this.id,
+    required this.bankId,
+    required this.voiceAssetId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['bank_id'] = Variable<String>(bankId);
+    map['voice_asset_id'] = Variable<String>(voiceAssetId);
+    return map;
+  }
+
+  VoiceBankMembersCompanion toCompanion(bool nullToAbsent) {
+    return VoiceBankMembersCompanion(
+      id: Value(id),
+      bankId: Value(bankId),
+      voiceAssetId: Value(voiceAssetId),
+    );
+  }
+
+  factory VoiceBankMember.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VoiceBankMember(
+      id: serializer.fromJson<String>(json['id']),
+      bankId: serializer.fromJson<String>(json['bankId']),
+      voiceAssetId: serializer.fromJson<String>(json['voiceAssetId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'bankId': serializer.toJson<String>(bankId),
+      'voiceAssetId': serializer.toJson<String>(voiceAssetId),
+    };
+  }
+
+  VoiceBankMember copyWith({
+    String? id,
+    String? bankId,
+    String? voiceAssetId,
+  }) => VoiceBankMember(
+    id: id ?? this.id,
+    bankId: bankId ?? this.bankId,
+    voiceAssetId: voiceAssetId ?? this.voiceAssetId,
+  );
+  VoiceBankMember copyWithCompanion(VoiceBankMembersCompanion data) {
+    return VoiceBankMember(
+      id: data.id.present ? data.id.value : this.id,
+      bankId: data.bankId.present ? data.bankId.value : this.bankId,
+      voiceAssetId: data.voiceAssetId.present
+          ? data.voiceAssetId.value
+          : this.voiceAssetId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VoiceBankMember(')
+          ..write('id: $id, ')
+          ..write('bankId: $bankId, ')
+          ..write('voiceAssetId: $voiceAssetId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, bankId, voiceAssetId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VoiceBankMember &&
+          other.id == this.id &&
+          other.bankId == this.bankId &&
+          other.voiceAssetId == this.voiceAssetId);
+}
+
+class VoiceBankMembersCompanion extends UpdateCompanion<VoiceBankMember> {
+  final Value<String> id;
+  final Value<String> bankId;
+  final Value<String> voiceAssetId;
+  final Value<int> rowid;
+  const VoiceBankMembersCompanion({
+    this.id = const Value.absent(),
+    this.bankId = const Value.absent(),
+    this.voiceAssetId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VoiceBankMembersCompanion.insert({
+    required String id,
+    required String bankId,
+    required String voiceAssetId,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       bankId = Value(bankId),
+       voiceAssetId = Value(voiceAssetId);
+  static Insertable<VoiceBankMember> custom({
+    Expression<String>? id,
+    Expression<String>? bankId,
+    Expression<String>? voiceAssetId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (bankId != null) 'bank_id': bankId,
+      if (voiceAssetId != null) 'voice_asset_id': voiceAssetId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VoiceBankMembersCompanion copyWith({
+    Value<String>? id,
+    Value<String>? bankId,
+    Value<String>? voiceAssetId,
+    Value<int>? rowid,
+  }) {
+    return VoiceBankMembersCompanion(
+      id: id ?? this.id,
+      bankId: bankId ?? this.bankId,
+      voiceAssetId: voiceAssetId ?? this.voiceAssetId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (bankId.present) {
+      map['bank_id'] = Variable<String>(bankId.value);
+    }
+    if (voiceAssetId.present) {
+      map['voice_asset_id'] = Variable<String>(voiceAssetId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VoiceBankMembersCompanion(')
+          ..write('id: $id, ')
+          ..write('bankId: $bankId, ')
+          ..write('voiceAssetId: $voiceAssetId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2288,13 +2980,2340 @@ class TtsJobsCompanion extends UpdateCompanion<TtsJob> {
   }
 }
 
+class $QuickTtsHistoriesTable extends QuickTtsHistories
+    with TableInfo<$QuickTtsHistoriesTable, QuickTtsHistory> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuickTtsHistoriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _voiceAssetIdMeta = const VerificationMeta(
+    'voiceAssetId',
+  );
+  @override
+  late final GeneratedColumn<String> voiceAssetId = GeneratedColumn<String>(
+    'voice_asset_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES voice_assets (id)',
+    ),
+  );
+  static const VerificationMeta _voiceNameMeta = const VerificationMeta(
+    'voiceName',
+  );
+  @override
+  late final GeneratedColumn<String> voiceName = GeneratedColumn<String>(
+    'voice_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _inputTextMeta = const VerificationMeta(
+    'inputText',
+  );
+  @override
+  late final GeneratedColumn<String> inputText = GeneratedColumn<String>(
+    'input_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _audioPathMeta = const VerificationMeta(
+    'audioPath',
+  );
+  @override
+  late final GeneratedColumn<String> audioPath = GeneratedColumn<String>(
+    'audio_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _errorMeta = const VerificationMeta('error');
+  @override
+  late final GeneratedColumn<String> error = GeneratedColumn<String>(
+    'error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    voiceAssetId,
+    voiceName,
+    inputText,
+    audioPath,
+    error,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quick_tts_histories';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<QuickTtsHistory> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('voice_asset_id')) {
+      context.handle(
+        _voiceAssetIdMeta,
+        voiceAssetId.isAcceptableOrUnknown(
+          data['voice_asset_id']!,
+          _voiceAssetIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_voiceAssetIdMeta);
+    }
+    if (data.containsKey('voice_name')) {
+      context.handle(
+        _voiceNameMeta,
+        voiceName.isAcceptableOrUnknown(data['voice_name']!, _voiceNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_voiceNameMeta);
+    }
+    if (data.containsKey('input_text')) {
+      context.handle(
+        _inputTextMeta,
+        inputText.isAcceptableOrUnknown(data['input_text']!, _inputTextMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_inputTextMeta);
+    }
+    if (data.containsKey('audio_path')) {
+      context.handle(
+        _audioPathMeta,
+        audioPath.isAcceptableOrUnknown(data['audio_path']!, _audioPathMeta),
+      );
+    }
+    if (data.containsKey('error')) {
+      context.handle(
+        _errorMeta,
+        error.isAcceptableOrUnknown(data['error']!, _errorMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  QuickTtsHistory map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuickTtsHistory(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      voiceAssetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}voice_asset_id'],
+      )!,
+      voiceName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}voice_name'],
+      )!,
+      inputText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}input_text'],
+      )!,
+      audioPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}audio_path'],
+      ),
+      error: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $QuickTtsHistoriesTable createAlias(String alias) {
+    return $QuickTtsHistoriesTable(attachedDatabase, alias);
+  }
+}
+
+class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
+  final String id;
+  final String voiceAssetId;
+  final String voiceName;
+  final String inputText;
+  final String? audioPath;
+  final String? error;
+  final DateTime createdAt;
+  const QuickTtsHistory({
+    required this.id,
+    required this.voiceAssetId,
+    required this.voiceName,
+    required this.inputText,
+    this.audioPath,
+    this.error,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['voice_asset_id'] = Variable<String>(voiceAssetId);
+    map['voice_name'] = Variable<String>(voiceName);
+    map['input_text'] = Variable<String>(inputText);
+    if (!nullToAbsent || audioPath != null) {
+      map['audio_path'] = Variable<String>(audioPath);
+    }
+    if (!nullToAbsent || error != null) {
+      map['error'] = Variable<String>(error);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  QuickTtsHistoriesCompanion toCompanion(bool nullToAbsent) {
+    return QuickTtsHistoriesCompanion(
+      id: Value(id),
+      voiceAssetId: Value(voiceAssetId),
+      voiceName: Value(voiceName),
+      inputText: Value(inputText),
+      audioPath: audioPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(audioPath),
+      error: error == null && nullToAbsent
+          ? const Value.absent()
+          : Value(error),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory QuickTtsHistory.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuickTtsHistory(
+      id: serializer.fromJson<String>(json['id']),
+      voiceAssetId: serializer.fromJson<String>(json['voiceAssetId']),
+      voiceName: serializer.fromJson<String>(json['voiceName']),
+      inputText: serializer.fromJson<String>(json['inputText']),
+      audioPath: serializer.fromJson<String?>(json['audioPath']),
+      error: serializer.fromJson<String?>(json['error']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'voiceAssetId': serializer.toJson<String>(voiceAssetId),
+      'voiceName': serializer.toJson<String>(voiceName),
+      'inputText': serializer.toJson<String>(inputText),
+      'audioPath': serializer.toJson<String?>(audioPath),
+      'error': serializer.toJson<String?>(error),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  QuickTtsHistory copyWith({
+    String? id,
+    String? voiceAssetId,
+    String? voiceName,
+    String? inputText,
+    Value<String?> audioPath = const Value.absent(),
+    Value<String?> error = const Value.absent(),
+    DateTime? createdAt,
+  }) => QuickTtsHistory(
+    id: id ?? this.id,
+    voiceAssetId: voiceAssetId ?? this.voiceAssetId,
+    voiceName: voiceName ?? this.voiceName,
+    inputText: inputText ?? this.inputText,
+    audioPath: audioPath.present ? audioPath.value : this.audioPath,
+    error: error.present ? error.value : this.error,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  QuickTtsHistory copyWithCompanion(QuickTtsHistoriesCompanion data) {
+    return QuickTtsHistory(
+      id: data.id.present ? data.id.value : this.id,
+      voiceAssetId: data.voiceAssetId.present
+          ? data.voiceAssetId.value
+          : this.voiceAssetId,
+      voiceName: data.voiceName.present ? data.voiceName.value : this.voiceName,
+      inputText: data.inputText.present ? data.inputText.value : this.inputText,
+      audioPath: data.audioPath.present ? data.audioPath.value : this.audioPath,
+      error: data.error.present ? data.error.value : this.error,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuickTtsHistory(')
+          ..write('id: $id, ')
+          ..write('voiceAssetId: $voiceAssetId, ')
+          ..write('voiceName: $voiceName, ')
+          ..write('inputText: $inputText, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('error: $error, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    voiceAssetId,
+    voiceName,
+    inputText,
+    audioPath,
+    error,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuickTtsHistory &&
+          other.id == this.id &&
+          other.voiceAssetId == this.voiceAssetId &&
+          other.voiceName == this.voiceName &&
+          other.inputText == this.inputText &&
+          other.audioPath == this.audioPath &&
+          other.error == this.error &&
+          other.createdAt == this.createdAt);
+}
+
+class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
+  final Value<String> id;
+  final Value<String> voiceAssetId;
+  final Value<String> voiceName;
+  final Value<String> inputText;
+  final Value<String?> audioPath;
+  final Value<String?> error;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const QuickTtsHistoriesCompanion({
+    this.id = const Value.absent(),
+    this.voiceAssetId = const Value.absent(),
+    this.voiceName = const Value.absent(),
+    this.inputText = const Value.absent(),
+    this.audioPath = const Value.absent(),
+    this.error = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  QuickTtsHistoriesCompanion.insert({
+    required String id,
+    required String voiceAssetId,
+    required String voiceName,
+    required String inputText,
+    this.audioPath = const Value.absent(),
+    this.error = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       voiceAssetId = Value(voiceAssetId),
+       voiceName = Value(voiceName),
+       inputText = Value(inputText),
+       createdAt = Value(createdAt);
+  static Insertable<QuickTtsHistory> custom({
+    Expression<String>? id,
+    Expression<String>? voiceAssetId,
+    Expression<String>? voiceName,
+    Expression<String>? inputText,
+    Expression<String>? audioPath,
+    Expression<String>? error,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (voiceAssetId != null) 'voice_asset_id': voiceAssetId,
+      if (voiceName != null) 'voice_name': voiceName,
+      if (inputText != null) 'input_text': inputText,
+      if (audioPath != null) 'audio_path': audioPath,
+      if (error != null) 'error': error,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  QuickTtsHistoriesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? voiceAssetId,
+    Value<String>? voiceName,
+    Value<String>? inputText,
+    Value<String?>? audioPath,
+    Value<String?>? error,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return QuickTtsHistoriesCompanion(
+      id: id ?? this.id,
+      voiceAssetId: voiceAssetId ?? this.voiceAssetId,
+      voiceName: voiceName ?? this.voiceName,
+      inputText: inputText ?? this.inputText,
+      audioPath: audioPath ?? this.audioPath,
+      error: error ?? this.error,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (voiceAssetId.present) {
+      map['voice_asset_id'] = Variable<String>(voiceAssetId.value);
+    }
+    if (voiceName.present) {
+      map['voice_name'] = Variable<String>(voiceName.value);
+    }
+    if (inputText.present) {
+      map['input_text'] = Variable<String>(inputText.value);
+    }
+    if (audioPath.present) {
+      map['audio_path'] = Variable<String>(audioPath.value);
+    }
+    if (error.present) {
+      map['error'] = Variable<String>(error.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuickTtsHistoriesCompanion(')
+          ..write('id: $id, ')
+          ..write('voiceAssetId: $voiceAssetId, ')
+          ..write('voiceName: $voiceName, ')
+          ..write('inputText: $inputText, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('error: $error, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PhaseTtsProjectsTable extends PhaseTtsProjects
+    with TableInfo<$PhaseTtsProjectsTable, PhaseTtsProject> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PhaseTtsProjectsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(minTextLength: 1),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bankIdMeta = const VerificationMeta('bankId');
+  @override
+  late final GeneratedColumn<String> bankId = GeneratedColumn<String>(
+    'bank_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES voice_banks (id)',
+    ),
+  );
+  static const VerificationMeta _scriptTextMeta = const VerificationMeta(
+    'scriptText',
+  );
+  @override
+  late final GeneratedColumn<String> scriptText = GeneratedColumn<String>(
+    'script_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    bankId,
+    scriptText,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'phase_tts_projects';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PhaseTtsProject> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('bank_id')) {
+      context.handle(
+        _bankIdMeta,
+        bankId.isAcceptableOrUnknown(data['bank_id']!, _bankIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bankIdMeta);
+    }
+    if (data.containsKey('script_text')) {
+      context.handle(
+        _scriptTextMeta,
+        scriptText.isAcceptableOrUnknown(data['script_text']!, _scriptTextMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PhaseTtsProject map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PhaseTtsProject(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      bankId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank_id'],
+      )!,
+      scriptText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}script_text'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PhaseTtsProjectsTable createAlias(String alias) {
+    return $PhaseTtsProjectsTable(attachedDatabase, alias);
+  }
+}
+
+class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
+  final String id;
+  final String name;
+  final String bankId;
+  final String scriptText;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const PhaseTtsProject({
+    required this.id,
+    required this.name,
+    required this.bankId,
+    required this.scriptText,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['bank_id'] = Variable<String>(bankId);
+    map['script_text'] = Variable<String>(scriptText);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PhaseTtsProjectsCompanion toCompanion(bool nullToAbsent) {
+    return PhaseTtsProjectsCompanion(
+      id: Value(id),
+      name: Value(name),
+      bankId: Value(bankId),
+      scriptText: Value(scriptText),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory PhaseTtsProject.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PhaseTtsProject(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      bankId: serializer.fromJson<String>(json['bankId']),
+      scriptText: serializer.fromJson<String>(json['scriptText']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'bankId': serializer.toJson<String>(bankId),
+      'scriptText': serializer.toJson<String>(scriptText),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  PhaseTtsProject copyWith({
+    String? id,
+    String? name,
+    String? bankId,
+    String? scriptText,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => PhaseTtsProject(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    bankId: bankId ?? this.bankId,
+    scriptText: scriptText ?? this.scriptText,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  PhaseTtsProject copyWithCompanion(PhaseTtsProjectsCompanion data) {
+    return PhaseTtsProject(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      bankId: data.bankId.present ? data.bankId.value : this.bankId,
+      scriptText: data.scriptText.present
+          ? data.scriptText.value
+          : this.scriptText,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PhaseTtsProject(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('bankId: $bankId, ')
+          ..write('scriptText: $scriptText, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, name, bankId, scriptText, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PhaseTtsProject &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.bankId == this.bankId &&
+          other.scriptText == this.scriptText &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> bankId;
+  final Value<String> scriptText;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const PhaseTtsProjectsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.bankId = const Value.absent(),
+    this.scriptText = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PhaseTtsProjectsCompanion.insert({
+    required String id,
+    required String name,
+    required String bankId,
+    this.scriptText = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       bankId = Value(bankId),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<PhaseTtsProject> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? bankId,
+    Expression<String>? scriptText,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (bankId != null) 'bank_id': bankId,
+      if (scriptText != null) 'script_text': scriptText,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PhaseTtsProjectsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? bankId,
+    Value<String>? scriptText,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return PhaseTtsProjectsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      bankId: bankId ?? this.bankId,
+      scriptText: scriptText ?? this.scriptText,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (bankId.present) {
+      map['bank_id'] = Variable<String>(bankId.value);
+    }
+    if (scriptText.present) {
+      map['script_text'] = Variable<String>(scriptText.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PhaseTtsProjectsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('bankId: $bankId, ')
+          ..write('scriptText: $scriptText, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PhaseTtsSegmentsTable extends PhaseTtsSegments
+    with TableInfo<$PhaseTtsSegmentsTable, PhaseTtsSegment> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PhaseTtsSegmentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES phase_tts_projects (id)',
+    ),
+  );
+  static const VerificationMeta _orderIndexMeta = const VerificationMeta(
+    'orderIndex',
+  );
+  @override
+  late final GeneratedColumn<int> orderIndex = GeneratedColumn<int>(
+    'order_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _segmentTextMeta = const VerificationMeta(
+    'segmentText',
+  );
+  @override
+  late final GeneratedColumn<String> segmentText = GeneratedColumn<String>(
+    'segment_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _voiceAssetIdMeta = const VerificationMeta(
+    'voiceAssetId',
+  );
+  @override
+  late final GeneratedColumn<String> voiceAssetId = GeneratedColumn<String>(
+    'voice_asset_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _audioPathMeta = const VerificationMeta(
+    'audioPath',
+  );
+  @override
+  late final GeneratedColumn<String> audioPath = GeneratedColumn<String>(
+    'audio_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _audioDurationMeta = const VerificationMeta(
+    'audioDuration',
+  );
+  @override
+  late final GeneratedColumn<double> audioDuration = GeneratedColumn<double>(
+    'audio_duration',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _errorMeta = const VerificationMeta('error');
+  @override
+  late final GeneratedColumn<String> error = GeneratedColumn<String>(
+    'error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    orderIndex,
+    segmentText,
+    voiceAssetId,
+    audioPath,
+    audioDuration,
+    error,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'phase_tts_segments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PhaseTtsSegment> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('order_index')) {
+      context.handle(
+        _orderIndexMeta,
+        orderIndex.isAcceptableOrUnknown(data['order_index']!, _orderIndexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_orderIndexMeta);
+    }
+    if (data.containsKey('segment_text')) {
+      context.handle(
+        _segmentTextMeta,
+        segmentText.isAcceptableOrUnknown(
+          data['segment_text']!,
+          _segmentTextMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_segmentTextMeta);
+    }
+    if (data.containsKey('voice_asset_id')) {
+      context.handle(
+        _voiceAssetIdMeta,
+        voiceAssetId.isAcceptableOrUnknown(
+          data['voice_asset_id']!,
+          _voiceAssetIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('audio_path')) {
+      context.handle(
+        _audioPathMeta,
+        audioPath.isAcceptableOrUnknown(data['audio_path']!, _audioPathMeta),
+      );
+    }
+    if (data.containsKey('audio_duration')) {
+      context.handle(
+        _audioDurationMeta,
+        audioDuration.isAcceptableOrUnknown(
+          data['audio_duration']!,
+          _audioDurationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('error')) {
+      context.handle(
+        _errorMeta,
+        error.isAcceptableOrUnknown(data['error']!, _errorMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PhaseTtsSegment map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PhaseTtsSegment(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      orderIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}order_index'],
+      )!,
+      segmentText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}segment_text'],
+      )!,
+      voiceAssetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}voice_asset_id'],
+      ),
+      audioPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}audio_path'],
+      ),
+      audioDuration: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}audio_duration'],
+      ),
+      error: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error'],
+      ),
+    );
+  }
+
+  @override
+  $PhaseTtsSegmentsTable createAlias(String alias) {
+    return $PhaseTtsSegmentsTable(attachedDatabase, alias);
+  }
+}
+
+class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
+  final String id;
+  final String projectId;
+  final int orderIndex;
+  final String segmentText;
+  final String? voiceAssetId;
+  final String? audioPath;
+  final double? audioDuration;
+  final String? error;
+  const PhaseTtsSegment({
+    required this.id,
+    required this.projectId,
+    required this.orderIndex,
+    required this.segmentText,
+    this.voiceAssetId,
+    this.audioPath,
+    this.audioDuration,
+    this.error,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['order_index'] = Variable<int>(orderIndex);
+    map['segment_text'] = Variable<String>(segmentText);
+    if (!nullToAbsent || voiceAssetId != null) {
+      map['voice_asset_id'] = Variable<String>(voiceAssetId);
+    }
+    if (!nullToAbsent || audioPath != null) {
+      map['audio_path'] = Variable<String>(audioPath);
+    }
+    if (!nullToAbsent || audioDuration != null) {
+      map['audio_duration'] = Variable<double>(audioDuration);
+    }
+    if (!nullToAbsent || error != null) {
+      map['error'] = Variable<String>(error);
+    }
+    return map;
+  }
+
+  PhaseTtsSegmentsCompanion toCompanion(bool nullToAbsent) {
+    return PhaseTtsSegmentsCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      orderIndex: Value(orderIndex),
+      segmentText: Value(segmentText),
+      voiceAssetId: voiceAssetId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voiceAssetId),
+      audioPath: audioPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(audioPath),
+      audioDuration: audioDuration == null && nullToAbsent
+          ? const Value.absent()
+          : Value(audioDuration),
+      error: error == null && nullToAbsent
+          ? const Value.absent()
+          : Value(error),
+    );
+  }
+
+  factory PhaseTtsSegment.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PhaseTtsSegment(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      orderIndex: serializer.fromJson<int>(json['orderIndex']),
+      segmentText: serializer.fromJson<String>(json['segmentText']),
+      voiceAssetId: serializer.fromJson<String?>(json['voiceAssetId']),
+      audioPath: serializer.fromJson<String?>(json['audioPath']),
+      audioDuration: serializer.fromJson<double?>(json['audioDuration']),
+      error: serializer.fromJson<String?>(json['error']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'orderIndex': serializer.toJson<int>(orderIndex),
+      'segmentText': serializer.toJson<String>(segmentText),
+      'voiceAssetId': serializer.toJson<String?>(voiceAssetId),
+      'audioPath': serializer.toJson<String?>(audioPath),
+      'audioDuration': serializer.toJson<double?>(audioDuration),
+      'error': serializer.toJson<String?>(error),
+    };
+  }
+
+  PhaseTtsSegment copyWith({
+    String? id,
+    String? projectId,
+    int? orderIndex,
+    String? segmentText,
+    Value<String?> voiceAssetId = const Value.absent(),
+    Value<String?> audioPath = const Value.absent(),
+    Value<double?> audioDuration = const Value.absent(),
+    Value<String?> error = const Value.absent(),
+  }) => PhaseTtsSegment(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    orderIndex: orderIndex ?? this.orderIndex,
+    segmentText: segmentText ?? this.segmentText,
+    voiceAssetId: voiceAssetId.present ? voiceAssetId.value : this.voiceAssetId,
+    audioPath: audioPath.present ? audioPath.value : this.audioPath,
+    audioDuration: audioDuration.present
+        ? audioDuration.value
+        : this.audioDuration,
+    error: error.present ? error.value : this.error,
+  );
+  PhaseTtsSegment copyWithCompanion(PhaseTtsSegmentsCompanion data) {
+    return PhaseTtsSegment(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      orderIndex: data.orderIndex.present
+          ? data.orderIndex.value
+          : this.orderIndex,
+      segmentText: data.segmentText.present
+          ? data.segmentText.value
+          : this.segmentText,
+      voiceAssetId: data.voiceAssetId.present
+          ? data.voiceAssetId.value
+          : this.voiceAssetId,
+      audioPath: data.audioPath.present ? data.audioPath.value : this.audioPath,
+      audioDuration: data.audioDuration.present
+          ? data.audioDuration.value
+          : this.audioDuration,
+      error: data.error.present ? data.error.value : this.error,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PhaseTtsSegment(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('orderIndex: $orderIndex, ')
+          ..write('segmentText: $segmentText, ')
+          ..write('voiceAssetId: $voiceAssetId, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('audioDuration: $audioDuration, ')
+          ..write('error: $error')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    orderIndex,
+    segmentText,
+    voiceAssetId,
+    audioPath,
+    audioDuration,
+    error,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PhaseTtsSegment &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.orderIndex == this.orderIndex &&
+          other.segmentText == this.segmentText &&
+          other.voiceAssetId == this.voiceAssetId &&
+          other.audioPath == this.audioPath &&
+          other.audioDuration == this.audioDuration &&
+          other.error == this.error);
+}
+
+class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<int> orderIndex;
+  final Value<String> segmentText;
+  final Value<String?> voiceAssetId;
+  final Value<String?> audioPath;
+  final Value<double?> audioDuration;
+  final Value<String?> error;
+  final Value<int> rowid;
+  const PhaseTtsSegmentsCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.orderIndex = const Value.absent(),
+    this.segmentText = const Value.absent(),
+    this.voiceAssetId = const Value.absent(),
+    this.audioPath = const Value.absent(),
+    this.audioDuration = const Value.absent(),
+    this.error = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PhaseTtsSegmentsCompanion.insert({
+    required String id,
+    required String projectId,
+    required int orderIndex,
+    required String segmentText,
+    this.voiceAssetId = const Value.absent(),
+    this.audioPath = const Value.absent(),
+    this.audioDuration = const Value.absent(),
+    this.error = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       orderIndex = Value(orderIndex),
+       segmentText = Value(segmentText);
+  static Insertable<PhaseTtsSegment> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<int>? orderIndex,
+    Expression<String>? segmentText,
+    Expression<String>? voiceAssetId,
+    Expression<String>? audioPath,
+    Expression<double>? audioDuration,
+    Expression<String>? error,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (orderIndex != null) 'order_index': orderIndex,
+      if (segmentText != null) 'segment_text': segmentText,
+      if (voiceAssetId != null) 'voice_asset_id': voiceAssetId,
+      if (audioPath != null) 'audio_path': audioPath,
+      if (audioDuration != null) 'audio_duration': audioDuration,
+      if (error != null) 'error': error,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PhaseTtsSegmentsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<int>? orderIndex,
+    Value<String>? segmentText,
+    Value<String?>? voiceAssetId,
+    Value<String?>? audioPath,
+    Value<double?>? audioDuration,
+    Value<String?>? error,
+    Value<int>? rowid,
+  }) {
+    return PhaseTtsSegmentsCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      orderIndex: orderIndex ?? this.orderIndex,
+      segmentText: segmentText ?? this.segmentText,
+      voiceAssetId: voiceAssetId ?? this.voiceAssetId,
+      audioPath: audioPath ?? this.audioPath,
+      audioDuration: audioDuration ?? this.audioDuration,
+      error: error ?? this.error,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (orderIndex.present) {
+      map['order_index'] = Variable<int>(orderIndex.value);
+    }
+    if (segmentText.present) {
+      map['segment_text'] = Variable<String>(segmentText.value);
+    }
+    if (voiceAssetId.present) {
+      map['voice_asset_id'] = Variable<String>(voiceAssetId.value);
+    }
+    if (audioPath.present) {
+      map['audio_path'] = Variable<String>(audioPath.value);
+    }
+    if (audioDuration.present) {
+      map['audio_duration'] = Variable<double>(audioDuration.value);
+    }
+    if (error.present) {
+      map['error'] = Variable<String>(error.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PhaseTtsSegmentsCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('orderIndex: $orderIndex, ')
+          ..write('segmentText: $segmentText, ')
+          ..write('voiceAssetId: $voiceAssetId, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('audioDuration: $audioDuration, ')
+          ..write('error: $error, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DialogTtsProjectsTable extends DialogTtsProjects
+    with TableInfo<$DialogTtsProjectsTable, DialogTtsProject> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DialogTtsProjectsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(minTextLength: 1),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bankIdMeta = const VerificationMeta('bankId');
+  @override
+  late final GeneratedColumn<String> bankId = GeneratedColumn<String>(
+    'bank_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES voice_banks (id)',
+    ),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    bankId,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'dialog_tts_projects';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DialogTtsProject> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('bank_id')) {
+      context.handle(
+        _bankIdMeta,
+        bankId.isAcceptableOrUnknown(data['bank_id']!, _bankIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bankIdMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DialogTtsProject map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DialogTtsProject(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      bankId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank_id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DialogTtsProjectsTable createAlias(String alias) {
+    return $DialogTtsProjectsTable(attachedDatabase, alias);
+  }
+}
+
+class DialogTtsProject extends DataClass
+    implements Insertable<DialogTtsProject> {
+  final String id;
+  final String name;
+  final String bankId;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const DialogTtsProject({
+    required this.id,
+    required this.name,
+    required this.bankId,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['bank_id'] = Variable<String>(bankId);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  DialogTtsProjectsCompanion toCompanion(bool nullToAbsent) {
+    return DialogTtsProjectsCompanion(
+      id: Value(id),
+      name: Value(name),
+      bankId: Value(bankId),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory DialogTtsProject.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DialogTtsProject(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      bankId: serializer.fromJson<String>(json['bankId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'bankId': serializer.toJson<String>(bankId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  DialogTtsProject copyWith({
+    String? id,
+    String? name,
+    String? bankId,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => DialogTtsProject(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    bankId: bankId ?? this.bankId,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  DialogTtsProject copyWithCompanion(DialogTtsProjectsCompanion data) {
+    return DialogTtsProject(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      bankId: data.bankId.present ? data.bankId.value : this.bankId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DialogTtsProject(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('bankId: $bankId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, bankId, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DialogTtsProject &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.bankId == this.bankId &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> bankId;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const DialogTtsProjectsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.bankId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DialogTtsProjectsCompanion.insert({
+    required String id,
+    required String name,
+    required String bankId,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       bankId = Value(bankId),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<DialogTtsProject> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? bankId,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (bankId != null) 'bank_id': bankId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DialogTtsProjectsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? bankId,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return DialogTtsProjectsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      bankId: bankId ?? this.bankId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (bankId.present) {
+      map['bank_id'] = Variable<String>(bankId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DialogTtsProjectsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('bankId: $bankId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DialogTtsLinesTable extends DialogTtsLines
+    with TableInfo<$DialogTtsLinesTable, DialogTtsLine> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DialogTtsLinesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES dialog_tts_projects (id)',
+    ),
+  );
+  static const VerificationMeta _orderIndexMeta = const VerificationMeta(
+    'orderIndex',
+  );
+  @override
+  late final GeneratedColumn<int> orderIndex = GeneratedColumn<int>(
+    'order_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lineTextMeta = const VerificationMeta(
+    'lineText',
+  );
+  @override
+  late final GeneratedColumn<String> lineText = GeneratedColumn<String>(
+    'line_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _voiceAssetIdMeta = const VerificationMeta(
+    'voiceAssetId',
+  );
+  @override
+  late final GeneratedColumn<String> voiceAssetId = GeneratedColumn<String>(
+    'voice_asset_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _audioPathMeta = const VerificationMeta(
+    'audioPath',
+  );
+  @override
+  late final GeneratedColumn<String> audioPath = GeneratedColumn<String>(
+    'audio_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _audioDurationMeta = const VerificationMeta(
+    'audioDuration',
+  );
+  @override
+  late final GeneratedColumn<double> audioDuration = GeneratedColumn<double>(
+    'audio_duration',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _errorMeta = const VerificationMeta('error');
+  @override
+  late final GeneratedColumn<String> error = GeneratedColumn<String>(
+    'error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    orderIndex,
+    lineText,
+    voiceAssetId,
+    audioPath,
+    audioDuration,
+    error,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'dialog_tts_lines';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DialogTtsLine> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('order_index')) {
+      context.handle(
+        _orderIndexMeta,
+        orderIndex.isAcceptableOrUnknown(data['order_index']!, _orderIndexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_orderIndexMeta);
+    }
+    if (data.containsKey('line_text')) {
+      context.handle(
+        _lineTextMeta,
+        lineText.isAcceptableOrUnknown(data['line_text']!, _lineTextMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lineTextMeta);
+    }
+    if (data.containsKey('voice_asset_id')) {
+      context.handle(
+        _voiceAssetIdMeta,
+        voiceAssetId.isAcceptableOrUnknown(
+          data['voice_asset_id']!,
+          _voiceAssetIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('audio_path')) {
+      context.handle(
+        _audioPathMeta,
+        audioPath.isAcceptableOrUnknown(data['audio_path']!, _audioPathMeta),
+      );
+    }
+    if (data.containsKey('audio_duration')) {
+      context.handle(
+        _audioDurationMeta,
+        audioDuration.isAcceptableOrUnknown(
+          data['audio_duration']!,
+          _audioDurationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('error')) {
+      context.handle(
+        _errorMeta,
+        error.isAcceptableOrUnknown(data['error']!, _errorMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DialogTtsLine map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DialogTtsLine(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      orderIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}order_index'],
+      )!,
+      lineText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}line_text'],
+      )!,
+      voiceAssetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}voice_asset_id'],
+      ),
+      audioPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}audio_path'],
+      ),
+      audioDuration: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}audio_duration'],
+      ),
+      error: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error'],
+      ),
+    );
+  }
+
+  @override
+  $DialogTtsLinesTable createAlias(String alias) {
+    return $DialogTtsLinesTable(attachedDatabase, alias);
+  }
+}
+
+class DialogTtsLine extends DataClass implements Insertable<DialogTtsLine> {
+  final String id;
+  final String projectId;
+  final int orderIndex;
+  final String lineText;
+  final String? voiceAssetId;
+  final String? audioPath;
+  final double? audioDuration;
+  final String? error;
+  const DialogTtsLine({
+    required this.id,
+    required this.projectId,
+    required this.orderIndex,
+    required this.lineText,
+    this.voiceAssetId,
+    this.audioPath,
+    this.audioDuration,
+    this.error,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['order_index'] = Variable<int>(orderIndex);
+    map['line_text'] = Variable<String>(lineText);
+    if (!nullToAbsent || voiceAssetId != null) {
+      map['voice_asset_id'] = Variable<String>(voiceAssetId);
+    }
+    if (!nullToAbsent || audioPath != null) {
+      map['audio_path'] = Variable<String>(audioPath);
+    }
+    if (!nullToAbsent || audioDuration != null) {
+      map['audio_duration'] = Variable<double>(audioDuration);
+    }
+    if (!nullToAbsent || error != null) {
+      map['error'] = Variable<String>(error);
+    }
+    return map;
+  }
+
+  DialogTtsLinesCompanion toCompanion(bool nullToAbsent) {
+    return DialogTtsLinesCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      orderIndex: Value(orderIndex),
+      lineText: Value(lineText),
+      voiceAssetId: voiceAssetId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voiceAssetId),
+      audioPath: audioPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(audioPath),
+      audioDuration: audioDuration == null && nullToAbsent
+          ? const Value.absent()
+          : Value(audioDuration),
+      error: error == null && nullToAbsent
+          ? const Value.absent()
+          : Value(error),
+    );
+  }
+
+  factory DialogTtsLine.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DialogTtsLine(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      orderIndex: serializer.fromJson<int>(json['orderIndex']),
+      lineText: serializer.fromJson<String>(json['lineText']),
+      voiceAssetId: serializer.fromJson<String?>(json['voiceAssetId']),
+      audioPath: serializer.fromJson<String?>(json['audioPath']),
+      audioDuration: serializer.fromJson<double?>(json['audioDuration']),
+      error: serializer.fromJson<String?>(json['error']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'orderIndex': serializer.toJson<int>(orderIndex),
+      'lineText': serializer.toJson<String>(lineText),
+      'voiceAssetId': serializer.toJson<String?>(voiceAssetId),
+      'audioPath': serializer.toJson<String?>(audioPath),
+      'audioDuration': serializer.toJson<double?>(audioDuration),
+      'error': serializer.toJson<String?>(error),
+    };
+  }
+
+  DialogTtsLine copyWith({
+    String? id,
+    String? projectId,
+    int? orderIndex,
+    String? lineText,
+    Value<String?> voiceAssetId = const Value.absent(),
+    Value<String?> audioPath = const Value.absent(),
+    Value<double?> audioDuration = const Value.absent(),
+    Value<String?> error = const Value.absent(),
+  }) => DialogTtsLine(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    orderIndex: orderIndex ?? this.orderIndex,
+    lineText: lineText ?? this.lineText,
+    voiceAssetId: voiceAssetId.present ? voiceAssetId.value : this.voiceAssetId,
+    audioPath: audioPath.present ? audioPath.value : this.audioPath,
+    audioDuration: audioDuration.present
+        ? audioDuration.value
+        : this.audioDuration,
+    error: error.present ? error.value : this.error,
+  );
+  DialogTtsLine copyWithCompanion(DialogTtsLinesCompanion data) {
+    return DialogTtsLine(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      orderIndex: data.orderIndex.present
+          ? data.orderIndex.value
+          : this.orderIndex,
+      lineText: data.lineText.present ? data.lineText.value : this.lineText,
+      voiceAssetId: data.voiceAssetId.present
+          ? data.voiceAssetId.value
+          : this.voiceAssetId,
+      audioPath: data.audioPath.present ? data.audioPath.value : this.audioPath,
+      audioDuration: data.audioDuration.present
+          ? data.audioDuration.value
+          : this.audioDuration,
+      error: data.error.present ? data.error.value : this.error,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DialogTtsLine(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('orderIndex: $orderIndex, ')
+          ..write('lineText: $lineText, ')
+          ..write('voiceAssetId: $voiceAssetId, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('audioDuration: $audioDuration, ')
+          ..write('error: $error')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    orderIndex,
+    lineText,
+    voiceAssetId,
+    audioPath,
+    audioDuration,
+    error,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DialogTtsLine &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.orderIndex == this.orderIndex &&
+          other.lineText == this.lineText &&
+          other.voiceAssetId == this.voiceAssetId &&
+          other.audioPath == this.audioPath &&
+          other.audioDuration == this.audioDuration &&
+          other.error == this.error);
+}
+
+class DialogTtsLinesCompanion extends UpdateCompanion<DialogTtsLine> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<int> orderIndex;
+  final Value<String> lineText;
+  final Value<String?> voiceAssetId;
+  final Value<String?> audioPath;
+  final Value<double?> audioDuration;
+  final Value<String?> error;
+  final Value<int> rowid;
+  const DialogTtsLinesCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.orderIndex = const Value.absent(),
+    this.lineText = const Value.absent(),
+    this.voiceAssetId = const Value.absent(),
+    this.audioPath = const Value.absent(),
+    this.audioDuration = const Value.absent(),
+    this.error = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DialogTtsLinesCompanion.insert({
+    required String id,
+    required String projectId,
+    required int orderIndex,
+    required String lineText,
+    this.voiceAssetId = const Value.absent(),
+    this.audioPath = const Value.absent(),
+    this.audioDuration = const Value.absent(),
+    this.error = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       orderIndex = Value(orderIndex),
+       lineText = Value(lineText);
+  static Insertable<DialogTtsLine> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<int>? orderIndex,
+    Expression<String>? lineText,
+    Expression<String>? voiceAssetId,
+    Expression<String>? audioPath,
+    Expression<double>? audioDuration,
+    Expression<String>? error,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (orderIndex != null) 'order_index': orderIndex,
+      if (lineText != null) 'line_text': lineText,
+      if (voiceAssetId != null) 'voice_asset_id': voiceAssetId,
+      if (audioPath != null) 'audio_path': audioPath,
+      if (audioDuration != null) 'audio_duration': audioDuration,
+      if (error != null) 'error': error,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DialogTtsLinesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<int>? orderIndex,
+    Value<String>? lineText,
+    Value<String?>? voiceAssetId,
+    Value<String?>? audioPath,
+    Value<double?>? audioDuration,
+    Value<String?>? error,
+    Value<int>? rowid,
+  }) {
+    return DialogTtsLinesCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      orderIndex: orderIndex ?? this.orderIndex,
+      lineText: lineText ?? this.lineText,
+      voiceAssetId: voiceAssetId ?? this.voiceAssetId,
+      audioPath: audioPath ?? this.audioPath,
+      audioDuration: audioDuration ?? this.audioDuration,
+      error: error ?? this.error,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (orderIndex.present) {
+      map['order_index'] = Variable<int>(orderIndex.value);
+    }
+    if (lineText.present) {
+      map['line_text'] = Variable<String>(lineText.value);
+    }
+    if (voiceAssetId.present) {
+      map['voice_asset_id'] = Variable<String>(voiceAssetId.value);
+    }
+    if (audioPath.present) {
+      map['audio_path'] = Variable<String>(audioPath.value);
+    }
+    if (audioDuration.present) {
+      map['audio_duration'] = Variable<double>(audioDuration.value);
+    }
+    if (error.present) {
+      map['error'] = Variable<String>(error.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DialogTtsLinesCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('orderIndex: $orderIndex, ')
+          ..write('lineText: $lineText, ')
+          ..write('voiceAssetId: $voiceAssetId, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('audioDuration: $audioDuration, ')
+          ..write('error: $error, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $TtsProvidersTable ttsProviders = $TtsProvidersTable(this);
   late final $ModelBindingsTable modelBindings = $ModelBindingsTable(this);
   late final $VoiceAssetsTable voiceAssets = $VoiceAssetsTable(this);
+  late final $VoiceBanksTable voiceBanks = $VoiceBanksTable(this);
+  late final $VoiceBankMembersTable voiceBankMembers = $VoiceBankMembersTable(
+    this,
+  );
   late final $TtsJobsTable ttsJobs = $TtsJobsTable(this);
+  late final $QuickTtsHistoriesTable quickTtsHistories =
+      $QuickTtsHistoriesTable(this);
+  late final $PhaseTtsProjectsTable phaseTtsProjects = $PhaseTtsProjectsTable(
+    this,
+  );
+  late final $PhaseTtsSegmentsTable phaseTtsSegments = $PhaseTtsSegmentsTable(
+    this,
+  );
+  late final $DialogTtsProjectsTable dialogTtsProjects =
+      $DialogTtsProjectsTable(this);
+  late final $DialogTtsLinesTable dialogTtsLines = $DialogTtsLinesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2303,7 +5322,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ttsProviders,
     modelBindings,
     voiceAssets,
+    voiceBanks,
+    voiceBankMembers,
     ttsJobs,
+    quickTtsHistories,
+    phaseTtsProjects,
+    phaseTtsSegments,
+    dialogTtsProjects,
+    dialogTtsLines,
   ];
 }
 
@@ -3073,6 +6099,7 @@ typedef $$VoiceAssetsTableCreateCompanionBuilder =
       Value<String?> promptLang,
       Value<String?> voiceInstruction,
       Value<String?> presetVoiceName,
+      Value<String?> avatarPath,
       Value<double> speed,
       Value<bool> enabled,
       Value<int> rowid,
@@ -3093,6 +6120,7 @@ typedef $$VoiceAssetsTableUpdateCompanionBuilder =
       Value<String?> promptLang,
       Value<String?> voiceInstruction,
       Value<String?> presetVoiceName,
+      Value<String?> avatarPath,
       Value<double> speed,
       Value<bool> enabled,
       Value<int> rowid,
@@ -3121,6 +6149,29 @@ final class $$VoiceAssetsTableReferences
     );
   }
 
+  static MultiTypedResultKey<$VoiceBankMembersTable, List<VoiceBankMember>>
+  _voiceBankMembersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.voiceBankMembers,
+    aliasName: $_aliasNameGenerator(
+      db.voiceAssets.id,
+      db.voiceBankMembers.voiceAssetId,
+    ),
+  );
+
+  $$VoiceBankMembersTableProcessedTableManager get voiceBankMembersRefs {
+    final manager = $$VoiceBankMembersTableTableManager(
+      $_db,
+      $_db.voiceBankMembers,
+    ).filter((f) => f.voiceAssetId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _voiceBankMembersRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$TtsJobsTable, List<TtsJob>> _ttsJobsRefsTable(
     _$AppDatabase db,
   ) => MultiTypedResultKey.fromTable(
@@ -3135,6 +6186,30 @@ final class $$VoiceAssetsTableReferences
     ).filter((f) => f.voiceAssetId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_ttsJobsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$QuickTtsHistoriesTable, List<QuickTtsHistory>>
+  _quickTtsHistoriesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.quickTtsHistories,
+        aliasName: $_aliasNameGenerator(
+          db.voiceAssets.id,
+          db.quickTtsHistories.voiceAssetId,
+        ),
+      );
+
+  $$QuickTtsHistoriesTableProcessedTableManager get quickTtsHistoriesRefs {
+    final manager = $$QuickTtsHistoriesTableTableManager(
+      $_db,
+      $_db.quickTtsHistories,
+    ).filter((f) => f.voiceAssetId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _quickTtsHistoriesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -3215,6 +6290,11 @@ class $$VoiceAssetsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get avatarPath => $composableBuilder(
+    column: $table.avatarPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<double> get speed => $composableBuilder(
     column: $table.speed,
     builder: (column) => ColumnFilters(column),
@@ -3248,6 +6328,31 @@ class $$VoiceAssetsTableFilterComposer
     return composer;
   }
 
+  Expression<bool> voiceBankMembersRefs(
+    Expression<bool> Function($$VoiceBankMembersTableFilterComposer f) f,
+  ) {
+    final $$VoiceBankMembersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.voiceBankMembers,
+      getReferencedColumn: (t) => t.voiceAssetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBankMembersTableFilterComposer(
+            $db: $db,
+            $table: $db.voiceBankMembers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<bool> ttsJobsRefs(
     Expression<bool> Function($$TtsJobsTableFilterComposer f) f,
   ) {
@@ -3264,6 +6369,31 @@ class $$VoiceAssetsTableFilterComposer
           }) => $$TtsJobsTableFilterComposer(
             $db: $db,
             $table: $db.ttsJobs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> quickTtsHistoriesRefs(
+    Expression<bool> Function($$QuickTtsHistoriesTableFilterComposer f) f,
+  ) {
+    final $$QuickTtsHistoriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.quickTtsHistories,
+      getReferencedColumn: (t) => t.voiceAssetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuickTtsHistoriesTableFilterComposer(
+            $db: $db,
+            $table: $db.quickTtsHistories,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3345,6 +6475,11 @@ class $$VoiceAssetsTableOrderingComposer
 
   ColumnOrderings<String> get presetVoiceName => $composableBuilder(
     column: $table.presetVoiceName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get avatarPath => $composableBuilder(
+    column: $table.avatarPath,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3448,6 +6583,11 @@ class $$VoiceAssetsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get avatarPath => $composableBuilder(
+    column: $table.avatarPath,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get speed =>
       $composableBuilder(column: $table.speed, builder: (column) => column);
 
@@ -3477,6 +6617,31 @@ class $$VoiceAssetsTableAnnotationComposer
     return composer;
   }
 
+  Expression<T> voiceBankMembersRefs<T extends Object>(
+    Expression<T> Function($$VoiceBankMembersTableAnnotationComposer a) f,
+  ) {
+    final $$VoiceBankMembersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.voiceBankMembers,
+      getReferencedColumn: (t) => t.voiceAssetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBankMembersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.voiceBankMembers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> ttsJobsRefs<T extends Object>(
     Expression<T> Function($$TtsJobsTableAnnotationComposer a) f,
   ) {
@@ -3501,6 +6666,32 @@ class $$VoiceAssetsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> quickTtsHistoriesRefs<T extends Object>(
+    Expression<T> Function($$QuickTtsHistoriesTableAnnotationComposer a) f,
+  ) {
+    final $$QuickTtsHistoriesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.quickTtsHistories,
+          getReferencedColumn: (t) => t.voiceAssetId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$QuickTtsHistoriesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.quickTtsHistories,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$VoiceAssetsTableTableManager
@@ -3516,7 +6707,12 @@ class $$VoiceAssetsTableTableManager
           $$VoiceAssetsTableUpdateCompanionBuilder,
           (VoiceAsset, $$VoiceAssetsTableReferences),
           VoiceAsset,
-          PrefetchHooks Function({bool providerId, bool ttsJobsRefs})
+          PrefetchHooks Function({
+            bool providerId,
+            bool voiceBankMembersRefs,
+            bool ttsJobsRefs,
+            bool quickTtsHistoriesRefs,
+          })
         > {
   $$VoiceAssetsTableTableManager(_$AppDatabase db, $VoiceAssetsTable table)
     : super(
@@ -3545,6 +6741,7 @@ class $$VoiceAssetsTableTableManager
                 Value<String?> promptLang = const Value.absent(),
                 Value<String?> voiceInstruction = const Value.absent(),
                 Value<String?> presetVoiceName = const Value.absent(),
+                Value<String?> avatarPath = const Value.absent(),
                 Value<double> speed = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -3563,6 +6760,7 @@ class $$VoiceAssetsTableTableManager
                 promptLang: promptLang,
                 voiceInstruction: voiceInstruction,
                 presetVoiceName: presetVoiceName,
+                avatarPath: avatarPath,
                 speed: speed,
                 enabled: enabled,
                 rowid: rowid,
@@ -3583,6 +6781,7 @@ class $$VoiceAssetsTableTableManager
                 Value<String?> promptLang = const Value.absent(),
                 Value<String?> voiceInstruction = const Value.absent(),
                 Value<String?> presetVoiceName = const Value.absent(),
+                Value<String?> avatarPath = const Value.absent(),
                 Value<double> speed = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -3601,6 +6800,7 @@ class $$VoiceAssetsTableTableManager
                 promptLang: promptLang,
                 voiceInstruction: voiceInstruction,
                 presetVoiceName: presetVoiceName,
+                avatarPath: avatarPath,
                 speed: speed,
                 enabled: enabled,
                 rowid: rowid,
@@ -3613,69 +6813,123 @@ class $$VoiceAssetsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({providerId = false, ttsJobsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (ttsJobsRefs) db.ttsJobs],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (providerId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.providerId,
-                                referencedTable: $$VoiceAssetsTableReferences
-                                    ._providerIdTable(db),
-                                referencedColumn: $$VoiceAssetsTableReferences
-                                    ._providerIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
+          prefetchHooksCallback:
+              ({
+                providerId = false,
+                voiceBankMembersRefs = false,
+                ttsJobsRefs = false,
+                quickTtsHistoriesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (voiceBankMembersRefs) db.voiceBankMembers,
+                    if (ttsJobsRefs) db.ttsJobs,
+                    if (quickTtsHistoriesRefs) db.quickTtsHistories,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (providerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.providerId,
+                                    referencedTable:
+                                        $$VoiceAssetsTableReferences
+                                            ._providerIdTable(db),
+                                    referencedColumn:
+                                        $$VoiceAssetsTableReferences
+                                            ._providerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (voiceBankMembersRefs)
+                        await $_getPrefetchedData<
+                          VoiceAsset,
+                          $VoiceAssetsTable,
+                          VoiceBankMember
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VoiceAssetsTableReferences
+                              ._voiceBankMembersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VoiceAssetsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).voiceBankMembersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.voiceAssetId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (ttsJobsRefs)
+                        await $_getPrefetchedData<
+                          VoiceAsset,
+                          $VoiceAssetsTable,
+                          TtsJob
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VoiceAssetsTableReferences
+                              ._ttsJobsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VoiceAssetsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).ttsJobsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.voiceAssetId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (quickTtsHistoriesRefs)
+                        await $_getPrefetchedData<
+                          VoiceAsset,
+                          $VoiceAssetsTable,
+                          QuickTtsHistory
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VoiceAssetsTableReferences
+                              ._quickTtsHistoriesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VoiceAssetsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).quickTtsHistoriesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.voiceAssetId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (ttsJobsRefs)
-                    await $_getPrefetchedData<
-                      VoiceAsset,
-                      $VoiceAssetsTable,
-                      TtsJob
-                    >(
-                      currentTable: table,
-                      referencedTable: $$VoiceAssetsTableReferences
-                          ._ttsJobsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$VoiceAssetsTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).ttsJobsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where(
-                            (e) => e.voiceAssetId == item.id,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -3692,7 +6946,912 @@ typedef $$VoiceAssetsTableProcessedTableManager =
       $$VoiceAssetsTableUpdateCompanionBuilder,
       (VoiceAsset, $$VoiceAssetsTableReferences),
       VoiceAsset,
-      PrefetchHooks Function({bool providerId, bool ttsJobsRefs})
+      PrefetchHooks Function({
+        bool providerId,
+        bool voiceBankMembersRefs,
+        bool ttsJobsRefs,
+        bool quickTtsHistoriesRefs,
+      })
+    >;
+typedef $$VoiceBanksTableCreateCompanionBuilder =
+    VoiceBanksCompanion Function({
+      required String id,
+      required String name,
+      Value<String?> description,
+      Value<bool> isActive,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$VoiceBanksTableUpdateCompanionBuilder =
+    VoiceBanksCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String?> description,
+      Value<bool> isActive,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$VoiceBanksTableReferences
+    extends BaseReferences<_$AppDatabase, $VoiceBanksTable, VoiceBank> {
+  $$VoiceBanksTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$VoiceBankMembersTable, List<VoiceBankMember>>
+  _voiceBankMembersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.voiceBankMembers,
+    aliasName: $_aliasNameGenerator(
+      db.voiceBanks.id,
+      db.voiceBankMembers.bankId,
+    ),
+  );
+
+  $$VoiceBankMembersTableProcessedTableManager get voiceBankMembersRefs {
+    final manager = $$VoiceBankMembersTableTableManager(
+      $_db,
+      $_db.voiceBankMembers,
+    ).filter((f) => f.bankId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _voiceBankMembersRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$PhaseTtsProjectsTable, List<PhaseTtsProject>>
+  _phaseTtsProjectsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.phaseTtsProjects,
+    aliasName: $_aliasNameGenerator(
+      db.voiceBanks.id,
+      db.phaseTtsProjects.bankId,
+    ),
+  );
+
+  $$PhaseTtsProjectsTableProcessedTableManager get phaseTtsProjectsRefs {
+    final manager = $$PhaseTtsProjectsTableTableManager(
+      $_db,
+      $_db.phaseTtsProjects,
+    ).filter((f) => f.bankId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _phaseTtsProjectsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$DialogTtsProjectsTable, List<DialogTtsProject>>
+  _dialogTtsProjectsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.dialogTtsProjects,
+        aliasName: $_aliasNameGenerator(
+          db.voiceBanks.id,
+          db.dialogTtsProjects.bankId,
+        ),
+      );
+
+  $$DialogTtsProjectsTableProcessedTableManager get dialogTtsProjectsRefs {
+    final manager = $$DialogTtsProjectsTableTableManager(
+      $_db,
+      $_db.dialogTtsProjects,
+    ).filter((f) => f.bankId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _dialogTtsProjectsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$VoiceBanksTableFilterComposer
+    extends Composer<_$AppDatabase, $VoiceBanksTable> {
+  $$VoiceBanksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> voiceBankMembersRefs(
+    Expression<bool> Function($$VoiceBankMembersTableFilterComposer f) f,
+  ) {
+    final $$VoiceBankMembersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.voiceBankMembers,
+      getReferencedColumn: (t) => t.bankId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBankMembersTableFilterComposer(
+            $db: $db,
+            $table: $db.voiceBankMembers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> phaseTtsProjectsRefs(
+    Expression<bool> Function($$PhaseTtsProjectsTableFilterComposer f) f,
+  ) {
+    final $$PhaseTtsProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.phaseTtsProjects,
+      getReferencedColumn: (t) => t.bankId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PhaseTtsProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.phaseTtsProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> dialogTtsProjectsRefs(
+    Expression<bool> Function($$DialogTtsProjectsTableFilterComposer f) f,
+  ) {
+    final $$DialogTtsProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.dialogTtsProjects,
+      getReferencedColumn: (t) => t.bankId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DialogTtsProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.dialogTtsProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$VoiceBanksTableOrderingComposer
+    extends Composer<_$AppDatabase, $VoiceBanksTable> {
+  $$VoiceBanksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$VoiceBanksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VoiceBanksTable> {
+  $$VoiceBanksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> voiceBankMembersRefs<T extends Object>(
+    Expression<T> Function($$VoiceBankMembersTableAnnotationComposer a) f,
+  ) {
+    final $$VoiceBankMembersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.voiceBankMembers,
+      getReferencedColumn: (t) => t.bankId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBankMembersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.voiceBankMembers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> phaseTtsProjectsRefs<T extends Object>(
+    Expression<T> Function($$PhaseTtsProjectsTableAnnotationComposer a) f,
+  ) {
+    final $$PhaseTtsProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.phaseTtsProjects,
+      getReferencedColumn: (t) => t.bankId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PhaseTtsProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.phaseTtsProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> dialogTtsProjectsRefs<T extends Object>(
+    Expression<T> Function($$DialogTtsProjectsTableAnnotationComposer a) f,
+  ) {
+    final $$DialogTtsProjectsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.dialogTtsProjects,
+          getReferencedColumn: (t) => t.bankId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$DialogTtsProjectsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.dialogTtsProjects,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$VoiceBanksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $VoiceBanksTable,
+          VoiceBank,
+          $$VoiceBanksTableFilterComposer,
+          $$VoiceBanksTableOrderingComposer,
+          $$VoiceBanksTableAnnotationComposer,
+          $$VoiceBanksTableCreateCompanionBuilder,
+          $$VoiceBanksTableUpdateCompanionBuilder,
+          (VoiceBank, $$VoiceBanksTableReferences),
+          VoiceBank,
+          PrefetchHooks Function({
+            bool voiceBankMembersRefs,
+            bool phaseTtsProjectsRefs,
+            bool dialogTtsProjectsRefs,
+          })
+        > {
+  $$VoiceBanksTableTableManager(_$AppDatabase db, $VoiceBanksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VoiceBanksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VoiceBanksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VoiceBanksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VoiceBanksCompanion(
+                id: id,
+                name: name,
+                description: description,
+                isActive: isActive,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<String?> description = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => VoiceBanksCompanion.insert(
+                id: id,
+                name: name,
+                description: description,
+                isActive: isActive,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$VoiceBanksTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                voiceBankMembersRefs = false,
+                phaseTtsProjectsRefs = false,
+                dialogTtsProjectsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (voiceBankMembersRefs) db.voiceBankMembers,
+                    if (phaseTtsProjectsRefs) db.phaseTtsProjects,
+                    if (dialogTtsProjectsRefs) db.dialogTtsProjects,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (voiceBankMembersRefs)
+                        await $_getPrefetchedData<
+                          VoiceBank,
+                          $VoiceBanksTable,
+                          VoiceBankMember
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VoiceBanksTableReferences
+                              ._voiceBankMembersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VoiceBanksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).voiceBankMembersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.bankId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (phaseTtsProjectsRefs)
+                        await $_getPrefetchedData<
+                          VoiceBank,
+                          $VoiceBanksTable,
+                          PhaseTtsProject
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VoiceBanksTableReferences
+                              ._phaseTtsProjectsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VoiceBanksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).phaseTtsProjectsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.bankId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (dialogTtsProjectsRefs)
+                        await $_getPrefetchedData<
+                          VoiceBank,
+                          $VoiceBanksTable,
+                          DialogTtsProject
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VoiceBanksTableReferences
+                              ._dialogTtsProjectsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VoiceBanksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).dialogTtsProjectsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.bankId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$VoiceBanksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $VoiceBanksTable,
+      VoiceBank,
+      $$VoiceBanksTableFilterComposer,
+      $$VoiceBanksTableOrderingComposer,
+      $$VoiceBanksTableAnnotationComposer,
+      $$VoiceBanksTableCreateCompanionBuilder,
+      $$VoiceBanksTableUpdateCompanionBuilder,
+      (VoiceBank, $$VoiceBanksTableReferences),
+      VoiceBank,
+      PrefetchHooks Function({
+        bool voiceBankMembersRefs,
+        bool phaseTtsProjectsRefs,
+        bool dialogTtsProjectsRefs,
+      })
+    >;
+typedef $$VoiceBankMembersTableCreateCompanionBuilder =
+    VoiceBankMembersCompanion Function({
+      required String id,
+      required String bankId,
+      required String voiceAssetId,
+      Value<int> rowid,
+    });
+typedef $$VoiceBankMembersTableUpdateCompanionBuilder =
+    VoiceBankMembersCompanion Function({
+      Value<String> id,
+      Value<String> bankId,
+      Value<String> voiceAssetId,
+      Value<int> rowid,
+    });
+
+final class $$VoiceBankMembersTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $VoiceBankMembersTable, VoiceBankMember> {
+  $$VoiceBankMembersTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $VoiceBanksTable _bankIdTable(_$AppDatabase db) =>
+      db.voiceBanks.createAlias(
+        $_aliasNameGenerator(db.voiceBankMembers.bankId, db.voiceBanks.id),
+      );
+
+  $$VoiceBanksTableProcessedTableManager get bankId {
+    final $_column = $_itemColumn<String>('bank_id')!;
+
+    final manager = $$VoiceBanksTableTableManager(
+      $_db,
+      $_db.voiceBanks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bankIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $VoiceAssetsTable _voiceAssetIdTable(_$AppDatabase db) =>
+      db.voiceAssets.createAlias(
+        $_aliasNameGenerator(
+          db.voiceBankMembers.voiceAssetId,
+          db.voiceAssets.id,
+        ),
+      );
+
+  $$VoiceAssetsTableProcessedTableManager get voiceAssetId {
+    final $_column = $_itemColumn<String>('voice_asset_id')!;
+
+    final manager = $$VoiceAssetsTableTableManager(
+      $_db,
+      $_db.voiceAssets,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_voiceAssetIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$VoiceBankMembersTableFilterComposer
+    extends Composer<_$AppDatabase, $VoiceBankMembersTable> {
+  $$VoiceBankMembersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VoiceBanksTableFilterComposer get bankId {
+    final $$VoiceBanksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bankId,
+      referencedTable: $db.voiceBanks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBanksTableFilterComposer(
+            $db: $db,
+            $table: $db.voiceBanks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VoiceAssetsTableFilterComposer get voiceAssetId {
+    final $$VoiceAssetsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voiceAssetId,
+      referencedTable: $db.voiceAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceAssetsTableFilterComposer(
+            $db: $db,
+            $table: $db.voiceAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VoiceBankMembersTableOrderingComposer
+    extends Composer<_$AppDatabase, $VoiceBankMembersTable> {
+  $$VoiceBankMembersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VoiceBanksTableOrderingComposer get bankId {
+    final $$VoiceBanksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bankId,
+      referencedTable: $db.voiceBanks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBanksTableOrderingComposer(
+            $db: $db,
+            $table: $db.voiceBanks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VoiceAssetsTableOrderingComposer get voiceAssetId {
+    final $$VoiceAssetsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voiceAssetId,
+      referencedTable: $db.voiceAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceAssetsTableOrderingComposer(
+            $db: $db,
+            $table: $db.voiceAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VoiceBankMembersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VoiceBankMembersTable> {
+  $$VoiceBankMembersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  $$VoiceBanksTableAnnotationComposer get bankId {
+    final $$VoiceBanksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bankId,
+      referencedTable: $db.voiceBanks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBanksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.voiceBanks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VoiceAssetsTableAnnotationComposer get voiceAssetId {
+    final $$VoiceAssetsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voiceAssetId,
+      referencedTable: $db.voiceAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceAssetsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.voiceAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VoiceBankMembersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $VoiceBankMembersTable,
+          VoiceBankMember,
+          $$VoiceBankMembersTableFilterComposer,
+          $$VoiceBankMembersTableOrderingComposer,
+          $$VoiceBankMembersTableAnnotationComposer,
+          $$VoiceBankMembersTableCreateCompanionBuilder,
+          $$VoiceBankMembersTableUpdateCompanionBuilder,
+          (VoiceBankMember, $$VoiceBankMembersTableReferences),
+          VoiceBankMember,
+          PrefetchHooks Function({bool bankId, bool voiceAssetId})
+        > {
+  $$VoiceBankMembersTableTableManager(
+    _$AppDatabase db,
+    $VoiceBankMembersTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VoiceBankMembersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VoiceBankMembersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VoiceBankMembersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> bankId = const Value.absent(),
+                Value<String> voiceAssetId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VoiceBankMembersCompanion(
+                id: id,
+                bankId: bankId,
+                voiceAssetId: voiceAssetId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String bankId,
+                required String voiceAssetId,
+                Value<int> rowid = const Value.absent(),
+              }) => VoiceBankMembersCompanion.insert(
+                id: id,
+                bankId: bankId,
+                voiceAssetId: voiceAssetId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$VoiceBankMembersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({bankId = false, voiceAssetId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (bankId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.bankId,
+                                referencedTable:
+                                    $$VoiceBankMembersTableReferences
+                                        ._bankIdTable(db),
+                                referencedColumn:
+                                    $$VoiceBankMembersTableReferences
+                                        ._bankIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (voiceAssetId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.voiceAssetId,
+                                referencedTable:
+                                    $$VoiceBankMembersTableReferences
+                                        ._voiceAssetIdTable(db),
+                                referencedColumn:
+                                    $$VoiceBankMembersTableReferences
+                                        ._voiceAssetIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$VoiceBankMembersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $VoiceBankMembersTable,
+      VoiceBankMember,
+      $$VoiceBankMembersTableFilterComposer,
+      $$VoiceBankMembersTableOrderingComposer,
+      $$VoiceBankMembersTableAnnotationComposer,
+      $$VoiceBankMembersTableCreateCompanionBuilder,
+      $$VoiceBankMembersTableUpdateCompanionBuilder,
+      (VoiceBankMember, $$VoiceBankMembersTableReferences),
+      VoiceBankMember,
+      PrefetchHooks Function({bool bankId, bool voiceAssetId})
     >;
 typedef $$TtsJobsTableCreateCompanionBuilder =
     TtsJobsCompanion Function({
@@ -4076,6 +8235,2049 @@ typedef $$TtsJobsTableProcessedTableManager =
       TtsJob,
       PrefetchHooks Function({bool voiceAssetId})
     >;
+typedef $$QuickTtsHistoriesTableCreateCompanionBuilder =
+    QuickTtsHistoriesCompanion Function({
+      required String id,
+      required String voiceAssetId,
+      required String voiceName,
+      required String inputText,
+      Value<String?> audioPath,
+      Value<String?> error,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$QuickTtsHistoriesTableUpdateCompanionBuilder =
+    QuickTtsHistoriesCompanion Function({
+      Value<String> id,
+      Value<String> voiceAssetId,
+      Value<String> voiceName,
+      Value<String> inputText,
+      Value<String?> audioPath,
+      Value<String?> error,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$QuickTtsHistoriesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $QuickTtsHistoriesTable,
+          QuickTtsHistory
+        > {
+  $$QuickTtsHistoriesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $VoiceAssetsTable _voiceAssetIdTable(_$AppDatabase db) =>
+      db.voiceAssets.createAlias(
+        $_aliasNameGenerator(
+          db.quickTtsHistories.voiceAssetId,
+          db.voiceAssets.id,
+        ),
+      );
+
+  $$VoiceAssetsTableProcessedTableManager get voiceAssetId {
+    final $_column = $_itemColumn<String>('voice_asset_id')!;
+
+    final manager = $$VoiceAssetsTableTableManager(
+      $_db,
+      $_db.voiceAssets,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_voiceAssetIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$QuickTtsHistoriesTableFilterComposer
+    extends Composer<_$AppDatabase, $QuickTtsHistoriesTable> {
+  $$QuickTtsHistoriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get voiceName => $composableBuilder(
+    column: $table.voiceName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inputText => $composableBuilder(
+    column: $table.inputText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get error => $composableBuilder(
+    column: $table.error,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VoiceAssetsTableFilterComposer get voiceAssetId {
+    final $$VoiceAssetsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voiceAssetId,
+      referencedTable: $db.voiceAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceAssetsTableFilterComposer(
+            $db: $db,
+            $table: $db.voiceAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuickTtsHistoriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $QuickTtsHistoriesTable> {
+  $$QuickTtsHistoriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get voiceName => $composableBuilder(
+    column: $table.voiceName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get inputText => $composableBuilder(
+    column: $table.inputText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get error => $composableBuilder(
+    column: $table.error,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VoiceAssetsTableOrderingComposer get voiceAssetId {
+    final $$VoiceAssetsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voiceAssetId,
+      referencedTable: $db.voiceAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceAssetsTableOrderingComposer(
+            $db: $db,
+            $table: $db.voiceAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuickTtsHistoriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $QuickTtsHistoriesTable> {
+  $$QuickTtsHistoriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get voiceName =>
+      $composableBuilder(column: $table.voiceName, builder: (column) => column);
+
+  GeneratedColumn<String> get inputText =>
+      $composableBuilder(column: $table.inputText, builder: (column) => column);
+
+  GeneratedColumn<String> get audioPath =>
+      $composableBuilder(column: $table.audioPath, builder: (column) => column);
+
+  GeneratedColumn<String> get error =>
+      $composableBuilder(column: $table.error, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$VoiceAssetsTableAnnotationComposer get voiceAssetId {
+    final $$VoiceAssetsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voiceAssetId,
+      referencedTable: $db.voiceAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceAssetsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.voiceAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuickTtsHistoriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $QuickTtsHistoriesTable,
+          QuickTtsHistory,
+          $$QuickTtsHistoriesTableFilterComposer,
+          $$QuickTtsHistoriesTableOrderingComposer,
+          $$QuickTtsHistoriesTableAnnotationComposer,
+          $$QuickTtsHistoriesTableCreateCompanionBuilder,
+          $$QuickTtsHistoriesTableUpdateCompanionBuilder,
+          (QuickTtsHistory, $$QuickTtsHistoriesTableReferences),
+          QuickTtsHistory,
+          PrefetchHooks Function({bool voiceAssetId})
+        > {
+  $$QuickTtsHistoriesTableTableManager(
+    _$AppDatabase db,
+    $QuickTtsHistoriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuickTtsHistoriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$QuickTtsHistoriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$QuickTtsHistoriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> voiceAssetId = const Value.absent(),
+                Value<String> voiceName = const Value.absent(),
+                Value<String> inputText = const Value.absent(),
+                Value<String?> audioPath = const Value.absent(),
+                Value<String?> error = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuickTtsHistoriesCompanion(
+                id: id,
+                voiceAssetId: voiceAssetId,
+                voiceName: voiceName,
+                inputText: inputText,
+                audioPath: audioPath,
+                error: error,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String voiceAssetId,
+                required String voiceName,
+                required String inputText,
+                Value<String?> audioPath = const Value.absent(),
+                Value<String?> error = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => QuickTtsHistoriesCompanion.insert(
+                id: id,
+                voiceAssetId: voiceAssetId,
+                voiceName: voiceName,
+                inputText: inputText,
+                audioPath: audioPath,
+                error: error,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$QuickTtsHistoriesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({voiceAssetId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (voiceAssetId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.voiceAssetId,
+                                referencedTable:
+                                    $$QuickTtsHistoriesTableReferences
+                                        ._voiceAssetIdTable(db),
+                                referencedColumn:
+                                    $$QuickTtsHistoriesTableReferences
+                                        ._voiceAssetIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$QuickTtsHistoriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $QuickTtsHistoriesTable,
+      QuickTtsHistory,
+      $$QuickTtsHistoriesTableFilterComposer,
+      $$QuickTtsHistoriesTableOrderingComposer,
+      $$QuickTtsHistoriesTableAnnotationComposer,
+      $$QuickTtsHistoriesTableCreateCompanionBuilder,
+      $$QuickTtsHistoriesTableUpdateCompanionBuilder,
+      (QuickTtsHistory, $$QuickTtsHistoriesTableReferences),
+      QuickTtsHistory,
+      PrefetchHooks Function({bool voiceAssetId})
+    >;
+typedef $$PhaseTtsProjectsTableCreateCompanionBuilder =
+    PhaseTtsProjectsCompanion Function({
+      required String id,
+      required String name,
+      required String bankId,
+      Value<String> scriptText,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$PhaseTtsProjectsTableUpdateCompanionBuilder =
+    PhaseTtsProjectsCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> bankId,
+      Value<String> scriptText,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$PhaseTtsProjectsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $PhaseTtsProjectsTable, PhaseTtsProject> {
+  $$PhaseTtsProjectsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $VoiceBanksTable _bankIdTable(_$AppDatabase db) =>
+      db.voiceBanks.createAlias(
+        $_aliasNameGenerator(db.phaseTtsProjects.bankId, db.voiceBanks.id),
+      );
+
+  $$VoiceBanksTableProcessedTableManager get bankId {
+    final $_column = $_itemColumn<String>('bank_id')!;
+
+    final manager = $$VoiceBanksTableTableManager(
+      $_db,
+      $_db.voiceBanks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bankIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$PhaseTtsSegmentsTable, List<PhaseTtsSegment>>
+  _phaseTtsSegmentsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.phaseTtsSegments,
+    aliasName: $_aliasNameGenerator(
+      db.phaseTtsProjects.id,
+      db.phaseTtsSegments.projectId,
+    ),
+  );
+
+  $$PhaseTtsSegmentsTableProcessedTableManager get phaseTtsSegmentsRefs {
+    final manager = $$PhaseTtsSegmentsTableTableManager(
+      $_db,
+      $_db.phaseTtsSegments,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _phaseTtsSegmentsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$PhaseTtsProjectsTableFilterComposer
+    extends Composer<_$AppDatabase, $PhaseTtsProjectsTable> {
+  $$PhaseTtsProjectsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get scriptText => $composableBuilder(
+    column: $table.scriptText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VoiceBanksTableFilterComposer get bankId {
+    final $$VoiceBanksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bankId,
+      referencedTable: $db.voiceBanks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBanksTableFilterComposer(
+            $db: $db,
+            $table: $db.voiceBanks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> phaseTtsSegmentsRefs(
+    Expression<bool> Function($$PhaseTtsSegmentsTableFilterComposer f) f,
+  ) {
+    final $$PhaseTtsSegmentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.phaseTtsSegments,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PhaseTtsSegmentsTableFilterComposer(
+            $db: $db,
+            $table: $db.phaseTtsSegments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PhaseTtsProjectsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PhaseTtsProjectsTable> {
+  $$PhaseTtsProjectsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get scriptText => $composableBuilder(
+    column: $table.scriptText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VoiceBanksTableOrderingComposer get bankId {
+    final $$VoiceBanksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bankId,
+      referencedTable: $db.voiceBanks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBanksTableOrderingComposer(
+            $db: $db,
+            $table: $db.voiceBanks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PhaseTtsProjectsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PhaseTtsProjectsTable> {
+  $$PhaseTtsProjectsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get scriptText => $composableBuilder(
+    column: $table.scriptText,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$VoiceBanksTableAnnotationComposer get bankId {
+    final $$VoiceBanksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bankId,
+      referencedTable: $db.voiceBanks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBanksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.voiceBanks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> phaseTtsSegmentsRefs<T extends Object>(
+    Expression<T> Function($$PhaseTtsSegmentsTableAnnotationComposer a) f,
+  ) {
+    final $$PhaseTtsSegmentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.phaseTtsSegments,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PhaseTtsSegmentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.phaseTtsSegments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PhaseTtsProjectsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PhaseTtsProjectsTable,
+          PhaseTtsProject,
+          $$PhaseTtsProjectsTableFilterComposer,
+          $$PhaseTtsProjectsTableOrderingComposer,
+          $$PhaseTtsProjectsTableAnnotationComposer,
+          $$PhaseTtsProjectsTableCreateCompanionBuilder,
+          $$PhaseTtsProjectsTableUpdateCompanionBuilder,
+          (PhaseTtsProject, $$PhaseTtsProjectsTableReferences),
+          PhaseTtsProject,
+          PrefetchHooks Function({bool bankId, bool phaseTtsSegmentsRefs})
+        > {
+  $$PhaseTtsProjectsTableTableManager(
+    _$AppDatabase db,
+    $PhaseTtsProjectsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PhaseTtsProjectsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PhaseTtsProjectsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PhaseTtsProjectsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> bankId = const Value.absent(),
+                Value<String> scriptText = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PhaseTtsProjectsCompanion(
+                id: id,
+                name: name,
+                bankId: bankId,
+                scriptText: scriptText,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String bankId,
+                Value<String> scriptText = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => PhaseTtsProjectsCompanion.insert(
+                id: id,
+                name: name,
+                bankId: bankId,
+                scriptText: scriptText,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PhaseTtsProjectsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({bankId = false, phaseTtsSegmentsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (phaseTtsSegmentsRefs) db.phaseTtsSegments,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (bankId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.bankId,
+                                    referencedTable:
+                                        $$PhaseTtsProjectsTableReferences
+                                            ._bankIdTable(db),
+                                    referencedColumn:
+                                        $$PhaseTtsProjectsTableReferences
+                                            ._bankIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (phaseTtsSegmentsRefs)
+                        await $_getPrefetchedData<
+                          PhaseTtsProject,
+                          $PhaseTtsProjectsTable,
+                          PhaseTtsSegment
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PhaseTtsProjectsTableReferences
+                              ._phaseTtsSegmentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PhaseTtsProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).phaseTtsSegmentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$PhaseTtsProjectsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PhaseTtsProjectsTable,
+      PhaseTtsProject,
+      $$PhaseTtsProjectsTableFilterComposer,
+      $$PhaseTtsProjectsTableOrderingComposer,
+      $$PhaseTtsProjectsTableAnnotationComposer,
+      $$PhaseTtsProjectsTableCreateCompanionBuilder,
+      $$PhaseTtsProjectsTableUpdateCompanionBuilder,
+      (PhaseTtsProject, $$PhaseTtsProjectsTableReferences),
+      PhaseTtsProject,
+      PrefetchHooks Function({bool bankId, bool phaseTtsSegmentsRefs})
+    >;
+typedef $$PhaseTtsSegmentsTableCreateCompanionBuilder =
+    PhaseTtsSegmentsCompanion Function({
+      required String id,
+      required String projectId,
+      required int orderIndex,
+      required String segmentText,
+      Value<String?> voiceAssetId,
+      Value<String?> audioPath,
+      Value<double?> audioDuration,
+      Value<String?> error,
+      Value<int> rowid,
+    });
+typedef $$PhaseTtsSegmentsTableUpdateCompanionBuilder =
+    PhaseTtsSegmentsCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<int> orderIndex,
+      Value<String> segmentText,
+      Value<String?> voiceAssetId,
+      Value<String?> audioPath,
+      Value<double?> audioDuration,
+      Value<String?> error,
+      Value<int> rowid,
+    });
+
+final class $$PhaseTtsSegmentsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $PhaseTtsSegmentsTable, PhaseTtsSegment> {
+  $$PhaseTtsSegmentsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $PhaseTtsProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.phaseTtsProjects.createAlias(
+        $_aliasNameGenerator(
+          db.phaseTtsSegments.projectId,
+          db.phaseTtsProjects.id,
+        ),
+      );
+
+  $$PhaseTtsProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$PhaseTtsProjectsTableTableManager(
+      $_db,
+      $_db.phaseTtsProjects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PhaseTtsSegmentsTableFilterComposer
+    extends Composer<_$AppDatabase, $PhaseTtsSegmentsTable> {
+  $$PhaseTtsSegmentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get segmentText => $composableBuilder(
+    column: $table.segmentText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get voiceAssetId => $composableBuilder(
+    column: $table.voiceAssetId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get audioDuration => $composableBuilder(
+    column: $table.audioDuration,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get error => $composableBuilder(
+    column: $table.error,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PhaseTtsProjectsTableFilterComposer get projectId {
+    final $$PhaseTtsProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.phaseTtsProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PhaseTtsProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.phaseTtsProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PhaseTtsSegmentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PhaseTtsSegmentsTable> {
+  $$PhaseTtsSegmentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get segmentText => $composableBuilder(
+    column: $table.segmentText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get voiceAssetId => $composableBuilder(
+    column: $table.voiceAssetId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get audioDuration => $composableBuilder(
+    column: $table.audioDuration,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get error => $composableBuilder(
+    column: $table.error,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PhaseTtsProjectsTableOrderingComposer get projectId {
+    final $$PhaseTtsProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.phaseTtsProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PhaseTtsProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.phaseTtsProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PhaseTtsSegmentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PhaseTtsSegmentsTable> {
+  $$PhaseTtsSegmentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get segmentText => $composableBuilder(
+    column: $table.segmentText,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get voiceAssetId => $composableBuilder(
+    column: $table.voiceAssetId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get audioPath =>
+      $composableBuilder(column: $table.audioPath, builder: (column) => column);
+
+  GeneratedColumn<double> get audioDuration => $composableBuilder(
+    column: $table.audioDuration,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get error =>
+      $composableBuilder(column: $table.error, builder: (column) => column);
+
+  $$PhaseTtsProjectsTableAnnotationComposer get projectId {
+    final $$PhaseTtsProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.phaseTtsProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PhaseTtsProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.phaseTtsProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PhaseTtsSegmentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PhaseTtsSegmentsTable,
+          PhaseTtsSegment,
+          $$PhaseTtsSegmentsTableFilterComposer,
+          $$PhaseTtsSegmentsTableOrderingComposer,
+          $$PhaseTtsSegmentsTableAnnotationComposer,
+          $$PhaseTtsSegmentsTableCreateCompanionBuilder,
+          $$PhaseTtsSegmentsTableUpdateCompanionBuilder,
+          (PhaseTtsSegment, $$PhaseTtsSegmentsTableReferences),
+          PhaseTtsSegment,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$PhaseTtsSegmentsTableTableManager(
+    _$AppDatabase db,
+    $PhaseTtsSegmentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PhaseTtsSegmentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PhaseTtsSegmentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PhaseTtsSegmentsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<int> orderIndex = const Value.absent(),
+                Value<String> segmentText = const Value.absent(),
+                Value<String?> voiceAssetId = const Value.absent(),
+                Value<String?> audioPath = const Value.absent(),
+                Value<double?> audioDuration = const Value.absent(),
+                Value<String?> error = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PhaseTtsSegmentsCompanion(
+                id: id,
+                projectId: projectId,
+                orderIndex: orderIndex,
+                segmentText: segmentText,
+                voiceAssetId: voiceAssetId,
+                audioPath: audioPath,
+                audioDuration: audioDuration,
+                error: error,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required int orderIndex,
+                required String segmentText,
+                Value<String?> voiceAssetId = const Value.absent(),
+                Value<String?> audioPath = const Value.absent(),
+                Value<double?> audioDuration = const Value.absent(),
+                Value<String?> error = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PhaseTtsSegmentsCompanion.insert(
+                id: id,
+                projectId: projectId,
+                orderIndex: orderIndex,
+                segmentText: segmentText,
+                voiceAssetId: voiceAssetId,
+                audioPath: audioPath,
+                audioDuration: audioDuration,
+                error: error,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PhaseTtsSegmentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable:
+                                    $$PhaseTtsSegmentsTableReferences
+                                        ._projectIdTable(db),
+                                referencedColumn:
+                                    $$PhaseTtsSegmentsTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PhaseTtsSegmentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PhaseTtsSegmentsTable,
+      PhaseTtsSegment,
+      $$PhaseTtsSegmentsTableFilterComposer,
+      $$PhaseTtsSegmentsTableOrderingComposer,
+      $$PhaseTtsSegmentsTableAnnotationComposer,
+      $$PhaseTtsSegmentsTableCreateCompanionBuilder,
+      $$PhaseTtsSegmentsTableUpdateCompanionBuilder,
+      (PhaseTtsSegment, $$PhaseTtsSegmentsTableReferences),
+      PhaseTtsSegment,
+      PrefetchHooks Function({bool projectId})
+    >;
+typedef $$DialogTtsProjectsTableCreateCompanionBuilder =
+    DialogTtsProjectsCompanion Function({
+      required String id,
+      required String name,
+      required String bankId,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$DialogTtsProjectsTableUpdateCompanionBuilder =
+    DialogTtsProjectsCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> bankId,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$DialogTtsProjectsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $DialogTtsProjectsTable,
+          DialogTtsProject
+        > {
+  $$DialogTtsProjectsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $VoiceBanksTable _bankIdTable(_$AppDatabase db) =>
+      db.voiceBanks.createAlias(
+        $_aliasNameGenerator(db.dialogTtsProjects.bankId, db.voiceBanks.id),
+      );
+
+  $$VoiceBanksTableProcessedTableManager get bankId {
+    final $_column = $_itemColumn<String>('bank_id')!;
+
+    final manager = $$VoiceBanksTableTableManager(
+      $_db,
+      $_db.voiceBanks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bankIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$DialogTtsLinesTable, List<DialogTtsLine>>
+  _dialogTtsLinesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.dialogTtsLines,
+    aliasName: $_aliasNameGenerator(
+      db.dialogTtsProjects.id,
+      db.dialogTtsLines.projectId,
+    ),
+  );
+
+  $$DialogTtsLinesTableProcessedTableManager get dialogTtsLinesRefs {
+    final manager = $$DialogTtsLinesTableTableManager(
+      $_db,
+      $_db.dialogTtsLines,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_dialogTtsLinesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$DialogTtsProjectsTableFilterComposer
+    extends Composer<_$AppDatabase, $DialogTtsProjectsTable> {
+  $$DialogTtsProjectsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VoiceBanksTableFilterComposer get bankId {
+    final $$VoiceBanksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bankId,
+      referencedTable: $db.voiceBanks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBanksTableFilterComposer(
+            $db: $db,
+            $table: $db.voiceBanks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> dialogTtsLinesRefs(
+    Expression<bool> Function($$DialogTtsLinesTableFilterComposer f) f,
+  ) {
+    final $$DialogTtsLinesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.dialogTtsLines,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DialogTtsLinesTableFilterComposer(
+            $db: $db,
+            $table: $db.dialogTtsLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$DialogTtsProjectsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DialogTtsProjectsTable> {
+  $$DialogTtsProjectsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VoiceBanksTableOrderingComposer get bankId {
+    final $$VoiceBanksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bankId,
+      referencedTable: $db.voiceBanks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBanksTableOrderingComposer(
+            $db: $db,
+            $table: $db.voiceBanks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DialogTtsProjectsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DialogTtsProjectsTable> {
+  $$DialogTtsProjectsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$VoiceBanksTableAnnotationComposer get bankId {
+    final $$VoiceBanksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bankId,
+      referencedTable: $db.voiceBanks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBanksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.voiceBanks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> dialogTtsLinesRefs<T extends Object>(
+    Expression<T> Function($$DialogTtsLinesTableAnnotationComposer a) f,
+  ) {
+    final $$DialogTtsLinesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.dialogTtsLines,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DialogTtsLinesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.dialogTtsLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$DialogTtsProjectsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DialogTtsProjectsTable,
+          DialogTtsProject,
+          $$DialogTtsProjectsTableFilterComposer,
+          $$DialogTtsProjectsTableOrderingComposer,
+          $$DialogTtsProjectsTableAnnotationComposer,
+          $$DialogTtsProjectsTableCreateCompanionBuilder,
+          $$DialogTtsProjectsTableUpdateCompanionBuilder,
+          (DialogTtsProject, $$DialogTtsProjectsTableReferences),
+          DialogTtsProject,
+          PrefetchHooks Function({bool bankId, bool dialogTtsLinesRefs})
+        > {
+  $$DialogTtsProjectsTableTableManager(
+    _$AppDatabase db,
+    $DialogTtsProjectsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DialogTtsProjectsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DialogTtsProjectsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DialogTtsProjectsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> bankId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DialogTtsProjectsCompanion(
+                id: id,
+                name: name,
+                bankId: bankId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String bankId,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => DialogTtsProjectsCompanion.insert(
+                id: id,
+                name: name,
+                bankId: bankId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$DialogTtsProjectsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({bankId = false, dialogTtsLinesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (dialogTtsLinesRefs) db.dialogTtsLines,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (bankId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.bankId,
+                                    referencedTable:
+                                        $$DialogTtsProjectsTableReferences
+                                            ._bankIdTable(db),
+                                    referencedColumn:
+                                        $$DialogTtsProjectsTableReferences
+                                            ._bankIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (dialogTtsLinesRefs)
+                        await $_getPrefetchedData<
+                          DialogTtsProject,
+                          $DialogTtsProjectsTable,
+                          DialogTtsLine
+                        >(
+                          currentTable: table,
+                          referencedTable: $$DialogTtsProjectsTableReferences
+                              ._dialogTtsLinesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$DialogTtsProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).dialogTtsLinesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$DialogTtsProjectsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DialogTtsProjectsTable,
+      DialogTtsProject,
+      $$DialogTtsProjectsTableFilterComposer,
+      $$DialogTtsProjectsTableOrderingComposer,
+      $$DialogTtsProjectsTableAnnotationComposer,
+      $$DialogTtsProjectsTableCreateCompanionBuilder,
+      $$DialogTtsProjectsTableUpdateCompanionBuilder,
+      (DialogTtsProject, $$DialogTtsProjectsTableReferences),
+      DialogTtsProject,
+      PrefetchHooks Function({bool bankId, bool dialogTtsLinesRefs})
+    >;
+typedef $$DialogTtsLinesTableCreateCompanionBuilder =
+    DialogTtsLinesCompanion Function({
+      required String id,
+      required String projectId,
+      required int orderIndex,
+      required String lineText,
+      Value<String?> voiceAssetId,
+      Value<String?> audioPath,
+      Value<double?> audioDuration,
+      Value<String?> error,
+      Value<int> rowid,
+    });
+typedef $$DialogTtsLinesTableUpdateCompanionBuilder =
+    DialogTtsLinesCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<int> orderIndex,
+      Value<String> lineText,
+      Value<String?> voiceAssetId,
+      Value<String?> audioPath,
+      Value<double?> audioDuration,
+      Value<String?> error,
+      Value<int> rowid,
+    });
+
+final class $$DialogTtsLinesTableReferences
+    extends BaseReferences<_$AppDatabase, $DialogTtsLinesTable, DialogTtsLine> {
+  $$DialogTtsLinesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $DialogTtsProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.dialogTtsProjects.createAlias(
+        $_aliasNameGenerator(
+          db.dialogTtsLines.projectId,
+          db.dialogTtsProjects.id,
+        ),
+      );
+
+  $$DialogTtsProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$DialogTtsProjectsTableTableManager(
+      $_db,
+      $_db.dialogTtsProjects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$DialogTtsLinesTableFilterComposer
+    extends Composer<_$AppDatabase, $DialogTtsLinesTable> {
+  $$DialogTtsLinesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lineText => $composableBuilder(
+    column: $table.lineText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get voiceAssetId => $composableBuilder(
+    column: $table.voiceAssetId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get audioDuration => $composableBuilder(
+    column: $table.audioDuration,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get error => $composableBuilder(
+    column: $table.error,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$DialogTtsProjectsTableFilterComposer get projectId {
+    final $$DialogTtsProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.dialogTtsProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DialogTtsProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.dialogTtsProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DialogTtsLinesTableOrderingComposer
+    extends Composer<_$AppDatabase, $DialogTtsLinesTable> {
+  $$DialogTtsLinesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lineText => $composableBuilder(
+    column: $table.lineText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get voiceAssetId => $composableBuilder(
+    column: $table.voiceAssetId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get audioDuration => $composableBuilder(
+    column: $table.audioDuration,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get error => $composableBuilder(
+    column: $table.error,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$DialogTtsProjectsTableOrderingComposer get projectId {
+    final $$DialogTtsProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.dialogTtsProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DialogTtsProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.dialogTtsProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DialogTtsLinesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DialogTtsLinesTable> {
+  $$DialogTtsLinesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lineText =>
+      $composableBuilder(column: $table.lineText, builder: (column) => column);
+
+  GeneratedColumn<String> get voiceAssetId => $composableBuilder(
+    column: $table.voiceAssetId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get audioPath =>
+      $composableBuilder(column: $table.audioPath, builder: (column) => column);
+
+  GeneratedColumn<double> get audioDuration => $composableBuilder(
+    column: $table.audioDuration,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get error =>
+      $composableBuilder(column: $table.error, builder: (column) => column);
+
+  $$DialogTtsProjectsTableAnnotationComposer get projectId {
+    final $$DialogTtsProjectsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.projectId,
+          referencedTable: $db.dialogTtsProjects,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$DialogTtsProjectsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.dialogTtsProjects,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$DialogTtsLinesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DialogTtsLinesTable,
+          DialogTtsLine,
+          $$DialogTtsLinesTableFilterComposer,
+          $$DialogTtsLinesTableOrderingComposer,
+          $$DialogTtsLinesTableAnnotationComposer,
+          $$DialogTtsLinesTableCreateCompanionBuilder,
+          $$DialogTtsLinesTableUpdateCompanionBuilder,
+          (DialogTtsLine, $$DialogTtsLinesTableReferences),
+          DialogTtsLine,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$DialogTtsLinesTableTableManager(
+    _$AppDatabase db,
+    $DialogTtsLinesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DialogTtsLinesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DialogTtsLinesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DialogTtsLinesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<int> orderIndex = const Value.absent(),
+                Value<String> lineText = const Value.absent(),
+                Value<String?> voiceAssetId = const Value.absent(),
+                Value<String?> audioPath = const Value.absent(),
+                Value<double?> audioDuration = const Value.absent(),
+                Value<String?> error = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DialogTtsLinesCompanion(
+                id: id,
+                projectId: projectId,
+                orderIndex: orderIndex,
+                lineText: lineText,
+                voiceAssetId: voiceAssetId,
+                audioPath: audioPath,
+                audioDuration: audioDuration,
+                error: error,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required int orderIndex,
+                required String lineText,
+                Value<String?> voiceAssetId = const Value.absent(),
+                Value<String?> audioPath = const Value.absent(),
+                Value<double?> audioDuration = const Value.absent(),
+                Value<String?> error = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DialogTtsLinesCompanion.insert(
+                id: id,
+                projectId: projectId,
+                orderIndex: orderIndex,
+                lineText: lineText,
+                voiceAssetId: voiceAssetId,
+                audioPath: audioPath,
+                audioDuration: audioDuration,
+                error: error,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$DialogTtsLinesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable: $$DialogTtsLinesTableReferences
+                                    ._projectIdTable(db),
+                                referencedColumn:
+                                    $$DialogTtsLinesTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$DialogTtsLinesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DialogTtsLinesTable,
+      DialogTtsLine,
+      $$DialogTtsLinesTableFilterComposer,
+      $$DialogTtsLinesTableOrderingComposer,
+      $$DialogTtsLinesTableAnnotationComposer,
+      $$DialogTtsLinesTableCreateCompanionBuilder,
+      $$DialogTtsLinesTableUpdateCompanionBuilder,
+      (DialogTtsLine, $$DialogTtsLinesTableReferences),
+      DialogTtsLine,
+      PrefetchHooks Function({bool projectId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4086,6 +10288,20 @@ class $AppDatabaseManager {
       $$ModelBindingsTableTableManager(_db, _db.modelBindings);
   $$VoiceAssetsTableTableManager get voiceAssets =>
       $$VoiceAssetsTableTableManager(_db, _db.voiceAssets);
+  $$VoiceBanksTableTableManager get voiceBanks =>
+      $$VoiceBanksTableTableManager(_db, _db.voiceBanks);
+  $$VoiceBankMembersTableTableManager get voiceBankMembers =>
+      $$VoiceBankMembersTableTableManager(_db, _db.voiceBankMembers);
   $$TtsJobsTableTableManager get ttsJobs =>
       $$TtsJobsTableTableManager(_db, _db.ttsJobs);
+  $$QuickTtsHistoriesTableTableManager get quickTtsHistories =>
+      $$QuickTtsHistoriesTableTableManager(_db, _db.quickTtsHistories);
+  $$PhaseTtsProjectsTableTableManager get phaseTtsProjects =>
+      $$PhaseTtsProjectsTableTableManager(_db, _db.phaseTtsProjects);
+  $$PhaseTtsSegmentsTableTableManager get phaseTtsSegments =>
+      $$PhaseTtsSegmentsTableTableManager(_db, _db.phaseTtsSegments);
+  $$DialogTtsProjectsTableTableManager get dialogTtsProjects =>
+      $$DialogTtsProjectsTableTableManager(_db, _db.dialogTtsProjects);
+  $$DialogTtsLinesTableTableManager get dialogTtsLines =>
+      $$DialogTtsLinesTableTableManager(_db, _db.dialogTtsLines);
 }

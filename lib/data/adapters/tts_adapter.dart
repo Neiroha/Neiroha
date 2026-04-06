@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:q_vox_lab/data/database/app_database.dart' as db;
 import 'package:q_vox_lab/data/adapters/openai_compatible_adapter.dart';
+import 'package:q_vox_lab/data/adapters/chat_completions_tts_adapter.dart';
 
 /// Request payload for TTS synthesis, unified across all adapters.
 class TtsRequest {
@@ -51,14 +52,23 @@ abstract class TtsAdapter {
 }
 
 /// Factory to create the correct adapter for a provider.
-TtsAdapter createAdapter(db.TtsProvider provider) {
+/// [modelName] overrides the provider's default model when provided.
+TtsAdapter createAdapter(db.TtsProvider provider, {String? modelName}) {
+  final model = modelName ?? provider.defaultModelName;
   switch (provider.adapterType) {
     case 'openaiCompatible':
       return OpenAiCompatibleAdapter(
         baseUrl: provider.baseUrl,
         apiKey: provider.apiKey,
+        modelName: model,
       );
-    // TODO: Add gptSovits, qwen3Native, cosyvoice adapters in Phase 2
+    case 'chatCompletionsTts':
+      return ChatCompletionsTtsAdapter(
+        baseUrl: provider.baseUrl,
+        apiKey: provider.apiKey,
+        modelName: model,
+      );
+    // TODO: Add gptSovits, qwen3Native, cosyvoice adapters
     default:
       throw UnimplementedError(
           'Adapter not implemented for: ${provider.adapterType}');

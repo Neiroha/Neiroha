@@ -1,12 +1,15 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
+
+import 'package:q_vox_lab/data/adapters/tts_adapter.dart';
+import 'package:q_vox_lab/data/database/app_database.dart' as db;
 import 'package:q_vox_lab/presentation/theme/app_theme.dart';
 import 'package:q_vox_lab/providers/app_providers.dart';
-import 'package:q_vox_lab/data/database/app_database.dart' as db;
 
-/// Voice Bank — a named collection of Characters for a project/config.
-/// Maps to the "Voice Bank → Voice Config → API Service" part of the diagram.
-/// UI: left = bank list, right = bank's character roster + API exposure settings.
+/// Voice Bank — a named collection of Characters persisted in SQLite.
+/// Only one bank can be "active" at a time; active bank is used for TTS.
 class VoiceBankScreen extends ConsumerStatefulWidget {
   const VoiceBankScreen({super.key});
 
@@ -15,12 +18,12 @@ class VoiceBankScreen extends ConsumerStatefulWidget {
 }
 
 class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
-  // Placeholder: list of banks stored in memory until DB schema is extended.
-  final List<_VoiceBank> _banks = [];
-  _VoiceBank? _selectedBank;
+  String? _selectedBankId;
 
   @override
   Widget build(BuildContext context) {
+    final banksAsync = ref.watch(voiceBanksStreamProvider);
+
     return Column(
       children: [
         _buildHeader(context),
@@ -29,13 +32,8 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Left: bank list
-              SizedBox(
-                width: 280,
-                child: _buildBankList(),
-              ),
+              SizedBox(width: 280, child: _buildBankList(banksAsync)),
               const VerticalDivider(width: 1),
-              // Right: roster
               Expanded(child: _buildRoster()),
             ],
           ),
@@ -43,6 +41,8 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
       ],
     );
   }
+
+  // ───────────────── Header ─────────────────
 
   Widget _buildHeader(BuildContext context) {
     return Container(
@@ -69,7 +69,9 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     );
   }
 
-  Widget _buildBankList() {
+  // ───────────────── Bank List (left) ─────────────────
+
+  Widget _buildBankList(AsyncValue<List<db.VoiceBank>> banksAsync) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -83,89 +85,62 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                   color: Colors.white.withValues(alpha: 0.4))),
         ),
         Expanded(
-          child: _banks.isEmpty
-              ? Center(
+          child: banksAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text('Error: $e')),
+            data: (banks) {
+              if (banks.isEmpty) {
+                return Center(
                   child: Text('No banks yet',
                       style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.3),
                           fontSize: 13)),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  itemCount: _banks.length,
-                  itemBuilder: (ctx, i) {
-                    final bank = _banks[i];
-                    final selected = _selectedBank?.id == bank.id;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
-                      child: Material(
-                        color: selected
-                            ? AppTheme.accentColor.withValues(alpha: 0.12)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(10),
-                          onTap: () =>
-                              setState(() => _selectedBank = bank),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 10),
-                            child: Row(
-                              children: [
-                                Icon(Icons.people_alt_rounded,
-                                    size: 18,
-                                    color: selected
-                                        ? AppTheme.accentColor
-                                        : Colors.white
-                                            .withValues(alpha: 0.4)),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(bank.name,
-                                          style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500)),
-                                      Text(
-                                          '${bank.characterIds.length} characters',
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.white
-                                                  .withValues(alpha: 0.4))),
-                                    ],
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: Icon(Icons.delete_outline_rounded,
-                                      size: 16,
-                                      color: Colors.white
-                                          .withValues(alpha: 0.3)),
-                                  onPressed: () => setState(() {
-                                    _banks.removeAt(i);
-                                    if (_selectedBank?.id == bank.id) {
-                                      _selectedBank = null;
-                                    }
-                                  }),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                );
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                itemCount: banks.length,
+                itemBuilder: (ctx, i) {
+                  final bank = banks[i];
+                  final selected = _selectedBankId == bank.id;
+                  return _BankTile(
+                    bank: bank,
+                    isSelected: selected,
+                    onTap: () => setState(() => _selectedBankId = bank.id),
+                    onDelete: () async {
+                      await ref.read(databaseProvider).deleteBank(bank.id);
+                      if (_selectedBankId == bank.id) {
+                        setState(() => _selectedBankId = null);
+                      }
+                    },
+                    onDuplicate: () async {
+                      final newBank = await ref
+                          .read(databaseProvider)
+                          .duplicateBank(bank.id, '${bank.name} (copy)');
+                      setState(() => _selectedBankId = newBank.id);
+                    },
+                    onToggleActive: () async {
+                      final database = ref.read(databaseProvider);
+                      if (bank.isActive) {
+                        await database.deactivateAllBanks();
+                      } else {
+                        await database.setActiveBank(bank.id);
+                      }
+                    },
+                  );
+                },
+              );
+            },
+          ),
         ),
       ],
     );
   }
 
+  // ───────────────── Roster (right) ─────────────────
+
   Widget _buildRoster() {
-    if (_selectedBank == null) {
+    if (_selectedBankId == null) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -178,7 +153,8 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                     color: Colors.white.withValues(alpha: 0.4), fontSize: 15)),
             const SizedBox(height: 8),
             Text(
-              'A Voice Bank groups characters for a project.\nThe bank\'s roster is exposed via the API as selectable voices.',
+              'A Voice Bank groups characters for a project.\n'
+              'Only one bank can be active at a time.',
               textAlign: TextAlign.center,
               style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.25), fontSize: 13),
@@ -188,8 +164,16 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
       );
     }
 
-    final bank = _selectedBank!;
+    final bankId = _selectedBankId!;
+    final banksAsync = ref.watch(voiceBanksStreamProvider);
+    final membersAsync = ref.watch(bankMembersStreamProvider(bankId));
     final assetsAsync = ref.watch(voiceAssetsStreamProvider);
+    final providersAsync = ref.watch(ttsProvidersStreamProvider);
+
+    final bank = banksAsync.valueOrNull?.where((b) => b.id == bankId).firstOrNull;
+    if (bank == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,41 +184,43 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
           child: Row(
             children: [
               Icon(Icons.people_alt_rounded,
-                  color: AppTheme.accentColor, size: 20),
+                  color: bank.isActive ? Colors.green : AppTheme.accentColor,
+                  size: 20),
               const SizedBox(width: 10),
               Text(bank.name,
                   style: const TextStyle(
                       fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(width: 10),
+              if (bank.isActive)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border:
+                        Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle, size: 12, color: Colors.green),
+                      SizedBox(width: 4),
+                      Text('Active',
+                          style: TextStyle(color: Colors.green, fontSize: 12)),
+                    ],
+                  ),
+                ),
               const Spacer(),
-              // API exposure indicator
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: Colors.green.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                          shape: BoxShape.circle, color: Colors.green),
-                    ),
-                    const SizedBox(width: 6),
-                    const Text('Exposed via API',
-                        style: TextStyle(
-                            color: Colors.green, fontSize: 12)),
-                  ],
-                ),
+              // Health check button
+              OutlinedButton.icon(
+                onPressed: () => _healthCheckBank(bank, membersAsync, assetsAsync, providersAsync),
+                icon: const Icon(Icons.favorite_border_rounded, size: 16),
+                label: const Text('Health Check'),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               FilledButton.icon(
-                onPressed: () => _addCharacterToBank(bank, assetsAsync),
+                onPressed: () => _showAddCharacterDialog(bank),
                 icon: const Icon(Icons.person_add_rounded, size: 16),
                 label: const Text('Add Character'),
               ),
@@ -243,32 +229,39 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         ),
         const Divider(height: 1),
 
-        // Character roster
+        // Members list
         Expanded(
-          child: assetsAsync.when(
-            loading: () =>
-                const Center(child: CircularProgressIndicator()),
+          child: membersAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(child: Text('Error: $e')),
-            data: (allAssets) {
-              final rosterAssets = allAssets
-                  .where((a) => bank.characterIds.contains(a.id))
-                  .toList();
-              if (rosterAssets.isEmpty) {
+            data: (members) {
+              if (members.isEmpty) {
                 return Center(
                   child: Text('No characters in this bank yet',
                       style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.3))),
                 );
               }
-              return ListView.builder(
-                padding: const EdgeInsets.all(12),
-                itemCount: rosterAssets.length,
-                itemBuilder: (ctx, i) {
-                  final a = rosterAssets[i];
-                  return _RosterCard(
-                    asset: a,
-                    onRemove: () => setState(() =>
-                        bank.characterIds.remove(a.id)),
+              return assetsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text('Error: $e')),
+                data: (allAssets) {
+                  final assetMap = {for (final a in allAssets) a.id: a};
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(12),
+                    itemCount: members.length,
+                    itemBuilder: (ctx, i) {
+                      final member = members[i];
+                      final asset = assetMap[member.voiceAssetId];
+                      if (asset == null) return const SizedBox.shrink();
+                      return _RosterCard(
+                        asset: asset,
+                        onRemove: () => ref
+                            .read(databaseProvider)
+                            .removeMemberByAssetAndBank(
+                                bankId, asset.id),
+                      );
+                    },
                   );
                 },
               );
@@ -278,6 +271,8 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
       ],
     );
   }
+
+  // ───────────────── Actions ─────────────────
 
   void _createBank() async {
     final nameCtrl = TextEditingController();
@@ -301,71 +296,362 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
       ),
     );
     if (result != null && result.isNotEmpty) {
-      setState(() {
-        final bank = _VoiceBank(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          name: result,
-        );
-        _banks.add(bank);
-        _selectedBank = bank;
-      });
+      final id = const Uuid().v4();
+      await ref.read(databaseProvider).insertBank(db.VoiceBanksCompanion(
+            id: Value(id),
+            name: Value(result),
+            createdAt: Value(DateTime.now()),
+          ));
+      setState(() => _selectedBankId = id);
     }
   }
 
-  void _addCharacterToBank(
-      _VoiceBank bank, AsyncValue<List<db.VoiceAsset>> assetsAsync) {
+  void _showAddCharacterDialog(db.VoiceBank bank) {
+    showDialog(
+      context: context,
+      builder: (ctx) => _AddCharacterDialog(
+        bankId: bank.id,
+        database: ref.read(databaseProvider),
+        assetsAsync: ref.read(voiceAssetsStreamProvider),
+        existingMembers: ref.read(bankMembersStreamProvider(bank.id)),
+      ),
+    );
+  }
+
+  void _healthCheckBank(
+    db.VoiceBank bank,
+    AsyncValue<List<db.VoiceBankMember>> membersAsync,
+    AsyncValue<List<db.VoiceAsset>> assetsAsync,
+    AsyncValue<List<db.TtsProvider>> providersAsync,
+  ) async {
+    final members = membersAsync.valueOrNull ?? [];
     final allAssets = assetsAsync.valueOrNull ?? [];
-    final available =
-        allAssets.where((a) => !bank.characterIds.contains(a.id)).toList();
-    if (available.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All characters already in bank')),
-      );
+    final allProviders = providersAsync.valueOrNull ?? [];
+    if (members.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Bank has no characters')));
+      }
       return;
     }
+
+    final assetMap = {for (final a in allAssets) a.id: a};
+    final providerMap = {for (final p in allProviders) p.id: p};
+
+    final results = <String, bool>{};
+    for (final m in members) {
+      final asset = assetMap[m.voiceAssetId];
+      if (asset == null) continue;
+      final provider = providerMap[asset.providerId];
+      if (provider == null) {
+        results[asset.name] = false;
+        continue;
+      }
+      try {
+        final adapter =
+            createAdapter(provider, modelName: asset.modelName);
+        results[asset.name] = await adapter.healthCheck();
+      } catch (_) {
+        results[asset.name] = false;
+      }
+    }
+
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Add Character'),
+        title: const Text('Health Check Results'),
         content: SizedBox(
-          width: 300,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: available.length,
-            itemBuilder: (ctx, i) {
-              final a = available[i];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: AppTheme.accentColor.withValues(alpha: 0.2),
-                  child: Text(a.name[0].toUpperCase()),
-                ),
-                title: Text(a.name),
-                onTap: () {
-                  setState(() => bank.characterIds.add(a.id));
-                  Navigator.pop(ctx);
-                },
-              );
-            },
+          width: 320,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: results.entries
+                .map((e) => ListTile(
+                      dense: true,
+                      leading: Icon(
+                        e.value
+                            ? Icons.check_circle_rounded
+                            : Icons.error_rounded,
+                        color: e.value ? Colors.green : Colors.redAccent,
+                        size: 20,
+                      ),
+                      title: Text(e.key),
+                      subtitle:
+                          Text(e.value ? 'Reachable' : 'Unreachable'),
+                    ))
+                .toList(),
           ),
         ),
         actions: [
-          TextButton(
+          FilledButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: const Text('OK')),
         ],
       ),
     );
   }
 }
 
-class _VoiceBank {
-  final String id;
-  final String name;
-  final List<String> characterIds;
+// ─────────────────────── Bank Tile ───────────────────────
 
-  _VoiceBank({required this.id, required this.name})
-      : characterIds = [];
+class _BankTile extends StatelessWidget {
+  final db.VoiceBank bank;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+  final VoidCallback onDuplicate;
+  final VoidCallback onToggleActive;
+
+  const _BankTile({
+    required this.bank,
+    required this.isSelected,
+    required this.onTap,
+    required this.onDelete,
+    required this.onDuplicate,
+    required this.onToggleActive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Material(
+        color: isSelected
+            ? AppTheme.accentColor.withValues(alpha: 0.12)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onTap,
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                Icon(
+                  bank.isActive
+                      ? Icons.check_circle_rounded
+                      : Icons.people_alt_rounded,
+                  size: 18,
+                  color: bank.isActive
+                      ? Colors.green
+                      : (isSelected
+                          ? AppTheme.accentColor
+                          : Colors.white.withValues(alpha: 0.4)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(bank.name,
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w500)),
+                ),
+                PopupMenuButton<String>(
+                  padding: EdgeInsets.zero,
+                  iconSize: 16,
+                  icon: Icon(Icons.more_vert_rounded,
+                      size: 16,
+                      color: Colors.white.withValues(alpha: 0.3)),
+                  onSelected: (v) {
+                    switch (v) {
+                      case 'activate':
+                        onToggleActive();
+                      case 'duplicate':
+                        onDuplicate();
+                      case 'delete':
+                        onDelete();
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    PopupMenuItem(
+                      value: 'activate',
+                      child: Text(
+                          bank.isActive ? 'Deactivate' : 'Set Active'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'duplicate',
+                      child: Text('Duplicate'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Text('Delete',
+                          style: TextStyle(color: Colors.redAccent)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
+
+// ─────────────────────── Add Character Dialog ───────────────────────
+
+class _AddCharacterDialog extends StatefulWidget {
+  final String bankId;
+  final db.AppDatabase database;
+  final AsyncValue<List<db.VoiceAsset>> assetsAsync;
+  final AsyncValue<List<db.VoiceBankMember>> existingMembers;
+
+  const _AddCharacterDialog({
+    required this.bankId,
+    required this.database,
+    required this.assetsAsync,
+    required this.existingMembers,
+  });
+
+  @override
+  State<_AddCharacterDialog> createState() => _AddCharacterDialogState();
+}
+
+class _AddCharacterDialogState extends State<_AddCharacterDialog> {
+  final _searchCtrl = TextEditingController();
+  String _filter = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl.addListener(() => setState(() => _filter = _searchCtrl.text));
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final allAssets = widget.assetsAsync.valueOrNull ?? [];
+    final existingIds = (widget.existingMembers.valueOrNull ?? [])
+        .map((m) => m.voiceAssetId)
+        .toSet();
+
+    final available =
+        allAssets.where((a) => !existingIds.contains(a.id)).toList();
+    final filtered = _filter.isEmpty
+        ? available
+        : available
+            .where(
+                (a) => a.name.toLowerCase().contains(_filter.toLowerCase()))
+            .toList();
+
+    return Dialog(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 420,
+          maxHeight: MediaQuery.of(context).size.height * 0.7,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+              child: Text('Add Characters',
+                  style: Theme.of(context).textTheme.titleLarge),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
+              child: TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Search by name...',
+                  prefixIcon: Icon(Icons.search_rounded, size: 20),
+                  isDense: true,
+                ),
+              ),
+            ),
+            Flexible(
+              child: available.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Text(
+                          existingIds.length == allAssets.length
+                              ? 'All characters already in this bank'
+                              : 'No voice characters created yet',
+                          style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.4)),
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      shrinkWrap: true,
+                      itemCount: filtered.length,
+                      itemBuilder: (ctx, i) {
+                        final a = filtered[i];
+                        return ListTile(
+                          leading: CircleAvatar(
+                            radius: 16,
+                            backgroundColor:
+                                AppTheme.accentColor.withValues(alpha: 0.2),
+                            child: Text(a.name[0].toUpperCase(),
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 13)),
+                          ),
+                          title: Text(a.name, style: const TextStyle(fontSize: 14)),
+                          subtitle: Text(a.taskMode,
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color:
+                                      Colors.white.withValues(alpha: 0.4))),
+                          onTap: () => _addSingle(a),
+                        );
+                      },
+                    ),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: filtered.isEmpty ? null : () => _addAll(filtered),
+                    child: const Text('Add All'),
+                  ),
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Done')),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addSingle(db.VoiceAsset asset) async {
+    await widget.database
+        .addMemberToBank(db.VoiceBankMembersCompanion(
+      id: Value(const Uuid().v4()),
+      bankId: Value(widget.bankId),
+      voiceAssetId: Value(asset.id),
+    ));
+    if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _addAll(List<db.VoiceAsset> assets) async {
+    for (final a in assets) {
+      await widget.database
+          .addMemberToBank(db.VoiceBankMembersCompanion(
+        id: Value(const Uuid().v4()),
+        bankId: Value(widget.bankId),
+        voiceAssetId: Value(a.id),
+      ));
+    }
+    if (mounted) Navigator.pop(context);
+  }
+}
+
+// ─────────────────────── Roster Card ───────────────────────
 
 class _RosterCard extends StatelessWidget {
   final db.VoiceAsset asset;
@@ -383,8 +669,7 @@ class _RosterCard extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor:
-                  AppTheme.accentColor.withValues(alpha: 0.2),
+              backgroundColor: AppTheme.accentColor.withValues(alpha: 0.2),
               child: Text(asset.name[0].toUpperCase(),
                   style: const TextStyle(color: Colors.white)),
             ),
@@ -403,7 +688,6 @@ class _RosterCard extends StatelessWidget {
                 ],
               ),
             ),
-            // API voice ID tag
             Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

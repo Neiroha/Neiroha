@@ -5,6 +5,8 @@ import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:q_vox_lab/data/database/app_database.dart' as db;
@@ -177,7 +179,7 @@ class _CharacterList extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 child: Row(
                   children: [
-                    _Avatar(name: a.name, selected: isSelected),
+                    _Avatar(name: a.name, selected: isSelected, avatarPath: a.avatarPath),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -244,9 +246,30 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        // Avatar + name
+        // Avatar + change photo
         Center(
-          child: _Avatar(name: a.name, selected: true, radius: 36),
+          child: GestureDetector(
+            onTap: () => _pickAvatar(a),
+            child: Stack(
+              children: [
+                _Avatar(name: a.name, selected: true, radius: 36, avatarPath: a.avatarPath),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceBright,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppTheme.surfaceDim, width: 2),
+                    ),
+                    child: const Icon(Icons.camera_alt_rounded,
+                        size: 14, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: 12),
         Center(
@@ -372,17 +395,103 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
           ],
         ),
         const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () {
-            ref.read(databaseProvider).deleteVoiceAsset(a.id);
-            ref.read(_selectedCharacterIdProvider.notifier).state = null;
-          },
-          icon: const Icon(Icons.delete_outline_rounded, size: 18),
-          label: const Text('Delete Character'),
-          style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent),
+        FilledButton.icon(
+          onPressed: () => _editCharacter(a),
+          icon: const Icon(Icons.edit_rounded, size: 18),
+          label: const Text('Edit Character'),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _duplicateCharacter(a),
+                icon: const Icon(Icons.copy_rounded, size: 18),
+                label: const Text('Duplicate'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  ref.read(databaseProvider).deleteVoiceAsset(a.id);
+                  ref.read(_selectedCharacterIdProvider.notifier).state = null;
+                },
+                icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                label: const Text('Delete'),
+                style:
+                    OutlinedButton.styleFrom(foregroundColor: Colors.redAccent),
+              ),
+            ),
+          ],
         ),
       ],
     );
+  }
+
+  Future<void> _pickAvatar(db.VoiceAsset asset) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+    );
+    if (result == null || result.files.single.path == null) return;
+
+    final picked = result.files.single.path!;
+    // Copy to app support dir so it persists
+    final appDir = await getApplicationSupportDirectory();
+    final avatarDir = Directory(p.join(appDir.path, 'avatars'));
+    if (!avatarDir.existsSync()) avatarDir.createSync(recursive: true);
+    final ext = p.extension(picked);
+    final dest = p.join(avatarDir.path, '${asset.id}$ext');
+    await File(picked).copy(dest);
+
+    await ref
+        .read(databaseProvider)
+        .updateVoiceAsset(asset.copyWith(avatarPath: Value(dest)));
+  }
+
+  void _editCharacter(db.VoiceAsset asset) {
+    final providers = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
+    if (providers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No providers available')));
+      return;
+    }
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _EditCharacterDialog(
+        asset: asset,
+        providers: providers,
+        onSave: (updated) async {
+          await ref.read(databaseProvider).updateVoiceAsset(updated);
+        },
+      ),
+    );
+  }
+
+  Future<void> _duplicateCharacter(db.VoiceAsset asset) async {
+    final newId = const Uuid().v4();
+    await ref.read(databaseProvider).insertVoiceAsset(db.VoiceAssetsCompanion(
+          id: Value(newId),
+          name: Value('${asset.name} (copy)'),
+          description: Value(asset.description),
+          providerId: Value(asset.providerId),
+          modelBindingId: Value(asset.modelBindingId),
+          modelName: Value(asset.modelName),
+          taskMode: Value(asset.taskMode),
+          refAudioPath: Value(asset.refAudioPath),
+          refAudioTrimStart: Value(asset.refAudioTrimStart),
+          refAudioTrimEnd: Value(asset.refAudioTrimEnd),
+          promptText: Value(asset.promptText),
+          promptLang: Value(asset.promptLang),
+          voiceInstruction: Value(asset.voiceInstruction),
+          presetVoiceName: Value(asset.presetVoiceName),
+          avatarPath: Value(asset.avatarPath),
+          speed: Value(asset.speed),
+          enabled: Value(asset.enabled),
+        ));
+    ref.read(_selectedCharacterIdProvider.notifier).state = newId;
   }
 }
 
@@ -895,27 +1004,294 @@ class _RefAudioPicker extends StatelessWidget {
   }
 }
 
+// ─────────────────────────── Edit Character Dialog ────────────────────────────
+
+class _EditCharacterDialog extends StatefulWidget {
+  final db.VoiceAsset asset;
+  final List<db.TtsProvider> providers;
+  final Future<void> Function(db.VoiceAsset) onSave;
+
+  const _EditCharacterDialog({
+    required this.asset,
+    required this.providers,
+    required this.onSave,
+  });
+
+  @override
+  State<_EditCharacterDialog> createState() => _EditCharacterDialogState();
+}
+
+class _EditCharacterDialogState extends State<_EditCharacterDialog> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _descCtrl;
+  late final TextEditingController _modelCtrl;
+  late final TextEditingController _voiceNameCtrl;
+  late final TextEditingController _speedCtrl;
+  late final TextEditingController _promptTextCtrl;
+  late final TextEditingController _promptLangCtrl;
+  late final TextEditingController _instructionCtrl;
+  late String _selectedProviderId;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final a = widget.asset;
+    _nameCtrl = TextEditingController(text: a.name);
+    _descCtrl = TextEditingController(text: a.description ?? '');
+    _modelCtrl = TextEditingController(text: a.modelName ?? '');
+    _voiceNameCtrl = TextEditingController(text: a.presetVoiceName ?? '');
+    _speedCtrl = TextEditingController(text: a.speed.toString());
+    _promptTextCtrl = TextEditingController(text: a.promptText ?? '');
+    _promptLangCtrl = TextEditingController(text: a.promptLang ?? '');
+    _instructionCtrl = TextEditingController(text: a.voiceInstruction ?? '');
+    _selectedProviderId = widget.providers.any((p) => p.id == a.providerId)
+        ? a.providerId
+        : widget.providers.first.id;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _descCtrl.dispose();
+    _modelCtrl.dispose();
+    _voiceNameCtrl.dispose();
+    _speedCtrl.dispose();
+    _promptTextCtrl.dispose();
+    _promptLangCtrl.dispose();
+    _instructionCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final a = widget.asset;
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: SizedBox(
+        width: 500,
+        height: 600,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 12, 0),
+              child: Row(
+                children: [
+                  const Text('Edit Character',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 24),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                children: [
+                  TextField(
+                    controller: _nameCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Character Name *'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _descCtrl,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                        labelText: 'Description (optional)'),
+                  ),
+                  const SizedBox(height: 20),
+                  _SectionLabel('PROVIDER'),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    decoration:
+                        const InputDecoration(labelText: 'Provider'),
+                    items: widget.providers
+                        .map((p) => DropdownMenuItem(
+                            value: p.id,
+                            child: Row(
+                              children: [
+                                Text(p.name),
+                                const SizedBox(width: 8),
+                                Text('(${p.adapterType})',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white
+                                            .withValues(alpha: 0.4))),
+                              ],
+                            )))
+                        .toList(),
+                    initialValue: _selectedProviderId,
+                    onChanged: (v) {
+                      if (v != null) setState(() => _selectedProviderId = v);
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _modelCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Model Name'),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _speedCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration:
+                        const InputDecoration(labelText: 'Speed (1.0 = normal)'),
+                  ),
+                  const SizedBox(height: 20),
+                  // Mode-specific fields
+                  if (a.taskMode == 'presetVoice') ...[
+                    _SectionLabel('PRESET VOICE'),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _voiceNameCtrl,
+                      decoration: const InputDecoration(
+                          labelText: 'Voice / Speaker Name'),
+                    ),
+                  ],
+                  if (a.taskMode == 'cloneWithPrompt') ...[
+                    _SectionLabel('VOICE CLONE'),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _promptTextCtrl,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                          labelText: 'Reference Transcript'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _promptLangCtrl,
+                      decoration: const InputDecoration(
+                          labelText: 'Language Code'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _instructionCtrl,
+                      decoration: const InputDecoration(
+                          labelText: 'Style Instruction (optional)'),
+                    ),
+                  ],
+                  if (a.taskMode == 'voiceDesign') ...[
+                    _SectionLabel('VOICE DESIGN'),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _instructionCtrl,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                          labelText: 'Voice Instruction'),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              child: Row(
+                children: [
+                  TextButton(
+                    onPressed: _saving ? null : () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  const Spacer(),
+                  FilledButton.icon(
+                    onPressed: _saving ? null : _save,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.check_rounded, size: 18),
+                    label: const Text('Save Changes'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _save() async {
+    if (_nameCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Name is required')));
+      return;
+    }
+    setState(() => _saving = true);
+
+    final speed = double.tryParse(_speedCtrl.text) ?? 1.0;
+    final updated = widget.asset.copyWith(
+      name: _nameCtrl.text.trim(),
+      description: Value(_descCtrl.text.trim().isEmpty
+          ? null
+          : _descCtrl.text.trim()),
+      providerId: _selectedProviderId,
+      modelName: Value(_modelCtrl.text.trim().isEmpty
+          ? null
+          : _modelCtrl.text.trim()),
+      speed: speed,
+      presetVoiceName: Value(_voiceNameCtrl.text.trim().isEmpty
+          ? null
+          : _voiceNameCtrl.text.trim()),
+      promptText: Value(_promptTextCtrl.text.trim().isEmpty
+          ? null
+          : _promptTextCtrl.text.trim()),
+      promptLang: Value(_promptLangCtrl.text.trim().isEmpty
+          ? null
+          : _promptLangCtrl.text.trim()),
+      voiceInstruction: Value(_instructionCtrl.text.trim().isEmpty
+          ? null
+          : _instructionCtrl.text.trim()),
+    );
+
+    await widget.onSave(updated);
+    if (mounted) Navigator.pop(context);
+  }
+}
+
 // ─────────────────────────── Shared helpers ─────────────────────────────────
 
 class _Avatar extends StatelessWidget {
   final String name;
   final bool selected;
   final double radius;
-  const _Avatar(
-      {required this.name, required this.selected, this.radius = 20});
+  final String? avatarPath;
+  const _Avatar({
+    required this.name,
+    required this.selected,
+    this.radius = 20,
+    this.avatarPath,
+  });
 
   @override
-  Widget build(BuildContext context) => CircleAvatar(
+  Widget build(BuildContext context) {
+    if (avatarPath != null && File(avatarPath!).existsSync()) {
+      return CircleAvatar(
         radius: radius,
-        backgroundColor: selected
-            ? AppTheme.accentColor
-            : const Color(0xFF2A2A36),
-        child: Text(
-          name.isNotEmpty ? name[0].toUpperCase() : '?',
-          style: TextStyle(
-              fontSize: radius * 0.75, color: Colors.white),
-        ),
+        backgroundImage: FileImage(File(avatarPath!)),
       );
+    }
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor:
+          selected ? AppTheme.accentColor : const Color(0xFF2A2A36),
+      child: Text(
+        name.isNotEmpty ? name[0].toUpperCase() : '?',
+        style: TextStyle(fontSize: radius * 0.75, color: Colors.white),
+      ),
+    );
+  }
 }
 
 class _ModeBadge extends StatelessWidget {

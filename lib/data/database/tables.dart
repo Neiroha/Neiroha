@@ -41,8 +41,29 @@ class VoiceAssets extends Table {
   TextColumn get promptLang => text().nullable()();
   TextColumn get voiceInstruction => text().nullable()();
   TextColumn get presetVoiceName => text().nullable()();
+  TextColumn get avatarPath => text().nullable()();
   RealColumn get speed => real().withDefault(const Constant(1.0))();
   BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class VoiceBanks extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text().withLength(min: 1)();
+  TextColumn get description => text().nullable()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class VoiceBankMembers extends Table {
+  TextColumn get id => text()();
+  TextColumn get bankId => text().references(VoiceBanks, #id)();
+  TextColumn get voiceAssetId => text().references(VoiceAssets, #id)();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -57,6 +78,76 @@ class TtsJobs extends Table {
   TextColumn get errorMessage => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get completedAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ─────────────── Quick TTS History ───────────────
+
+class QuickTtsHistories extends Table {
+  TextColumn get id => text()();
+  TextColumn get voiceAssetId => text().references(VoiceAssets, #id)();
+  TextColumn get voiceName => text()();
+  TextColumn get inputText => text()();
+  TextColumn get audioPath => text().nullable()();
+  TextColumn get error => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ─────────────── Phase TTS Projects & Segments ───────────────
+
+class PhaseTtsProjects extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text().withLength(min: 1)();
+  TextColumn get bankId => text().references(VoiceBanks, #id)();
+  TextColumn get scriptText => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class PhaseTtsSegments extends Table {
+  TextColumn get id => text()();
+  TextColumn get projectId => text().references(PhaseTtsProjects, #id)();
+  IntColumn get orderIndex => integer()();
+  TextColumn get segmentText => text()();
+  TextColumn get voiceAssetId => text().nullable()();
+  TextColumn get audioPath => text().nullable()();
+  RealColumn get audioDuration => real().nullable()();
+  TextColumn get error => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ─────────────── Dialog TTS Projects & Lines ───────────────
+
+class DialogTtsProjects extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text().withLength(min: 1)();
+  TextColumn get bankId => text().references(VoiceBanks, #id)();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class DialogTtsLines extends Table {
+  TextColumn get id => text()();
+  TextColumn get projectId => text().references(DialogTtsProjects, #id)();
+  IntColumn get orderIndex => integer()();
+  TextColumn get lineText => text()();
+  TextColumn get voiceAssetId => text().nullable()();
+  TextColumn get audioPath => text().nullable()();
+  RealColumn get audioDuration => real().nullable()();
+  TextColumn get error => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

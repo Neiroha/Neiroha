@@ -31,4 +31,5 @@ const _$AdapterTypeEnumMap = {
   AdapterType.gptSovits: 'gptSovits',
   AdapterType.qwen3Native: 'qwen3Native',
   AdapterType.cosyvoice: 'cosyvoice',
+  AdapterType.chatCompletionsTts: 'chatCompletionsTts',
 };

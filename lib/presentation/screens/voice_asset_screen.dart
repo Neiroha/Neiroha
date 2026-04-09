@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:q_vox_lab/data/database/app_database.dart' as db;
 import 'package:q_vox_lab/presentation/theme/app_theme.dart';
+import 'package:q_vox_lab/presentation/widgets/resizable_split_pane.dart';
 import 'package:q_vox_lab/providers/app_providers.dart';
 
 /// Voice Asset library — a collection of single audio tracks that the user
@@ -38,27 +39,21 @@ class VoiceAssetScreen extends ConsumerWidget {
               if (tracks.isEmpty) return _buildEmpty(context, ref);
               final selected =
                   tracks.where((t) => t.id == selectedId).firstOrNull;
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: _TrackList(
-                      tracks: tracks,
-                      selectedId: selectedId,
-                      onSelect: (id) => ref
-                          .read(_selectedTrackIdProvider.notifier)
-                          .state = id,
-                    ),
-                  ),
-                  if (selected != null) ...[
-                    const VerticalDivider(width: 1),
-                    SizedBox(
-                      width: 380,
-                      child: _TrackInspector(track: selected),
-                    ),
-                  ],
-                ],
+              return ResizableSplitPane(
+                initialLeftFraction: 0.6,
+                left: _TrackList(
+                  tracks: tracks,
+                  selectedId: selectedId,
+                  onSelect: (id) => ref
+                      .read(_selectedTrackIdProvider.notifier)
+                      .state = id,
+                ),
+                rightBuilder: (_) => selected != null
+                    ? _TrackInspector(track: selected)
+                    : Center(
+                        child: Text('Select a track',
+                            style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.4)))),
               );
             },
           ),

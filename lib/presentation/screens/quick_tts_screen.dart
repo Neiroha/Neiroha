@@ -12,6 +12,7 @@ import 'package:uuid/uuid.dart';
 import 'package:q_vox_lab/data/adapters/tts_adapter.dart';
 import 'package:q_vox_lab/data/database/app_database.dart' as db;
 import 'package:q_vox_lab/presentation/theme/app_theme.dart';
+import 'package:q_vox_lab/presentation/widgets/resizable_split_pane.dart';
 import 'package:q_vox_lab/providers/app_providers.dart';
 
 /// Quick TTS — select a voice character, type text, generate & play audio.
@@ -80,13 +81,10 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
       children: [
         _buildHeader(context, historyAsync),
         Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(width: 280, child: _buildVoiceSelector(activeBankVoices)),
-              const VerticalDivider(width: 1),
-              Expanded(child: _buildHistory(historyAsync, assetsAsync)),
-            ],
+          child: ResizableSplitPane(
+            initialLeftFraction: 0.3,
+            left: _buildVoiceSelector(activeBankVoices),
+            rightBuilder: (_) => _buildHistory(historyAsync, assetsAsync),
           ),
         ),
         _buildGenerateBar(context, assetsAsync),

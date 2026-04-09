@@ -13,6 +13,7 @@ import 'package:q_vox_lab/data/adapters/tts_adapter.dart';
 import 'package:q_vox_lab/data/database/app_database.dart' as db;
 import 'package:q_vox_lab/domain/enums/task_mode.dart';
 import 'package:q_vox_lab/presentation/theme/app_theme.dart';
+import 'package:q_vox_lab/presentation/widgets/resizable_split_pane.dart';
 import 'package:q_vox_lab/providers/app_providers.dart';
 
 final _selectedCharacterIdProvider = StateProvider<String?>((ref) => null);
@@ -38,27 +39,21 @@ class VoiceCharacterScreen extends ConsumerWidget {
               if (assets.isEmpty) return _buildEmpty(context, ref, providersAsync);
               final selected =
                   assets.where((a) => a.id == selectedId).firstOrNull;
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: _CharacterList(
-                      assets: assets,
-                      selectedId: selectedId,
-                      onSelect: (id) => ref
-                          .read(_selectedCharacterIdProvider.notifier)
-                          .state = id,
-                    ),
-                  ),
-                  if (selected != null) ...[
-                    const VerticalDivider(width: 1),
-                    SizedBox(
-                      width: 360,
-                      child: _CharacterInspector(asset: selected),
-                    ),
-                  ],
-                ],
+              return ResizableSplitPane(
+                initialLeftFraction: 0.6,
+                left: _CharacterList(
+                  assets: assets,
+                  selectedId: selectedId,
+                  onSelect: (id) => ref
+                      .read(_selectedCharacterIdProvider.notifier)
+                      .state = id,
+                ),
+                rightBuilder: (_) => selected != null
+                    ? _CharacterInspector(asset: selected)
+                    : Center(
+                        child: Text('Select a character',
+                            style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.4)))),
               );
             },
           ),

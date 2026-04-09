@@ -7,6 +7,7 @@ import 'package:q_vox_lab/data/adapters/tts_adapter.dart';
 import 'package:q_vox_lab/data/database/app_database.dart' as db;
 import 'package:q_vox_lab/domain/enums/adapter_type.dart';
 import 'package:q_vox_lab/presentation/theme/app_theme.dart';
+import 'package:q_vox_lab/presentation/widgets/resizable_split_pane.dart';
 import 'package:q_vox_lab/providers/app_providers.dart';
 
 /// Two-pane provider configuration screen.
@@ -35,28 +36,20 @@ class ProviderScreen extends ConsumerWidget {
         final selected =
             providers.where((p) => p.id == effectiveSelectedId).firstOrNull;
 
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              width: 320,
-              child: _ProviderListPane(
-                providers: providers,
-                selectedId: effectiveSelectedId,
-                onSelect: (id) =>
-                    ref.read(_selectedProviderIdProvider.notifier).state = id,
-              ),
-            ),
-            const VerticalDivider(width: 1),
-            Expanded(
-              child: selected == null
-                  ? _buildEmpty(context)
-                  : _ProviderEditor(
-                      key: ValueKey(selected.id),
-                      provider: selected,
-                    ),
-            ),
-          ],
+        return ResizableSplitPane(
+          initialLeftFraction: 0.35,
+          left: _ProviderListPane(
+            providers: providers,
+            selectedId: effectiveSelectedId,
+            onSelect: (id) =>
+                ref.read(_selectedProviderIdProvider.notifier).state = id,
+          ),
+          rightBuilder: (_) => selected == null
+              ? _buildEmpty(context)
+              : _ProviderEditor(
+                  key: ValueKey(selected.id),
+                  provider: selected,
+                ),
         );
       },
     );

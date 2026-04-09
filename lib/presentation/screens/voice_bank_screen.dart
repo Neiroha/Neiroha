@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import 'package:q_vox_lab/data/adapters/tts_adapter.dart';
 import 'package:q_vox_lab/data/database/app_database.dart' as db;
 import 'package:q_vox_lab/presentation/theme/app_theme.dart';
+import 'package:q_vox_lab/presentation/widgets/resizable_split_pane.dart';
 import 'package:q_vox_lab/providers/app_providers.dart';
 
 /// Voice Bank — a named collection of Characters persisted in SQLite.
@@ -29,13 +30,10 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         _buildHeader(context),
         const Divider(height: 1),
         Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(width: 280, child: _buildBankList(banksAsync)),
-              const VerticalDivider(width: 1),
-              Expanded(child: _buildRoster()),
-            ],
+          child: ResizableSplitPane(
+            initialLeftFraction: 0.35,
+            left: _buildBankList(banksAsync),
+            rightBuilder: (_) => _buildRoster(),
           ),
         ),
       ],

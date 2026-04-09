@@ -34,7 +34,10 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) => m.createAll(),
+        onCreate: (m) async {
+          await m.createAll();
+          await _seedDefaults();
+        },
         onUpgrade: (m, from, to) async {
           // Development: drop and recreate in reverse FK order
           await m.drop(audioTracks);
@@ -50,8 +53,94 @@ class AppDatabase extends _$AppDatabase {
           await m.drop(modelBindings);
           await m.drop(ttsProviders);
           await m.createAll();
+          await _seedDefaults();
         },
       );
+
+  /// Populate the database with built-in providers and starter data so new
+  /// users can immediately understand the workflow.
+  Future<void> _seedDefaults() async {
+    final now = DateTime.now();
+
+    // ── Default providers (disabled — user activates after filling in URL) ──
+    const providerOpenai = 'default-openai-tts';
+    const providerChat = 'default-chat-tts';
+    const providerCosyVoice = 'default-cosyvoice';
+
+    await into(ttsProviders).insert(TtsProvidersCompanion(
+      id: const Value(providerOpenai),
+      name: const Value('OpenAI TTS'),
+      adapterType: const Value('openaiCompatible'),
+      baseUrl: const Value('http://localhost:8880/v1'),
+      defaultModelName: const Value('tts-1'),
+      enabled: const Value(false),
+      position: const Value(0),
+    ));
+    await into(ttsProviders).insert(TtsProvidersCompanion(
+      id: const Value(providerChat),
+      name: const Value('Chat Completions TTS'),
+      adapterType: const Value('chatCompletionsTts'),
+      baseUrl: const Value('http://localhost:8880/v1'),
+      defaultModelName: const Value('mimo-v2-tts'),
+      enabled: const Value(false),
+      position: const Value(1),
+    ));
+    await into(ttsProviders).insert(TtsProvidersCompanion(
+      id: const Value(providerCosyVoice),
+      name: const Value('CosyVoice'),
+      adapterType: const Value('cosyvoice'),
+      baseUrl: const Value('http://localhost:9880'),
+      defaultModelName: const Value('cosyvoice'),
+      enabled: const Value(false),
+      position: const Value(2),
+    ));
+
+    // ── Default voice character ──
+    const defaultCharId = 'default-character';
+    await into(voiceAssets).insert(VoiceAssetsCompanion(
+      id: const Value(defaultCharId),
+      name: const Value('Default Voice'),
+      description: const Value('Built-in starter character'),
+      providerId: const Value(providerOpenai),
+      taskMode: const Value('presetVoice'),
+      presetVoiceName: const Value('alloy'),
+      enabled: const Value(true),
+    ));
+
+    // ── Default voice bank (activated) ──
+    const defaultBankId = 'default-bank';
+    await into(voiceBanks).insert(VoiceBanksCompanion(
+      id: const Value(defaultBankId),
+      name: const Value('Default Bank'),
+      description: const Value('Starter voice bank'),
+      isActive: const Value(true),
+      createdAt: Value(now),
+    ));
+    await into(voiceBankMembers).insert(VoiceBankMembersCompanion(
+      id: const Value('default-bank-member'),
+      bankId: const Value(defaultBankId),
+      voiceAssetId: const Value(defaultCharId),
+    ));
+
+    // ── Default Dialog TTS project ──
+    await into(dialogTtsProjects).insert(DialogTtsProjectsCompanion(
+      id: const Value('default-dialog-project'),
+      name: const Value('Sample Dialog'),
+      bankId: const Value(defaultBankId),
+      createdAt: Value(now),
+      updatedAt: Value(now),
+    ));
+
+    // ── Default Phase TTS project ──
+    await into(phaseTtsProjects).insert(PhaseTtsProjectsCompanion(
+      id: const Value('default-phase-project'),
+      name: const Value('Sample Narration'),
+      bankId: const Value(defaultBankId),
+      scriptText: const Value('Enter your script here.\n\nSeparate paragraphs with blank lines.\nEach paragraph becomes a segment.'),
+      createdAt: Value(now),
+      updatedAt: Value(now),
+    ));
+  }
 
   // --- Provider CRUD ---
 

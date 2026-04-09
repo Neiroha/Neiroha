@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 import 'package:q_vox_lab/data/adapters/tts_adapter.dart';
 import 'package:q_vox_lab/data/database/app_database.dart' as db;
 import 'package:q_vox_lab/presentation/theme/app_theme.dart';
+import 'package:q_vox_lab/presentation/widgets/resizable_split_pane.dart';
 import 'package:q_vox_lab/providers/app_providers.dart';
 
 /// Phase TTS — long-form / novel TTS with project management.
@@ -44,13 +45,10 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         _buildHeader(context),
         const Divider(height: 1),
         Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(width: 260, child: _buildProjectList(projectsAsync)),
-              const VerticalDivider(width: 1),
-              Expanded(child: _buildProjectContent()),
-            ],
+          child: ResizableSplitPane(
+            initialLeftFraction: 0.3,
+            left: _buildProjectList(projectsAsync),
+            rightBuilder: (_) => _buildProjectContent(),
           ),
         ),
       ],

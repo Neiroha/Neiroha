@@ -19,11 +19,16 @@ class Sidebar extends StatelessWidget {
       NavTab.quickTts,
       NavTab.phaseTts,
       NavTab.dialogTts,
+      NavTab.voiceDesign,
+      NavTab.voiceAssets,
       NavTab.voiceCharacters,
       NavTab.voiceBank,
-      NavTab.voiceDesign,
-      NavTab.providerTest,
+    ];
+
+    // Tabs pinned at the bottom (providers + settings)
+    const bottomTabs = [
       NavTab.providers,
+      NavTab.settings,
     ];
 
     return Container(
@@ -78,14 +83,15 @@ class Sidebar extends StatelessWidget {
 
           const Spacer(),
 
-          // Settings pinned at bottom
+          // Providers + Settings pinned at bottom
           const Divider(indent: 12, endIndent: 12),
           const SizedBox(height: 4),
-          _SidebarButton(
-            tab: NavTab.settings,
-            isSelected: selected == NavTab.settings,
-            onTap: () => onTabChanged(NavTab.settings),
-          ),
+          for (final tab in bottomTabs)
+            _SidebarButton(
+              tab: tab,
+              isSelected: selected == tab,
+              onTap: () => onTabChanged(tab),
+            ),
           const SizedBox(height: 12),
         ],
       ),

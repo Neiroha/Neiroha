@@ -6,10 +6,10 @@ import 'package:q_vox_lab/presentation/widgets/sidebar.dart';
 import 'quick_tts_screen.dart';
 import 'phase_tts_screen.dart';
 import 'dialog_tts_screen.dart';
+import 'voice_asset_screen.dart';
 import 'voice_character_screen.dart';
 import 'voice_bank_screen.dart';
 import 'voice_design_screen.dart';
-import 'provider_test_screen.dart';
 import 'provider_screen.dart';
 import 'settings_screen.dart';
 
@@ -49,13 +49,13 @@ class AppShell extends ConsumerWidget {
       NavTab.quickTts => const QuickTtsScreen(key: ValueKey('quickTts')),
       NavTab.phaseTts => const PhaseTtsScreen(key: ValueKey('phaseTts')),
       NavTab.dialogTts => const DialogTtsScreen(key: ValueKey('dialogTts')),
+      NavTab.voiceDesign =>
+        const VoiceDesignScreen(key: ValueKey('voiceDesign')),
+      NavTab.voiceAssets =>
+        const VoiceAssetScreen(key: ValueKey('voiceAssets')),
       NavTab.voiceCharacters =>
         const VoiceCharacterScreen(key: ValueKey('voiceCharacters')),
       NavTab.voiceBank => const VoiceBankScreen(key: ValueKey('voiceBank')),
-      NavTab.voiceDesign =>
-        const VoiceDesignScreen(key: ValueKey('voiceDesign')),
-      NavTab.providerTest =>
-        const ProviderTestScreen(key: ValueKey('providerTest')),
       NavTab.providers => const ProviderScreen(key: ValueKey('providers')),
       NavTab.settings => const SettingsScreen(key: ValueKey('settings')),
     };

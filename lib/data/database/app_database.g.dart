@@ -85,7 +85,19 @@ class $TtsProvidersTable extends TtsProviders
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'CHECK ("enabled" IN (0, 1))',
     ),
-    defaultValue: const Constant(true),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
   );
   @override
   List<GeneratedColumn> get $columns => [
@@ -96,6 +108,7 @@ class $TtsProvidersTable extends TtsProviders
     apiKey,
     defaultModelName,
     enabled,
+    position,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -162,6 +175,12 @@ class $TtsProvidersTable extends TtsProviders
         enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
       );
     }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    }
     return context;
   }
 
@@ -199,6 +218,10 @@ class $TtsProvidersTable extends TtsProviders
         DriftSqlType.bool,
         data['${effectivePrefix}enabled'],
       )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
     );
   }
 
@@ -216,6 +239,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
   final String apiKey;
   final String defaultModelName;
   final bool enabled;
+  final int position;
   const TtsProvider({
     required this.id,
     required this.name,
@@ -224,6 +248,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     required this.apiKey,
     required this.defaultModelName,
     required this.enabled,
+    required this.position,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -235,6 +260,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     map['api_key'] = Variable<String>(apiKey);
     map['default_model_name'] = Variable<String>(defaultModelName);
     map['enabled'] = Variable<bool>(enabled);
+    map['position'] = Variable<int>(position);
     return map;
   }
 
@@ -247,6 +273,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
       apiKey: Value(apiKey),
       defaultModelName: Value(defaultModelName),
       enabled: Value(enabled),
+      position: Value(position),
     );
   }
 
@@ -263,6 +290,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
       apiKey: serializer.fromJson<String>(json['apiKey']),
       defaultModelName: serializer.fromJson<String>(json['defaultModelName']),
       enabled: serializer.fromJson<bool>(json['enabled']),
+      position: serializer.fromJson<int>(json['position']),
     );
   }
   @override
@@ -276,6 +304,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
       'apiKey': serializer.toJson<String>(apiKey),
       'defaultModelName': serializer.toJson<String>(defaultModelName),
       'enabled': serializer.toJson<bool>(enabled),
+      'position': serializer.toJson<int>(position),
     };
   }
 
@@ -287,6 +316,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     String? apiKey,
     String? defaultModelName,
     bool? enabled,
+    int? position,
   }) => TtsProvider(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -295,6 +325,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     apiKey: apiKey ?? this.apiKey,
     defaultModelName: defaultModelName ?? this.defaultModelName,
     enabled: enabled ?? this.enabled,
+    position: position ?? this.position,
   );
   TtsProvider copyWithCompanion(TtsProvidersCompanion data) {
     return TtsProvider(
@@ -309,6 +340,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
           ? data.defaultModelName.value
           : this.defaultModelName,
       enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      position: data.position.present ? data.position.value : this.position,
     );
   }
 
@@ -321,7 +353,8 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
           ..write('baseUrl: $baseUrl, ')
           ..write('apiKey: $apiKey, ')
           ..write('defaultModelName: $defaultModelName, ')
-          ..write('enabled: $enabled')
+          ..write('enabled: $enabled, ')
+          ..write('position: $position')
           ..write(')'))
         .toString();
   }
@@ -335,6 +368,7 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     apiKey,
     defaultModelName,
     enabled,
+    position,
   );
   @override
   bool operator ==(Object other) =>
@@ -346,7 +380,8 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
           other.baseUrl == this.baseUrl &&
           other.apiKey == this.apiKey &&
           other.defaultModelName == this.defaultModelName &&
-          other.enabled == this.enabled);
+          other.enabled == this.enabled &&
+          other.position == this.position);
 }
 
 class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
@@ -357,6 +392,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
   final Value<String> apiKey;
   final Value<String> defaultModelName;
   final Value<bool> enabled;
+  final Value<int> position;
   final Value<int> rowid;
   const TtsProvidersCompanion({
     this.id = const Value.absent(),
@@ -366,6 +402,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     this.apiKey = const Value.absent(),
     this.defaultModelName = const Value.absent(),
     this.enabled = const Value.absent(),
+    this.position = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TtsProvidersCompanion.insert({
@@ -376,6 +413,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     this.apiKey = const Value.absent(),
     this.defaultModelName = const Value.absent(),
     this.enabled = const Value.absent(),
+    this.position = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -389,6 +427,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     Expression<String>? apiKey,
     Expression<String>? defaultModelName,
     Expression<bool>? enabled,
+    Expression<int>? position,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -399,6 +438,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
       if (apiKey != null) 'api_key': apiKey,
       if (defaultModelName != null) 'default_model_name': defaultModelName,
       if (enabled != null) 'enabled': enabled,
+      if (position != null) 'position': position,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -411,6 +451,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     Value<String>? apiKey,
     Value<String>? defaultModelName,
     Value<bool>? enabled,
+    Value<int>? position,
     Value<int>? rowid,
   }) {
     return TtsProvidersCompanion(
@@ -421,6 +462,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
       apiKey: apiKey ?? this.apiKey,
       defaultModelName: defaultModelName ?? this.defaultModelName,
       enabled: enabled ?? this.enabled,
+      position: position ?? this.position,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -449,6 +491,9 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     if (enabled.present) {
       map['enabled'] = Variable<bool>(enabled.value);
     }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -465,6 +510,7 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
           ..write('apiKey: $apiKey, ')
           ..write('defaultModelName: $defaultModelName, ')
           ..write('enabled: $enabled, ')
+          ..write('position: $position, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5348,6 +5394,630 @@ class DialogTtsLinesCompanion extends UpdateCompanion<DialogTtsLine> {
   }
 }
 
+class $AudioTracksTable extends AudioTracks
+    with TableInfo<$AudioTracksTable, AudioTrack> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AudioTracksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(minTextLength: 1),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _audioPathMeta = const VerificationMeta(
+    'audioPath',
+  );
+  @override
+  late final GeneratedColumn<String> audioPath = GeneratedColumn<String>(
+    'audio_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _avatarPathMeta = const VerificationMeta(
+    'avatarPath',
+  );
+  @override
+  late final GeneratedColumn<String> avatarPath = GeneratedColumn<String>(
+    'avatar_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _refTextMeta = const VerificationMeta(
+    'refText',
+  );
+  @override
+  late final GeneratedColumn<String> refText = GeneratedColumn<String>(
+    'ref_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _refLangMeta = const VerificationMeta(
+    'refLang',
+  );
+  @override
+  late final GeneratedColumn<String> refLang = GeneratedColumn<String>(
+    'ref_lang',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _durationSecMeta = const VerificationMeta(
+    'durationSec',
+  );
+  @override
+  late final GeneratedColumn<double> durationSec = GeneratedColumn<double>(
+    'duration_sec',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourceTypeMeta = const VerificationMeta(
+    'sourceType',
+  );
+  @override
+  late final GeneratedColumn<String> sourceType = GeneratedColumn<String>(
+    'source_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('upload'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    description,
+    audioPath,
+    avatarPath,
+    refText,
+    refLang,
+    durationSec,
+    sourceType,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'audio_tracks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AudioTrack> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('audio_path')) {
+      context.handle(
+        _audioPathMeta,
+        audioPath.isAcceptableOrUnknown(data['audio_path']!, _audioPathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_audioPathMeta);
+    }
+    if (data.containsKey('avatar_path')) {
+      context.handle(
+        _avatarPathMeta,
+        avatarPath.isAcceptableOrUnknown(data['avatar_path']!, _avatarPathMeta),
+      );
+    }
+    if (data.containsKey('ref_text')) {
+      context.handle(
+        _refTextMeta,
+        refText.isAcceptableOrUnknown(data['ref_text']!, _refTextMeta),
+      );
+    }
+    if (data.containsKey('ref_lang')) {
+      context.handle(
+        _refLangMeta,
+        refLang.isAcceptableOrUnknown(data['ref_lang']!, _refLangMeta),
+      );
+    }
+    if (data.containsKey('duration_sec')) {
+      context.handle(
+        _durationSecMeta,
+        durationSec.isAcceptableOrUnknown(
+          data['duration_sec']!,
+          _durationSecMeta,
+        ),
+      );
+    }
+    if (data.containsKey('source_type')) {
+      context.handle(
+        _sourceTypeMeta,
+        sourceType.isAcceptableOrUnknown(data['source_type']!, _sourceTypeMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AudioTrack map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AudioTrack(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      audioPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}audio_path'],
+      )!,
+      avatarPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}avatar_path'],
+      ),
+      refText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ref_text'],
+      ),
+      refLang: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ref_lang'],
+      ),
+      durationSec: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}duration_sec'],
+      ),
+      sourceType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_type'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $AudioTracksTable createAlias(String alias) {
+    return $AudioTracksTable(attachedDatabase, alias);
+  }
+}
+
+class AudioTrack extends DataClass implements Insertable<AudioTrack> {
+  final String id;
+  final String name;
+  final String? description;
+  final String audioPath;
+  final String? avatarPath;
+  final String? refText;
+  final String? refLang;
+  final double? durationSec;
+  final String sourceType;
+  final DateTime createdAt;
+  const AudioTrack({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.audioPath,
+    this.avatarPath,
+    this.refText,
+    this.refLang,
+    this.durationSec,
+    required this.sourceType,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['audio_path'] = Variable<String>(audioPath);
+    if (!nullToAbsent || avatarPath != null) {
+      map['avatar_path'] = Variable<String>(avatarPath);
+    }
+    if (!nullToAbsent || refText != null) {
+      map['ref_text'] = Variable<String>(refText);
+    }
+    if (!nullToAbsent || refLang != null) {
+      map['ref_lang'] = Variable<String>(refLang);
+    }
+    if (!nullToAbsent || durationSec != null) {
+      map['duration_sec'] = Variable<double>(durationSec);
+    }
+    map['source_type'] = Variable<String>(sourceType);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  AudioTracksCompanion toCompanion(bool nullToAbsent) {
+    return AudioTracksCompanion(
+      id: Value(id),
+      name: Value(name),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      audioPath: Value(audioPath),
+      avatarPath: avatarPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(avatarPath),
+      refText: refText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(refText),
+      refLang: refLang == null && nullToAbsent
+          ? const Value.absent()
+          : Value(refLang),
+      durationSec: durationSec == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durationSec),
+      sourceType: Value(sourceType),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory AudioTrack.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AudioTrack(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String?>(json['description']),
+      audioPath: serializer.fromJson<String>(json['audioPath']),
+      avatarPath: serializer.fromJson<String?>(json['avatarPath']),
+      refText: serializer.fromJson<String?>(json['refText']),
+      refLang: serializer.fromJson<String?>(json['refLang']),
+      durationSec: serializer.fromJson<double?>(json['durationSec']),
+      sourceType: serializer.fromJson<String>(json['sourceType']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String?>(description),
+      'audioPath': serializer.toJson<String>(audioPath),
+      'avatarPath': serializer.toJson<String?>(avatarPath),
+      'refText': serializer.toJson<String?>(refText),
+      'refLang': serializer.toJson<String?>(refLang),
+      'durationSec': serializer.toJson<double?>(durationSec),
+      'sourceType': serializer.toJson<String>(sourceType),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  AudioTrack copyWith({
+    String? id,
+    String? name,
+    Value<String?> description = const Value.absent(),
+    String? audioPath,
+    Value<String?> avatarPath = const Value.absent(),
+    Value<String?> refText = const Value.absent(),
+    Value<String?> refLang = const Value.absent(),
+    Value<double?> durationSec = const Value.absent(),
+    String? sourceType,
+    DateTime? createdAt,
+  }) => AudioTrack(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    description: description.present ? description.value : this.description,
+    audioPath: audioPath ?? this.audioPath,
+    avatarPath: avatarPath.present ? avatarPath.value : this.avatarPath,
+    refText: refText.present ? refText.value : this.refText,
+    refLang: refLang.present ? refLang.value : this.refLang,
+    durationSec: durationSec.present ? durationSec.value : this.durationSec,
+    sourceType: sourceType ?? this.sourceType,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  AudioTrack copyWithCompanion(AudioTracksCompanion data) {
+    return AudioTrack(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      audioPath: data.audioPath.present ? data.audioPath.value : this.audioPath,
+      avatarPath: data.avatarPath.present
+          ? data.avatarPath.value
+          : this.avatarPath,
+      refText: data.refText.present ? data.refText.value : this.refText,
+      refLang: data.refLang.present ? data.refLang.value : this.refLang,
+      durationSec: data.durationSec.present
+          ? data.durationSec.value
+          : this.durationSec,
+      sourceType: data.sourceType.present
+          ? data.sourceType.value
+          : this.sourceType,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AudioTrack(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('avatarPath: $avatarPath, ')
+          ..write('refText: $refText, ')
+          ..write('refLang: $refLang, ')
+          ..write('durationSec: $durationSec, ')
+          ..write('sourceType: $sourceType, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    description,
+    audioPath,
+    avatarPath,
+    refText,
+    refLang,
+    durationSec,
+    sourceType,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AudioTrack &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.audioPath == this.audioPath &&
+          other.avatarPath == this.avatarPath &&
+          other.refText == this.refText &&
+          other.refLang == this.refLang &&
+          other.durationSec == this.durationSec &&
+          other.sourceType == this.sourceType &&
+          other.createdAt == this.createdAt);
+}
+
+class AudioTracksCompanion extends UpdateCompanion<AudioTrack> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> description;
+  final Value<String> audioPath;
+  final Value<String?> avatarPath;
+  final Value<String?> refText;
+  final Value<String?> refLang;
+  final Value<double?> durationSec;
+  final Value<String> sourceType;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const AudioTracksCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.audioPath = const Value.absent(),
+    this.avatarPath = const Value.absent(),
+    this.refText = const Value.absent(),
+    this.refLang = const Value.absent(),
+    this.durationSec = const Value.absent(),
+    this.sourceType = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AudioTracksCompanion.insert({
+    required String id,
+    required String name,
+    this.description = const Value.absent(),
+    required String audioPath,
+    this.avatarPath = const Value.absent(),
+    this.refText = const Value.absent(),
+    this.refLang = const Value.absent(),
+    this.durationSec = const Value.absent(),
+    this.sourceType = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       audioPath = Value(audioPath),
+       createdAt = Value(createdAt);
+  static Insertable<AudioTrack> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<String>? audioPath,
+    Expression<String>? avatarPath,
+    Expression<String>? refText,
+    Expression<String>? refLang,
+    Expression<double>? durationSec,
+    Expression<String>? sourceType,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (audioPath != null) 'audio_path': audioPath,
+      if (avatarPath != null) 'avatar_path': avatarPath,
+      if (refText != null) 'ref_text': refText,
+      if (refLang != null) 'ref_lang': refLang,
+      if (durationSec != null) 'duration_sec': durationSec,
+      if (sourceType != null) 'source_type': sourceType,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AudioTracksCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String?>? description,
+    Value<String>? audioPath,
+    Value<String?>? avatarPath,
+    Value<String?>? refText,
+    Value<String?>? refLang,
+    Value<double?>? durationSec,
+    Value<String>? sourceType,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return AudioTracksCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      audioPath: audioPath ?? this.audioPath,
+      avatarPath: avatarPath ?? this.avatarPath,
+      refText: refText ?? this.refText,
+      refLang: refLang ?? this.refLang,
+      durationSec: durationSec ?? this.durationSec,
+      sourceType: sourceType ?? this.sourceType,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (audioPath.present) {
+      map['audio_path'] = Variable<String>(audioPath.value);
+    }
+    if (avatarPath.present) {
+      map['avatar_path'] = Variable<String>(avatarPath.value);
+    }
+    if (refText.present) {
+      map['ref_text'] = Variable<String>(refText.value);
+    }
+    if (refLang.present) {
+      map['ref_lang'] = Variable<String>(refLang.value);
+    }
+    if (durationSec.present) {
+      map['duration_sec'] = Variable<double>(durationSec.value);
+    }
+    if (sourceType.present) {
+      map['source_type'] = Variable<String>(sourceType.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AudioTracksCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('avatarPath: $avatarPath, ')
+          ..write('refText: $refText, ')
+          ..write('refLang: $refLang, ')
+          ..write('durationSec: $durationSec, ')
+          ..write('sourceType: $sourceType, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5370,6 +6040,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DialogTtsProjectsTable dialogTtsProjects =
       $DialogTtsProjectsTable(this);
   late final $DialogTtsLinesTable dialogTtsLines = $DialogTtsLinesTable(this);
+  late final $AudioTracksTable audioTracks = $AudioTracksTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5386,6 +6057,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     phaseTtsSegments,
     dialogTtsProjects,
     dialogTtsLines,
+    audioTracks,
   ];
 }
 
@@ -5398,6 +6070,7 @@ typedef $$TtsProvidersTableCreateCompanionBuilder =
       Value<String> apiKey,
       Value<String> defaultModelName,
       Value<bool> enabled,
+      Value<int> position,
       Value<int> rowid,
     });
 typedef $$TtsProvidersTableUpdateCompanionBuilder =
@@ -5409,6 +6082,7 @@ typedef $$TtsProvidersTableUpdateCompanionBuilder =
       Value<String> apiKey,
       Value<String> defaultModelName,
       Value<bool> enabled,
+      Value<int> position,
       Value<int> rowid,
     });
 
@@ -5500,6 +6174,11 @@ class $$TtsProvidersTableFilterComposer
 
   ColumnFilters<bool> get enabled => $composableBuilder(
     column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5597,6 +6276,11 @@ class $$TtsProvidersTableOrderingComposer
     column: $table.enabled,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TtsProvidersTableAnnotationComposer
@@ -5632,6 +6316,9 @@ class $$TtsProvidersTableAnnotationComposer
 
   GeneratedColumn<bool> get enabled =>
       $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
 
   Expression<T> modelBindingsRefs<T extends Object>(
     Expression<T> Function($$ModelBindingsTableAnnotationComposer a) f,
@@ -5719,6 +6406,7 @@ class $$TtsProvidersTableTableManager
                 Value<String> apiKey = const Value.absent(),
                 Value<String> defaultModelName = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
+                Value<int> position = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TtsProvidersCompanion(
                 id: id,
@@ -5728,6 +6416,7 @@ class $$TtsProvidersTableTableManager
                 apiKey: apiKey,
                 defaultModelName: defaultModelName,
                 enabled: enabled,
+                position: position,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5739,6 +6428,7 @@ class $$TtsProvidersTableTableManager
                 Value<String> apiKey = const Value.absent(),
                 Value<String> defaultModelName = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
+                Value<int> position = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TtsProvidersCompanion.insert(
                 id: id,
@@ -5748,6 +6438,7 @@ class $$TtsProvidersTableTableManager
                 apiKey: apiKey,
                 defaultModelName: defaultModelName,
                 enabled: enabled,
+                position: position,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -10355,6 +11046,309 @@ typedef $$DialogTtsLinesTableProcessedTableManager =
       DialogTtsLine,
       PrefetchHooks Function({bool projectId})
     >;
+typedef $$AudioTracksTableCreateCompanionBuilder =
+    AudioTracksCompanion Function({
+      required String id,
+      required String name,
+      Value<String?> description,
+      required String audioPath,
+      Value<String?> avatarPath,
+      Value<String?> refText,
+      Value<String?> refLang,
+      Value<double?> durationSec,
+      Value<String> sourceType,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$AudioTracksTableUpdateCompanionBuilder =
+    AudioTracksCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String?> description,
+      Value<String> audioPath,
+      Value<String?> avatarPath,
+      Value<String?> refText,
+      Value<String?> refLang,
+      Value<double?> durationSec,
+      Value<String> sourceType,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$AudioTracksTableFilterComposer
+    extends Composer<_$AppDatabase, $AudioTracksTable> {
+  $$AudioTracksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get avatarPath => $composableBuilder(
+    column: $table.avatarPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get refText => $composableBuilder(
+    column: $table.refText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get refLang => $composableBuilder(
+    column: $table.refLang,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get durationSec => $composableBuilder(
+    column: $table.durationSec,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceType => $composableBuilder(
+    column: $table.sourceType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AudioTracksTableOrderingComposer
+    extends Composer<_$AppDatabase, $AudioTracksTable> {
+  $$AudioTracksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get avatarPath => $composableBuilder(
+    column: $table.avatarPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get refText => $composableBuilder(
+    column: $table.refText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get refLang => $composableBuilder(
+    column: $table.refLang,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get durationSec => $composableBuilder(
+    column: $table.durationSec,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceType => $composableBuilder(
+    column: $table.sourceType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AudioTracksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AudioTracksTable> {
+  $$AudioTracksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get audioPath =>
+      $composableBuilder(column: $table.audioPath, builder: (column) => column);
+
+  GeneratedColumn<String> get avatarPath => $composableBuilder(
+    column: $table.avatarPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get refText =>
+      $composableBuilder(column: $table.refText, builder: (column) => column);
+
+  GeneratedColumn<String> get refLang =>
+      $composableBuilder(column: $table.refLang, builder: (column) => column);
+
+  GeneratedColumn<double> get durationSec => $composableBuilder(
+    column: $table.durationSec,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceType => $composableBuilder(
+    column: $table.sourceType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$AudioTracksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AudioTracksTable,
+          AudioTrack,
+          $$AudioTracksTableFilterComposer,
+          $$AudioTracksTableOrderingComposer,
+          $$AudioTracksTableAnnotationComposer,
+          $$AudioTracksTableCreateCompanionBuilder,
+          $$AudioTracksTableUpdateCompanionBuilder,
+          (
+            AudioTrack,
+            BaseReferences<_$AppDatabase, $AudioTracksTable, AudioTrack>,
+          ),
+          AudioTrack,
+          PrefetchHooks Function()
+        > {
+  $$AudioTracksTableTableManager(_$AppDatabase db, $AudioTracksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AudioTracksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AudioTracksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AudioTracksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String> audioPath = const Value.absent(),
+                Value<String?> avatarPath = const Value.absent(),
+                Value<String?> refText = const Value.absent(),
+                Value<String?> refLang = const Value.absent(),
+                Value<double?> durationSec = const Value.absent(),
+                Value<String> sourceType = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AudioTracksCompanion(
+                id: id,
+                name: name,
+                description: description,
+                audioPath: audioPath,
+                avatarPath: avatarPath,
+                refText: refText,
+                refLang: refLang,
+                durationSec: durationSec,
+                sourceType: sourceType,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<String?> description = const Value.absent(),
+                required String audioPath,
+                Value<String?> avatarPath = const Value.absent(),
+                Value<String?> refText = const Value.absent(),
+                Value<String?> refLang = const Value.absent(),
+                Value<double?> durationSec = const Value.absent(),
+                Value<String> sourceType = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => AudioTracksCompanion.insert(
+                id: id,
+                name: name,
+                description: description,
+                audioPath: audioPath,
+                avatarPath: avatarPath,
+                refText: refText,
+                refLang: refLang,
+                durationSec: durationSec,
+                sourceType: sourceType,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AudioTracksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AudioTracksTable,
+      AudioTrack,
+      $$AudioTracksTableFilterComposer,
+      $$AudioTracksTableOrderingComposer,
+      $$AudioTracksTableAnnotationComposer,
+      $$AudioTracksTableCreateCompanionBuilder,
+      $$AudioTracksTableUpdateCompanionBuilder,
+      (
+        AudioTrack,
+        BaseReferences<_$AppDatabase, $AudioTracksTable, AudioTrack>,
+      ),
+      AudioTrack,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -10381,4 +11375,6 @@ class $AppDatabaseManager {
       $$DialogTtsProjectsTableTableManager(_db, _db.dialogTtsProjects);
   $$DialogTtsLinesTableTableManager get dialogTtsLines =>
       $$DialogTtsLinesTableTableManager(_db, _db.dialogTtsLines);
+  $$AudioTracksTableTableManager get audioTracks =>
+      $$AudioTracksTableTableManager(_db, _db.audioTracks);
 }

@@ -8,7 +8,30 @@ class TtsProviders extends Table {
   TextColumn get apiKey => text().withDefault(const Constant(''))();
   TextColumn get defaultModelName =>
       text().withDefault(const Constant('tts-1'))();
-  BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+  BoolColumn get enabled => boolean().withDefault(const Constant(false))();
+  IntColumn get position => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ─────────────── Audio Tracks (single audio samples) ───────────────
+//
+// A library of individual audio clips that the user collects from any source
+// (TTS output, microphone recording, file upload). These can be referenced by
+// voice cloning models that need a reference audio sample.
+class AudioTracks extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text().withLength(min: 1)();
+  TextColumn get description => text().nullable()();
+  TextColumn get audioPath => text()();
+  TextColumn get avatarPath => text().nullable()();
+  TextColumn get refText => text().nullable()();
+  TextColumn get refLang => text().nullable()();
+  RealColumn get durationSec => real().nullable()();
+  TextColumn get sourceType => text().withDefault(const Constant('upload'))();
+  // upload | record | quickTts | phaseTts | dialogTts
+  DateTimeColumn get createdAt => dateTime()();
 
   @override
   Set<Column> get primaryKey => {id};

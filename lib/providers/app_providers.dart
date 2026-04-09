@@ -78,5 +78,11 @@ final dialogTtsLinesStreamProvider =
   return db.watchDialogTtsLines(projectId);
 });
 
+/// Stream of all audio tracks (raw audio sample library).
+final audioTracksStreamProvider = StreamProvider((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.watchAllAudioTracks();
+});
+
 /// Whether the API server is currently running.
 final serverRunningProvider = StateProvider<bool>((ref) => false);

@@ -22,6 +22,7 @@ part 'app_database.g.dart';
   PhaseTtsSegments,
   DialogTtsProjects,
   DialogTtsLines,
+  AudioTracks,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -29,13 +30,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
         onUpgrade: (m, from, to) async {
           // Development: drop and recreate in reverse FK order
+          await m.drop(audioTracks);
           await m.drop(dialogTtsLines);
           await m.drop(dialogTtsProjects);
           await m.drop(phaseTtsSegments);
@@ -53,10 +55,23 @@ class AppDatabase extends _$AppDatabase {
 
   // --- Provider CRUD ---
 
-  Future<List<TtsProvider>> getAllProviders() => select(ttsProviders).get();
+  // Providers are ordered by enabled-first (active on top), then by their
+  // user-controlled position. Within the same group, ties fall back to name.
+  Future<List<TtsProvider>> getAllProviders() => (select(ttsProviders)
+        ..orderBy([
+          (t) => OrderingTerm.desc(t.enabled),
+          (t) => OrderingTerm.asc(t.position),
+          (t) => OrderingTerm.asc(t.name),
+        ]))
+      .get();
 
-  Stream<List<TtsProvider>> watchAllProviders() =>
-      select(ttsProviders).watch();
+  Stream<List<TtsProvider>> watchAllProviders() => (select(ttsProviders)
+        ..orderBy([
+          (t) => OrderingTerm.desc(t.enabled),
+          (t) => OrderingTerm.asc(t.position),
+          (t) => OrderingTerm.asc(t.name),
+        ]))
+      .watch();
 
   Future<int> insertProvider(TtsProvidersCompanion provider) =>
       into(ttsProviders).insert(provider);
@@ -66,6 +81,15 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteProvider(String id) =>
       (delete(ttsProviders)..where((t) => t.id.equals(id))).go();
+
+  /// Re-write `position` for a list of providers to match their list index.
+  /// Used when the user manually reorders the provider list.
+  Future<void> reorderProviders(List<String> orderedIds) => transaction(() async {
+        for (var i = 0; i < orderedIds.length; i++) {
+          await (update(ttsProviders)..where((t) => t.id.equals(orderedIds[i])))
+              .write(TtsProvidersCompanion(position: Value(i)));
+        }
+      });
 
   // --- ModelBinding CRUD ---
 
@@ -315,6 +339,21 @@ class AppDatabase extends _$AppDatabase {
       (delete(dialogTtsLines)
             ..where((t) => t.projectId.equals(projectId)))
           .go();
+
+  // --- Audio Tracks ---
+
+  Stream<List<AudioTrack>> watchAllAudioTracks() => (select(audioTracks)
+        ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+      .watch();
+
+  Future<int> insertAudioTrack(AudioTracksCompanion track) =>
+      into(audioTracks).insert(track);
+
+  Future<bool> updateAudioTrack(AudioTrack track) =>
+      update(audioTracks).replace(track);
+
+  Future<int> deleteAudioTrack(String id) =>
+      (delete(audioTracks)..where((t) => t.id.equals(id))).go();
 }
 
 LazyDatabase _openConnection() {

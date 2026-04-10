@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:q_vox_lab/presentation/navigation/app_navigation.dart';
+import 'package:q_vox_lab/presentation/theme/app_theme.dart';
 import 'package:q_vox_lab/presentation/widgets/sidebar.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'quick_tts_screen.dart';
 import 'phase_tts_screen.dart';
@@ -23,20 +27,25 @@ class AppShell extends ConsumerWidget {
     final selectedTab = ref.watch(selectedTabProvider);
 
     return Scaffold(
-      body: Row(
+      body: Column(
         children: [
-          // Sidebar (no API toggle here anymore — moved to Settings)
-          Sidebar(
-            selected: selectedTab,
-            onTabChanged: (tab) =>
-                ref.read(selectedTabProvider.notifier).state = tab,
-          ),
-          const VerticalDivider(width: 1, thickness: 1),
-          // Main content
+          if (Platform.isWindows) const _WindowsTitleBar(),
           Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              child: _buildPage(selectedTab),
+            child: Row(
+              children: [
+                Sidebar(
+                  selected: selectedTab,
+                  onTabChanged: (tab) =>
+                      ref.read(selectedTabProvider.notifier).state = tab,
+                ),
+                const VerticalDivider(width: 1, thickness: 1),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    child: _buildPage(selectedTab),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -59,5 +68,109 @@ class AppShell extends ConsumerWidget {
       NavTab.providers => const ProviderScreen(key: ValueKey('providers')),
       NavTab.settings => const SettingsScreen(key: ValueKey('settings')),
     };
+  }
+}
+
+class _WindowsTitleBar extends StatelessWidget {
+  const _WindowsTitleBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 32,
+      color: AppTheme.sidebarBg,
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onPanStart: (_) => windowManager.startDragging(),
+              onDoubleTap: () async {
+                if (await windowManager.isMaximized()) {
+                  windowManager.unmaximize();
+                } else {
+                  windowManager.maximize();
+                }
+              },
+              child: const Padding(
+                padding: EdgeInsets.only(left: 12),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Q-Vox-Lab',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white54,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          _TitleBarButton(
+            icon: Icons.minimize,
+            onTap: windowManager.minimize,
+          ),
+          _TitleBarButton(
+            icon: Icons.crop_square,
+            onTap: () async {
+              if (await windowManager.isMaximized()) {
+                windowManager.unmaximize();
+              } else {
+                windowManager.maximize();
+              }
+            },
+          ),
+          _TitleBarButton(
+            icon: Icons.close,
+            onTap: windowManager.close,
+            isClose: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TitleBarButton extends StatefulWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool isClose;
+
+  const _TitleBarButton({
+    required this.icon,
+    required this.onTap,
+    this.isClose = false,
+  });
+
+  @override
+  State<_TitleBarButton> createState() => _TitleBarButtonState();
+}
+
+class _TitleBarButtonState extends State<_TitleBarButton> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+          width: 46,
+          height: 32,
+          color: _hovering
+              ? (widget.isClose ? Colors.red : Colors.white.withValues(alpha: 0.1))
+              : Colors.transparent,
+          child: Icon(
+            widget.icon,
+            size: 16,
+            color: Colors.white.withValues(alpha: _hovering ? 0.9 : 0.6),
+          ),
+        ),
+      ),
+    );
   }
 }

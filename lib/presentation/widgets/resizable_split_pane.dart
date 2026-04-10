@@ -21,6 +21,10 @@ class ResizableSplitPane extends StatefulWidget {
   /// Minimum width in logical pixels before a pane auto-collapses.
   final double collapseThreshold;
 
+  /// Minimum width in logical pixels that each pane must keep when dragging.
+  /// Prevents the divider from being dragged so far that a pane disappears.
+  final double minPaneWidth;
+
   final bool startCollapsedLeft;
   final bool startCollapsedRight;
   final ValueChanged<bool?>? onCollapseChanged;
@@ -31,6 +35,7 @@ class ResizableSplitPane extends StatefulWidget {
     required this.rightBuilder,
     this.initialLeftFraction = 0.35,
     this.collapseThreshold = 80,
+    this.minPaneWidth = 120,
     this.startCollapsedLeft = false,
     this.startCollapsedRight = false,
     this.onCollapseChanged,
@@ -177,8 +182,13 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
   }
 
   Widget _buildSplit(double totalWidth) {
-    final leftWidth = (totalWidth * _leftFraction).clamp(0.0, totalWidth);
     const dividerWidth = 6.0;
+    // Clamp fraction so both panes keep at least minPaneWidth.
+    final minFraction = widget.minPaneWidth / totalWidth;
+    final maxFraction =
+        1.0 - (widget.minPaneWidth + dividerWidth) / totalWidth;
+    final clampedFraction = _leftFraction.clamp(minFraction, maxFraction);
+    final leftWidth = (totalWidth * clampedFraction).clamp(0.0, totalWidth);
     final rightWidth =
         (totalWidth - leftWidth - dividerWidth).clamp(0.0, totalWidth);
 
@@ -190,25 +200,13 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
             setState(() {
               _leftFraction =
                   ((_leftFraction * totalWidth + dx) / totalWidth)
-                      .clamp(0.0, 1.0);
+                      .clamp(minFraction, maxFraction);
             });
           },
           onDragEnd: () {
             _draggingFromCollapsed = false;
-            final leftPx = totalWidth * _leftFraction;
-            final rightPx = totalWidth - leftPx;
-            if (leftPx < widget.collapseThreshold) {
-              _savedFraction = widget.initialLeftFraction;
-              setState(() => _collapsed = true);
-              widget.onCollapseChanged?.call(true);
-            } else if (rightPx < widget.collapseThreshold) {
-              _savedFraction = widget.initialLeftFraction;
-              setState(() => _collapsed = false);
-              widget.onCollapseChanged?.call(false);
-            } else {
-              // Landed in a valid split — save as new baseline.
-              _savedFraction = _leftFraction;
-            }
+            // Always save the current split ratio.
+            _savedFraction = _leftFraction;
           },
         ),
         SizedBox(

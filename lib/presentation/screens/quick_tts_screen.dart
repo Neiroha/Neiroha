@@ -38,6 +38,9 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
     _player.onPlayerComplete.listen((_) {
       if (mounted) setState(() => _playingId = null);
     });
+    _textController.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -76,6 +79,12 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
         );
       },
     );
+
+    // Auto-select first voice if none selected
+    final bankVoices = activeBankVoices.valueOrNull;
+    if (bankVoices != null && bankVoices.isNotEmpty && _selectedVoiceId == null) {
+      _selectedVoiceId = bankVoices.first.id;
+    }
 
     return Column(
       children: [

@@ -29,6 +29,7 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
   bool _generatingAll = false;
   final _player = AudioPlayer();
   String? _playingLineId;
+  Duration _currentPosition = Duration.zero;
   final _textController = TextEditingController();
   String? _inputVoiceId;
 
@@ -36,7 +37,10 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
   void initState() {
     super.initState();
     _player.onPlayerComplete.listen((_) {
-      if (mounted) setState(() => _playingLineId = null);
+      if (mounted) setState(() { _playingLineId = null; _currentPosition = Duration.zero; });
+    });
+    _player.onPositionChanged.listen((pos) {
+      if (mounted) setState(() => _currentPosition = pos);
     });
   }
 
@@ -322,22 +326,29 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
             ),
           );
         }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: lines.length,
-          itemBuilder: (ctx, i) {
-            final line = lines[i];
-            final asset = line.voiceAssetId != null
-                ? assetMap[line.voiceAssetId]
-                : null;
-            return _ChatBubble(
-              line: line,
-              asset: asset,
-              isPlaying: _playingLineId == line.id,
-              onPlay: () => _playLine(line),
-              onDelete: () => ref
-                  .read(databaseProvider)
-                  .deleteDialogTtsLine(line.id),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final maxBubbleWidth = constraints.maxWidth * 0.6;
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: lines.length,
+              itemBuilder: (ctx, i) {
+                final line = lines[i];
+                final asset = line.voiceAssetId != null
+                    ? assetMap[line.voiceAssetId]
+                    : null;
+                return _ChatBubble(
+                  line: line,
+                  asset: asset,
+                  isPlaying: _playingLineId == line.id,
+                  playbackPosition: _playingLineId == line.id ? _currentPosition : null,
+                  maxBubbleWidth: maxBubbleWidth,
+                  onPlay: () => _playLine(line),
+                  onDelete: () => ref
+                      .read(databaseProvider)
+                      .deleteDialogTtsLine(line.id),
+                );
+              },
             );
           },
         );
@@ -664,6 +675,8 @@ class _ChatBubble extends StatelessWidget {
   final db.DialogTtsLine line;
   final db.VoiceAsset? asset;
   final bool isPlaying;
+  final Duration? playbackPosition;
+  final double maxBubbleWidth;
   final VoidCallback onPlay;
   final VoidCallback onDelete;
 
@@ -671,6 +684,8 @@ class _ChatBubble extends StatelessWidget {
     required this.line,
     required this.asset,
     required this.isPlaying,
+    this.playbackPosition,
+    required this.maxBubbleWidth,
     required this.onPlay,
     required this.onDelete,
   });
@@ -686,50 +701,48 @@ class _ChatBubble extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Avatar
           _buildAvatar(name),
           const SizedBox(width: 10),
-          // Message content
-          Expanded(
+          Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Character name
                 Text(name,
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: AppTheme.accentColor)),
                 const SizedBox(height: 4),
-                // Text bubble
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceBright,
-                    borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(14),
-                      bottomLeft: Radius.circular(14),
-                      bottomRight: Radius.circular(14),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxBubbleWidth),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceBright,
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(14),
+                        bottomLeft: Radius.circular(14),
+                        bottomRight: Radius.circular(14),
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(line.lineText,
-                          style: const TextStyle(fontSize: 14)),
-                      // Audio player row
-                      if (hasAudio || hasError) ...[
-                        const SizedBox(height: 8),
-                        _buildAudioRow(hasAudio, hasError),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(line.lineText,
+                            style: const TextStyle(fontSize: 14)),
+                        if (hasAudio || hasError) ...[
+                          const SizedBox(height: 8),
+                          _buildAudioRow(hasAudio, hasError),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 4),
-          // Delete
           IconButton(
             icon: Icon(Icons.close_rounded,
                 size: 14, color: Colors.white.withValues(alpha: 0.2)),
@@ -763,35 +776,51 @@ class _ChatBubble extends StatelessWidget {
   Widget _buildAudioRow(bool hasAudio, bool hasError) {
     if (hasError) {
       return Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.error_rounded, size: 16, color: Colors.redAccent),
           const SizedBox(width: 6),
-          Expanded(
-            child: Text('Error',
-                style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.redAccent.withValues(alpha: 0.7))),
-          ),
+          Text('Error',
+              style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.redAccent.withValues(alpha: 0.7))),
         ],
       );
     }
-    // Format duration as mm:ss
-    String durationText = '--:--';
-    if (line.audioDuration != null) {
+
+    // Playback progress fraction (0.0 – 1.0)
+    final double progressFraction;
+    if (isPlaying && playbackPosition != null && line.audioDuration != null && line.audioDuration! > 0) {
+      progressFraction = (playbackPosition!.inMilliseconds / (line.audioDuration! * 1000)).clamp(0.0, 1.0);
+    } else {
+      progressFraction = 0.0;
+    }
+
+    // Time label: "played/total" during playback, "mm:ss" otherwise
+    String timeText;
+    if (isPlaying && playbackPosition != null && line.audioDuration != null) {
+      final playedSecs = playbackPosition!.inSeconds;
+      final totalSecs = line.audioDuration!.floor();
+      timeText = '$playedSecs/$totalSecs';
+    } else if (line.audioDuration != null) {
       final totalSecs = line.audioDuration!;
       final mins = (totalSecs / 60).floor();
       final secs = (totalSecs % 60).floor();
-      durationText = '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+      timeText = '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+    } else {
+      timeText = '--:--';
     }
 
+    const int barCount = 30;
+
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // Play/stop button
         GestureDetector(
           onTap: onPlay,
           child: Container(
-            width: 32,
-            height: 32,
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
               color: isPlaying
                   ? AppTheme.accentColor
@@ -800,49 +829,52 @@ class _ChatBubble extends StatelessWidget {
             ),
             child: Icon(
               isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
-              size: 16,
+              size: 15,
               color: Colors.white,
             ),
           ),
         ),
-        const SizedBox(width: 10),
-        // Waveform bars — smooth wave pattern
-        Expanded(
-          child: SizedBox(
-            height: 28,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: List.generate(40, (i) {
-                // Generate a smooth wave-like pattern
-                final progress = i / 40.0;
-                final wave1 = math.sin(progress * math.pi * 4).abs();
-                final wave2 = math.sin(progress * math.pi * 7 + 1.2).abs();
-                final wave3 = math.sin(progress * math.pi * 2.5 + 0.5).abs();
-                final h = 3.0 + (wave1 * 0.4 + wave2 * 0.35 + wave3 * 0.25) * 22.0;
-                return Expanded(
-                  child: Center(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 0.5),
-                      height: h,
-                      decoration: BoxDecoration(
-                        color: isPlaying
-                            ? AppTheme.accentColor.withValues(alpha: 0.7)
-                            : Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(1.5),
+        const SizedBox(width: 8),
+        // Waveform — max 50% of bubble width
+        Flexible(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxBubbleWidth * 0.5),
+            child: SizedBox(
+              height: 26,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: List.generate(barCount, (i) {
+                  final p = i / barCount;
+                  final wave1 = math.sin(p * math.pi * 4).abs();
+                  final wave2 = math.sin(p * math.pi * 7 + 1.2).abs();
+                  final wave3 = math.sin(p * math.pi * 2.5 + 0.5).abs();
+                  final h = 3.0 + (wave1 * 0.4 + wave2 * 0.35 + wave3 * 0.25) * 20.0;
+                  final isPlayedBar = i / barCount < progressFraction;
+                  return Expanded(
+                    child: Center(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                        height: h,
+                        decoration: BoxDecoration(
+                          color: isPlayedBar
+                              ? AppTheme.accentColor
+                              : Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(1.5),
+                        ),
                       ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
+              ),
             ),
           ),
         ),
-        const SizedBox(width: 10),
-        // Duration
+        const SizedBox(width: 8),
         Text(
-          durationText,
+          timeText,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 11,
             fontFamily: 'monospace',
             color: isPlaying
                 ? AppTheme.accentColor

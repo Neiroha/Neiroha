@@ -30,7 +30,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -78,9 +78,9 @@ class AppDatabase extends _$AppDatabase {
     ));
     await into(ttsProviders).insert(TtsProvidersCompanion(
       id: const Value(providerChat),
-      name: const Value('Chat Completions TTS'),
+      name: const Value('MiMo V2 TTS'),
       adapterType: const Value('chatCompletionsTts'),
-      baseUrl: const Value('http://localhost:8880/v1'),
+      baseUrl: const Value('https://api.xiaomimimo.com/v1'),
       defaultModelName: const Value('mimo-v2-tts'),
       enabled: const Value(false),
       position: const Value(1),
@@ -89,10 +89,43 @@ class AppDatabase extends _$AppDatabase {
       id: const Value(providerCosyVoice),
       name: const Value('CosyVoice'),
       adapterType: const Value('cosyvoice'),
-      baseUrl: const Value('http://localhost:9880'),
-      defaultModelName: const Value('cosyvoice'),
+      baseUrl: const Value('http://127.0.0.1:9880'),
+      defaultModelName: const Value(''),
       enabled: const Value(false),
       position: const Value(2),
+    ));
+
+    const providerGptSovits = 'default-gpt-sovits';
+    await into(ttsProviders).insert(TtsProvidersCompanion(
+      id: const Value(providerGptSovits),
+      name: const Value('GPT-SoVITS'),
+      adapterType: const Value('gptSovits'),
+      baseUrl: const Value('http://127.0.0.1:9880'),
+      defaultModelName: const Value('gpt-sovits'),
+      enabled: const Value(false),
+      position: const Value(3),
+    ));
+
+    const providerAzure = 'default-azure-tts';
+    await into(ttsProviders).insert(TtsProvidersCompanion(
+      id: const Value(providerAzure),
+      name: const Value('Azure TTS'),
+      adapterType: const Value('azureTts'),
+      baseUrl: const Value('https://eastus.tts.speech.microsoft.com'),
+      defaultModelName: const Value(''),
+      enabled: const Value(false),
+      position: const Value(4),
+    ));
+
+    const providerSystem = 'default-system-tts';
+    await into(ttsProviders).insert(TtsProvidersCompanion(
+      id: const Value(providerSystem),
+      name: const Value('Windows System TTS'),
+      adapterType: const Value('systemTts'),
+      baseUrl: const Value(''),
+      defaultModelName: const Value(''),
+      enabled: const Value(false),
+      position: const Value(5),
     ));
 
     // ── Default voice character ──
@@ -170,6 +203,24 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteProvider(String id) =>
       (delete(ttsProviders)..where((t) => t.id.equals(id))).go();
+
+  /// Duplicate a provider with a new name. Copies all fields except id.
+  Future<TtsProvider> duplicateProvider(String id, String newName) async {
+    final original =
+        await (select(ttsProviders)..where((t) => t.id.equals(id))).getSingle();
+    final newId = const Uuid().v4();
+    await into(ttsProviders).insert(TtsProvidersCompanion(
+      id: Value(newId),
+      name: Value(newName),
+      adapterType: Value(original.adapterType),
+      baseUrl: Value(original.baseUrl),
+      apiKey: Value(original.apiKey),
+      defaultModelName: Value(original.defaultModelName),
+      enabled: const Value(false),
+      position: Value(original.position + 1),
+    ));
+    return (select(ttsProviders)..where((t) => t.id.equals(newId))).getSingle();
+  }
 
   /// Re-write `position` for a list of providers to match their list index.
   /// Used when the user manually reorders the provider list.
@@ -250,6 +301,19 @@ class AppDatabase extends _$AppDatabase {
   Stream<VoiceBank?> watchActiveBank() =>
       (select(voiceBanks)..where((t) => t.isActive.equals(true)))
           .watchSingleOrNull();
+
+  /// Get all activated banks (for API server — multiple banks can be active).
+  Future<List<VoiceBank>> getActiveBanks() =>
+      (select(voiceBanks)..where((t) => t.isActive.equals(true))).get();
+
+  Stream<List<VoiceBank>> watchActiveBanks() =>
+      (select(voiceBanks)..where((t) => t.isActive.equals(true))).watch();
+
+  /// Toggle a single bank's active state without affecting others.
+  Future<void> toggleBankActive(String bankId, bool active) async {
+    await (update(voiceBanks)..where((t) => t.id.equals(bankId)))
+        .write(VoiceBanksCompanion(isActive: Value(active)));
+  }
 
   // --- VoiceBankMember CRUD ---
 

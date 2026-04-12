@@ -25,7 +25,9 @@ class ApiServer {
 
     final router = Router()
       ..post('/v1/audio/speech', _handleSpeech)
+      ..get('/v1/audio/voices', _handleListVoices)
       ..get('/v1/models', _handleListModels)
+      ..get('/speakers', _handleSpeakers)
       ..get('/health', _handleHealth);
 
     final handler =
@@ -40,6 +42,8 @@ class ApiServer {
     _server = null;
   }
 
+  // ────────────── POST /v1/audio/speech ──────────────
+
   Future<Response> _handleSpeech(Request request) async {
     try {
       final body = await request.readAsString();
@@ -49,30 +53,32 @@ class ApiServer {
       final voice = json['voice'] as String?;
       final speed = (json['speed'] as num?)?.toDouble() ?? 1.0;
       final responseFormat = json['response_format'] as String?;
+      final model = json['model'] as String?;
 
       if (input == null || voice == null) {
-        return Response(400,
-            body: jsonEncode(
-                {'error': 'Missing required fields: input, voice'}),
-            headers: {'content-type': 'application/json'});
+        return _jsonError(400, 'Missing required fields: input, voice');
       }
 
-      // Look up VoiceAsset by name
-      final asset = await db.getVoiceAssetByName(voice);
+      // Resolve voice asset — if `model` is given, treat it as a bank name
+      // and look up the voice within that bank's members.
+      VoiceAsset? asset;
+      if (model != null && model.isNotEmpty) {
+        asset = await _resolveVoiceInBank(model, voice);
+      }
+      // Fallback: look up by voice name globally
+      asset ??= await db.getVoiceAssetByName(voice);
+
       if (asset == null) {
-        return Response(404,
-            body: jsonEncode({'error': 'Voice "$voice" not found'}),
-            headers: {'content-type': 'application/json'});
+        return _jsonError(404, 'Voice "$voice" not found');
       }
 
-      // Look up the provider
+      // Resolve provider
       final providers = await db.getAllProviders();
       final provider =
-          providers.where((p) => p.id == asset.providerId).firstOrNull;
+          providers.where((p) => p.id == asset!.providerId).firstOrNull;
+
       if (provider == null) {
-        return Response(500,
-            body: jsonEncode({'error': 'Provider not found for voice'}),
-            headers: {'content-type': 'application/json'});
+        return _jsonError(500, 'Provider not found for voice');
       }
 
       // Build the adapter and synthesize
@@ -94,18 +100,72 @@ class ApiServer {
       return Response.ok(result.audioBytes,
           headers: {'content-type': result.contentType});
     } catch (e) {
-      return Response.internalServerError(
-          body: jsonEncode({'error': e.toString()}),
-          headers: {'content-type': 'application/json'});
+      return _jsonError(500, e.toString());
     }
   }
 
-  Future<Response> _handleListModels(Request request) async {
+  /// Look up a voice asset by name within a specific bank (matched by bank name).
+  Future<VoiceAsset?> _resolveVoiceInBank(
+      String bankName, String voiceName) async {
+    final banks = await db.getActiveBanks();
+    final bank = banks
+        .where((b) => b.name.toLowerCase() == bankName.toLowerCase())
+        .firstOrNull;
+    if (bank == null) return null;
+
+    final members = await db.getBankMembers(bank.id);
     final assets = await db.getAllVoiceAssets();
-    final models = assets
-        .where((a) => a.enabled)
-        .map((a) => {
-              'id': a.name,
+    final assetMap = {for (final a in assets) a.id: a};
+
+    for (final m in members) {
+      final a = assetMap[m.voiceAssetId];
+      if (a != null && a.enabled && a.name.toLowerCase() == voiceName.toLowerCase()) {
+        return a;
+      }
+    }
+    return null;
+  }
+
+  // ────────────── GET /v1/audio/voices ──────────────
+
+  Future<Response> _handleListVoices(Request request) async {
+    final activeBanks = await db.getActiveBanks();
+    final allAssets = await db.getAllVoiceAssets();
+    final assetMap = {for (final a in allAssets) a.id: a};
+    final providers = await db.getAllProviders();
+    final providerMap = {for (final p in providers) p.id: p};
+
+    final voices = <Map<String, dynamic>>[];
+    for (final bank in activeBanks) {
+      final members = await db.getBankMembers(bank.id);
+      for (final m in members) {
+        final a = assetMap[m.voiceAssetId];
+        if (a == null || !a.enabled) continue;
+        final p = providerMap[a.providerId];
+        voices.add({
+          'voice_id': a.name,
+          'name': a.name,
+          'description': a.description ?? '',
+          'provider': p?.name ?? 'unknown',
+          'model': bank.name,
+          'task_mode': a.taskMode,
+        });
+      }
+    }
+
+    return Response.ok(
+      jsonEncode({'voices': voices}),
+      headers: {'content-type': 'application/json'},
+    );
+  }
+
+  // ────────────── GET /v1/models ──────────────
+
+  Future<Response> _handleListModels(Request request) async {
+    final activeBanks = await db.getActiveBanks();
+    final models = activeBanks
+        .map((b) => {
+              'id': b.name,
               'object': 'model',
               'owned_by': 'q-vox-lab',
             })
@@ -117,10 +177,47 @@ class ApiServer {
     );
   }
 
+  // ────────────── GET /speakers ──────────────
+
+  Future<Response> _handleSpeakers(Request request) async {
+    final activeBanks = await db.getActiveBanks();
+    final allAssets = await db.getAllVoiceAssets();
+    final assetMap = {for (final a in allAssets) a.id: a};
+
+    final speakers = <Map<String, dynamic>>[];
+    for (final bank in activeBanks) {
+      final members = await db.getBankMembers(bank.id);
+      for (final m in members) {
+        final a = assetMap[m.voiceAssetId];
+        if (a == null || !a.enabled) continue;
+        speakers.add({
+          'name': a.name,
+          'voice_id': a.id,
+          'model': bank.name,
+        });
+      }
+    }
+
+    return Response.ok(
+      jsonEncode(speakers),
+      headers: {'content-type': 'application/json'},
+    );
+  }
+
+  // ────────────── GET /health ──────────────
+
   Future<Response> _handleHealth(Request request) async {
     return Response.ok(
       jsonEncode({'status': 'ok', 'port': _port}),
       headers: {'content-type': 'application/json'},
     );
+  }
+
+  // ────────────── Helpers ──────────────
+
+  Response _jsonError(int status, String message) {
+    return Response(status,
+        body: jsonEncode({'error': message}),
+        headers: {'content-type': 'application/json'});
   }
 }

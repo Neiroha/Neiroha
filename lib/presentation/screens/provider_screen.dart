@@ -289,6 +289,10 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
   bool? _lastHealth;
   String? _healthError;
 
+  // Model list management
+  List<db.ModelBinding> _models = [];
+  bool _fetchingModels = false;
+
   @override
   void initState() {
     super.initState();
@@ -300,6 +304,90 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
       (t) => t.name == widget.provider.adapterType,
       orElse: () => AdapterType.openaiCompatible,
     );
+    _loadModels();
+  }
+
+  Future<void> _loadModels() async {
+    final db_ = ref.read(databaseProvider);
+    final bindings = await db_.getBindingsForProvider(widget.provider.id);
+    if (mounted) setState(() => _models = bindings);
+  }
+
+  Future<void> _fetchModelsFromApi() async {
+    setState(() => _fetchingModels = true);
+    try {
+      final tmp = widget.provider.copyWith(
+        adapterType: _adapterType.name,
+        baseUrl: _urlCtrl.text.trim(),
+        apiKey: _keyCtrl.text,
+        defaultModelName: _modelCtrl.text.trim().isEmpty
+            ? _adapterType.defaultModel
+            : _modelCtrl.text.trim(),
+      );
+      final adapter = createAdapter(tmp);
+      final fetched = await adapter.getModels();
+      if (!mounted) return;
+      final db_ = ref.read(databaseProvider);
+      final existing = _models.map((m) => m.modelKey).toSet();
+      for (final m in fetched) {
+        if (!existing.contains(m.id)) {
+          await db_.insertBinding(db.ModelBindingsCompanion(
+            id: Value(const Uuid().v4()),
+            providerId: Value(widget.provider.id),
+            modelKey: Value(m.id),
+          ));
+        }
+      }
+      await _loadModels();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to fetch models: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _fetchingModels = false);
+    }
+  }
+
+  Future<void> _addModelManually() async {
+    final ctrl = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Model'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Model name / ID',
+            hintText: 'e.g. tts-1-hd',
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (name == null || name.isEmpty) return;
+    final db_ = ref.read(databaseProvider);
+    await db_.insertBinding(db.ModelBindingsCompanion(
+      id: Value(const Uuid().v4()),
+      providerId: Value(widget.provider.id),
+      modelKey: Value(name),
+    ));
+    await _loadModels();
+  }
+
+  Future<void> _removeModel(String bindingId) async {
+    await ref.read(databaseProvider).deleteBinding(bindingId);
+    await _loadModels();
   }
 
   @override
@@ -324,6 +412,39 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Saved'), duration: Duration(seconds: 1)));
+    }
+  }
+
+  Future<void> _duplicate() async {
+    final nameCtrl =
+        TextEditingController(text: '${widget.provider.name} (Copy)');
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Duplicate Provider'),
+        content: TextField(
+          controller: nameCtrl,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'New name'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, nameCtrl.text.trim()),
+            child: const Text('Duplicate'),
+          ),
+        ],
+      ),
+    );
+    nameCtrl.dispose();
+    if (newName == null || newName.isEmpty) return;
+    final db_ = ref.read(databaseProvider);
+    final newProvider =
+        await db_.duplicateProvider(widget.provider.id, newName);
+    if (mounted) {
+      ref.read(_selectedProviderIdProvider.notifier).state = newProvider.id;
     }
   }
 
@@ -413,6 +534,12 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                 ),
               ),
               IconButton(
+                onPressed: _duplicate,
+                icon: const Icon(Icons.copy_rounded),
+                tooltip: 'Duplicate as Template',
+              ),
+              const SizedBox(width: 4),
+              IconButton(
                 onPressed: _delete,
                 icon: const Icon(Icons.delete_outline_rounded),
                 tooltip: 'Delete',
@@ -481,6 +608,76 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                   hintText: _adapterType.defaultModel,
                 ),
               ),
+              const SizedBox(height: 20),
+              // ── Model List ──
+              Row(
+                children: [
+                  Text('Models',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w600)),
+                  const Spacer(),
+                  if (_adapterType.supportsModelQuery)
+                    TextButton.icon(
+                      onPressed: _fetchingModels ? null : _fetchModelsFromApi,
+                      icon: _fetchingModels
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.cloud_download_rounded, size: 16),
+                      label: const Text('Auto Fetch'),
+                    ),
+                  TextButton.icon(
+                    onPressed: _addModelManually,
+                    icon: const Icon(Icons.add_rounded, size: 16),
+                    label: const Text('Add'),
+                  ),
+                ],
+              ),
+              if (_models.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'No models added yet. Use "Auto Fetch" or add manually.',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.4)),
+                  ),
+                )
+              else
+                ..._models.map((m) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.surfaceBright,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.model_training_rounded,
+                                size: 16, color: Colors.grey),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(m.modelKey,
+                                  style: const TextStyle(fontSize: 13)),
+                            ),
+                            InkWell(
+                              onTap: () => _removeModel(m.id),
+                              borderRadius: BorderRadius.circular(4),
+                              child: const Padding(
+                                padding: EdgeInsets.all(4),
+                                child: Icon(Icons.close_rounded,
+                                    size: 14, color: Colors.grey),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )),
               const SizedBox(height: 24),
               Row(
                 children: [

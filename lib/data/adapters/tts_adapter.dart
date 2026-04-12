@@ -4,6 +4,9 @@ import 'package:q_vox_lab/data/database/app_database.dart' as db;
 import 'package:q_vox_lab/data/adapters/openai_compatible_adapter.dart';
 import 'package:q_vox_lab/data/adapters/chat_completions_tts_adapter.dart';
 import 'package:q_vox_lab/data/adapters/cosyvoice_adapter.dart';
+import 'package:q_vox_lab/data/adapters/gpt_sovits_adapter.dart';
+import 'package:q_vox_lab/data/adapters/azure_tts_adapter.dart';
+import 'package:q_vox_lab/data/adapters/system_tts_adapter.dart';
 
 /// Request payload for TTS synthesis, unified across all adapters.
 class TtsRequest {
@@ -46,6 +49,17 @@ class TtsResult {
   const TtsResult({required this.audioBytes, required this.contentType});
 }
 
+/// Describes a model available from a provider.
+class ModelInfo {
+  final String id;
+  final String name;
+
+  const ModelInfo({required this.id, this.name = ''});
+
+  @override
+  String toString() => name.isNotEmpty ? '$name ($id)' : id;
+}
+
 /// Base class for all TTS provider adapters.
 abstract class TtsAdapter {
   Future<TtsResult> synthesize(TtsRequest request);
@@ -54,6 +68,10 @@ abstract class TtsAdapter {
   /// Fetch available speaker/voice names from the provider.
   /// Returns empty list if not supported.
   Future<List<String>> getSpeakers() async => [];
+
+  /// Fetch available models from the provider.
+  /// Returns empty list if not supported.
+  Future<List<ModelInfo>> getModels() async => [];
 }
 
 /// Factory to create the correct adapter for a provider.
@@ -79,7 +97,25 @@ TtsAdapter createAdapter(db.TtsProvider provider, {String? modelName}) {
         apiKey: provider.apiKey,
         modelName: model,
       );
-    // TODO: Add gptSovits, qwen3Native adapters
+    case 'gptSovits':
+      return GptSovitsAdapter(
+        baseUrl: provider.baseUrl,
+        apiKey: provider.apiKey,
+        modelName: model,
+      );
+    case 'azureTts':
+      return AzureTtsAdapter(
+        baseUrl: provider.baseUrl,
+        apiKey: provider.apiKey,
+        modelName: model,
+      );
+    case 'systemTts':
+      return SystemTtsAdapter(
+        baseUrl: provider.baseUrl,
+        apiKey: provider.apiKey,
+        modelName: model,
+      );
+    // TODO: Add qwen3Native adapter
     default:
       throw UnimplementedError(
           'Adapter not implemented for: ${provider.adapterType}');

@@ -4,7 +4,7 @@
 
 Q-Vox-Lab exposes audio APIs at two levels:
 
-1. **Local API Server** (`lib/server/api_server.dart`) — an OpenAI-compatible HTTP server that proxies TTS requests through configured voice characters
+1. **Local API Server** (`lib/server/api_server.dart`) — an OpenAI-compatible HTTP server that proxies TTS requests through configured voice characters, scoped by active voice banks
 2. **Upstream Adapter Layer** (`lib/data/adapters/`) — client-side adapters that talk to external TTS backends
 
 ---
@@ -13,22 +13,33 @@ Q-Vox-Lab exposes audio APIs at two levels:
 
 The built-in server runs on `0.0.0.0:8976` (configurable) and can be toggled from the Settings screen.
 
+### Voice Bank as Model
+
+The API uses **voice banks** as the `model` abstraction:
+- Multiple voice banks can be **active simultaneously**
+- Each active bank appears as a model in `/v1/models`
+- The bank name is used as the `model` value in API requests
+- Voices listed in `/v1/audio/voices` and `/speakers` are scoped to active banks
+
 ### Implemented Endpoints
 
 | Method | Path | Description | Status |
 |---|---|---|---|
 | `POST` | `/v1/audio/speech` | Synthesize speech from text | **Implemented** |
-| `GET` | `/v1/models` | List available voice characters | **Implemented** |
+| `GET` | `/v1/audio/voices` | List voices from active banks (OpenAI format) | **Implemented** |
+| `GET` | `/v1/models` | List active voice banks as models | **Implemented** |
+| `GET` | `/speakers` | List voices from active banks (SillyTavern format) | **Implemented** |
 | `GET` | `/health` | Server health check | **Implemented** |
 
 ### `POST /v1/audio/speech`
 
-OpenAI-compatible TTS endpoint. Looks up the voice character by name, resolves its provider + adapter, and returns raw audio bytes.
+OpenAI-compatible TTS endpoint. Resolves voice by name (optionally scoped to a bank via `model`), finds the provider + adapter, and returns raw audio bytes.
 
 **Request body (JSON):**
 ```json
 {
   "input": "Text to synthesize",
+  "model": "My Bank",
   "voice": "character_name",
   "speed": 1.0,
   "response_format": "wav"
@@ -39,8 +50,13 @@ OpenAI-compatible TTS endpoint. Looks up the voice character by name, resolves i
 |---|---|---|---|
 | `input` | string | yes | Text to synthesize |
 | `voice` | string | yes | Voice character name (matched against `VoiceAssets.name`) |
+| `model` | string | no | Voice bank name — scopes voice lookup to that bank's members |
 | `speed` | number | no | Playback speed multiplier (default: 1.0) |
 | `response_format` | string | no | Output format hint passed to upstream adapter |
+
+**Voice resolution order:**
+1. If `model` is provided, find the active bank with that name and look up the voice within its members
+2. Fallback: look up the voice by name globally across all voice assets
 
 **Response:** Raw audio bytes with appropriate `Content-Type` header (`audio/mpeg`, `audio/wav`, etc.)
 
@@ -49,18 +65,50 @@ OpenAI-compatible TTS endpoint. Looks up the voice character by name, resolves i
 - `404` — Voice character not found
 - `500` — Provider not found or upstream synthesis failed
 
+### `GET /v1/audio/voices`
+
+Lists voices from all active banks. Each voice includes its bank name as the `model` field.
+
+**Response:**
+```json
+{
+  "voices": [
+    {
+      "voice_id": "character_name",
+      "name": "character_name",
+      "description": "...",
+      "provider": "OpenAI TTS",
+      "model": "My Bank",
+      "task_mode": "presetVoice"
+    }
+  ]
+}
+```
+
 ### `GET /v1/models`
 
-Lists all enabled voice characters as OpenAI-style model objects.
+Lists all active voice banks as OpenAI-style model objects.
 
 **Response:**
 ```json
 {
   "object": "list",
   "data": [
-    { "id": "character_name", "object": "model", "owned_by": "q-vox-lab" }
+    { "id": "Default Bank", "object": "model", "owned_by": "q-vox-lab" },
+    { "id": "Japanese Voices", "object": "model", "owned_by": "q-vox-lab" }
   ]
 }
+```
+
+### `GET /speakers`
+
+SillyTavern-compatible speaker list, scoped to active banks.
+
+**Response:**
+```json
+[
+  { "name": "character_name", "voice_id": "asset-uuid", "model": "My Bank" }
+]
 ```
 
 ### `GET /health`
@@ -83,6 +131,7 @@ abstract class TtsAdapter {
   Future<TtsResult> synthesize(TtsRequest request);
   Future<bool> healthCheck();
   Future<List<String>> getSpeakers();
+  Future<List<ModelInfo>> getModels();
 }
 ```
 
@@ -95,6 +144,7 @@ For any server exposing the standard OpenAI TTS API.
 | Synthesize | `POST` | `/audio/speech` | **Implemented** |
 | Health check | `GET` | `/models` | **Implemented** |
 | List speakers | `GET` | `/audio/voices` then `/speakers` | **Implemented** |
+| List models | `GET` | `/models` | **Implemented** |
 
 **Synthesis payload:**
 ```json
@@ -109,18 +159,19 @@ For any server exposing the standard OpenAI TTS API.
 
 ### 2.2 Chat Completions TTS (`chatCompletionsTts`)
 
-For TTS providers using the Chat Completions format (e.g. MiMo TTS, Qwen-style audio models).
+For TTS providers using the Chat Completions format (e.g. MiMo V2 TTS, Qwen-style audio models).
 
 | Operation | Method | Path | Status |
 |---|---|---|---|
 | Synthesize | `POST` | `/chat/completions` | **Implemented** |
 | Health check | `GET` | `/models` | **Implemented** |
 | List speakers | `GET` | `/speakers` | **Implemented** |
+| List models | `GET` | `/models` | **Implemented** |
 
 **Synthesis payload:**
 ```json
 {
-  "model": "model_name",
+  "model": "mimo-v2-tts",
   "messages": [
     { "role": "user", "content": "voice instruction (optional)" },
     { "role": "assistant", "content": "text to synthesize" }
@@ -138,7 +189,7 @@ For TTS providers using the Chat Completions format (e.g. MiMo TTS, Qwen-style a
 
 ### 2.3 CosyVoice Native (`cosyvoice`)
 
-Full CosyVoice feature support with multiple synthesis modes.
+Full CosyVoice feature support with multiple synthesis modes via the native JSON API.
 
 | Operation | Method | Path | Status |
 |---|---|---|---|
@@ -153,13 +204,20 @@ Full CosyVoice feature support with multiple synthesis modes.
   "text": "text to synthesize",
   "speed": 1.0,
   "response_format": "wav",
-  "mode": "instruct",
+  "mode": "zero_shot",
   "profile": "speaker_name",
-  "instruct_text": "style instruction",
+  "prompt_audio_path": "D:/voices/demo.wav",
   "prompt_text": "reference text",
-  "prompt_lang": "zh"
+  "instruct_text": "Read in a gentle and calm tone"
 }
 ```
+
+**Mode descriptions:**
+| Mode | Description | Required fields |
+|---|---|---|
+| `zero_shot` | Voice cloning | `prompt_audio_path`/`prompt_audio` + `prompt_text` |
+| `cross_lingual` | Fine control | `prompt_audio_path`/`prompt_audio` |
+| `instruct` | Instruction mode | `prompt_audio_path`/`prompt_audio` + `instruct_text` |
 
 **Multipart upload (`/cosyvoice/speech/upload`):**
 Used for zero_shot mode with a reference audio file. Fields sent as `multipart/form-data`:
@@ -167,64 +225,96 @@ Used for zero_shot mode with a reference audio file. Fields sent as `multipart/f
 - `prompt_audio` — the reference audio file
 - `prompt_text`, `prompt_lang`, `profile`, `instruct_text` (optional)
 
+### 2.4 GPT-SoVITS (`gptSovits`)
+
+Adapter for the GPT-SoVITS TTS backend (api_v2.py style).
+
+| Operation | Method | Path | Status |
+|---|---|---|---|
+| Synthesize | `POST` | `/tts` | **Implemented** |
+| Health check | `GET` | `/control` | **Implemented** |
+| List speakers | — | — | Not supported (uses ref audio files) |
+
+**Synthesis payload:**
+```json
+{
+  "text": "text to synthesize",
+  "text_lang": "zh",
+  "ref_audio_path": "/path/to/ref.wav",
+  "prompt_text": "reference text",
+  "prompt_lang": "zh",
+  "speed_factor": 1.0,
+  "media_type": "wav",
+  "text_split_method": "cut5",
+  "batch_size": 1,
+  "streaming_mode": false
+}
+```
+
+### 2.5 Azure Speech Service (`azureTts`)
+
+Microsoft Azure Cognitive Services Text-to-Speech REST API. Free tier provides 500k characters/month.
+
+| Operation | Method | Path | Status |
+|---|---|---|---|
+| Synthesize | `POST` | `/cognitiveservices/v1` | **Implemented** |
+| Health check | `GET` | `/cognitiveservices/voices/list` | **Implemented** |
+| List speakers | `GET` | `/cognitiveservices/voices/list` | **Implemented** |
+| List models | `GET` | `/cognitiveservices/voices/list` | **Implemented** (returns locales) |
+
+**Configuration:**
+- Base URL: `https://{region}.tts.speech.microsoft.com` (e.g. `eastus`, `westus2`, `southeastasia`)
+- API Key: Azure subscription key (set as `Ocp-Apim-Subscription-Key` header)
+
+**Synthesis:** Uses SSML format with voice name, prosody rate, and text. Supports output formats: wav (default), mp3, opus/ogg, pcm.
+
+### 2.6 Windows System TTS (`systemTts`)
+
+Built-in Windows SAPI (System.Speech.Synthesis) via PowerShell. Zero setup — works on any Windows 10/11 installation.
+
+| Operation | Method | Path | Status |
+|---|---|---|---|
+| Synthesize | PowerShell `SpeechSynthesizer` | — | **Implemented** |
+| Health check | PowerShell assembly load | — | **Implemented** |
+| List speakers | PowerShell `GetInstalledVoices()` | — | **Implemented** |
+
+**Configuration:** No base URL or API key needed. Voice selection via `presetVoiceName` (matched to installed SAPI voice name). Speed is mapped from 0.5–2.0 range to SAPI's -10..10 rate scale. Output is always WAV.
+
 ---
 
-## 3. Not Yet Implemented
+## 3. Model Management
 
-### Adapter stubs (planned but throw `UnimplementedError`)
+Providers that support it can auto-query available models from their API. The provider editor UI allows:
+
+- **Auto Fetch** — queries `GET /models` (OpenAI/Chat) or voice list (Azure) to discover available models
+- **Manual Add** — user types in model name/ID
+- Models are stored in the `ModelBindings` table and persist across sessions
+- Voice assets can reference specific models within a provider
+
+Supported adapters: `openaiCompatible`, `chatCompletionsTts`, `azureTts`
+
+---
+
+## 4. Not Yet Implemented
+
+### Adapter stubs (planned)
 
 | Adapter Type | Target Backend | Notes |
 |---|---|---|
-| `gptSovits` | GPT-SoVITS | Popular open-source voice cloning; typically serves on `localhost:9880` with `/tts` endpoint |
 | `qwen3Native` | Qwen3 audio models | Native Qwen3 TTS API (not chat completions wrapper) |
 
 ### Missing local server endpoints
 
 | Method | Path | Description | Priority |
 |---|---|---|---|
-| `GET` | `/v1/audio/voices` | List voices in OpenAI format (name, preview_url) | High — needed for OpenAI client compatibility |
 | `GET` | `/v1/audio/speech/:id` | Retrieve previously generated audio by ID | Medium |
-| `POST` | `/v1/audio/speech` | Support `model` field to select provider | Medium — currently ignores model, routes by voice name only |
-| `GET` | `/speakers` | SillyTavern-compatible speaker list | Medium — enables SillyTavern integration |
-| `POST` | `/v1/audio/transcriptions` | Speech-to-text (STT) proxy | Low — outside core TTS scope |
-| `POST` | `/v1/audio/translations` | Audio translation proxy | Low |
-| `DELETE` | `/v1/audio/speech/:id` | Delete cached audio | Low |
 
 ### Missing adapter capabilities
 
 | Feature | Description | Priority |
 |---|---|---|
-| Streaming synthesis | Return audio as chunked stream instead of buffered response | High — improves perceived latency for long text |
+| Streaming synthesis | Return audio as chunked stream instead of buffered response | High |
 | Voice cloning upload | Upload reference audio through the local API (not just UI) | Medium |
 | Batch synthesis | Accept multiple inputs in one request | Medium |
 | SSML support | Pass SSML markup to adapters that support it | Low |
 | Pronunciation dictionary | Custom word pronunciations | Low |
-
----
-
-## 4. Recommendations — Next APIs to Implement
-
-### High Priority
-
-1. **`GET /v1/audio/voices`** — Return voice character list in OpenAI format. This is the most commonly expected companion to `/v1/audio/speech` and is needed for any OpenAI-compatible client (SillyTavern, Open WebUI, etc.) to discover available voices.
-
-2. **GPT-SoVITS adapter** — One of the most popular open-source voice cloning backends. Typical API:
-   - `POST /tts` with `text`, `text_lang`, `ref_audio_path`, `prompt_text`, `prompt_lang`
-   - `GET /speakers` for speaker list
-   - Already has a table slot (`gptSovits` adapter type); just needs the Dio implementation.
-
-3. **Streaming TTS** — Add `Transfer-Encoding: chunked` support to the local server's `/v1/audio/speech`. Long paragraphs currently block until the entire audio is generated. Streaming would enable playback-as-it-generates.
-
-### Medium Priority
-
-4. **`GET /speakers`** (local server) — SillyTavern-format speaker list. Many community tools expect this endpoint. Trivial to implement since voice data is already in the database.
-
-5. **`model` field routing** — The local `/v1/audio/speech` currently ignores the `model` field. Supporting it would allow clients to target a specific provider (e.g. `model: "cosyvoice"` vs `model: "openai-tts"`).
-
-6. **Qwen3 native adapter** — For direct Qwen3 audio model inference without the chat completions wrapper. Useful when running Qwen3 locally with vLLM or similar.
-
-### Low Priority
-
-7. **STT proxy** (`/v1/audio/transcriptions`) — Would enable full audio round-trip (TTS + STT) for dubbing QA workflows.
-
-8. **WebSocket streaming** — Alternative to HTTP chunked for real-time synthesis in web clients.

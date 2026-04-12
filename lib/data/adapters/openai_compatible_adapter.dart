@@ -87,4 +87,26 @@ class OpenAiCompatibleAdapter extends TtsAdapter {
     } catch (_) {}
     return [];
   }
+
+  @override
+  Future<List<ModelInfo>> getModels() async {
+    try {
+      final response = await _dio.get(
+        'models',
+        options: Options(responseType: ResponseType.json),
+      );
+      if (response.statusCode == 200 && response.data is Map) {
+        final data = response.data as Map<String, dynamic>;
+        if (data['data'] is List) {
+          return (data['data'] as List)
+              .map((e) {
+                final id = e is Map ? (e['id'] ?? '') as String : e.toString();
+                return ModelInfo(id: id, name: id);
+              })
+              .toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
 }

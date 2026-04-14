@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:q_vox_lab/domain/enums/task_mode.dart';
+import 'package:neiroha/domain/enums/task_mode.dart';
 
 part 'model_binding.freezed.dart';
 part 'model_binding.g.dart';

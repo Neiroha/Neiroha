@@ -512,7 +512,54 @@ class AppDatabase extends _$AppDatabase {
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dir = await getApplicationSupportDirectory();
-    final file = File(p.join(dir.path, 'q_vox_lab.db'));
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+    final file = await _resolveDatabaseFile(dir);
     return NativeDatabase.createInBackground(file);
   });
+}
+
+Future<File> _resolveDatabaseFile(Directory currentDir) async {
+  final currentFile = File(p.join(currentDir.path, 'neiroha.db'));
+  if (await currentFile.exists()) return currentFile;
+
+  for (final legacyFile in _legacyDatabaseCandidates(currentDir)) {
+    if (await legacyFile.exists()) {
+      await legacyFile.copy(currentFile.path);
+      return currentFile;
+    }
+  }
+
+  return currentFile;
+}
+
+Iterable<File> _legacyDatabaseCandidates(Directory currentDir) sync* {
+  yield File(p.join(currentDir.path, 'q_vox_lab.db'));
+
+  final candidateDirs = <String>{};
+
+  void addCandidate(String path) {
+    if (path != currentDir.path) {
+      candidateDirs.add(path);
+    }
+  }
+
+  addCandidate(currentDir.path.replaceAll(
+    'com.neiroha.neiroha',
+    'com.qvoxlab.q_vox_lab',
+  ));
+  addCandidate(currentDir.path.replaceAll(
+    '${Platform.pathSeparator}neiroha',
+    '${Platform.pathSeparator}q_vox_lab',
+  ));
+  addCandidate(currentDir.path.replaceAll(
+    '${Platform.pathSeparator}Neiroha',
+    '${Platform.pathSeparator}q_vox_lab',
+  ));
+
+  for (final dirPath in candidateDirs) {
+    yield File(p.join(dirPath, 'neiroha.db'));
+    yield File(p.join(dirPath, 'q_vox_lab.db'));
+  }
 }

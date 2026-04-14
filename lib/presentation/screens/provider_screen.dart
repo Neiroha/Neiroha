@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:q_vox_lab/data/adapters/tts_adapter.dart';
-import 'package:q_vox_lab/data/database/app_database.dart' as db;
-import 'package:q_vox_lab/domain/enums/adapter_type.dart';
-import 'package:q_vox_lab/presentation/theme/app_theme.dart';
-import 'package:q_vox_lab/presentation/widgets/resizable_split_pane.dart';
-import 'package:q_vox_lab/providers/app_providers.dart';
+import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/domain/enums/adapter_type.dart';
+import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
+import 'package:neiroha/providers/app_providers.dart';
 
 /// Two-pane provider configuration screen.
 ///
@@ -600,25 +600,30 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: _modelCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Default Model Name',
-                  hintText: _adapterType.defaultModel,
+              // ── Default Model Name (only for adapters without model/voice query) ──
+              if (_adapterType.showDefaultModelField) ...[
+                const SizedBox(height: 14),
+                TextField(
+                  controller: _modelCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Default Model Name',
+                    hintText: _adapterType.defaultModel,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              // ── Model List ──
-              Row(
-                children: [
-                  Text('Models',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w600)),
-                  const Spacer(),
-                  if (_adapterType.supportsModelQuery)
+              ],
+              // ── Model / Voice List (only for adapters that support query) ──
+              if (_adapterType.supportsModelQuery ||
+                  _adapterType.supportsVoiceQuery) ...[
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Text(
+                        _adapterType.supportsVoiceQuery ? 'Voices' : 'Models',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w600)),
+                    const Spacer(),
                     TextButton.icon(
                       onPressed: _fetchingModels ? null : _fetchModelsFromApi,
                       icon: _fetchingModels
@@ -627,57 +632,64 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                               height: 14,
                               child: CircularProgressIndicator(strokeWidth: 2))
                           : const Icon(Icons.cloud_download_rounded, size: 16),
-                      label: const Text('Auto Fetch'),
+                      label: const Text('Fetch'),
                     ),
-                  TextButton.icon(
-                    onPressed: _addModelManually,
-                    icon: const Icon(Icons.add_rounded, size: 16),
-                    label: const Text('Add'),
-                  ),
-                ],
-              ),
-              if (_models.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    'No models added yet. Use "Auto Fetch" or add manually.',
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.4)),
-                  ),
-                )
-              else
-                ..._models.map((m) => Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.surfaceBright,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.model_training_rounded,
-                                size: 16, color: Colors.grey),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(m.modelKey,
-                                  style: const TextStyle(fontSize: 13)),
-                            ),
-                            InkWell(
-                              onTap: () => _removeModel(m.id),
-                              borderRadius: BorderRadius.circular(4),
-                              child: const Padding(
-                                padding: EdgeInsets.all(4),
-                                child: Icon(Icons.close_rounded,
-                                    size: 14, color: Colors.grey),
+                    TextButton.icon(
+                      onPressed: _addModelManually,
+                      icon: const Icon(Icons.add_rounded, size: 16),
+                      label: const Text('Add'),
+                    ),
+                  ],
+                ),
+                if (_models.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      _adapterType.supportsVoiceQuery
+                          ? 'No voices added yet. Use "Fetch" to get available voices.'
+                          : 'No models added yet. Use "Fetch" or add manually.',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.4)),
+                    ),
+                  )
+                else
+                  ..._models.map((m) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceBright,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                  _adapterType.supportsVoiceQuery
+                                      ? Icons.record_voice_over_rounded
+                                      : Icons.model_training_rounded,
+                                  size: 16,
+                                  color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(m.modelKey,
+                                    style: const TextStyle(fontSize: 13)),
                               ),
-                            ),
-                          ],
+                              InkWell(
+                                onTap: () => _removeModel(m.id),
+                                borderRadius: BorderRadius.circular(4),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(4),
+                                  child: Icon(Icons.close_rounded,
+                                      size: 14, color: Colors.grey),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    )),
+                      )),
+              ],
               const SizedBox(height: 24),
               Row(
                 children: [

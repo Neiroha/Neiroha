@@ -1,4 +1,4 @@
-name: q_vox_lab
+name: neiroha
 description: "AI audio middleware and dubbing workstation"
 publish_to: 'none'
 version: 0.1.0+1
@@ -42,6 +42,7 @@ dependencies:
   path_provider: ^2.1.5
   path: ^1.9.1
   window_manager: ^0.5.1
+  flutter_svg: ^2.0.17
 
 dev_dependencies:
   flutter_test:
@@ -57,3 +58,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/

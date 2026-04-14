@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:q_vox_lab/providers/app_providers.dart';
+import 'package:neiroha/providers/app_providers.dart';
 
 /// Compact server status indicator for the bottom of the sidebar or top bar.
 class ServerStatusBar extends ConsumerWidget {

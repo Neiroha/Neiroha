@@ -98,6 +98,12 @@ class SystemTtsAdapter extends TtsAdapter {
   }
 
   @override
+  Future<List<ModelInfo>> getModels() async {
+    final speakers = await getSpeakers();
+    return speakers.map((s) => ModelInfo(id: s, name: s)).toList();
+  }
+
+  @override
   Future<List<String>> getSpeakers() async {
     if (!Platform.isWindows) return [];
     try {

@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:q_vox_lab/domain/enums/adapter_type.dart';
+import 'package:neiroha/domain/enums/adapter_type.dart';
 
 part 'tts_provider.freezed.dart';
 part 'tts_provider.g.dart';

@@ -9,10 +9,10 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:q_vox_lab/data/database/app_database.dart' as db;
-import 'package:q_vox_lab/presentation/theme/app_theme.dart';
-import 'package:q_vox_lab/presentation/widgets/resizable_split_pane.dart';
-import 'package:q_vox_lab/providers/app_providers.dart';
+import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
+import 'package:neiroha/providers/app_providers.dart';
 
 /// Voice Asset library — a collection of single audio tracks that the user
 /// has uploaded, recorded, or imported from generated TTS output. These can

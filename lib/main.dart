@@ -12,7 +12,7 @@ void main() async {
   if (Platform.isWindows) {
     await windowManager.ensureInitialized();
     const windowOptions = WindowOptions(
-      title: 'Q-Vox-Lab',
+      title: 'Neiroha',
       titleBarStyle: TitleBarStyle.hidden,
       backgroundColor: Colors.transparent,
     );
@@ -22,16 +22,16 @@ void main() async {
     });
   }
 
-  runApp(const ProviderScope(child: QVoxLabApp()));
+  runApp(const ProviderScope(child: NeirohaApp()));
 }
 
-class QVoxLabApp extends StatelessWidget {
-  const QVoxLabApp({super.key});
+class NeirohaApp extends StatelessWidget {
+  const NeirohaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Q-Vox-Lab',
+      title: 'Neiroha',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
       home: const AppShell(),

@@ -8,7 +8,7 @@
 ## 1. Core Architecture & Tech Stack
 
 ### 1.1 The "Thin Backend" + "Fat Client" Approach
-**Why this approach?** Unlike enterprise-heavy Docker/NestJS/Postgres architectures, Q-Vox-Lab is a *Workstation App*. The user simply opens the app on Windows/Linux/Android, and it runs natively.
+**Why this approach?** Unlike enterprise-heavy Docker/NestJS/Postgres architectures, Neiroha is a *Workstation App*. The user simply opens the app on Windows/Linux/Android, and it runs natively.
 - **Frontend (GUI)**: Flutter (Responsive layout: mobile -> tablet -> split-screen desktop).
 - **Local Middleware (API Server)**: Runs a local HTTP server in-app via the Dart `shelf` package. It exposes standard OpenAI-compatible endpoints (`/v1/audio/speech`).
 - **State & Local Storage**: `Riverpod` (state), `Isar` or `Drift` (high-performance local SQLite).

@@ -1,5 +1,1 @@
-package com.qvoxlab.q_vox_lab
-
-import io.flutter.embedding.android.FlutterActivity
-
-class MainActivity : FlutterActivity()
+// MainActivity moved to android/app/src/main/kotlin/com/neiroha/neiroha/MainActivity.kt.

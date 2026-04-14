@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:q_vox_lab/presentation/navigation/app_navigation.dart';
-import 'package:q_vox_lab/presentation/theme/app_theme.dart';
-import 'package:q_vox_lab/presentation/widgets/sidebar.dart';
+import 'package:neiroha/presentation/navigation/app_navigation.dart';
+import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/sidebar.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'quick_tts_screen.dart';
@@ -97,7 +97,7 @@ class _WindowsTitleBar extends StatelessWidget {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Q-Vox-Lab',
+                    'Neiroha',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.white54,

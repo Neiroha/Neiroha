@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:q_vox_lab/providers/app_providers.dart';
-import 'package:q_vox_lab/presentation/theme/app_theme.dart';
+import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/presentation/theme/app_theme.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -101,7 +101,7 @@ class SettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             child: _SettingsRow(
               icon: Icons.info_outline_rounded,
-              title: 'Q-Vox-Lab',
+              title: 'Neiroha',
               subtitle: 'v0.1.0 — AI Audio Middleware & Dubbing Workstation',
               trailing: const SizedBox.shrink(),
             ),

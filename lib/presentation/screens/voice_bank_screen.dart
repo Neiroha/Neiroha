@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:q_vox_lab/data/adapters/tts_adapter.dart';
-import 'package:q_vox_lab/data/database/app_database.dart' as db;
-import 'package:q_vox_lab/presentation/theme/app_theme.dart';
-import 'package:q_vox_lab/presentation/widgets/resizable_split_pane.dart';
-import 'package:q_vox_lab/providers/app_providers.dart';
+import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
+import 'package:neiroha/providers/app_providers.dart';
 
 /// Voice Bank — a named collection of Characters persisted in SQLite.
 /// Only one bank can be "active" at a time; active bank is used for TTS.

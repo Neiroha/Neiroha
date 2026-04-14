@@ -31,7 +31,22 @@ enum AdapterType {
   bool get supportsModelQuery => switch (this) {
         openaiCompatible => true,
         chatCompletionsTts => true,
-        azureTts => true,
         _ => false,
+      };
+
+  /// Whether this adapter type supports querying available voices from the API.
+  bool get supportsVoiceQuery => switch (this) {
+        azureTts => true,
+        systemTts => true,
+        _ => false,
+      };
+
+  /// Whether to show the default model name field in the provider editor.
+  bool get showDefaultModelField => switch (this) {
+        openaiCompatible => false,
+        chatCompletionsTts => false,
+        azureTts => false,
+        systemTts => false,
+        _ => true,
       };
 }

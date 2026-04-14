@@ -1,4 +1,4 @@
-# q_vox_lab
+# Neiroha
 
 AI audio middleware and dubbing workstation
 

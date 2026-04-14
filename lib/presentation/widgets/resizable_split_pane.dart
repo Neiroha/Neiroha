@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:q_vox_lab/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/theme/app_theme.dart';
 
 /// A two-pane layout with a draggable divider.
 ///

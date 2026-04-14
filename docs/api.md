@@ -1,8 +1,8 @@
-# Q-Vox-Lab — Audio API Reference
+# Neiroha — Audio API Reference
 
 ## Overview
 
-Q-Vox-Lab exposes audio APIs at two levels:
+Neiroha exposes audio APIs at two levels:
 
 1. **Local API Server** (`lib/server/api_server.dart`) — an OpenAI-compatible HTTP server that proxies TTS requests through configured voice characters, scoped by active voice banks
 2. **Upstream Adapter Layer** (`lib/data/adapters/`) — client-side adapters that talk to external TTS backends
@@ -94,8 +94,8 @@ Lists all active voice banks as OpenAI-style model objects.
 {
   "object": "list",
   "data": [
-    { "id": "Default Bank", "object": "model", "owned_by": "q-vox-lab" },
-    { "id": "Japanese Voices", "object": "model", "owned_by": "q-vox-lab" }
+    { "id": "Default Bank", "object": "model", "owned_by": "neiroha" },
+    { "id": "Japanese Voices", "object": "model", "owned_by": "neiroha" }
   ]
 }
 ```

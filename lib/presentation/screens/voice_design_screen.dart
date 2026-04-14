@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:q_vox_lab/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/theme/app_theme.dart';
 
 /// Voice Design — generate new voice profiles using voice design models
 /// like Qwen3-TTS voice_design mode. Describe the voice you want in text,

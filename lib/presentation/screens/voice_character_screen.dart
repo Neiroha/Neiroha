@@ -9,12 +9,13 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:q_vox_lab/data/adapters/tts_adapter.dart';
-import 'package:q_vox_lab/data/database/app_database.dart' as db;
-import 'package:q_vox_lab/domain/enums/task_mode.dart';
-import 'package:q_vox_lab/presentation/theme/app_theme.dart';
-import 'package:q_vox_lab/presentation/widgets/resizable_split_pane.dart';
-import 'package:q_vox_lab/providers/app_providers.dart';
+import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/domain/enums/adapter_type.dart';
+import 'package:neiroha/domain/enums/task_mode.dart';
+import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
+import 'package:neiroha/providers/app_providers.dart';
 
 final _selectedCharacterIdProvider = StateProvider<String?>((ref) => null);
 
@@ -119,22 +120,28 @@ class VoiceCharacterScreen extends ConsumerWidget {
 
   void _openCreateDialog(BuildContext context, WidgetRef ref,
       AsyncValue<List<db.TtsProvider>> providersAsync) {
-    final providers = providersAsync.valueOrNull ?? [];
-    if (providers.isEmpty) {
+    final allProviders = providersAsync.valueOrNull ?? [];
+    final enabledProviders = allProviders.where((p) => p.enabled).toList();
+    if (enabledProviders.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content:
-              Text('Add a Provider first (Providers tab)')));
+              Text('Enable at least one Provider first (Providers tab)')));
       return;
     }
     final existingAssets = ref.read(voiceAssetsStreamProvider).valueOrNull ?? [];
+    final audioTracks = ref.read(audioTracksStreamProvider).valueOrNull ?? [];
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => _CreateCharacterDialog(
-        providers: providers,
+        providers: enabledProviders,
         existingAssets: existingAssets,
+        audioTracks: audioTracks,
         onSave: (companion) async {
           await ref.read(databaseProvider).insertVoiceAsset(companion);
+        },
+        onSaveAudioTrack: (track) async {
+          await ref.read(databaseProvider).insertAudioTrack(track);
         },
       ),
     );
@@ -241,6 +248,10 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
   @override
   Widget build(BuildContext context) {
     final a = widget.asset;
+    final providers = ref.watch(ttsProvidersStreamProvider).valueOrNull ??
+        const <db.TtsProvider>[];
+    final provider = providers.where((p) => p.id == a.providerId).firstOrNull;
+    final isGptSovits = provider?.adapterType == 'gptSovits';
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -294,7 +305,8 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
         const SizedBox(height: 12),
 
         // Fields
-        if (a.modelName != null) _Field('Model', a.modelName!),
+        if (a.modelName != null)
+          _Field(isGptSovits ? 'Output Language' : 'Model', a.modelName!),
         if (a.presetVoiceName != null) _Field('Voice Name', a.presetVoiceName!),
         _Field('Speed', '${a.speed}x'),
 
@@ -449,10 +461,16 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
   }
 
   void _editCharacter(db.VoiceAsset asset) {
-    final providers = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
-    if (providers.isEmpty) {
+    final allProviders = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
+    final enabledProviders = allProviders.where((p) => p.enabled).toList();
+    // Include the asset's current provider even if disabled, so it's selectable
+    if (!enabledProviders.any((p) => p.id == asset.providerId)) {
+      final current = allProviders.where((p) => p.id == asset.providerId).firstOrNull;
+      if (current != null) enabledProviders.insert(0, current);
+    }
+    if (enabledProviders.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No providers available')));
+          const SnackBar(content: Text('Enable at least one Provider first')));
       return;
     }
     final existingAssets = ref.read(voiceAssetsStreamProvider).valueOrNull ?? [];
@@ -461,7 +479,7 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
       barrierDismissible: false,
       builder: (ctx) => _EditCharacterDialog(
         asset: asset,
-        providers: providers,
+        providers: enabledProviders,
         existingAssets: existingAssets,
         onSave: (updated) async {
           await ref.read(databaseProvider).updateVoiceAsset(updated);
@@ -499,13 +517,17 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
 
 class _CreateCharacterDialog extends StatefulWidget {
   final List<db.TtsProvider> providers;
-  final Future<void> Function(db.VoiceAssetsCompanion) onSave;
   final List<db.VoiceAsset> existingAssets;
+  final List<db.AudioTrack> audioTracks;
+  final Future<void> Function(db.VoiceAssetsCompanion) onSave;
+  final Future<void> Function(db.AudioTracksCompanion) onSaveAudioTrack;
 
   const _CreateCharacterDialog({
     required this.providers,
     required this.onSave,
+    required this.onSaveAudioTrack,
     this.existingAssets = const [],
+    this.audioTracks = const [],
   });
 
   @override
@@ -516,16 +538,13 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   final _nameCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _voiceNameCtrl = TextEditingController();
-  final _modelCtrl = TextEditingController();
   final _promptTextCtrl = TextEditingController();
   final _promptLangCtrl = TextEditingController(text: 'zh');
+  final _textLangCtrl = TextEditingController(text: 'zh');
   final _instructionCtrl = TextEditingController();
-  final _trimStartCtrl = TextEditingController(text: '0');
-  final _trimEndCtrl = TextEditingController();
 
   TaskMode _taskMode = TaskMode.presetVoice;
   late String _selectedProviderId;
-  String? _refAudioPath;
   String? _avatarPath;
   bool _saving = false;
 
@@ -540,11 +559,24 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   // CosyVoice mode
   String? _cosyVoiceMode;
 
+  // Reference audio: from voice assets OR manual upload
+  String? _selectedAudioTrackId;
+  String? _uploadedRefAudioPath;
+
+  String? get _effectiveRefAudioPath {
+    if (_selectedAudioTrackId != null) {
+      final track = widget.audioTracks
+          .where((t) => t.id == _selectedAudioTrackId)
+          .firstOrNull;
+      return track?.audioPath;
+    }
+    return _uploadedRefAudioPath;
+  }
+
   @override
   void initState() {
     super.initState();
     _selectedProviderId = widget.providers.first.id;
-    _modelCtrl.text = widget.providers.first.defaultModelName;
     _fetchSpeakers();
   }
 
@@ -553,12 +585,10 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     _nameCtrl.dispose();
     _descCtrl.dispose();
     _voiceNameCtrl.dispose();
-    _modelCtrl.dispose();
     _promptTextCtrl.dispose();
     _promptLangCtrl.dispose();
+    _textLangCtrl.dispose();
     _instructionCtrl.dispose();
-    _trimStartCtrl.dispose();
-    _trimEndCtrl.dispose();
     _refPlayer.dispose();
     super.dispose();
   }
@@ -566,10 +596,14 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   db.TtsProvider get _selectedProvider =>
       widget.providers.firstWhere((p) => p.id == _selectedProviderId);
 
-  bool get _isCosyVoice => _selectedProvider.adapterType == 'cosyvoice';
-  bool get _isSpeakerOnly =>
-      _selectedProvider.adapterType == 'chatCompletionsTts' ||
-      _selectedProvider.adapterType == 'openaiCompatible';
+  String get _adapterType => _selectedProvider.adapterType;
+  bool get _isCosyVoice => _adapterType == 'cosyvoice';
+  bool get _isGptSovits => _adapterType == 'gptSovits';
+  bool get _isPresetVoiceProvider =>
+      _adapterType == 'chatCompletionsTts' ||
+      _adapterType == 'openaiCompatible' ||
+      _adapterType == 'azureTts' ||
+      _adapterType == 'systemTts';
 
   Future<void> _fetchSpeakers() async {
     setState(() {
@@ -578,10 +612,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       _selectedSpeaker = null;
     });
     try {
-      final adapter = createAdapter(_selectedProvider,
-          modelName: _modelCtrl.text.trim().isEmpty
-              ? null
-              : _modelCtrl.text.trim());
+      final adapter = createAdapter(_selectedProvider);
       final speakers = await adapter.getSpeakers();
       if (mounted) {
         setState(() {
@@ -595,7 +626,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   }
 
   /// Reusable speaker dropdown + loading indicator.
-  List<Widget> _buildSpeakerPicker() {
+  List<Widget> _buildSpeakerPicker({String label = 'Select Speaker'}) {
     if (_loadingSpeakers) {
       return [
         const Padding(
@@ -616,7 +647,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     if (_speakers.isNotEmpty) {
       return [
         DropdownButtonFormField<String>(
-          decoration: const InputDecoration(labelText: 'Select Speaker'),
+          decoration: InputDecoration(labelText: label),
           isExpanded: true,
           items: _speakers
               .map((s) => DropdownMenuItem(value: s, child: Text(s)))
@@ -633,6 +664,80 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       ];
     }
     return [];
+  }
+
+  /// Build the reference audio picker with voice asset library support.
+  List<Widget> _buildRefAudioPicker() {
+    return [
+      _SectionLabel('REFERENCE AUDIO'),
+      const SizedBox(height: 8),
+      // Pick from voice assets library
+      if (widget.audioTracks.isNotEmpty) ...[
+        DropdownButtonFormField<String>(
+          decoration: const InputDecoration(
+            labelText: 'Select from Voice Assets',
+            prefixIcon: Icon(Icons.library_music_rounded, size: 18),
+          ),
+          isExpanded: true,
+          items: [
+            const DropdownMenuItem(
+              value: null,
+              child: Text('None (upload manually)',
+                  style: TextStyle(fontStyle: FontStyle.italic)),
+            ),
+            ...widget.audioTracks.map((t) => DropdownMenuItem(
+                  value: t.id,
+                  child: Text(t.name, overflow: TextOverflow.ellipsis),
+                )),
+          ],
+          initialValue: _selectedAudioTrackId,
+          onChanged: (v) {
+            setState(() {
+              _selectedAudioTrackId = v;
+              if (v != null) {
+                _uploadedRefAudioPath = null;
+                // Auto-fill prompt text/lang from track metadata
+                final track = widget.audioTracks
+                    .where((t) => t.id == v)
+                    .firstOrNull;
+                if (track != null) {
+                  if (track.refText != null &&
+                      track.refText!.isNotEmpty &&
+                      _promptTextCtrl.text.isEmpty) {
+                    _promptTextCtrl.text = track.refText!;
+                  }
+                  if (track.refLang != null &&
+                      track.refLang!.isNotEmpty &&
+                      _promptLangCtrl.text == 'zh') {
+                    _promptLangCtrl.text = track.refLang!;
+                  }
+                }
+              }
+            });
+          },
+        ),
+        const SizedBox(height: 10),
+        if (_selectedAudioTrackId == null) ...[
+          Text('— or upload a new file —',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.3))),
+          const SizedBox(height: 8),
+        ],
+      ],
+      // Manual upload (shown when no track selected or no tracks exist)
+      if (_selectedAudioTrackId == null)
+        _RefAudioPicker(
+          path: _uploadedRefAudioPath,
+          player: _refPlayer,
+          isPlaying: _refPlaying,
+          onPick: (path) => setState(() => _uploadedRefAudioPath = path),
+          onPlayToggle: (playing) =>
+              setState(() => _refPlaying = playing),
+        ),
+      const SizedBox(height: 12),
+    ];
   }
 
   Future<void> _pickAvatarForCreate() async {
@@ -684,257 +789,9 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 children: [
-                  // ── PROVIDER (first) ──
-                  _SectionLabel('PROVIDER'),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    decoration:
-                        const InputDecoration(labelText: 'Provider'),
-                    items: widget.providers
-                        .map((p) => DropdownMenuItem(
-                            value: p.id,
-                            child: Row(
-                              children: [
-                                Text(p.name),
-                                const SizedBox(width: 8),
-                                Text('(${p.adapterType})',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.white
-                                            .withValues(alpha: 0.4))),
-                              ],
-                            )))
-                        .toList(),
-                    initialValue: _selectedProviderId,
-                    onChanged: (v) {
-                      if (v == null) return;
-                      setState(() {
-                        _selectedProviderId = v;
-                        _modelCtrl.text =
-                            _selectedProvider.defaultModelName;
-                        _cosyVoiceMode = null;
-                        // Force presetVoice for speaker-only providers
-                        if (_isSpeakerOnly) {
-                          _taskMode = TaskMode.presetVoice;
-                        }
-                      });
-                      _fetchSpeakers();
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _modelCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Model Name'),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // ── BACKEND-SPECIFIC OPTIONS ──
-                  if (_isSpeakerOnly) ...[
-                    // chatCompletionsTts / openaiCompatible: only speakers
-                    _SectionLabel('PRESET VOICE'),
-                    const SizedBox(height: 8),
-                    ..._buildSpeakerPicker(),
-                    TextField(
-                      controller: _voiceNameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Voice / Speaker Name',
-                        hintText: 'e.g. alloy, mimo_default, default_zh',
-                      ),
-                    ),
-                  ] else if (_isCosyVoice) ...[
-                    // ── CosyVoice: 3 modes with mode-specific fields ──
-                    _SectionLabel('COSYVOICE MODE'),
-                    const SizedBox(height: 8),
-                    _CosyVoiceModeSelector(
-                      selected: _cosyVoiceMode,
-                      onChanged: (mode) {
-                        setState(() {
-                          _cosyVoiceMode = mode;
-                          if (mode == 'zero_shot') {
-                            _taskMode = TaskMode.cloneWithPrompt;
-                          } else if (mode == 'instruct') {
-                            _taskMode = TaskMode.voiceDesign;
-                          } else {
-                            // cross_lingual
-                            _taskMode = TaskMode.presetVoice;
-                          }
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 20),
-
-                    // CosyVoice mode-specific fields
-                    if (_cosyVoiceMode != null) ...[
-                      // All modes: profile/speaker picker
-                      _SectionLabel('SPEAKER / PROFILE'),
-                      const SizedBox(height: 8),
-                      ..._buildSpeakerPicker(),
-                      TextField(
-                        controller: _voiceNameCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Profile Name',
-                          hintText: 'e.g. 哆啦A梦正常',
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // zero_shot: ref audio + prompt text
-                      if (_cosyVoiceMode == 'zero_shot') ...[
-                        _SectionLabel('REFERENCE AUDIO'),
-                        const SizedBox(height: 8),
-                        _RefAudioPicker(
-                          path: _refAudioPath,
-                          player: _refPlayer,
-                          isPlaying: _refPlaying,
-                          onPick: (path) =>
-                              setState(() => _refAudioPath = path),
-                          onPlayToggle: (playing) =>
-                              setState(() => _refPlaying = playing),
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _promptTextCtrl,
-                          maxLines: 3,
-                          decoration: const InputDecoration(
-                            labelText: 'Prompt Text (spoken in ref audio)',
-                            hintText: 'Transcript of the reference audio',
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: _promptLangCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Language Code',
-                            hintText: 'zh / en / ja / ko ...',
-                          ),
-                        ),
-                      ],
-
-                      // instruct: instruct text
-                      if (_cosyVoiceMode == 'instruct') ...[
-                        _SectionLabel('INSTRUCT'),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _instructionCtrl,
-                          maxLines: 4,
-                          decoration: const InputDecoration(
-                            labelText: 'Instruct Text',
-                            hintText:
-                                'e.g. "用轻柔的声音说话" or "speak with excitement"',
-                          ),
-                        ),
-                      ],
-
-                      // cross_lingual: just speaker (already shown above)
-                    ],
-                  ] else ...[
-                    // ── VOICE TYPE (for other providers like gptSovits, qwen3) ──
-                    _SectionLabel('VOICE TYPE'),
-                    const SizedBox(height: 8),
-                    _ModeSelector(
-                      selected: _taskMode,
-                      onChanged: (m) => setState(() => _taskMode = m),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Generic mode-specific fields
-                    if (_taskMode == TaskMode.presetVoice) ...[
-                      _SectionLabel('PRESET VOICE'),
-                      const SizedBox(height: 8),
-                      ..._buildSpeakerPicker(),
-                      TextField(
-                        controller: _voiceNameCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Voice / Speaker Name',
-                          hintText: 'e.g. alloy, mimo_default, default_zh',
-                        ),
-                      ),
-                    ],
-
-                    if (_taskMode == TaskMode.cloneWithPrompt) ...[
-                      _SectionLabel('REFERENCE AUDIO'),
-                      const SizedBox(height: 8),
-                      _RefAudioPicker(
-                        path: _refAudioPath,
-                        player: _refPlayer,
-                        isPlaying: _refPlaying,
-                        onPick: (path) =>
-                            setState(() => _refAudioPath = path),
-                        onPlayToggle: (playing) =>
-                            setState(() => _refPlaying = playing),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _trimStartCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                  labelText: 'Trim start (s)',
-                                  hintText: '0'),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextField(
-                              controller: _trimEndCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                  labelText: 'Trim end (s)',
-                                  hintText: 'leave blank = full'),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _promptTextCtrl,
-                        maxLines: 3,
-                        decoration: const InputDecoration(
-                          labelText: 'Reference Transcript',
-                          hintText: 'Text spoken in the reference audio',
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: _promptLangCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Language Code',
-                          hintText: 'zh / en / ja / ko ...',
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: _instructionCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Style Instruction (optional)',
-                          hintText: 'e.g. "speak slowly and gently"',
-                        ),
-                      ),
-                    ],
-
-                    if (_taskMode == TaskMode.voiceDesign) ...[
-                      _SectionLabel('VOICE DESIGN'),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _instructionCtrl,
-                        maxLines: 4,
-                        decoration: const InputDecoration(
-                          labelText: 'Voice Instruction',
-                          hintText:
-                              'Describe the voice...\ne.g. "A warm female voice with slight breathiness"',
-                        ),
-                      ),
-                    ],
-                  ],
-                  const SizedBox(height: 20),
-
-                  // ── NAME + DESCRIPTION ──
+                  // ── CHARACTER INFO (at top) ──
                   _SectionLabel('CHARACTER INFO'),
                   const SizedBox(height: 8),
-                  // Avatar picker
                   Center(
                     child: GestureDetector(
                       onTap: _pickAvatarForCreate,
@@ -942,14 +799,16 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                         children: [
                           CircleAvatar(
                             radius: 36,
-                            backgroundColor: AppTheme.accentColor.withValues(alpha: 0.15),
+                            backgroundColor:
+                                AppTheme.accentColor.withValues(alpha: 0.15),
                             backgroundImage: _avatarPath != null
                                 ? FileImage(File(_avatarPath!))
                                 : null,
                             child: _avatarPath == null
                                 ? Icon(Icons.person_rounded,
                                     size: 36,
-                                    color: Colors.white.withValues(alpha: 0.3))
+                                    color:
+                                        Colors.white.withValues(alpha: 0.3))
                                 : null,
                           ),
                           Positioned(
@@ -986,7 +845,8 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                         message: 'Auto-fill: Provider + Speaker',
                         child: IconButton(
                           onPressed: _autoFillName,
-                          icon: const Icon(Icons.auto_fix_high_rounded, size: 20),
+                          icon: const Icon(Icons.auto_fix_high_rounded,
+                              size: 20),
                           style: IconButton.styleFrom(
                             backgroundColor:
                                 AppTheme.accentColor.withValues(alpha: 0.15),
@@ -1002,6 +862,172 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                     decoration: const InputDecoration(
                         labelText: 'Description (optional)'),
                   ),
+                  const SizedBox(height: 20),
+
+                  // ── PROVIDER ──
+                  _SectionLabel('PROVIDER'),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    decoration:
+                        const InputDecoration(labelText: 'Provider'),
+                    items: widget.providers
+                        .map((p) => DropdownMenuItem(
+                            value: p.id,
+                            child: Row(
+                              children: [
+                                Text(p.name),
+                                const SizedBox(width: 8),
+                                Text('(${AdapterType.values.where((t) => t.name == p.adapterType).firstOrNull?.displayName ?? p.adapterType})',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white
+                                            .withValues(alpha: 0.4))),
+                              ],
+                            )))
+                        .toList(),
+                    initialValue: _selectedProviderId,
+                    onChanged: (v) {
+                      if (v == null) return;
+                      setState(() {
+                        _selectedProviderId = v;
+                        _cosyVoiceMode = null;
+                        _selectedAudioTrackId = null;
+                        _uploadedRefAudioPath = null;
+                        _voiceNameCtrl.clear();
+                        _selectedSpeaker = null;
+                      });
+                      _fetchSpeakers();
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── ADAPTER-SPECIFIC OPTIONS ──
+                  if (_isPresetVoiceProvider) ...[
+                    // OpenAI / Chat Completions / Azure / System TTS
+                    _SectionLabel(_adapterType == 'azureTts'
+                        ? 'VOICE'
+                        : 'PRESET VOICE'),
+                    const SizedBox(height: 8),
+                    ..._buildSpeakerPicker(
+                      label: _adapterType == 'azureTts'
+                          ? 'Select Voice'
+                          : 'Select Speaker',
+                    ),
+                    TextField(
+                      controller: _voiceNameCtrl,
+                      decoration: InputDecoration(
+                        labelText: _adapterType == 'azureTts'
+                            ? 'Voice Name'
+                            : 'Voice / Speaker Name',
+                        hintText: _adapterType == 'azureTts'
+                            ? 'e.g. en-US-AriaNeural'
+                            : 'e.g. alloy, mimo_default',
+                      ),
+                    ),
+                  ] else if (_isCosyVoice) ...[
+                    // ── CosyVoice: 3 modes ──
+                    _SectionLabel('COSYVOICE MODE'),
+                    const SizedBox(height: 8),
+                    _CosyVoiceModeSelector(
+                      selected: _cosyVoiceMode,
+                      onChanged: (mode) {
+                        setState(() {
+                          _cosyVoiceMode = mode;
+                          if (mode == 'zero_shot') {
+                            _taskMode = TaskMode.cloneWithPrompt;
+                          } else if (mode == 'instruct') {
+                            _taskMode = TaskMode.voiceDesign;
+                          } else {
+                            _taskMode = TaskMode.presetVoice;
+                          }
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    if (_cosyVoiceMode != null) ...[
+                      _SectionLabel('SPEAKER / PROFILE'),
+                      const SizedBox(height: 8),
+                      ..._buildSpeakerPicker(),
+                      TextField(
+                        controller: _voiceNameCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Profile Name',
+                          hintText: 'e.g. 哆啦A梦正常',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      if (_cosyVoiceMode == 'zero_shot') ...[
+                        ..._buildRefAudioPicker(),
+                        TextField(
+                          controller: _promptTextCtrl,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            labelText: 'Prompt Text (spoken in ref audio)',
+                            hintText: 'Transcript of the reference audio',
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _promptLangCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Language Code',
+                            hintText: 'zh / en / ja / ko ...',
+                          ),
+                        ),
+                      ],
+                      if (_cosyVoiceMode == 'instruct') ...[
+                        _SectionLabel('INSTRUCT'),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _instructionCtrl,
+                          maxLines: 4,
+                          decoration: const InputDecoration(
+                            labelText: 'Instruct Text',
+                            hintText:
+                                'e.g. "用轻柔的声音说话" or "speak with excitement"',
+                          ),
+                        ),
+                      ],
+                    ],
+                  ] else if (_isGptSovits) ...[
+                    // ── GPT-SoVITS: always ref audio mode ──
+                    ..._buildRefAudioPicker(),
+                    TextField(
+                      controller: _promptTextCtrl,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: 'Prompt Text (spoken in ref audio)',
+                        hintText: 'Transcript of the reference audio',
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _promptLangCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Prompt Language',
+                        hintText: 'zh / en / ja / ko ...',
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _textLangCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Text Language (synthesis output)',
+                        hintText: 'zh / en / ja / ko ...',
+                      ),
+                    ),
+                  ] else ...[
+                    // ── Fallback for other adapters (qwen3, etc.) ──
+                    _SectionLabel('VOICE'),
+                    const SizedBox(height: 8),
+                    ..._buildSpeakerPicker(),
+                    TextField(
+                      controller: _voiceNameCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Voice / Speaker Name',
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                 ],
               ),
@@ -1047,22 +1073,34 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
           .showSnackBar(const SnackBar(content: Text('Name is required')));
       return;
     }
-    // Uniqueness check
     if (widget.existingAssets.any((a) => a.name == name)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('A character with this name already exists')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('A character with this name already exists')));
       return;
     }
-    if (_taskMode == TaskMode.cloneWithPrompt && _refAudioPath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reference audio is required for voice clone')));
+
+    final refAudio = _effectiveRefAudioPath;
+    // For GPT-SoVITS and CosyVoice zero_shot, ref audio is required
+    if ((_isGptSovits ||
+            (_isCosyVoice && _cosyVoiceMode == 'zero_shot')) &&
+        refAudio == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Reference audio is required')));
       return;
     }
 
     setState(() => _saving = true);
 
-    final trimEnd = double.tryParse(_trimEndCtrl.text);
-    final trimStart = double.tryParse(_trimStartCtrl.text) ?? 0;
+    // Determine task mode
+    TaskMode effectiveMode;
+    if (_isPresetVoiceProvider) {
+      effectiveMode = TaskMode.presetVoice;
+    } else if (_isGptSovits) {
+      effectiveMode = TaskMode.cloneWithPrompt;
+    } else {
+      effectiveMode = _taskMode;
+    }
+
     final assetId = const Uuid().v4();
 
     // Copy avatar to persistent location if picked
@@ -1079,6 +1117,33 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       } catch (_) {}
     }
 
+    // Auto-save manually uploaded ref audio to voice assets library
+    if (_uploadedRefAudioPath != null && _selectedAudioTrackId == null) {
+      try {
+        final appDir = await getApplicationSupportDirectory();
+        final vaDir =
+            Directory(p.join(appDir.path, 'voice_assets'));
+        if (!vaDir.existsSync()) vaDir.createSync(recursive: true);
+        final trackId = const Uuid().v4();
+        final ext = p.extension(_uploadedRefAudioPath!);
+        final dest = p.join(vaDir.path, '$trackId$ext');
+        await File(_uploadedRefAudioPath!).copy(dest);
+        await widget.onSaveAudioTrack(db.AudioTracksCompanion(
+          id: Value(trackId),
+          name: Value(p.basenameWithoutExtension(_uploadedRefAudioPath!)),
+          audioPath: Value(dest),
+          refText: Value(_promptTextCtrl.text.trim().isEmpty
+              ? null
+              : _promptTextCtrl.text.trim()),
+          refLang: Value(_promptLangCtrl.text.trim().isEmpty
+              ? null
+              : _promptLangCtrl.text.trim()),
+          sourceType: const Value('upload'),
+          createdAt: Value(DateTime.now()),
+        ));
+      } catch (_) {}
+    }
+
     await widget.onSave(db.VoiceAssetsCompanion(
       id: Value(assetId),
       name: Value(name),
@@ -1087,14 +1152,15 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
           : _descCtrl.text.trim()),
       providerId: Value(_selectedProviderId),
       modelBindingId: const Value(null),
-      modelName: Value(_modelCtrl.text.trim().isEmpty
-          ? null
-          : _modelCtrl.text.trim()),
-      taskMode: Value(_taskMode.name),
-      refAudioPath: Value(_refAudioPath),
-      refAudioTrimStart:
-          Value(_refAudioPath != null ? trimStart : null),
-      refAudioTrimEnd: Value(_refAudioPath != null ? trimEnd : null),
+      modelName: Value(_isGptSovits
+          ? (_textLangCtrl.text.trim().isEmpty
+              ? null
+              : _textLangCtrl.text.trim())
+          : null),
+      taskMode: Value(effectiveMode.name),
+      refAudioPath: Value(refAudio),
+      refAudioTrimStart: const Value(null),
+      refAudioTrimEnd: const Value(null),
       promptText: Value(_promptTextCtrl.text.trim().isEmpty
           ? null
           : _promptTextCtrl.text.trim()),
@@ -1115,81 +1181,6 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
 }
 
 // ─────────────────────────── Sub-widgets ────────────────────────────────────
-
-class _ModeSelector extends StatelessWidget {
-  final TaskMode selected;
-  final ValueChanged<TaskMode> onChanged;
-
-  const _ModeSelector({required this.selected, required this.onChanged});
-
-  static const _modes = [
-    (TaskMode.presetVoice, Icons.volume_up_rounded, 'Preset Voice',
-        'Use a built-in voice from the provider\n(e.g. alloy, mimo_default)'),
-    (TaskMode.cloneWithPrompt, Icons.upload_file_rounded, 'Voice Clone',
-        'Upload reference audio to clone\na specific voice'),
-    (TaskMode.voiceDesign, Icons.auto_fix_high_rounded, 'Voice Design',
-        'Describe the voice in text\n(Qwen3-TTS style)'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: _modes.map((rec) {
-        final (mode, icon, label, hint) = rec;
-        final isSelected = selected == mode;
-        return Expanded(
-          child: Padding(
-            padding:
-                EdgeInsets.only(right: mode != TaskMode.voiceDesign ? 8 : 0),
-            child: InkWell(
-              onTap: () => onChanged(mode),
-              borderRadius: BorderRadius.circular(10),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: isSelected
-                      ? AppTheme.accentColor.withValues(alpha: 0.15)
-                      : AppTheme.surfaceDim,
-                  border: Border.all(
-                    color: isSelected
-                        ? AppTheme.accentColor.withValues(alpha: 0.5)
-                        : Colors.transparent,
-                    width: 1.5,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(icon,
-                        size: 20,
-                        color: isSelected
-                            ? AppTheme.accentColor
-                            : Colors.white.withValues(alpha: 0.5)),
-                    const SizedBox(height: 6),
-                    Text(label,
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected
-                                ? Colors.white
-                                : Colors.white.withValues(alpha: 0.7))),
-                    const SizedBox(height: 4),
-                    Text(hint,
-                        style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.white.withValues(alpha: 0.4))),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
 
 class _CosyVoiceModeSelector extends StatelessWidget {
   final String? selected;
@@ -1389,13 +1380,14 @@ class _EditCharacterDialog extends StatefulWidget {
 class _EditCharacterDialogState extends State<_EditCharacterDialog> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _descCtrl;
-  late final TextEditingController _modelCtrl;
   late final TextEditingController _voiceNameCtrl;
   late final TextEditingController _speedCtrl;
   late final TextEditingController _promptTextCtrl;
   late final TextEditingController _promptLangCtrl;
+  late final TextEditingController _textLangCtrl;
   late final TextEditingController _instructionCtrl;
   late String _selectedProviderId;
+  late final bool _assetWasGptSovits;
   bool _saving = false;
 
   @override
@@ -1404,11 +1396,18 @@ class _EditCharacterDialogState extends State<_EditCharacterDialog> {
     final a = widget.asset;
     _nameCtrl = TextEditingController(text: a.name);
     _descCtrl = TextEditingController(text: a.description ?? '');
-    _modelCtrl = TextEditingController(text: a.modelName ?? '');
     _voiceNameCtrl = TextEditingController(text: a.presetVoiceName ?? '');
     _speedCtrl = TextEditingController(text: a.speed.toString());
     _promptTextCtrl = TextEditingController(text: a.promptText ?? '');
     _promptLangCtrl = TextEditingController(text: a.promptLang ?? '');
+    _assetWasGptSovits = widget.providers
+            .where((p) => p.id == a.providerId)
+            .firstOrNull
+            ?.adapterType ==
+        'gptSovits';
+    _textLangCtrl = TextEditingController(
+      text: _assetWasGptSovits ? (a.modelName ?? 'zh') : 'zh',
+    );
     _instructionCtrl = TextEditingController(text: a.voiceInstruction ?? '');
     _selectedProviderId = widget.providers.any((p) => p.id == a.providerId)
         ? a.providerId
@@ -1419,14 +1418,19 @@ class _EditCharacterDialogState extends State<_EditCharacterDialog> {
   void dispose() {
     _nameCtrl.dispose();
     _descCtrl.dispose();
-    _modelCtrl.dispose();
     _voiceNameCtrl.dispose();
     _speedCtrl.dispose();
     _promptTextCtrl.dispose();
     _promptLangCtrl.dispose();
+    _textLangCtrl.dispose();
     _instructionCtrl.dispose();
     super.dispose();
   }
+
+  db.TtsProvider get _selectedProvider =>
+      widget.providers.firstWhere((p) => p.id == _selectedProviderId);
+
+  bool get _isSelectedGptSovits => _selectedProvider.adapterType == 'gptSovits';
 
   @override
   Widget build(BuildContext context) {
@@ -1458,6 +1462,7 @@ class _EditCharacterDialogState extends State<_EditCharacterDialog> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 children: [
+                  // Character info at top
                   TextField(
                     controller: _nameCtrl,
                     decoration:
@@ -1483,7 +1488,8 @@ class _EditCharacterDialogState extends State<_EditCharacterDialog> {
                               children: [
                                 Text(p.name),
                                 const SizedBox(width: 8),
-                                Text('(${p.adapterType})',
+                                Text(
+                                    '(${AdapterType.values.where((t) => t.name == p.adapterType).firstOrNull?.displayName ?? p.adapterType})',
                                     style: TextStyle(
                                         fontSize: 12,
                                         color: Colors.white
@@ -1495,12 +1501,6 @@ class _EditCharacterDialogState extends State<_EditCharacterDialog> {
                     onChanged: (v) {
                       if (v != null) setState(() => _selectedProviderId = v);
                     },
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _modelCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Model Name'),
                   ),
                   const SizedBox(height: 16),
                   TextField(
@@ -1535,6 +1535,16 @@ class _EditCharacterDialogState extends State<_EditCharacterDialog> {
                       decoration: const InputDecoration(
                           labelText: 'Language Code'),
                     ),
+                    if (_isSelectedGptSovits) ...[
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _textLangCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Text Language (synthesis output)',
+                          hintText: 'zh / en / ja / ko ...',
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 10),
                     TextField(
                       controller: _instructionCtrl,
@@ -1604,15 +1614,17 @@ class _EditCharacterDialogState extends State<_EditCharacterDialog> {
     setState(() => _saving = true);
 
     final speed = double.tryParse(_speedCtrl.text) ?? 1.0;
+    final textLang = _textLangCtrl.text.trim();
+    final modelName = _isSelectedGptSovits
+        ? (textLang.isEmpty ? null : textLang)
+        : (_assetWasGptSovits ? null : widget.asset.modelName);
     final updated = widget.asset.copyWith(
       name: name,
       description: Value(_descCtrl.text.trim().isEmpty
           ? null
           : _descCtrl.text.trim()),
       providerId: _selectedProviderId,
-      modelName: Value(_modelCtrl.text.trim().isEmpty
-          ? null
-          : _modelCtrl.text.trim()),
+      modelName: Value(modelName),
       speed: speed,
       presetVoiceName: Value(_voiceNameCtrl.text.trim().isEmpty
           ? null

@@ -6,8 +6,8 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
 
-import 'package:q_vox_lab/data/database/app_database.dart';
-import 'package:q_vox_lab/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/database/app_database.dart';
+import 'package:neiroha/data/adapters/tts_adapter.dart';
 
 class ApiServer {
   final AppDatabase db;
@@ -34,7 +34,7 @@ class ApiServer {
         const Pipeline().addMiddleware(logRequests()).addHandler(router.call);
 
     _server = await shelf_io.serve(handler, InternetAddress.anyIPv4, _port);
-    print('Q-Vox-Lab API server running on port $_port');
+    stdout.writeln('Neiroha API server running on port $_port');
   }
 
   Future<void> stop() async {
@@ -88,6 +88,7 @@ class ApiServer {
         voice: voice,
         speed: speed,
         responseFormat: responseFormat,
+        textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
         refAudioPath: asset.refAudioPath,
         promptText: asset.promptText,
         promptLang: asset.promptLang,
@@ -167,7 +168,7 @@ class ApiServer {
         .map((b) => {
               'id': b.name,
               'object': 'model',
-              'owned_by': 'q-vox-lab',
+              'owned_by': 'neiroha',
             })
         .toList();
 

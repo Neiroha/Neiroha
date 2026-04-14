@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:q_vox_lab/domain/enums/job_status.dart';
+import 'package:neiroha/domain/enums/job_status.dart';
 
 part 'tts_job.freezed.dart';
 part 'tts_job.g.dart';

@@ -113,15 +113,12 @@ class AzureTtsAdapter extends TtsAdapter {
         options: Options(responseType: ResponseType.json),
       );
       if (response.statusCode == 200 && response.data is List) {
-        // Group voices by locale as "models"
-        final locales = <String>{};
-        for (final v in response.data as List) {
-          if (v is Map && v['Locale'] != null) {
-            locales.add(v['Locale'] as String);
-          }
-        }
-        return locales
-            .map((l) => ModelInfo(id: l, name: 'Azure Voice ($l)'))
+        return (response.data as List)
+            .where((v) => v is Map && v['ShortName'] != null)
+            .map((v) => ModelInfo(
+                  id: v['ShortName'] as String,
+                  name: '${v['DisplayName'] ?? v['ShortName']} (${v['Locale'] ?? ''})',
+                ))
             .toList();
       }
     } catch (_) {}

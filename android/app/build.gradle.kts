@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.qvoxlab.q_vox_lab"
+    namespace = "com.neiroha.neiroha"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.qvoxlab.q_vox_lab"
+        applicationId = "com.neiroha.neiroha"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

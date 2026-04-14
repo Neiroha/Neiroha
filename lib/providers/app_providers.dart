@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:q_vox_lab/data/database/app_database.dart';
-import 'package:q_vox_lab/server/api_server.dart';
+import 'package:neiroha/data/database/app_database.dart';
+import 'package:neiroha/server/api_server.dart';
 
 /// Single database instance for the app.
 final databaseProvider = Provider<AppDatabase>((ref) {

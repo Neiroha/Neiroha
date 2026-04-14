@@ -9,11 +9,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
-import 'package:q_vox_lab/data/adapters/tts_adapter.dart';
-import 'package:q_vox_lab/data/database/app_database.dart' as db;
-import 'package:q_vox_lab/presentation/theme/app_theme.dart';
-import 'package:q_vox_lab/presentation/widgets/resizable_split_pane.dart';
-import 'package:q_vox_lab/providers/app_providers.dart';
+import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
+import 'package:neiroha/providers/app_providers.dart';
 
 /// Quick TTS — select a voice character, type text, generate & play audio.
 /// History is persisted to SQLite.
@@ -542,6 +542,7 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
         text: text,
         voice: asset.presetVoiceName ?? asset.name,
         speed: asset.speed,
+        textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
         presetVoiceName: asset.presetVoiceName,
         voiceInstruction: asset.voiceInstruction,
         refAudioPath: asset.refAudioPath,

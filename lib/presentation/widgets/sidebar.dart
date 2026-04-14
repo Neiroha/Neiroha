@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:q_vox_lab/presentation/navigation/app_navigation.dart';
-import 'package:q_vox_lab/presentation/theme/app_theme.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:neiroha/presentation/navigation/app_navigation.dart';
+import 'package:neiroha/presentation/theme/app_theme.dart';
 
 class Sidebar extends StatelessWidget {
   final NavTab selected;
@@ -38,35 +39,12 @@ class Sidebar extends StatelessWidget {
         children: [
           const SizedBox(height: 12),
           // Logo
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.accentColor,
-                  AppTheme.accentColor.withValues(alpha: 0.6),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.accentColor.withValues(alpha: 0.3),
-                  blurRadius: 12,
-                ),
-              ],
-            ),
-            child: const Center(
-              child: Text(
-                'Q',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: SvgPicture.asset(
+              'assets/neiroha_logo.svg',
+              width: 42,
+              height: 42,
             ),
           ),
           const SizedBox(height: 12),

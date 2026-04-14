@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.qvoxlab" "\0"
-            VALUE "FileDescription", "q_vox_lab" "\0"
+            VALUE "CompanyName", "com.neiroha" "\0"
+            VALUE "FileDescription", "Neiroha" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "q_vox_lab" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.qvoxlab. All rights reserved." "\0"
-            VALUE "OriginalFilename", "q_vox_lab.exe" "\0"
-            VALUE "ProductName", "q_vox_lab" "\0"
+            VALUE "InternalName", "neiroha" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.neiroha. All rights reserved." "\0"
+            VALUE "OriginalFilename", "neiroha.exe" "\0"
+            VALUE "ProductName", "Neiroha" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

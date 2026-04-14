@@ -1,12 +1,12 @@
 import 'dart:typed_data';
 
-import 'package:q_vox_lab/data/database/app_database.dart' as db;
-import 'package:q_vox_lab/data/adapters/openai_compatible_adapter.dart';
-import 'package:q_vox_lab/data/adapters/chat_completions_tts_adapter.dart';
-import 'package:q_vox_lab/data/adapters/cosyvoice_adapter.dart';
-import 'package:q_vox_lab/data/adapters/gpt_sovits_adapter.dart';
-import 'package:q_vox_lab/data/adapters/azure_tts_adapter.dart';
-import 'package:q_vox_lab/data/adapters/system_tts_adapter.dart';
+import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/adapters/openai_compatible_adapter.dart';
+import 'package:neiroha/data/adapters/chat_completions_tts_adapter.dart';
+import 'package:neiroha/data/adapters/cosyvoice_adapter.dart';
+import 'package:neiroha/data/adapters/gpt_sovits_adapter.dart';
+import 'package:neiroha/data/adapters/azure_tts_adapter.dart';
+import 'package:neiroha/data/adapters/system_tts_adapter.dart';
 
 /// Request payload for TTS synthesis, unified across all adapters.
 class TtsRequest {

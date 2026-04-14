@@ -1,0 +1,121 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="140" y1="120" x2="884" y2="904" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0A0F1F"></stop>
+      <stop offset="0.55" stop-color="#11182E"></stop>
+      <stop offset="1" stop-color="#09111C"></stop>
+    </linearGradient>
+
+    <linearGradient id="frame" x1="180" y1="180" x2="844" y2="844" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5EE6FF"></stop>
+      <stop offset="0.5" stop-color="#7C7DFF"></stop>
+      <stop offset="1" stop-color="#FF66D6"></stop>
+    </linearGradient>
+
+    <linearGradient id="nFill" x1="286" y1="240" x2="760" y2="776" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8CF7FF"></stop>
+      <stop offset="0.45" stop-color="#7A8CFF"></stop>
+      <stop offset="1" stop-color="#FF7AE8"></stop>
+    </linearGradient>
+
+    <linearGradient id="wave" x1="250" y1="512" x2="774" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7DF9FF"></stop>
+      <stop offset="0.5" stop-color="#FFFFFF"></stop>
+      <stop offset="1" stop-color="#FF9AF0"></stop>
+    </linearGradient>
+
+    <radialGradient id="glowCore" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(512 512) rotate(90) scale(340)">
+      <stop stop-color="#7C7DFF" stop-opacity="0.22"></stop>
+      <stop offset="0.55" stop-color="#42E8FF" stop-opacity="0.10"></stop>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"></stop>
+    </radialGradient>
+
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="14" result="blur"></feGaussianBlur>
+      <feMerge>
+        <feMergeNode in="blur"></feMergeNode>
+        <feMergeNode in="SourceGraphic"></feMergeNode>
+      </feMerge>
+    </filter>
+
+    <filter id="strongGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="24" result="blur1"></feGaussianBlur>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur2"></feGaussianBlur>
+      <feMerge>
+        <feMergeNode in="blur1"></feMergeNode>
+        <feMergeNode in="blur2"></feMergeNode>
+        <feMergeNode in="SourceGraphic"></feMergeNode>
+      </feMerge>
+    </filter>
+
+    <clipPath id="clip">
+      <rect x="96" y="96" width="832" height="832" rx="220"></rect>
+    </clipPath>
+  </defs>
+
+  <!-- Base -->
+  <rect x="96" y="96" width="832" height="832" rx="220" fill="url(#bg)"></rect>
+  <rect x="96" y="96" width="832" height="832" rx="220" stroke="url(#frame)" stroke-width="10"></rect>
+
+  <!-- Core glow -->
+  <circle cx="512" cy="512" r="340" fill="url(#glowCore)"></circle>
+
+  <g clip-path="url(#clip)">
+    <!-- Tech grid -->
+    <g opacity="0.10">
+      <path d="M192 256H832" stroke="#7EEBFF" stroke-width="2"></path>
+      <path d="M192 384H832" stroke="#7EEBFF" stroke-width="2"></path>
+      <path d="M192 512H832" stroke="#7EEBFF" stroke-width="2"></path>
+      <path d="M192 640H832" stroke="#7EEBFF" stroke-width="2"></path>
+      <path d="M192 768H832" stroke="#7EEBFF" stroke-width="2"></path>
+
+      <path d="M256 192V832" stroke="#8B7FFF" stroke-width="2"></path>
+      <path d="M384 192V832" stroke="#8B7FFF" stroke-width="2"></path>
+      <path d="M512 192V832" stroke="#8B7FFF" stroke-width="2"></path>
+      <path d="M640 192V832" stroke="#8B7FFF" stroke-width="2"></path>
+      <path d="M768 192V832" stroke="#8B7FFF" stroke-width="2"></path>
+    </g>
+
+    <!-- Decorative orbit arcs -->
+    <g opacity="0.22">
+      <path d="M235 355C292 253 391 194 512 194C633 194 732 253 789 355" stroke="#66E8FF" stroke-width="8" stroke-linecap="round"></path>
+      <path d="M245 669C306 760 401 814 512 814C623 814 718 760 779 669" stroke="#FF75DE" stroke-width="8" stroke-linecap="round"></path>
+    </g>
+
+    <!-- Wave bars -->
+    <g opacity="0.22">
+      <rect x="224" y="446" width="18" height="132" rx="9" fill="#5EE6FF"></rect>
+      <rect x="258" y="406" width="18" height="212" rx="9" fill="#5EE6FF"></rect>
+      <rect x="292" y="470" width="18" height="84" rx="9" fill="#5EE6FF"></rect>
+      <rect x="326" y="386" width="18" height="252" rx="9" fill="#5EE6FF"></rect>
+
+      <rect x="680" y="386" width="18" height="252" rx="9" fill="#FF7AE8"></rect>
+      <rect x="714" y="470" width="18" height="84" rx="9" fill="#FF7AE8"></rect>
+      <rect x="748" y="406" width="18" height="212" rx="9" fill="#FF7AE8"></rect>
+      <rect x="782" y="446" width="18" height="132" rx="9" fill="#FF7AE8"></rect>
+    </g>
+
+    <!-- Main N -->
+    <g filter="url(#strongGlow)">
+      <path d="M300 738V286C300 268.327 314.327 254 332 254H386C398.973 254 410.931 261.008 417.262 272.336L603 604.6V286C603 268.327 617.327 254 635 254H692C709.673 254 724 268.327 724 286V738C724 755.673 709.673 770 692 770H638C625.027 770 613.069 762.992 606.738 751.664L421 419.4V738C421 755.673 406.673 770 389 770H332C314.327 770 300 755.673 300 738Z" fill="url(#nFill)"></path>
+    </g>
+
+    <!-- Inner cut shine -->
+    <path d="M356 326V687" stroke="#EFFFFF" stroke-opacity="0.55" stroke-width="10" stroke-linecap="round"></path>
+    <path d="M668 338V698" stroke="#FFEAFE" stroke-opacity="0.34" stroke-width="8" stroke-linecap="round"></path>
+
+    <!-- Voice synthesis pulse -->
+    <g filter="url(#softGlow)">
+      <path d="M226 512H338L392 438L454 602L512 462L566 558L628 392L686 512H798" stroke="url(#wave)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"></path>
+    </g>
+
+    <!-- Anime-tech sparkle accents -->
+    <g opacity="0.95">
+      <path d="M760 248L768 272L792 280L768 288L760 312L752 288L728 280L752 272L760 248Z" fill="#7DF9FF"></path>
+      <path d="M274 728L280 746L298 752L280 758L274 776L268 758L250 752L268 746L274 728Z" fill="#FF8BEA"></path>
+      <circle cx="796" cy="352" r="8" fill="#FFFFFF"></circle>
+      <circle cx="248" cy="316" r="6" fill="#7EEBFF"></circle>
+      <circle cx="716" cy="742" r="7" fill="#FF94EC"></circle>
+    </g>
+  </g>
+</svg>

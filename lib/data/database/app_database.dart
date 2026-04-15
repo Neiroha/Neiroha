@@ -233,8 +233,25 @@ class AppDatabase extends _$AppDatabase {
 
   // --- ModelBinding CRUD ---
 
+  /// All bindings for a provider (models + voices combined).
   Future<List<ModelBinding>> getBindingsForProvider(String providerId) =>
       (select(modelBindings)..where((t) => t.providerId.equals(providerId)))
+          .get();
+
+  /// Only model entries (supportedTaskModes != 'voice').
+  Future<List<ModelBinding>> getModelEntriesForProvider(String providerId) =>
+      (select(modelBindings)
+            ..where((t) =>
+                t.providerId.equals(providerId) &
+                t.supportedTaskModes.equals('voice').not()))
+          .get();
+
+  /// Only voice entries (supportedTaskModes == 'voice').
+  Future<List<ModelBinding>> getVoiceEntriesForProvider(String providerId) =>
+      (select(modelBindings)
+            ..where((t) =>
+                t.providerId.equals(providerId) &
+                t.supportedTaskModes.equals('voice')))
           .get();
 
   Future<int> insertBinding(ModelBindingsCompanion binding) =>

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -28,14 +29,17 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
   final _textController = TextEditingController();
   String? _selectedVoiceId;
   bool _generating = false;
-  final _player = AudioPlayer();
+  // Shared global player — do NOT call dispose() on it; the provider owns it.
+  late final AudioPlayer _player;
+  late final StreamSubscription<void> _completeSub;
   String? _playingId;
   bool _deleteAllConfirm = false;
 
   @override
   void initState() {
     super.initState();
-    _player.onPlayerComplete.listen((_) {
+    _player = ref.read(audioPlayerProvider);
+    _completeSub = _player.onPlayerComplete.listen((_) {
       if (mounted) setState(() => _playingId = null);
     });
     _textController.addListener(() {
@@ -46,7 +50,8 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
   @override
   void dispose() {
     _textController.dispose();
-    _player.dispose();
+    _completeSub.cancel();
+    // _player is owned by audioPlayerProvider — do not dispose here.
     super.dispose();
   }
 
@@ -560,19 +565,7 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
           outDir.path, '${DateTime.now().millisecondsSinceEpoch}.$ext');
       await File(filePath).writeAsBytes(result.audioBytes);
 
-      // Detect audio duration
-      double? duration;
-      try {
-        final durationPlayer = AudioPlayer();
-        await durationPlayer.setSource(DeviceFileSource(filePath));
-        final d = await durationPlayer.getDuration();
-        if (d != null) {
-          duration = d.inMilliseconds / 1000.0;
-        }
-        durationPlayer.dispose();
-      } catch (_) {}
-
-      // Persist to DB
+      // Persist to DB (duration filled in lazily after playback starts)
       await database.insertQuickTtsHistory(
         db.QuickTtsHistoriesCompanion(
           id: Value(entryId),
@@ -580,14 +573,19 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
           voiceName: Value(asset.name),
           inputText: Value(text),
           audioPath: Value(filePath),
-          audioDuration: Value(duration),
           createdAt: Value(DateTime.now()),
         ),
       );
 
-      // Auto-play
+      // Auto-play; then capture duration from the playing stream (avoids
+      // creating a throw-away AudioPlayer that triggers the Windows
+      // platform-channel threading error).
       await _player.play(DeviceFileSource(filePath));
       setState(() => _playingId = entryId);
+      _player.onDurationChanged.first.then((d) async {
+        final secs = d.inMilliseconds / 1000.0;
+        await database.updateQuickTtsHistoryDuration(entryId, secs);
+      }).catchError((_) {});
     } catch (e) {
       // Persist error to DB
       await database.insertQuickTtsHistory(

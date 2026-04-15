@@ -414,6 +414,10 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> clearQuickTtsHistory() => delete(quickTtsHistories).go();
 
+  Future<void> updateQuickTtsHistoryDuration(String id, double duration) =>
+      (update(quickTtsHistories)..where((t) => t.id.equals(id)))
+          .write(QuickTtsHistoriesCompanion(audioDuration: Value(duration)));
+
   // --- Phase TTS Projects ---
 
   Stream<List<PhaseTtsProject>> watchPhaseTtsProjects() =>

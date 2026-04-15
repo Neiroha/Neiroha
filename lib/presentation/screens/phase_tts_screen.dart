@@ -27,12 +27,12 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
   String? _selectedProjectId;
   final _scriptController = TextEditingController();
   bool _generatingAll = false;
-  final _player = AudioPlayer();
+  // Shared global player — owned by audioPlayerProvider; do not dispose here.
+  AudioPlayer get _player => ref.read(audioPlayerProvider);
 
   @override
   void dispose() {
     _scriptController.dispose();
-    _player.dispose();
     super.dispose();
   }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -27,7 +28,10 @@ class DialogTtsScreen extends ConsumerStatefulWidget {
 class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
   String? _selectedProjectId;
   bool _generatingAll = false;
-  final _player = AudioPlayer();
+  // Shared global player — do NOT call dispose() on it; the provider owns it.
+  late final AudioPlayer _player;
+  late final StreamSubscription<void> _completeSub;
+  late final StreamSubscription<Duration> _positionSub;
   String? _playingLineId;
   Duration _currentPosition = Duration.zero;
   final _textController = TextEditingController();
@@ -36,10 +40,11 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
   @override
   void initState() {
     super.initState();
-    _player.onPlayerComplete.listen((_) {
+    _player = ref.read(audioPlayerProvider);
+    _completeSub = _player.onPlayerComplete.listen((_) {
       if (mounted) setState(() { _playingLineId = null; _currentPosition = Duration.zero; });
     });
-    _player.onPositionChanged.listen((pos) {
+    _positionSub = _player.onPositionChanged.listen((pos) {
       if (mounted) setState(() => _currentPosition = pos);
     });
   }
@@ -47,7 +52,9 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
   @override
   void dispose() {
     _textController.dispose();
-    _player.dispose();
+    _completeSub.cancel();
+    _positionSub.cancel();
+    // _player is owned by audioPlayerProvider — do not dispose here.
     super.dispose();
   }
 
@@ -586,6 +593,16 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
     } else {
       await _player.play(DeviceFileSource(line.audioPath!));
       setState(() => _playingLineId = line.id);
+      // Capture duration on first play — avoids throw-away AudioPlayer
+      // instances that trigger the Windows platform-channel threading error.
+      if (line.audioDuration == null) {
+        _player.onDurationChanged.first.then((d) async {
+          final secs = d.inMilliseconds / 1000.0;
+          await ref.read(databaseProvider).updateDialogTtsLine(
+                line.copyWith(audioDuration: Value(secs)),
+              );
+        }).catchError((_) {});
+      }
     }
   }
 
@@ -633,25 +650,12 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
             'line_${line.orderIndex}_${DateTime.now().millisecondsSinceEpoch}.$ext');
         await File(filePath).writeAsBytes(result.audioBytes);
 
-        // Detect audio duration
-        final durationPlayer = AudioPlayer();
-        double? duration;
-        try {
-          await durationPlayer.setSource(DeviceFileSource(filePath));
-          final d = await durationPlayer.getDuration();
-          if (d != null) {
-            duration = d.inMilliseconds / 1000.0;
-          }
-        } catch (_) {
-          // Duration detection failed, leave as null
-        } finally {
-          durationPlayer.dispose();
-        }
-
+        // Duration is detected lazily on first playback (avoids creating a
+        // throw-away AudioPlayer that triggers the Windows platform-channel
+        // threading error).
         await database.updateDialogTtsLine(
           line.copyWith(
             audioPath: Value(filePath),
-            audioDuration: Value(duration),
             error: const Value(null),
           ),
         );

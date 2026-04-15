@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/server/api_server.dart';
@@ -86,3 +87,16 @@ final audioTracksStreamProvider = StreamProvider((ref) {
 
 /// Whether the API server is currently running.
 final serverRunningProvider = StateProvider<bool>((ref) => false);
+
+/// Single long-lived AudioPlayer shared across all TTS screens.
+///
+/// Keeping one instance for the entire app lifetime means the Windows
+/// platform-channel threading warning (audioplayers_windows firing events from
+/// a WinRT thread) fires at most once per app session instead of once per
+/// screen navigation. Screens must cancel their stream subscriptions in
+/// dispose() but must NOT call player.dispose().
+final audioPlayerProvider = Provider<AudioPlayer>((ref) {
+  final player = AudioPlayer();
+  ref.onDispose(() => player.dispose());
+  return player;
+});

@@ -137,6 +137,7 @@ class VoiceCharacterScreen extends ConsumerWidget {
         providers: enabledProviders,
         existingAssets: existingAssets,
         audioTracks: audioTracks,
+        database: ref.read(databaseProvider),
         onSave: (companion) async {
           await ref.read(databaseProvider).insertVoiceAsset(companion);
         },
@@ -481,6 +482,7 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
         asset: asset,
         providers: enabledProviders,
         existingAssets: existingAssets,
+        database: ref.read(databaseProvider),
         onSave: (updated) async {
           await ref.read(databaseProvider).updateVoiceAsset(updated);
         },
@@ -521,11 +523,13 @@ class _CreateCharacterDialog extends StatefulWidget {
   final List<db.AudioTrack> audioTracks;
   final Future<void> Function(db.VoiceAssetsCompanion) onSave;
   final Future<void> Function(db.AudioTracksCompanion) onSaveAudioTrack;
+  final db.AppDatabase database;
 
   const _CreateCharacterDialog({
     required this.providers,
     required this.onSave,
     required this.onSaveAudioTrack,
+    required this.database,
     this.existingAssets = const [],
     this.audioTracks = const [],
   });
@@ -538,6 +542,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   final _nameCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _voiceNameCtrl = TextEditingController();
+  final _modelNameCtrl = TextEditingController();
   final _promptTextCtrl = TextEditingController();
   final _promptLangCtrl = TextEditingController(text: 'zh');
   final _textLangCtrl = TextEditingController(text: 'zh');
@@ -551,10 +556,15 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   final _refPlayer = AudioPlayer();
   bool _refPlaying = false;
 
-  // Speaker list fetched from provider
+  // Voice list fetched/cached from provider
   List<String> _speakers = [];
   bool _loadingSpeakers = false;
   String? _selectedSpeaker;
+
+  // Model list (only for hasSeparateModelAndVoice adapters)
+  List<String> _models = [];
+  bool _loadingModels = false;
+  String? _selectedModel;
 
   // CosyVoice mode
   String? _cosyVoiceMode;
@@ -577,7 +587,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   void initState() {
     super.initState();
     _selectedProviderId = widget.providers.first.id;
-    _fetchSpeakers();
+    _fetchModelsAndSpeakers();
   }
 
   @override
@@ -585,6 +595,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     _nameCtrl.dispose();
     _descCtrl.dispose();
     _voiceNameCtrl.dispose();
+    _modelNameCtrl.dispose();
     _promptTextCtrl.dispose();
     _promptLangCtrl.dispose();
     _textLangCtrl.dispose();
@@ -605,28 +616,87 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       _adapterType == 'azureTts' ||
       _adapterType == 'systemTts';
 
-  Future<void> _fetchSpeakers() async {
+  Future<void> _fetchModelsAndSpeakers() async {
     setState(() {
       _loadingSpeakers = true;
+      _loadingModels = true;
       _speakers = [];
+      _models = [];
       _selectedSpeaker = null;
+      _selectedModel = null;
+      _modelNameCtrl.clear();
+      _voiceNameCtrl.clear();
     });
-    try {
-      final adapter = createAdapter(_selectedProvider);
-      final speakers = await adapter.getSpeakers();
+
+    final adapterType = _selectedProvider.adapterType;
+    final hasSeparate = AdapterType.values
+        .firstWhere((t) => t.name == adapterType,
+            orElse: () => AdapterType.openaiCompatible)
+        .hasSeparateModelAndVoice;
+
+    if (hasSeparate) {
+      // Models from cache
+      final cachedModels =
+          await widget.database.getModelEntriesForProvider(_selectedProviderId);
+      final modelList = cachedModels.map((b) => b.modelKey).toList()..sort();
+
+      // Voices from cache
+      final cachedVoices =
+          await widget.database.getVoiceEntriesForProvider(_selectedProviderId);
+      final voiceList = cachedVoices.map((b) => b.modelKey).toList()..sort();
+
       if (mounted) {
         setState(() {
-          _speakers = speakers;
+          _models = modelList;
+          _speakers = voiceList;
+          _loadingModels = false;
           _loadingSpeakers = false;
+          // Auto-select model if only one
+          if (modelList.length == 1) {
+            _selectedModel = modelList.first;
+            _modelNameCtrl.text = modelList.first;
+          }
         });
       }
-    } catch (_) {
-      if (mounted) setState(() => _loadingSpeakers = false);
+    } else {
+      // Voice-only providers (Azure, System TTS, CosyVoice, GPT-SoVITS)
+      final cached =
+          await widget.database.getBindingsForProvider(_selectedProviderId);
+      if (cached.isNotEmpty) {
+        final voices = cached.map((b) => b.modelKey).toList()..sort();
+        if (mounted) {
+          setState(() {
+            _speakers = voices;
+            _loadingSpeakers = false;
+            _loadingModels = false;
+          });
+        }
+        return;
+      }
+      // No cache — live API fetch fallback
+      try {
+        final adapter = createAdapter(_selectedProvider);
+        final speakers = await adapter.getSpeakers();
+        if (mounted) {
+          setState(() {
+            _speakers = speakers;
+            _loadingSpeakers = false;
+            _loadingModels = false;
+          });
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _loadingSpeakers = false;
+            _loadingModels = false;
+          });
+        }
+      }
     }
   }
 
-  /// Reusable speaker dropdown + loading indicator.
-  List<Widget> _buildSpeakerPicker({String label = 'Select Speaker'}) {
+  /// Reusable searchable speaker picker + loading indicator.
+  List<Widget> _buildSpeakerPicker({String label = 'Select Voice'}) {
     if (_loadingSpeakers) {
       return [
         const Padding(
@@ -634,11 +704,12 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
           child: Row(
             children: [
               SizedBox(
-                width: 16, height: 16,
+                width: 16,
+                height: 16,
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               SizedBox(width: 10),
-              Text('Fetching speakers...'),
+              Text('Loading voices...'),
             ],
           ),
         ),
@@ -646,19 +717,14 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     }
     if (_speakers.isNotEmpty) {
       return [
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(labelText: label),
-          isExpanded: true,
-          items: _speakers
-              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-              .toList(),
-          initialValue: _selectedSpeaker,
-          onChanged: (v) {
-            setState(() {
-              _selectedSpeaker = v;
-              _voiceNameCtrl.text = v ?? '';
-            });
-          },
+        _VoiceSearchPicker(
+          label: label,
+          voices: _speakers,
+          selected: _selectedSpeaker,
+          onSelected: (v) => setState(() {
+            _selectedSpeaker = v;
+            _voiceNameCtrl.text = v;
+          }),
         ),
         const SizedBox(height: 8),
       ];
@@ -896,34 +962,89 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                         _voiceNameCtrl.clear();
                         _selectedSpeaker = null;
                       });
-                      _fetchSpeakers();
+                      _fetchModelsAndSpeakers();
                     },
                   ),
                   const SizedBox(height: 20),
 
                   // ── ADAPTER-SPECIFIC OPTIONS ──
                   if (_isPresetVoiceProvider) ...[
-                    // OpenAI / Chat Completions / Azure / System TTS
-                    _SectionLabel(_adapterType == 'azureTts'
-                        ? 'VOICE'
-                        : 'PRESET VOICE'),
-                    const SizedBox(height: 8),
-                    ..._buildSpeakerPicker(
-                      label: _adapterType == 'azureTts'
-                          ? 'Select Voice'
-                          : 'Select Speaker',
-                    ),
-                    TextField(
-                      controller: _voiceNameCtrl,
-                      decoration: InputDecoration(
-                        labelText: _adapterType == 'azureTts'
-                            ? 'Voice Name'
-                            : 'Voice / Speaker Name',
-                        hintText: _adapterType == 'azureTts'
-                            ? 'e.g. en-US-AriaNeural'
-                            : 'e.g. alloy, mimo_default',
+                    if (_adapterType == 'openaiCompatible' ||
+                        _adapterType == 'chatCompletionsTts') ...[
+                      // ── OpenAI-compatible: separate Model + Voice ──
+                      _SectionLabel('MODEL'),
+                      const SizedBox(height: 8),
+                      if (_loadingModels)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Row(children: [
+                            SizedBox(
+                                width: 16,
+                                height: 16,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2)),
+                            SizedBox(width: 10),
+                            Text('Loading models...'),
+                          ]),
+                        )
+                      else if (_models.isNotEmpty) ...[
+                        _VoiceSearchPicker(
+                          label: 'Select Model',
+                          voices: _models,
+                          selected: _selectedModel,
+                          onSelected: (v) => setState(() {
+                            _selectedModel = v;
+                            _modelNameCtrl.text = v;
+                          }),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      TextField(
+                        controller: _modelNameCtrl,
+                        decoration: InputDecoration(
+                          labelText: 'Model Name',
+                          hintText: 'e.g. tts-1',
+                          helperText: _models.isEmpty
+                              ? 'Go to Providers → Fetch to cache available models'
+                              : null,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      _SectionLabel('VOICE'),
+                      const SizedBox(height: 8),
+                      ..._buildSpeakerPicker(label: 'Select Voice'),
+                      TextField(
+                        controller: _voiceNameCtrl,
+                        decoration: InputDecoration(
+                          labelText: 'Voice Name',
+                          hintText: 'e.g. alloy',
+                          helperText: _speakers.isEmpty
+                              ? 'Go to Providers → Fetch to cache available voices'
+                              : null,
+                        ),
+                      ),
+                    ] else ...[
+                      // ── Azure / System TTS: voices only ──
+                      _SectionLabel(
+                          _adapterType == 'azureTts' ? 'VOICE' : 'PRESET VOICE'),
+                      const SizedBox(height: 8),
+                      ..._buildSpeakerPicker(
+                        label: _adapterType == 'azureTts'
+                            ? 'Select Voice'
+                            : 'Select Speaker',
+                      ),
+                      TextField(
+                        controller: _voiceNameCtrl,
+                        decoration: InputDecoration(
+                          labelText: _adapterType == 'azureTts'
+                              ? 'Voice Name'
+                              : 'Voice / Speaker Name',
+                          hintText: _adapterType == 'azureTts'
+                              ? 'e.g. en-US-AriaNeural'
+                              : 'e.g. alloy, mimo_default',
+                        ),
+                      ),
+                    ],
                   ] else if (_isCosyVoice) ...[
                     // ── CosyVoice: 3 modes ──
                     _SectionLabel('COSYVOICE MODE'),
@@ -1156,7 +1277,12 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
           ? (_textLangCtrl.text.trim().isEmpty
               ? null
               : _textLangCtrl.text.trim())
-          : null),
+          : (_adapterType == 'openaiCompatible' ||
+                  _adapterType == 'chatCompletionsTts')
+              ? (_modelNameCtrl.text.trim().isEmpty
+                  ? null
+                  : _modelNameCtrl.text.trim())
+              : null),
       taskMode: Value(effectiveMode.name),
       refAudioPath: Value(refAudio),
       refAudioTrimStart: const Value(null),
@@ -1365,11 +1491,13 @@ class _EditCharacterDialog extends StatefulWidget {
   final List<db.TtsProvider> providers;
   final Future<void> Function(db.VoiceAsset) onSave;
   final List<db.VoiceAsset> existingAssets;
+  final db.AppDatabase database;
 
   const _EditCharacterDialog({
     required this.asset,
     required this.providers,
     required this.onSave,
+    required this.database,
     this.existingAssets = const [],
   });
 
@@ -1389,6 +1517,10 @@ class _EditCharacterDialogState extends State<_EditCharacterDialog> {
   late String _selectedProviderId;
   late final bool _assetWasGptSovits;
   bool _saving = false;
+
+  List<String> _speakers = [];
+  bool _loadingSpeakers = false;
+  String? _selectedSpeaker;
 
   @override
   void initState() {
@@ -1412,6 +1544,8 @@ class _EditCharacterDialogState extends State<_EditCharacterDialog> {
     _selectedProviderId = widget.providers.any((p) => p.id == a.providerId)
         ? a.providerId
         : widget.providers.first.id;
+    _selectedSpeaker = a.presetVoiceName;
+    _fetchSpeakers();
   }
 
   @override
@@ -1431,6 +1565,41 @@ class _EditCharacterDialogState extends State<_EditCharacterDialog> {
       widget.providers.firstWhere((p) => p.id == _selectedProviderId);
 
   bool get _isSelectedGptSovits => _selectedProvider.adapterType == 'gptSovits';
+
+  bool get _isPresetVoiceProvider {
+    final t = _selectedProvider.adapterType;
+    return t == 'azureTts' ||
+        t == 'systemTts' ||
+        t == 'openaiCompatible' ||
+        t == 'chatCompletionsTts';
+  }
+
+  Future<void> _fetchSpeakers() async {
+    if (!_isPresetVoiceProvider) return;
+    setState(() {
+      _loadingSpeakers = true;
+      _speakers = [];
+    });
+    final cached =
+        await widget.database.getBindingsForProvider(_selectedProviderId);
+    if (cached.isNotEmpty) {
+      final voices = cached.map((b) => b.modelKey).toList()..sort();
+      if (mounted) {
+        setState(() {
+          _speakers = voices;
+          _loadingSpeakers = false;
+        });
+      }
+      return;
+    }
+    try {
+      final adapter = createAdapter(_selectedProvider);
+      final speakers = await adapter.getSpeakers();
+      if (mounted) setState(() { _speakers = speakers; _loadingSpeakers = false; });
+    } catch (_) {
+      if (mounted) setState(() => _loadingSpeakers = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1514,10 +1683,36 @@ class _EditCharacterDialogState extends State<_EditCharacterDialog> {
                   if (a.taskMode == 'presetVoice') ...[
                     _SectionLabel('PRESET VOICE'),
                     const SizedBox(height: 8),
+                    if (_loadingSpeakers)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Row(children: [
+                          SizedBox(
+                              width: 16,
+                              height: 16,
+                              child:
+                                  CircularProgressIndicator(strokeWidth: 2)),
+                          SizedBox(width: 10),
+                          Text('Loading voices...'),
+                        ]),
+                      )
+                    else if (_speakers.isNotEmpty) ...[
+                      _VoiceSearchPicker(
+                        label: 'Select Voice',
+                        voices: _speakers,
+                        selected: _selectedSpeaker,
+                        onSelected: (v) => setState(() {
+                          _selectedSpeaker = v;
+                          _voiceNameCtrl.text = v;
+                        }),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                     TextField(
                       controller: _voiceNameCtrl,
                       decoration: const InputDecoration(
-                          labelText: 'Voice / Speaker Name'),
+                          labelText: 'Voice Name',
+                          helperText: 'Filled automatically when you pick above, or type manually'),
                     ),
                   ],
                   if (a.taskMode == 'cloneWithPrompt') ...[
@@ -1747,3 +1942,147 @@ String _modeLabel(String mode) => switch (mode) {
       'voiceDesign' => 'Voice Design',
       _ => mode,
     };
+
+// ─────────────────────────── Voice Search Picker ────────────────────────────
+
+/// A searchable voice list that replaces the standard DropdownButtonFormField
+/// for providers with large voice libraries (e.g. Azure ~400 voices).
+///
+/// Shows a search TextField and a scrollable filtered list below it.
+/// Selecting an item calls [onSelected] and highlights the row.
+class _VoiceSearchPicker extends StatefulWidget {
+  final String label;
+  final List<String> voices;
+  final String? selected;
+  final ValueChanged<String> onSelected;
+
+  const _VoiceSearchPicker({
+    required this.label,
+    required this.voices,
+    required this.onSelected,
+    this.selected,
+  });
+
+  @override
+  State<_VoiceSearchPicker> createState() => _VoiceSearchPickerState();
+}
+
+class _VoiceSearchPickerState extends State<_VoiceSearchPicker> {
+  final _searchCtrl = TextEditingController();
+  late List<String> _filtered;
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.voices;
+    _searchCtrl.addListener(_onSearch);
+  }
+
+  @override
+  void didUpdateWidget(covariant _VoiceSearchPicker old) {
+    super.didUpdateWidget(old);
+    if (old.voices != widget.voices) {
+      _filtered = _applyFilter(_searchCtrl.text);
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onSearch() => setState(() => _filtered = _applyFilter(_searchCtrl.text));
+
+  List<String> _applyFilter(String query) {
+    if (query.isEmpty) return widget.voices;
+    final q = query.toLowerCase();
+    return widget.voices.where((v) => v.toLowerCase().contains(q)).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Search field
+        TextField(
+          controller: _searchCtrl,
+          decoration: InputDecoration(
+            labelText: widget.label,
+            hintText: 'Search voices… (${widget.voices.length} total)',
+            prefixIcon: const Icon(Icons.search_rounded, size: 18),
+            suffixIcon: _searchCtrl.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear_rounded, size: 16),
+                    onPressed: () => _searchCtrl.clear(),
+                  )
+                : null,
+          ),
+        ),
+        const SizedBox(height: 4),
+        // Filtered list in a bounded container
+        Container(
+          height: 200,
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceDim,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          child: _filtered.isEmpty
+              ? Center(
+                  child: Text(
+                    'No voices match "${_searchCtrl.text}"',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.4)),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  itemCount: _filtered.length,
+                  itemBuilder: (ctx, i) {
+                    final voice = _filtered[i];
+                    final isSelected = voice == widget.selected;
+                    return InkWell(
+                      onTap: () => widget.onSelected(voice),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        color: isSelected
+                            ? AppTheme.accentColor.withValues(alpha: 0.18)
+                            : Colors.transparent,
+                        child: Row(
+                          children: [
+                            if (isSelected)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: Icon(Icons.check_rounded,
+                                    size: 14,
+                                    color: AppTheme.accentColor),
+                              ),
+                            Expanded(
+                              child: Text(
+                                voice,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isSelected
+                                      ? AppTheme.accentColor
+                                      : Colors.white.withValues(alpha: 0.85),
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+}

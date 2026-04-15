@@ -1,7 +1,6 @@
 enum AdapterType {
   openaiCompatible,
   gptSovits,
-  qwen3Native,
   cosyvoice,
   chatCompletionsTts,
   azureTts,
@@ -10,7 +9,6 @@ enum AdapterType {
   String get displayName => switch (this) {
         openaiCompatible => 'OpenAI TTS API Compatible',
         gptSovits => 'GPT-SoVITS',
-        qwen3Native => 'Qwen3 Native',
         cosyvoice => 'CosyVoice Native',
         chatCompletionsTts => 'OpenAI Chat Completions TTS',
         azureTts => 'Azure Speech Service',
@@ -20,24 +18,34 @@ enum AdapterType {
   String get defaultModel => switch (this) {
         openaiCompatible => 'tts-1',
         gptSovits => 'gpt-sovits',
-        qwen3Native => 'qwen3-tts',
         cosyvoice => '',
         chatCompletionsTts => 'mimo-v2-tts',
         azureTts => '',
         systemTts => '',
       };
 
-  /// Whether this adapter type supports querying available models from the API.
+  /// Whether this adapter type fetches models (synthesis engines) from the API.
   bool get supportsModelQuery => switch (this) {
         openaiCompatible => true,
         chatCompletionsTts => true,
         _ => false,
       };
 
-  /// Whether this adapter type supports querying available voices from the API.
+  /// Whether this adapter type fetches voices (speaker identities) from the API.
   bool get supportsVoiceQuery => switch (this) {
         azureTts => true,
         systemTts => true,
+        openaiCompatible => true,
+        chatCompletionsTts => true,
+        _ => false,
+      };
+
+  /// Whether this adapter type has BOTH a model concept AND a separate voice
+  /// concept (e.g. OpenAI TTS: model=tts-1, voice=alloy).
+  /// When true the provider screen and character dialog show separate sections.
+  bool get hasSeparateModelAndVoice => switch (this) {
+        openaiCompatible => true,
+        chatCompletionsTts => true,
         _ => false,
       };
 

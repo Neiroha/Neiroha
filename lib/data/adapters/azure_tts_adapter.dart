@@ -23,7 +23,8 @@ class AzureTtsAdapter extends TtsAdapter {
     required this.apiKey,
     this.modelName = '',
   }) {
-    final base = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
+    final normalized = _normalizeTtsUrl(baseUrl);
+    final base = normalized.endsWith('/') ? normalized : '$normalized/';
     _dio = Dio(BaseOptions(
       baseUrl: base,
       headers: {
@@ -31,6 +32,37 @@ class AzureTtsAdapter extends TtsAdapter {
       },
       responseType: ResponseType.bytes,
     ));
+  }
+
+  /// Normalizes any Azure endpoint variant to the TTS speech endpoint.
+  ///
+  /// Accepted forms:
+  ///   - `https://eastasia.tts.speech.microsoft.com`  (already correct)
+  ///   - `https://eastasia.api.cognitive.microsoft.com` (management endpoint)
+  ///   - `eastasia`  (bare region name)
+  static String _normalizeTtsUrl(String rawUrl) {
+    final url = rawUrl.trim().replaceAll(RegExp(r'/+$'), '');
+    if (url.isEmpty) return url;
+
+    // Already the correct TTS speech endpoint — use as-is.
+    if (url.contains('tts.speech.microsoft.com')) return url;
+
+    // https://{region}.api.cognitive.microsoft.com → extract region.
+    final cognitiveMatch = RegExp(
+      r'https?://([a-z0-9-]+)\.api\.cognitive\.microsoft\.com',
+      caseSensitive: false,
+    ).firstMatch(url);
+    if (cognitiveMatch != null) {
+      final region = cognitiveMatch.group(1)!.toLowerCase();
+      return 'https://$region.tts.speech.microsoft.com';
+    }
+
+    // Bare region name (no dots, no slashes, no colons).
+    if (!url.contains('.') && !url.contains('/') && !url.contains(':')) {
+      return 'https://$url.tts.speech.microsoft.com';
+    }
+
+    return url;
   }
 
   /// Default voice when none specified.

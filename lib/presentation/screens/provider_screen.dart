@@ -289,8 +289,11 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
   bool? _lastHealth;
   String? _healthError;
 
-  // Model list management
+  // Model & voice list management
+  // For hasSeparateModelAndVoice adapters, _models holds model entries and
+  // _voices holds voice entries. For others, _models holds everything.
   List<db.ModelBinding> _models = [];
+  List<db.ModelBinding> _voices = [];
   bool _fetchingModels = false;
 
   @override
@@ -309,8 +312,14 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
 
   Future<void> _loadModels() async {
     final db_ = ref.read(databaseProvider);
-    final bindings = await db_.getBindingsForProvider(widget.provider.id);
-    if (mounted) setState(() => _models = bindings);
+    if (_adapterType.hasSeparateModelAndVoice) {
+      final models = await db_.getModelEntriesForProvider(widget.provider.id);
+      final voices = await db_.getVoiceEntriesForProvider(widget.provider.id);
+      if (mounted) setState(() { _models = models; _voices = voices; });
+    } else {
+      final bindings = await db_.getBindingsForProvider(widget.provider.id);
+      if (mounted) setState(() => _models = bindings);
+    }
   }
 
   Future<void> _fetchModelsFromApi() async {
@@ -325,24 +334,45 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
             : _modelCtrl.text.trim(),
       );
       final adapter = createAdapter(tmp);
-      final fetched = await adapter.getModels();
-      if (!mounted) return;
       final db_ = ref.read(databaseProvider);
-      final existing = _models.map((m) => m.modelKey).toSet();
-      for (final m in fetched) {
-        if (!existing.contains(m.id)) {
+
+      // Fetch models
+      final fetchedModels = await adapter.getModels();
+      if (!mounted) return;
+      final existingModels = _models.map((m) => m.modelKey).toSet();
+      for (final m in fetchedModels) {
+        if (!existingModels.contains(m.id)) {
           await db_.insertBinding(db.ModelBindingsCompanion(
             id: Value(const Uuid().v4()),
             providerId: Value(widget.provider.id),
             modelKey: Value(m.id),
+            // model entries use default supportedTaskModes = ''
           ));
         }
       }
+
+      // For adapters with separate voices, also fetch and cache voices.
+      if (_adapterType.hasSeparateModelAndVoice) {
+        final fetchedVoices = await adapter.getSpeakers();
+        if (!mounted) return;
+        final existingVoices = _voices.map((v) => v.modelKey).toSet();
+        for (final v in fetchedVoices) {
+          if (!existingVoices.contains(v)) {
+            await db_.insertBinding(db.ModelBindingsCompanion(
+              id: Value(const Uuid().v4()),
+              providerId: Value(widget.provider.id),
+              modelKey: Value(v),
+              supportedTaskModes: const Value('voice'),
+            ));
+          }
+        }
+      }
+
       await _loadModels();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to fetch models: $e')),
+          SnackBar(content: Text('Failed to fetch: $e')),
         );
       }
     } finally {
@@ -350,18 +380,18 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     }
   }
 
-  Future<void> _addModelManually() async {
+  Future<void> _addEntryManually({required bool isVoice}) async {
     final ctrl = TextEditingController();
     final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Add Model'),
+        title: Text(isVoice ? 'Add Voice' : 'Add Model'),
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Model name / ID',
-            hintText: 'e.g. tts-1-hd',
+          decoration: InputDecoration(
+            labelText: isVoice ? 'Voice name' : 'Model name / ID',
+            hintText: isVoice ? 'e.g. alloy' : 'e.g. tts-1-hd',
           ),
         ),
         actions: [
@@ -381,11 +411,12 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
       id: Value(const Uuid().v4()),
       providerId: Value(widget.provider.id),
       modelKey: Value(name),
+      supportedTaskModes: Value(isVoice ? 'voice' : ''),
     ));
     await _loadModels();
   }
 
-  Future<void> _removeModel(String bindingId) async {
+  Future<void> _removeEntry(String bindingId) async {
     await ref.read(databaseProvider).deleteBinding(bindingId);
     await _loadModels();
   }
@@ -472,6 +503,15 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
       ref.read(_selectedProviderIdProvider.notifier).state = null;
     }
   }
+
+  String _baseUrlHint(AdapterType type) => switch (type) {
+        AdapterType.azureTts =>
+          'https://eastasia.tts.speech.microsoft.com  (or region name)',
+        AdapterType.systemTts => '(not required)',
+        AdapterType.gptSovits => 'http://localhost:9880',
+        AdapterType.cosyvoice => 'http://localhost:9880',
+        _ => 'https://api.openai.com/v1',
+      };
 
   Future<void> _healthCheck() async {
     setState(() {
@@ -578,9 +618,12 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
               const SizedBox(height: 14),
               TextField(
                 controller: _urlCtrl,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Base URL',
-                  hintText: 'https://api.openai.com/v1',
+                  hintText: _baseUrlHint(_adapterType),
+                  helperText: _adapterType == AdapterType.azureTts
+                      ? 'Accepts region name, tts.speech.microsoft.com, or api.cognitive.microsoft.com URL'
+                      : null,
                 ),
               ),
               const SizedBox(height: 14),
@@ -611,84 +654,127 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                   ),
                 ),
               ],
-              // ── Model / Voice List (only for adapters that support query) ──
+              // ── Model / Voice sections ──
               if (_adapterType.supportsModelQuery ||
                   _adapterType.supportsVoiceQuery) ...[
                 const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Text(
-                        _adapterType.supportsVoiceQuery ? 'Voices' : 'Models',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600)),
-                    const Spacer(),
-                    TextButton.icon(
-                      onPressed: _fetchingModels ? null : _fetchModelsFromApi,
-                      icon: _fetchingModels
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.cloud_download_rounded, size: 16),
-                      label: const Text('Fetch'),
-                    ),
-                    TextButton.icon(
-                      onPressed: _addModelManually,
-                      icon: const Icon(Icons.add_rounded, size: 16),
-                      label: const Text('Add'),
-                    ),
-                  ],
-                ),
-                if (_models.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      _adapterType.supportsVoiceQuery
-                          ? 'No voices added yet. Use "Fetch" to get available voices.'
-                          : 'No models added yet. Use "Fetch" or add manually.',
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.4)),
-                    ),
-                  )
-                else
-                  ..._models.map((m) => Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: AppTheme.surfaceBright,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                  _adapterType.supportsVoiceQuery
-                                      ? Icons.record_voice_over_rounded
-                                      : Icons.model_training_rounded,
-                                  size: 16,
-                                  color: Colors.grey),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(m.modelKey,
-                                    style: const TextStyle(fontSize: 13)),
-                              ),
-                              InkWell(
-                                onTap: () => _removeModel(m.id),
-                                borderRadius: BorderRadius.circular(4),
-                                child: const Padding(
-                                  padding: EdgeInsets.all(4),
-                                  child: Icon(Icons.close_rounded,
-                                      size: 14, color: Colors.grey),
-                                ),
-                              ),
-                            ],
-                          ),
+
+                // ── Models section ──
+                if (_adapterType.supportsModelQuery) ...[
+                  Row(
+                    children: [
+                      Text('Models',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w600)),
+                      const Spacer(),
+                      TextButton.icon(
+                        onPressed: _fetchingModels ? null : _fetchModelsFromApi,
+                        icon: _fetchingModels
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.cloud_download_rounded,
+                                size: 16),
+                        label: Text(_adapterType.hasSeparateModelAndVoice
+                            ? 'Fetch All'
+                            : 'Fetch'),
+                      ),
+                      TextButton.icon(
+                        onPressed: () =>
+                            _addEntryManually(isVoice: false),
+                        icon: const Icon(Icons.add_rounded, size: 16),
+                        label: const Text('Add'),
+                      ),
+                    ],
+                  ),
+                  if (_models.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Text(
+                        'No models yet. Use "Fetch All" or add manually.',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.4)),
+                      ),
+                    )
+                  else
+                    ..._models.map((m) => _BindingRow(
+                          key: ValueKey(m.id),
+                          label: m.modelKey,
+                          icon: Icons.model_training_rounded,
+                          onDelete: () => _removeEntry(m.id),
+                        )),
+                ],
+
+                // ── Voices section (voice-only adapters OR separate-voice adapters) ──
+                if (_adapterType.supportsVoiceQuery) ...[
+                  if (_adapterType.supportsModelQuery)
+                    const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text('Voices',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w600)),
+                      const Spacer(),
+                      // Voice-only adapters (Azure/System) need their own Fetch button.
+                      if (!_adapterType.hasSeparateModelAndVoice)
+                        TextButton.icon(
+                          onPressed:
+                              _fetchingModels ? null : _fetchModelsFromApi,
+                          icon: _fetchingModels
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2))
+                              : const Icon(Icons.cloud_download_rounded,
+                                  size: 16),
+                          label: const Text('Fetch'),
                         ),
-                      )),
+                      TextButton.icon(
+                        onPressed: () => _addEntryManually(isVoice: true),
+                        icon: const Icon(Icons.add_rounded, size: 16),
+                        label: const Text('Add'),
+                      ),
+                    ],
+                  ),
+                  // For voice-only adapters (Azure, System), _models IS the voice list.
+                  // For hasSeparateModelAndVoice adapters, _voices is the voice list.
+                  Builder(builder: (context) {
+                    final list = _adapterType.hasSeparateModelAndVoice
+                        ? _voices
+                        : _models;
+                    if (list.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Text(
+                          _adapterType.hasSeparateModelAndVoice
+                              ? 'No voices yet. Use "Fetch All" or add manually.'
+                              : 'No voices yet. Use "Fetch" to get available voices.',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.4)),
+                        ),
+                      );
+                    }
+                    return Column(
+                      children: list
+                          .map((v) => _BindingRow(
+                                key: ValueKey(v.id),
+                                label: v.modelKey,
+                                icon: Icons.record_voice_over_rounded,
+                                onDelete: () => _removeEntry(v.id),
+                              ))
+                          .toList(),
+                    );
+                  }),
+                ],
               ],
               const SizedBox(height: 24),
               Row(
@@ -721,6 +807,53 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─────────────────── Shared binding row widget ───────────────────────────────
+
+class _BindingRow extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onDelete;
+
+  const _BindingRow({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceBright,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: Colors.grey),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(label, style: const TextStyle(fontSize: 13)),
+            ),
+            InkWell(
+              onTap: onDelete,
+              borderRadius: BorderRadius.circular(4),
+              child: const Padding(
+                padding: EdgeInsets.all(4),
+                child:
+                    Icon(Icons.close_rounded, size: 14, color: Colors.grey),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

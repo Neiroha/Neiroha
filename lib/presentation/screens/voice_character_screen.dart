@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:neiroha/data/adapters/cosyvoice_adapter.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/enums/adapter_type.dart';
@@ -253,6 +254,7 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
         const <db.TtsProvider>[];
     final provider = providers.where((p) => p.id == a.providerId).firstOrNull;
     final isGptSovits = provider?.adapterType == 'gptSovits';
+    final isCosyVoiceNative = provider?.adapterType == 'cosyvoice';
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -307,7 +309,12 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
 
         // Fields
         if (a.modelName != null)
-          _Field(isGptSovits ? 'Output Language' : 'Model', a.modelName!),
+          _Field(
+            isGptSovits ? 'Output Language' :
+            isCosyVoiceNative ? 'CosyVoice Mode' :
+            'Model',
+            a.modelName!,
+          ),
         if (a.presetVoiceName != null) _Field('Voice Name', a.presetVoiceName!),
         _Field('Speed', '${a.speed}x'),
 
@@ -569,6 +576,14 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   // CosyVoice mode
   String? _cosyVoiceMode;
 
+  // CosyVoice server-side profiles (from `/cosyvoice/profiles`). These are the
+  // ONLY values that can safely be sent as `profile` — typing a name that
+  // doesn't exist on the server makes `build_runtime_char_config` reject the
+  // request with 400 "未找到角色".
+  List<CosyVoiceProfile> _cosyProfiles = [];
+  bool _loadingCosyProfiles = false;
+  String? _selectedCosyProfileId;
+
   // Reference audio: from voice assets OR manual upload
   String? _selectedAudioTrackId;
   String? _uploadedRefAudioPath;
@@ -659,7 +674,15 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
         });
       }
     } else {
-      // Voice-only providers (Azure, System TTS, CosyVoice, GPT-SoVITS)
+      // CosyVoice native exposes profiles via /cosyvoice/profiles — fetch them
+      // so the user can pick a registered one instead of typing a name that
+      // the server will reject.
+      if (_isCosyVoice) {
+        if (mounted) setState(() { _loadingSpeakers = false; _loadingModels = false; });
+        _fetchCosyVoiceProfiles();
+        return;
+      }
+      // Voice-only providers (Azure, System TTS, GPT-SoVITS)
       final cached =
           await widget.database.getBindingsForProvider(_selectedProviderId);
       if (cached.isNotEmpty) {
@@ -693,6 +716,30 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
         }
       }
     }
+  }
+
+  /// Live-fetch CosyVoice native profiles from `/cosyvoice/profiles`.
+  Future<void> _fetchCosyVoiceProfiles() async {
+    if (!_isCosyVoice) return;
+    setState(() {
+      _loadingCosyProfiles = true;
+      _cosyProfiles = [];
+      _selectedCosyProfileId = null;
+    });
+    try {
+      final adapter = createAdapter(_selectedProvider);
+      if (adapter is CosyVoiceAdapter) {
+        final profiles = await adapter.getProfiles();
+        if (mounted) {
+          setState(() {
+            _cosyProfiles = profiles;
+            _loadingCosyProfiles = false;
+          });
+        }
+        return;
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _loadingCosyProfiles = false);
   }
 
   /// Reusable searchable speaker picker + loading indicator.
@@ -1054,7 +1101,8 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                       onChanged: (mode) {
                         setState(() {
                           _cosyVoiceMode = mode;
-                          if (mode == 'zero_shot') {
+                          // cross_lingual also clones from reference audio
+                          if (mode == 'zero_shot' || mode == 'cross_lingual') {
                             _taskMode = TaskMode.cloneWithPrompt;
                           } else if (mode == 'instruct') {
                             _taskMode = TaskMode.voiceDesign;
@@ -1066,17 +1114,65 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                     ),
                     const SizedBox(height: 20),
                     if (_cosyVoiceMode != null) ...[
-                      _SectionLabel('SPEAKER / PROFILE'),
-                      const SizedBox(height: 8),
-                      ..._buildSpeakerPicker(),
-                      TextField(
-                        controller: _voiceNameCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Profile Name',
-                          hintText: 'e.g. 哆啦A梦正常',
-                        ),
+                      _SectionLabel('SERVER PROFILE (optional)'),
+                      const SizedBox(height: 4),
+                      Text(
+                        'A profile registered on the CosyVoice server. '
+                        'Leave as "None" to synthesise purely from your uploaded '
+                        'reference audio — typing a name that the server '
+                        'doesn\'t know causes 400 "未找到角色".',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.4)),
                       ),
+                      const SizedBox(height: 8),
+                      if (_loadingCosyProfiles)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Row(children: [
+                            SizedBox(
+                                width: 16,
+                                height: 16,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2)),
+                            SizedBox(width: 10),
+                            Text('Loading server profiles...'),
+                          ]),
+                        )
+                      else
+                        DropdownButtonFormField<String?>(
+                          decoration: const InputDecoration(
+                            labelText: 'Server Profile',
+                            prefixIcon:
+                                Icon(Icons.folder_shared_rounded, size: 18),
+                          ),
+                          isExpanded: true,
+                          initialValue: _selectedCosyProfileId,
+                          items: [
+                            const DropdownMenuItem<String?>(
+                              value: null,
+                              child: Text('None (use uploaded audio only)',
+                                  style:
+                                      TextStyle(fontStyle: FontStyle.italic)),
+                            ),
+                            ..._cosyProfiles.map((p) => DropdownMenuItem<String?>(
+                                  value: p.id,
+                                  child: Text(
+                                    p.modeLabel.isNotEmpty
+                                        ? '${p.name}  ·  ${p.modeLabel}'
+                                        : p.name,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                )),
+                          ],
+                          onChanged: (v) => setState(() {
+                            _selectedCosyProfileId = v;
+                            _voiceNameCtrl.text = v ?? '';
+                          }),
+                        ),
                       const SizedBox(height: 12),
+
+                      // ── Zero Shot ──────────────────────────────────────────
                       if (_cosyVoiceMode == 'zero_shot') ...[
                         ..._buildRefAudioPicker(),
                         TextField(
@@ -1096,6 +1192,22 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                           ),
                         ),
                       ],
+
+                      // ── Cross Lingual ──────────────────────────────────────
+                      if (_cosyVoiceMode == 'cross_lingual') ...[
+                        _SectionLabel('REFERENCE AUDIO'),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Upload a voice sample — the model will clone its tone and speak the synthesis text in any language.',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.4)),
+                        ),
+                        const SizedBox(height: 8),
+                        ..._buildRefAudioPicker(),
+                      ],
+
+                      // ── Instruct ───────────────────────────────────────────
                       if (_cosyVoiceMode == 'instruct') ...[
                         _SectionLabel('INSTRUCT'),
                         const SizedBox(height: 8),
@@ -1103,11 +1215,22 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                           controller: _instructionCtrl,
                           maxLines: 4,
                           decoration: const InputDecoration(
-                            labelText: 'Instruct Text',
+                            labelText: 'Instruct Text *',
                             hintText:
                                 'e.g. "用轻柔的声音说话" or "speak with excitement"',
                           ),
                         ),
+                        const SizedBox(height: 16),
+                        _SectionLabel('REFERENCE AUDIO (optional)'),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Upload a voice sample to use as the base voice instead of a preset profile.',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.4)),
+                        ),
+                        const SizedBox(height: 8),
+                        ..._buildRefAudioPicker(),
                       ],
                     ],
                   ] else if (_isGptSovits) ...[
@@ -1201,12 +1324,18 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     }
 
     final refAudio = _effectiveRefAudioPath;
-    // For GPT-SoVITS and CosyVoice zero_shot, ref audio is required
-    if ((_isGptSovits ||
-            (_isCosyVoice && _cosyVoiceMode == 'zero_shot')) &&
-        refAudio == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Reference audio is required')));
+    // GPT-SoVITS and CosyVoice zero_shot / cross_lingual require ref audio.
+    // cross_lingual can skip it only if a profile name is given instead.
+    final needsRefAudio = _isGptSovits ||
+        (_isCosyVoice && _cosyVoiceMode == 'zero_shot') ||
+        (_isCosyVoice &&
+            _cosyVoiceMode == 'cross_lingual' &&
+            _voiceNameCtrl.text.trim().isEmpty);
+    if (needsRefAudio && refAudio == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_isCosyVoice && _cosyVoiceMode == 'cross_lingual'
+              ? 'Cross Lingual mode requires a Reference Audio or a Profile Name'
+              : 'Reference audio is required')));
       return;
     }
 
@@ -1282,7 +1411,11 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
               ? (_modelNameCtrl.text.trim().isEmpty
                   ? null
                   : _modelNameCtrl.text.trim())
-              : null),
+              // CosyVoice native: store the synthesis mode so the adapter
+              // can route zero_shot / cross_lingual / instruct correctly.
+              : _isCosyVoice
+                  ? _cosyVoiceMode
+                  : null),
       taskMode: Value(effectiveMode.name),
       refAudioPath: Value(refAudio),
       refAudioTrimStart: const Value(null),

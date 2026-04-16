@@ -293,17 +293,7 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
                     // Line 1: Character name + delete button
                     Row(
                       children: [
-                        CircleAvatar(
-                          radius: 12,
-                          backgroundColor:
-                              AppTheme.accentColor.withValues(alpha: 0.2),
-                          child: Text(
-                              entry.voiceName.isNotEmpty
-                                  ? entry.voiceName[0].toUpperCase()
-                                  : '?',
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 10)),
-                        ),
+                        _historyAvatar(entry, assetsAsync),
                         const SizedBox(width: 8),
                         Text(entry.voiceName,
                             style: const TextStyle(
@@ -445,6 +435,31 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _historyAvatar(
+    db.QuickTtsHistory entry,
+    AsyncValue<List<db.VoiceAsset>> assetsAsync,
+  ) {
+    final asset = assetsAsync.valueOrNull
+        ?.where((a) => a.id == entry.voiceAssetId)
+        .firstOrNull;
+    if (asset != null &&
+        asset.avatarPath != null &&
+        File(asset.avatarPath!).existsSync()) {
+      return CircleAvatar(
+        radius: 12,
+        backgroundImage: FileImage(File(asset.avatarPath!)),
+      );
+    }
+    return CircleAvatar(
+      radius: 12,
+      backgroundColor: AppTheme.accentColor.withValues(alpha: 0.2),
+      child: Text(
+        entry.voiceName.isNotEmpty ? entry.voiceName[0].toUpperCase() : '?',
+        style: const TextStyle(color: Colors.white, fontSize: 10),
+      ),
     );
   }
 

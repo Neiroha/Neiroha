@@ -197,6 +197,7 @@ Full CosyVoice feature support with multiple synthesis modes via the native JSON
 | Synthesize (upload) | `POST` | `/cosyvoice/speech/upload` | **Implemented** |
 | Health check | `GET` | `/health` | **Implemented** |
 | List speakers | `GET` | `/speakers` | **Implemented** |
+| List profiles | `GET` | `/cosyvoice/profiles` | **Implemented** |
 
 **JSON synthesis (`/cosyvoice/speech`):**
 ```json
@@ -216,14 +217,48 @@ Full CosyVoice feature support with multiple synthesis modes via the native JSON
 | Mode | Description | Required fields |
 |---|---|---|
 | `zero_shot` | Voice cloning | `prompt_audio_path`/`prompt_audio` + `prompt_text` |
-| `cross_lingual` | Fine control | `prompt_audio_path`/`prompt_audio` |
-| `instruct` | Instruction mode | `prompt_audio_path`/`prompt_audio` + `instruct_text` |
+| `cross_lingual` | Cross-language clone | `prompt_audio_path`/`prompt_audio` |
+| `instruct` | Instruction-controlled style | `prompt_audio_path`/`prompt_audio` + `instruct_text` |
 
 **Multipart upload (`/cosyvoice/speech/upload`):**
-Used for zero_shot mode with a reference audio file. Fields sent as `multipart/form-data`:
-- `text`, `mode` (= `zero_shot`), `speed`, `response_format`
+Used when the user uploads a local reference audio. Fields sent as `multipart/form-data`:
+- `text`, `mode`, `speed`, `response_format`
 - `prompt_audio` — the reference audio file
-- `prompt_text`, `prompt_lang`, `profile`, `instruct_text` (optional)
+- `prompt_text` (zero_shot required), `prompt_lang`, `instruct_text` (instruct required)
+
+> **Important:** `profile` is **NOT sent** in the multipart path. The server's
+> `build_runtime_char_config` does a strict lookup and raises 400 "未找到角色"
+> if the name isn't registered. When uploading audio the upload fully defines
+> the voice; no profile lookup is needed. Profile is only used in the JSON path
+> when no audio is uploaded and the server must retrieve stored reference audio.
+
+**Profile list (`GET /cosyvoice/profiles`):**
+Returns server-registered profiles. Only names from this list are safe to send as `profile`.
+```json
+{
+  "object": "list",
+  "data": [
+    { "id": "Neko",  "name": "Neko",  "mode": "zero_shot",    "mode_label": "语音克隆" },
+    { "id": "Kuro",  "name": "Kuro",  "mode": "instruct",     "mode_label": "指令模式" }
+  ]
+}
+```
+The character creation dialog fetches this list and shows it as a dropdown so users cannot type arbitrary (non-existent) profile names.
+
+**Synthesis mode stored in `VoiceAsset.modelName`:**
+For CosyVoice native characters the `modelName` column stores the synthesis mode string
+(`zero_shot` / `cross_lingual` / `instruct`). `createAdapter(provider, modelName: asset.modelName)`
+passes it to `CosyVoiceAdapter(modelName: mode)` which uses it to route synthesis.
+
+**`CosyVoiceProfile` data class** (returned by `getProfiles()`):
+```dart
+class CosyVoiceProfile {
+  final String id;
+  final String name;
+  final String mode;       // zero_shot | cross_lingual | instruct
+  final String modeLabel;  // Chinese label, e.g. 语音克隆
+}
+```
 
 ### 2.4 GPT-SoVITS (`gptSovits`)
 
@@ -302,6 +337,11 @@ Supported adapters: `openaiCompatible`, `chatCompletionsTts`, `azureTts`
 | Adapter Type | Target Backend | Notes |
 |---|---|---|
 | `qwen3Native` | Qwen3 audio models | Native Qwen3 TTS API (not chat completions wrapper) |
+| `fishSpeech` | Fish Speech | Voice clone / instruct / preset modes |
+| `kokoro` | Kokoro-TTS | Preset + voice design modes |
+| `f5Tts` | F5-TTS / E2-TTS | Zero-shot voice clone mode |
+
+See [add-llm-tts-adapter.md](add-llm-tts-adapter.md) for the step-by-step guide on wiring a new LLM TTS backend.
 
 ### Missing local server endpoints
 

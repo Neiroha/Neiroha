@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/presentation/widgets/sidebar.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -48,6 +49,7 @@ class AppShell extends ConsumerWidget {
               ],
             ),
           ),
+          const PersistentAudioBar(),
         ],
       ),
     );

@@ -13,6 +13,7 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/providers/playback_provider.dart';
 
 /// Voice Asset library — a collection of single audio tracks that the user
 /// has uploaded, recorded, or imported from generated TTS output. These can
@@ -290,8 +291,6 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
   late final TextEditingController _descCtrl;
   late final TextEditingController _refTextCtrl;
   late final TextEditingController _refLangCtrl;
-  final _player = AudioPlayer();
-  bool _playing = false;
   String? _loadedTrackId;
 
   @override
@@ -302,18 +301,12 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
     _refTextCtrl = TextEditingController(text: widget.track.refText ?? '');
     _refLangCtrl = TextEditingController(text: widget.track.refLang ?? '');
     _loadedTrackId = widget.track.id;
-
-    _player.onPlayerComplete.listen((_) {
-      if (mounted) setState(() => _playing = false);
-    });
   }
 
   @override
   void didUpdateWidget(covariant _TrackInspector old) {
     super.didUpdateWidget(old);
     if (old.track.id != widget.track.id) {
-      _player.stop();
-      _playing = false;
       _nameCtrl.text = widget.track.name;
       _descCtrl.text = widget.track.description ?? '';
       _refTextCtrl.text = widget.track.refText ?? '';
@@ -328,14 +321,14 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
     _descCtrl.dispose();
     _refTextCtrl.dispose();
     _refLangCtrl.dispose();
-    _player.dispose();
     super.dispose();
   }
 
   Future<void> _togglePlay() async {
-    if (_playing) {
-      await _player.stop();
-      setState(() => _playing = false);
+    final playback = ref.read(playbackNotifierProvider);
+    final notifier = ref.read(playbackNotifierProvider.notifier);
+    if (playback.audioPath == widget.track.audioPath && playback.isPlaying) {
+      await notifier.stop();
       return;
     }
     if (!await File(widget.track.audioPath).exists()) {
@@ -345,8 +338,11 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
       }
       return;
     }
-    await _player.play(DeviceFileSource(widget.track.audioPath));
-    setState(() => _playing = true);
+    await notifier.load(
+      widget.track.audioPath,
+      widget.track.name,
+      subtitle: widget.track.description,
+    );
   }
 
   Future<void> _pickAvatar() async {
@@ -417,6 +413,9 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
   Widget build(BuildContext context) {
     // Suppress "unused" lint when track refreshes mid-edit.
     assert(_loadedTrackId == widget.track.id);
+    final playback = ref.watch(playbackNotifierProvider);
+    final isPlayingThis = playback.audioPath == widget.track.audioPath &&
+        playback.isPlaying;
     return Container(
       color: AppTheme.surfaceDim,
       child: ListView(
@@ -463,7 +462,7 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
               children: [
                 IconButton(
                   onPressed: _togglePlay,
-                  icon: Icon(_playing
+                  icon: Icon(isPlayingThis
                       ? Icons.stop_circle_rounded
                       : Icons.play_circle_rounded),
                   color: AppTheme.accentColor,

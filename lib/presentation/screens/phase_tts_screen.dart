@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +11,9 @@ import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
+import 'package:neiroha/presentation/widgets/story_track_editor.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/providers/playback_provider.dart';
 
 /// Phase TTS — long-form / novel TTS with project management.
 /// Left panel: project list. Right panel: script editor + segments.
@@ -27,8 +28,8 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
   String? _selectedProjectId;
   final _scriptController = TextEditingController();
   bool _generatingAll = false;
-  // Shared global player — owned by audioPlayerProvider; do not dispose here.
-  AudioPlayer get _player => ref.read(audioPlayerProvider);
+  final Set<String> _generatingSegmentIds = <String>{};
+  final Set<String> _seededProjects = <String>{};
 
   @override
   void dispose() {
@@ -242,25 +243,41 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         .whereType<db.VoiceAsset>()
         .toList();
 
+    final clipsAsync =
+        ref.watch(timelineClipsStreamProvider('phase:$projectId'));
+    final segments = segmentsAsync.valueOrNull;
+    final clips = clipsAsync.valueOrNull;
+    if (segments != null &&
+        clips != null &&
+        clips.isEmpty &&
+        !_seededProjects.contains(projectId) &&
+        segments.any((s) => s.audioPath != null)) {
+      _seededProjects.add(projectId);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _seedTimeline(projectId, segments, assetMap);
+      });
+    }
+
     return Column(
       children: [
-        // Project info bar
         _buildProjectBar(project, bankAssets),
         const Divider(height: 1),
         Expanded(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Script editor
               Expanded(flex: 3, child: _buildScriptEditor(project)),
               const VerticalDivider(width: 1),
-              // Segments
               Expanded(
                   flex: 2,
                   child: _buildSegmentPanel(
                       project, segmentsAsync, bankAssets)),
             ],
           ),
+        ),
+        StoryTrackEditor(
+          projectId: project.id,
+          projectType: 'phase',
         ),
         _buildActionBar(project, segmentsAsync, bankAssets),
       ],
@@ -384,17 +401,37 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 itemCount: segments.length,
-                itemBuilder: (ctx, i) => _SegmentCard(
-                  segment: segments[i],
-                  index: i,
-                  bankAssets: bankAssets,
-                  player: _player,
-                  onVoiceChanged: (voiceId) => _updateSegmentVoice(
-                      segments[i], voiceId),
-                  onDelete: () => ref
-                      .read(databaseProvider)
-                      .deletePhaseTtsSegment(segments[i].id),
-                ),
+                itemBuilder: (ctx, i) {
+                  final seg = segments[i];
+                  return _SegmentCard(
+                    segment: seg,
+                    index: i,
+                    bankAssets: bankAssets,
+                    isGenerating: _generatingSegmentIds.contains(seg.id),
+                    onPlay: () {
+                      if (seg.audioPath == null) return;
+                      final voiceName = bankAssets
+                              .where((a) => a.id == seg.voiceAssetId)
+                              .firstOrNull
+                              ?.name ??
+                          'Segment ${i + 1}';
+                      ref.read(playbackNotifierProvider.notifier).load(
+                            seg.audioPath!,
+                            seg.segmentText,
+                            subtitle: voiceName,
+                          );
+                    },
+                    onGenerate: seg.voiceAssetId == null ||
+                            _generatingSegmentIds.contains(seg.id)
+                        ? null
+                        : () => _generateOne(project, seg, bankAssets),
+                    onVoiceChanged: (voiceId) =>
+                        _updateSegmentVoice(seg, voiceId),
+                    onDelete: () => ref
+                        .read(databaseProvider)
+                        .deletePhaseTtsSegment(seg.id),
+                  );
+                },
               );
             },
           ),
@@ -571,56 +608,93 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     List<db.PhaseTtsSegment> segments,
     List<db.VoiceAsset> bankAssets,
   ) async {
+    setState(() => _generatingAll = true);
+    for (final seg in segments) {
+      if (seg.audioPath != null) continue;
+      if (seg.voiceAssetId == null) continue;
+      await _generateOne(project, seg, bankAssets);
+    }
+    if (mounted) setState(() => _generatingAll = false);
+  }
+
+  Future<void> _generateOne(
+    db.PhaseTtsProject project,
+    db.PhaseTtsSegment seg,
+    List<db.VoiceAsset> bankAssets,
+  ) async {
+    if (seg.voiceAssetId == null) return;
     final providers = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
     final assetMap = {for (final a in bankAssets) a.id: a};
     final providerMap = {for (final p in providers) p.id: p};
-
-    setState(() => _generatingAll = true);
+    final asset = assetMap[seg.voiceAssetId];
+    if (asset == null) return;
+    final provider = providerMap[asset.providerId];
+    if (provider == null) return;
 
     final dir = await getApplicationSupportDirectory();
     final outDir = Directory(p.join(dir.path, 'phase_tts', project.id));
     if (!outDir.existsSync()) outDir.createSync(recursive: true);
-
     final database = ref.read(databaseProvider);
 
-    for (final seg in segments) {
-      if (seg.audioPath != null) continue; // skip already generated
-      if (seg.voiceAssetId == null) continue; // skip unassigned
-
-      final asset = assetMap[seg.voiceAssetId];
-      if (asset == null) continue;
-      final provider = providerMap[asset.providerId];
-      if (provider == null) continue;
-
-      try {
-        final adapter = createAdapter(provider, modelName: asset.modelName);
-        final result = await adapter.synthesize(TtsRequest(
-          text: seg.segmentText,
-          voice: asset.presetVoiceName ?? asset.name,
-          speed: asset.speed,
-          textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
-          presetVoiceName: asset.presetVoiceName,
-          voiceInstruction: asset.voiceInstruction,
-          refAudioPath: asset.refAudioPath,
-          promptText: asset.promptText,
-          promptLang: asset.promptLang,
-        ));
-        final ext = result.contentType.contains('wav') ? 'wav' : 'mp3';
-        final filePath = p.join(outDir.path,
-            'seg_${seg.orderIndex}_${DateTime.now().millisecondsSinceEpoch}.$ext');
-        await File(filePath).writeAsBytes(result.audioBytes);
-
-        await database.updatePhaseTtsSegment(
-          seg.copyWith(audioPath: Value(filePath), error: const Value(null)),
-        );
-      } catch (e) {
-        await database.updatePhaseTtsSegment(
-          seg.copyWith(error: Value(e.toString())),
-        );
-      }
+    setState(() => _generatingSegmentIds.add(seg.id));
+    try {
+      final adapter = createAdapter(provider, modelName: asset.modelName);
+      final result = await adapter.synthesize(TtsRequest(
+        text: seg.segmentText,
+        voice: asset.presetVoiceName ?? asset.name,
+        speed: asset.speed,
+        textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
+        presetVoiceName: asset.presetVoiceName,
+        voiceInstruction: asset.voiceInstruction,
+        refAudioPath: asset.refAudioPath,
+        promptText: asset.promptText,
+        promptLang: asset.promptLang,
+      ));
+      final ext = result.contentType.contains('wav') ? 'wav' : 'mp3';
+      final filePath = p.join(outDir.path,
+          'seg_${seg.orderIndex}_${DateTime.now().millisecondsSinceEpoch}.$ext');
+      await File(filePath).writeAsBytes(result.audioBytes);
+      await database.updatePhaseTtsSegment(
+        seg.copyWith(audioPath: Value(filePath), error: const Value(null)),
+      );
+    } catch (e) {
+      await database.updatePhaseTtsSegment(
+        seg.copyWith(error: Value(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _generatingSegmentIds.remove(seg.id));
     }
+  }
 
-    if (mounted) setState(() => _generatingAll = false);
+  Future<void> _seedTimeline(
+    String projectId,
+    List<db.PhaseTtsSegment> segments,
+    Map<String, db.VoiceAsset> assetMap,
+  ) async {
+    final database = ref.read(databaseProvider);
+    int cursorMs = 0;
+    for (final seg in segments) {
+      if (seg.audioPath == null) continue;
+      final dur = seg.audioDuration ?? 0;
+      final voiceName = seg.voiceAssetId != null
+          ? (assetMap[seg.voiceAssetId]?.name ?? 'Voice')
+          : 'Voice';
+      await database.insertTimelineClip(
+        db.TimelineClipsCompanion(
+          id: Value(const Uuid().v4()),
+          projectId: Value(projectId),
+          projectType: const Value('phase'),
+          laneIndex: const Value(0),
+          startTimeMs: Value(cursorMs),
+          durationSec: Value(dur > 0 ? dur : null),
+          audioPath: Value(seg.audioPath!),
+          sourceType: const Value('generated'),
+          sourceLineId: Value(seg.id),
+          label: Value(voiceName),
+        ),
+      );
+      cursorMs += (dur * 1000).round();
+    }
   }
 
   String _formatDate(DateTime dt) {
@@ -634,7 +708,9 @@ class _SegmentCard extends StatelessWidget {
   final db.PhaseTtsSegment segment;
   final int index;
   final List<db.VoiceAsset> bankAssets;
-  final AudioPlayer player;
+  final bool isGenerating;
+  final VoidCallback onPlay;
+  final VoidCallback? onGenerate;
   final ValueChanged<String?> onVoiceChanged;
   final VoidCallback onDelete;
 
@@ -642,7 +718,9 @@ class _SegmentCard extends StatelessWidget {
     required this.segment,
     required this.index,
     required this.bankAssets,
-    required this.player,
+    required this.isGenerating,
+    required this.onPlay,
+    required this.onGenerate,
     required this.onVoiceChanged,
     required this.onDelete,
   });
@@ -702,13 +780,19 @@ class _SegmentCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 // Status / play / error
-                if (segment.audioPath != null)
+                if (isGenerating)
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child:
+                        CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else if (segment.audioPath != null)
                   IconButton(
                     icon: const Icon(Icons.play_arrow_rounded, size: 18),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    onPressed: () =>
-                        player.play(DeviceFileSource(segment.audioPath!)),
+                    onPressed: onPlay,
                   )
                 else if (segment.error != null)
                   Tooltip(
@@ -720,6 +804,24 @@ class _SegmentCard extends StatelessWidget {
                   Icon(Icons.pending_rounded,
                       size: 18,
                       color: Colors.white.withValues(alpha: 0.2)),
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: Icon(
+                    segment.audioPath != null
+                        ? Icons.refresh_rounded
+                        : Icons.auto_awesome_rounded,
+                    size: 16,
+                    color: onGenerate == null
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : AppTheme.accentColor,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  tooltip: segment.audioPath != null
+                      ? 'Regenerate'
+                      : 'Generate',
+                  onPressed: onGenerate,
+                ),
                 const SizedBox(width: 4),
                 IconButton(
                   icon: Icon(Icons.close_rounded,

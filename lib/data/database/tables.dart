@@ -176,3 +176,35 @@ class DialogTtsLines extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+// ─────────────── Timeline Clips ───────────────
+//
+// Editable timeline model for Dialog/Phase TTS projects. Each clip is a freely
+// positioned audio segment (generated from a line, imported from voice assets,
+// or uploaded as SFX). Clips support multi-lane layout and arbitrary start
+// times, so they exist independently of the source line's order.
+class TimelineClips extends Table {
+  TextColumn get id => text()();
+  // Parent project id (dialog or phase).
+  TextColumn get projectId => text()();
+  // 'dialog' | 'phase' — scopes queries by project type.
+  TextColumn get projectType => text()();
+  // Horizontal lane; 0 is the default lane. Negative lanes render above.
+  IntColumn get laneIndex => integer().withDefault(const Constant(0))();
+  // Clip start time on the timeline, in milliseconds.
+  IntColumn get startTimeMs => integer().withDefault(const Constant(0))();
+  // Audio duration in seconds (captured after first probe/playback).
+  RealColumn get durationSec => real().nullable()();
+  // On-disk audio path.
+  TextColumn get audioPath => text()();
+  // 'generated' | 'imported' | 'sfx' — drives visual + delete semantics.
+  TextColumn get sourceType =>
+      text().withDefault(const Constant('generated'))();
+  // Optional id of the originating DialogTtsLine or PhaseTtsSegment.
+  TextColumn get sourceLineId => text().nullable()();
+  // Display label (voice name, filename, etc.).
+  TextColumn get label => text().withDefault(const Constant(''))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

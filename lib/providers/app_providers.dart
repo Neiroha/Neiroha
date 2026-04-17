@@ -79,6 +79,16 @@ final dialogTtsLinesStreamProvider =
   return db.watchDialogTtsLines(projectId);
 });
 
+/// Timeline clips for a project. Key is "$projectType:$projectId" so the
+/// family works across both Dialog and Phase TTS projects.
+final timelineClipsStreamProvider =
+    StreamProvider.family<List<TimelineClip>, String>((ref, key) {
+  final parts = key.split(':');
+  if (parts.length != 2) return const Stream.empty();
+  final db = ref.watch(databaseProvider);
+  return db.watchTimelineClips(parts[1], parts[0]);
+});
+
 /// Stream of all audio tracks (raw audio sample library).
 final audioTracksStreamProvider = StreamProvider((ref) {
   final db = ref.watch(databaseProvider);

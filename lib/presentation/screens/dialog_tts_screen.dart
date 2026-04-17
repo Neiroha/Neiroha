@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +13,9 @@ import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
+import 'package:neiroha/presentation/widgets/story_track_editor.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/providers/playback_provider.dart';
 
 /// Dialog TTS — multi-character conversation with project management.
 /// Left panel: project list. Right panel: Telegram-like chat view.
@@ -28,33 +29,14 @@ class DialogTtsScreen extends ConsumerStatefulWidget {
 class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
   String? _selectedProjectId;
   bool _generatingAll = false;
-  // Shared global player — do NOT call dispose() on it; the provider owns it.
-  late final AudioPlayer _player;
-  late final StreamSubscription<void> _completeSub;
-  late final StreamSubscription<Duration> _positionSub;
-  String? _playingLineId;
-  Duration _currentPosition = Duration.zero;
   final _textController = TextEditingController();
   String? _inputVoiceId;
-
-  @override
-  void initState() {
-    super.initState();
-    _player = ref.read(audioPlayerProvider);
-    _completeSub = _player.onPlayerComplete.listen((_) {
-      if (mounted) setState(() { _playingLineId = null; _currentPosition = Duration.zero; });
-    });
-    _positionSub = _player.onPositionChanged.listen((pos) {
-      if (mounted) setState(() => _currentPosition = pos);
-    });
-  }
+  final Set<String> _seededProjects = <String>{};
+  final Set<String> _generatingLineIds = <String>{};
 
   @override
   void dispose() {
     _textController.dispose();
-    _completeSub.cancel();
-    _positionSub.cancel();
-    // _player is owned by audioPlayerProvider — do not dispose here.
     super.dispose();
   }
 
@@ -247,6 +229,8 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
     final projectsAsync = ref.watch(dialogTtsProjectsStreamProvider);
     final linesAsync = ref.watch(dialogTtsLinesStreamProvider(projectId));
     final assetsAsync = ref.watch(voiceAssetsStreamProvider);
+    final clipsAsync =
+        ref.watch(timelineClipsStreamProvider('dialog:$projectId'));
 
     final project = projectsAsync.valueOrNull
         ?.where((p) => p.id == projectId)
@@ -265,13 +249,33 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
         .whereType<db.VoiceAsset>()
         .toList();
 
+    final lines = linesAsync.valueOrNull;
+    final clips = clipsAsync.valueOrNull;
+    if (lines != null &&
+        clips != null &&
+        clips.isEmpty &&
+        !_seededProjects.contains(projectId) &&
+        lines.any((l) => l.audioPath != null)) {
+      _seededProjects.add(projectId);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _seedTimeline(projectId, lines, assetMap);
+      });
+    }
+
     return Column(
       children: [
         // Project info bar
         _buildProjectBar(project, bankAssets),
         const Divider(height: 1),
         // Chat messages
-        Expanded(child: _buildChatView(linesAsync, assetMap)),
+        Expanded(
+            child:
+                _buildChatView(project, linesAsync, assetMap, bankAssets)),
+        // Timeline track editor
+        StoryTrackEditor(
+          projectId: project.id,
+          projectType: 'dialog',
+        ),
         // Action bar
         _buildChatActionBar(project, linesAsync, bankAssets),
         // Input bar
@@ -309,8 +313,10 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
   }
 
   Widget _buildChatView(
+    db.DialogTtsProject project,
     AsyncValue<List<db.DialogTtsLine>> linesAsync,
     Map<String, db.VoiceAsset> assetMap,
+    List<db.VoiceAsset> bankAssets,
   ) {
     return linesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -336,24 +342,50 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
         return LayoutBuilder(
           builder: (context, constraints) {
             final maxBubbleWidth = constraints.maxWidth * 0.6;
-            return ListView.builder(
+            final playback = ref.watch(playbackNotifierProvider);
+            return ReorderableListView.builder(
               padding: const EdgeInsets.all(16),
+              buildDefaultDragHandles: false,
               itemCount: lines.length,
+              onReorder: (oldIndex, newIndex) {
+                if (newIndex > oldIndex) newIndex--;
+                ref.read(databaseProvider).reorderDialogLine(
+                      lines.first.projectId,
+                      oldIndex,
+                      newIndex,
+                    );
+              },
               itemBuilder: (ctx, i) {
                 final line = lines[i];
                 final asset = line.voiceAssetId != null
                     ? assetMap[line.voiceAssetId]
                     : null;
-                return _ChatBubble(
-                  line: line,
-                  asset: asset,
-                  isPlaying: _playingLineId == line.id,
-                  playbackPosition: _playingLineId == line.id ? _currentPosition : null,
-                  maxBubbleWidth: maxBubbleWidth,
-                  onPlay: () => _playLine(line),
-                  onDelete: () => ref
-                      .read(databaseProvider)
-                      .deleteDialogTtsLine(line.id),
+                final isThisPlaying = line.audioPath != null &&
+                    playback.audioPath == line.audioPath &&
+                    playback.isPlaying;
+                final isGenerating = _generatingLineIds.contains(line.id);
+                return ReorderableDragStartListener(
+                  key: ValueKey(line.id),
+                  index: i,
+                  child: _ChatBubble(
+                    line: line,
+                    asset: asset,
+                    isPlaying: isThisPlaying,
+                    isGenerating: isGenerating,
+                    playbackPosition:
+                        isThisPlaying ? playback.position : null,
+                    maxBubbleWidth: maxBubbleWidth,
+                    onPlay: () => _playLine(line),
+                    onPlayFrom: line.audioPath == null
+                        ? null
+                        : () => _playFrom(lines, i, assetMap),
+                    onGenerate: line.voiceAssetId == null || isGenerating
+                        ? null
+                        : () => _generateOne(project, line, bankAssets),
+                    onDelete: () => ref
+                        .read(databaseProvider)
+                        .deleteDialogTtsLine(line.id),
+                  ),
                 );
               },
             );
@@ -585,24 +617,86 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
     _textController.clear();
   }
 
+  Future<void> _seedTimeline(
+    String projectId,
+    List<db.DialogTtsLine> lines,
+    Map<String, db.VoiceAsset> assetMap,
+  ) async {
+    final database = ref.read(databaseProvider);
+    int cursorMs = 0;
+    for (final line in lines) {
+      if (line.audioPath == null) continue;
+      final dur = line.audioDuration ?? 0;
+      final voiceName = line.voiceAssetId != null
+          ? (assetMap[line.voiceAssetId]?.name ?? 'Voice')
+          : 'Voice';
+      await database.insertTimelineClip(
+        db.TimelineClipsCompanion(
+          id: Value(const Uuid().v4()),
+          projectId: Value(projectId),
+          projectType: const Value('dialog'),
+          laneIndex: const Value(0),
+          startTimeMs: Value(cursorMs),
+          durationSec: Value(dur > 0 ? dur : null),
+          audioPath: Value(line.audioPath!),
+          sourceType: const Value('generated'),
+          sourceLineId: Value(line.id),
+          label: Value(voiceName),
+        ),
+      );
+      cursorMs += (dur * 1000).round();
+    }
+  }
+
+  Future<void> _playFrom(
+    List<db.DialogTtsLine> lines,
+    int startIndex,
+    Map<String, db.VoiceAsset> assetMap,
+  ) async {
+    final items = <({String audioPath, String title, String? subtitle})>[];
+    for (int i = startIndex; i < lines.length; i++) {
+      final l = lines[i];
+      if (l.audioPath == null) continue;
+      final voiceName =
+          l.voiceAssetId != null ? assetMap[l.voiceAssetId]?.name : null;
+      items.add((
+        audioPath: l.audioPath!,
+        title: l.lineText,
+        subtitle: voiceName,
+      ));
+    }
+    if (items.isEmpty) return;
+    unawaited(
+      ref.read(playbackNotifierProvider.notifier).playSequenceFrom(items),
+    );
+  }
+
   Future<void> _playLine(db.DialogTtsLine line) async {
     if (line.audioPath == null) return;
-    if (_playingLineId == line.id) {
-      await _player.stop();
-      setState(() => _playingLineId = null);
-    } else {
-      await _player.play(DeviceFileSource(line.audioPath!));
-      setState(() => _playingLineId = line.id);
-      // Capture duration on first play — avoids throw-away AudioPlayer
-      // instances that trigger the Windows platform-channel threading error.
-      if (line.audioDuration == null) {
-        _player.onDurationChanged.first.then((d) async {
-          final secs = d.inMilliseconds / 1000.0;
-          await ref.read(databaseProvider).updateDialogTtsLine(
-                line.copyWith(audioDuration: Value(secs)),
-              );
-        }).catchError((_) {});
-      }
+    final playback = ref.read(playbackNotifierProvider);
+    final notifier = ref.read(playbackNotifierProvider.notifier);
+    if (playback.audioPath == line.audioPath && playback.isPlaying) {
+      await notifier.stop();
+      return;
+    }
+    final assets = ref.read(voiceAssetsStreamProvider).valueOrNull ?? const [];
+    final voiceName = assets
+            .where((a) => a.id == line.voiceAssetId)
+            .firstOrNull
+            ?.name ??
+        'Line';
+    await notifier.load(
+      line.audioPath!,
+      line.lineText,
+      subtitle: voiceName,
+    );
+    if (line.audioDuration == null) {
+      ref.read(audioPlayerProvider).onDurationChanged.first.then((d) async {
+        final secs = d.inMilliseconds / 1000.0;
+        await ref.read(databaseProvider).updateDialogTtsLine(
+              line.copyWith(audioDuration: Value(secs)),
+            );
+      }).catchError((_) {});
     }
   }
 
@@ -611,62 +705,65 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
     List<db.DialogTtsLine> lines,
     List<db.VoiceAsset> bankAssets,
   ) async {
+    setState(() => _generatingAll = true);
+    for (final line in lines) {
+      if (line.audioPath != null) continue;
+      if (line.voiceAssetId == null) continue;
+      await _generateOne(project, line, bankAssets);
+    }
+    if (mounted) setState(() => _generatingAll = false);
+  }
+
+  Future<void> _generateOne(
+    db.DialogTtsProject project,
+    db.DialogTtsLine line,
+    List<db.VoiceAsset> bankAssets,
+  ) async {
+    if (line.voiceAssetId == null) return;
     final providers = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
     final assetMap = {for (final a in bankAssets) a.id: a};
     final providerMap = {for (final p in providers) p.id: p};
-
-    setState(() => _generatingAll = true);
+    final asset = assetMap[line.voiceAssetId];
+    if (asset == null) return;
+    final provider = providerMap[asset.providerId];
+    if (provider == null) return;
 
     final dir = await getApplicationSupportDirectory();
     final outDir = Directory(p.join(dir.path, 'dialog_tts', project.id));
     if (!outDir.existsSync()) outDir.createSync(recursive: true);
-
     final database = ref.read(databaseProvider);
 
-    for (final line in lines) {
-      if (line.audioPath != null) continue;
-      if (line.voiceAssetId == null) continue;
-
-      final asset = assetMap[line.voiceAssetId];
-      if (asset == null) continue;
-      final provider = providerMap[asset.providerId];
-      if (provider == null) continue;
-
-      try {
-        final adapter = createAdapter(provider, modelName: asset.modelName);
-        final result = await adapter.synthesize(TtsRequest(
-          text: line.lineText,
-          voice: asset.presetVoiceName ?? asset.name,
-          speed: asset.speed,
-          textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
-          presetVoiceName: asset.presetVoiceName,
-          voiceInstruction: asset.voiceInstruction,
-          refAudioPath: asset.refAudioPath,
-          promptText: asset.promptText,
-          promptLang: asset.promptLang,
-        ));
-        final ext = result.contentType.contains('wav') ? 'wav' : 'mp3';
-        final filePath = p.join(outDir.path,
-            'line_${line.orderIndex}_${DateTime.now().millisecondsSinceEpoch}.$ext');
-        await File(filePath).writeAsBytes(result.audioBytes);
-
-        // Duration is detected lazily on first playback (avoids creating a
-        // throw-away AudioPlayer that triggers the Windows platform-channel
-        // threading error).
-        await database.updateDialogTtsLine(
-          line.copyWith(
-            audioPath: Value(filePath),
-            error: const Value(null),
-          ),
-        );
-      } catch (e) {
-        await database.updateDialogTtsLine(
-          line.copyWith(error: Value(e.toString())),
-        );
-      }
+    setState(() => _generatingLineIds.add(line.id));
+    try {
+      final adapter = createAdapter(provider, modelName: asset.modelName);
+      final result = await adapter.synthesize(TtsRequest(
+        text: line.lineText,
+        voice: asset.presetVoiceName ?? asset.name,
+        speed: asset.speed,
+        textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
+        presetVoiceName: asset.presetVoiceName,
+        voiceInstruction: asset.voiceInstruction,
+        refAudioPath: asset.refAudioPath,
+        promptText: asset.promptText,
+        promptLang: asset.promptLang,
+      ));
+      final ext = result.contentType.contains('wav') ? 'wav' : 'mp3';
+      final filePath = p.join(outDir.path,
+          'line_${line.orderIndex}_${DateTime.now().millisecondsSinceEpoch}.$ext');
+      await File(filePath).writeAsBytes(result.audioBytes);
+      await database.updateDialogTtsLine(
+        line.copyWith(
+          audioPath: Value(filePath),
+          error: const Value(null),
+        ),
+      );
+    } catch (e) {
+      await database.updateDialogTtsLine(
+        line.copyWith(error: Value(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _generatingLineIds.remove(line.id));
     }
-
-    if (mounted) setState(() => _generatingAll = false);
   }
 
   String _formatDate(DateTime dt) {
@@ -680,18 +777,24 @@ class _ChatBubble extends StatelessWidget {
   final db.DialogTtsLine line;
   final db.VoiceAsset? asset;
   final bool isPlaying;
+  final bool isGenerating;
   final Duration? playbackPosition;
   final double maxBubbleWidth;
   final VoidCallback onPlay;
+  final VoidCallback? onPlayFrom;
+  final VoidCallback? onGenerate;
   final VoidCallback onDelete;
 
   const _ChatBubble({
     required this.line,
     required this.asset,
     required this.isPlaying,
+    required this.isGenerating,
     this.playbackPosition,
     required this.maxBubbleWidth,
     required this.onPlay,
+    this.onPlayFrom,
+    this.onGenerate,
     required this.onDelete,
   });
 
@@ -747,6 +850,40 @@ class _ChatBubble extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 4),
+          if (isGenerating)
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else
+            IconButton(
+              icon: Icon(
+                line.audioPath != null
+                    ? Icons.refresh_rounded
+                    : Icons.auto_awesome_rounded,
+                size: 16,
+                color: onGenerate == null
+                    ? Colors.white.withValues(alpha: 0.15)
+                    : AppTheme.accentColor,
+              ),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              tooltip:
+                  line.audioPath != null ? 'Regenerate' : 'Generate',
+              onPressed: onGenerate,
+            ),
+          const SizedBox(width: 4),
+          if (onPlayFrom != null)
+            IconButton(
+              icon: Icon(Icons.playlist_play_rounded,
+                  size: 18, color: Colors.white.withValues(alpha: 0.4)),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              tooltip: 'Play from here',
+              onPressed: onPlayFrom,
+            ),
           const SizedBox(width: 4),
           IconButton(
             icon: Icon(Icons.close_rounded,

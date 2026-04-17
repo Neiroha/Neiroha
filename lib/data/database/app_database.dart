@@ -23,6 +23,7 @@ part 'app_database.g.dart';
   DialogTtsProjects,
   DialogTtsLines,
   AudioTracks,
+  TimelineClips,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -30,7 +31,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -40,6 +41,7 @@ class AppDatabase extends _$AppDatabase {
         },
         onUpgrade: (m, from, to) async {
           // Development: drop and recreate in reverse FK order
+          await m.drop(timelineClips);
           await m.drop(audioTracks);
           await m.drop(dialogTtsLines);
           await m.drop(dialogTtsProjects);
@@ -512,6 +514,89 @@ class AppDatabase extends _$AppDatabase {
   Future<int> clearDialogTtsLines(String projectId) =>
       (delete(dialogTtsLines)
             ..where((t) => t.projectId.equals(projectId)))
+          .go();
+
+  /// Reorder a dialog line within its project by rewriting all affected
+  /// `orderIndex` values in a single transaction. `oldIndex` and `newIndex`
+  /// are 0-based positions in the current ordered list.
+  Future<void> reorderDialogLine(
+    String projectId,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    if (oldIndex == newIndex) return;
+    await transaction(() async {
+      final lines = await getDialogTtsLines(projectId);
+      if (oldIndex < 0 ||
+          oldIndex >= lines.length ||
+          newIndex < 0 ||
+          newIndex >= lines.length) {
+        return;
+      }
+      final moved = lines.removeAt(oldIndex);
+      lines.insert(newIndex, moved);
+      for (int i = 0; i < lines.length; i++) {
+        if (lines[i].orderIndex != i) {
+          await (update(dialogTtsLines)
+                ..where((t) => t.id.equals(lines[i].id)))
+              .write(DialogTtsLinesCompanion(orderIndex: Value(i)));
+        }
+      }
+    });
+  }
+
+  // --- Timeline Clips ---
+
+  Stream<List<TimelineClip>> watchTimelineClips(
+    String projectId,
+    String projectType,
+  ) =>
+      (select(timelineClips)
+            ..where((t) =>
+                t.projectId.equals(projectId) &
+                t.projectType.equals(projectType))
+            ..orderBy([
+              (t) => OrderingTerm.asc(t.startTimeMs),
+              (t) => OrderingTerm.asc(t.laneIndex),
+            ]))
+          .watch();
+
+  Future<List<TimelineClip>> getTimelineClips(
+    String projectId,
+    String projectType,
+  ) =>
+      (select(timelineClips)
+            ..where((t) =>
+                t.projectId.equals(projectId) &
+                t.projectType.equals(projectType))
+            ..orderBy([(t) => OrderingTerm.asc(t.startTimeMs)]))
+          .get();
+
+  Future<int> insertTimelineClip(TimelineClipsCompanion clip) =>
+      into(timelineClips).insert(clip);
+
+  Future<bool> updateTimelineClip(TimelineClip clip) =>
+      update(timelineClips).replace(clip);
+
+  Future<int> deleteTimelineClip(String id) =>
+      (delete(timelineClips)..where((t) => t.id.equals(id))).go();
+
+  /// Replace a clip's position (lane + start). Use for drag operations.
+  Future<int> moveTimelineClip(
+    String id, {
+    required int laneIndex,
+    required int startTimeMs,
+  }) =>
+      (update(timelineClips)..where((t) => t.id.equals(id))).write(
+        TimelineClipsCompanion(
+          laneIndex: Value(laneIndex),
+          startTimeMs: Value(startTimeMs),
+        ),
+      );
+
+  Future<int> deleteTimelineClipsByLine(String sourceLineId) =>
+      (delete(timelineClips)
+            ..where((t) => t.sourceLineId.equals(sourceLineId)))
           .go();
 
   // --- Audio Tracks ---

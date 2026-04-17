@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +14,7 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/providers/playback_provider.dart';
 
 /// Quick TTS — select a voice character, type text, generate & play audio.
 /// History is persisted to SQLite.
@@ -29,19 +29,11 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
   final _textController = TextEditingController();
   String? _selectedVoiceId;
   bool _generating = false;
-  // Shared global player — do NOT call dispose() on it; the provider owns it.
-  late final AudioPlayer _player;
-  late final StreamSubscription<void> _completeSub;
-  String? _playingId;
   bool _deleteAllConfirm = false;
 
   @override
   void initState() {
     super.initState();
-    _player = ref.read(audioPlayerProvider);
-    _completeSub = _player.onPlayerComplete.listen((_) {
-      if (mounted) setState(() => _playingId = null);
-    });
     _textController.addListener(() {
       if (mounted) setState(() {});
     });
@@ -50,8 +42,6 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
   @override
   void dispose() {
     _textController.dispose();
-    _completeSub.cancel();
-    // _player is owned by audioPlayerProvider — do not dispose here.
     super.dispose();
   }
 
@@ -279,7 +269,10 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
           itemCount: history.length,
           itemBuilder: (ctx, i) {
             final entry = history[i];
-            final isPlaying = _playingId == entry.id;
+            final playback = ref.watch(playbackNotifierProvider);
+            final isPlaying = entry.audioPath != null &&
+                playback.audioPath == entry.audioPath &&
+                playback.isPlaying;
             final hasAudio = entry.audioPath != null;
             final hasError = entry.error != null;
 
@@ -367,12 +360,15 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
         // Play/stop button
         GestureDetector(
           onTap: () async {
+            final notifier = ref.read(playbackNotifierProvider.notifier);
             if (isPlaying) {
-              await _player.stop();
-              setState(() => _playingId = null);
+              await notifier.stop();
             } else {
-              await _player.play(DeviceFileSource(entry.audioPath!));
-              setState(() => _playingId = entry.id);
+              await notifier.load(
+                entry.audioPath!,
+                entry.inputText,
+                subtitle: entry.voiceName,
+              );
             }
           },
           child: Container(
@@ -592,12 +588,14 @@ class _QuickTtsScreenState extends ConsumerState<QuickTtsScreen> {
         ),
       );
 
-      // Auto-play; then capture duration from the playing stream (avoids
-      // creating a throw-away AudioPlayer that triggers the Windows
-      // platform-channel threading error).
-      await _player.play(DeviceFileSource(filePath));
-      setState(() => _playingId = entryId);
-      _player.onDurationChanged.first.then((d) async {
+      // Auto-play via global notifier; capture duration from the shared player.
+      final player = ref.read(audioPlayerProvider);
+      await ref.read(playbackNotifierProvider.notifier).load(
+            filePath,
+            text,
+            subtitle: asset.name,
+          );
+      player.onDurationChanged.first.then((d) async {
         final secs = d.inMilliseconds / 1000.0;
         await database.updateQuickTtsHistoryDuration(entryId, secs);
       }).catchError((_) {});

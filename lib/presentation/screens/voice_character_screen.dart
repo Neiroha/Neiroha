@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +16,7 @@ import 'package:neiroha/domain/enums/task_mode.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/providers/playback_provider.dart';
 
 final _selectedCharacterIdProvider = StateProvider<String?>((ref) => null);
 
@@ -238,8 +238,6 @@ class _CharacterInspector extends ConsumerStatefulWidget {
 }
 
 class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
-  final _player = AudioPlayer();
-  bool _playing = false;
   bool _saving = false;
 
   late TextEditingController _nameCtrl;
@@ -306,7 +304,6 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
   @override
   void dispose() {
     _disposeControllers();
-    _player.dispose();
     super.dispose();
   }
 
@@ -553,28 +550,35 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
                   borderRadius: BorderRadius.circular(10)),
               child: Row(
                 children: [
-                  IconButton.filled(
-                    onPressed: () async {
-                      if (_playing) {
-                        await _player.stop();
-                        setState(() => _playing = false);
-                      } else {
-                        await _player
-                            .play(DeviceFileSource(a.refAudioPath!));
-                        setState(() => _playing = true);
-                        _player.onPlayerComplete
-                            .listen((_) => setState(() => _playing = false));
-                      }
-                    },
-                    style: IconButton.styleFrom(
-                        backgroundColor: AppTheme.accentColor,
-                        minimumSize: const Size(36, 36)),
-                    icon: Icon(
-                        _playing
-                            ? Icons.stop_rounded
-                            : Icons.play_arrow_rounded,
-                        size: 18),
-                  ),
+                  Consumer(builder: (context, ref, _) {
+                    final playback = ref.watch(playbackNotifierProvider);
+                    final isPlaying =
+                        playback.audioPath == a.refAudioPath &&
+                            playback.isPlaying;
+                    return IconButton.filled(
+                      onPressed: () async {
+                        final n =
+                            ref.read(playbackNotifierProvider.notifier);
+                        if (isPlaying) {
+                          await n.stop();
+                        } else {
+                          await n.load(
+                            a.refAudioPath!,
+                            '${a.name} (ref)',
+                            subtitle: a.name,
+                          );
+                        }
+                      },
+                      style: IconButton.styleFrom(
+                          backgroundColor: AppTheme.accentColor,
+                          minimumSize: const Size(36, 36)),
+                      icon: Icon(
+                          isPlaying
+                              ? Icons.stop_rounded
+                              : Icons.play_arrow_rounded,
+                          size: 18),
+                    );
+                  }),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -853,8 +857,6 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   String? _avatarPath;
   bool _saving = false;
 
-  final _refPlayer = AudioPlayer();
-  bool _refPlaying = false;
 
   // Voice list fetched/cached from provider
   List<String> _speakers = [];
@@ -908,7 +910,6 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     _promptLangCtrl.dispose();
     _textLangCtrl.dispose();
     _instructionCtrl.dispose();
-    _refPlayer.dispose();
     super.dispose();
   }
 
@@ -1136,11 +1137,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       if (_selectedAudioTrackId == null)
         _RefAudioPicker(
           path: _uploadedRefAudioPath,
-          player: _refPlayer,
-          isPlaying: _refPlaying,
           onPick: (path) => setState(() => _uploadedRefAudioPath = path),
-          onPlayToggle: (playing) =>
-              setState(() => _refPlaying = playing),
         ),
       const SizedBox(height: 12),
     ];
@@ -1811,23 +1808,21 @@ class _CosyVoiceModeSelector extends StatelessWidget {
   }
 }
 
-class _RefAudioPicker extends StatelessWidget {
+class _RefAudioPicker extends ConsumerWidget {
   final String? path;
-  final AudioPlayer player;
-  final bool isPlaying;
   final ValueChanged<String> onPick;
-  final ValueChanged<bool> onPlayToggle;
 
   const _RefAudioPicker({
     required this.path,
-    required this.player,
-    required this.isPlaying,
     required this.onPick,
-    required this.onPlayToggle,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final playback = ref.watch(playbackNotifierProvider);
+    final isPlaying = path != null &&
+        playback.audioPath == path &&
+        playback.isPlaying;
     return GestureDetector(
       onTap: _pickFile,
       child: Container(
@@ -1878,14 +1873,15 @@ class _RefAudioPicker extends StatelessWidget {
                   // Play / stop preview
                   IconButton(
                     onPressed: () async {
+                      final n =
+                          ref.read(playbackNotifierProvider.notifier);
                       if (isPlaying) {
-                        await player.stop();
-                        onPlayToggle(false);
+                        await n.stop();
                       } else {
-                        await player.play(DeviceFileSource(path!));
-                        onPlayToggle(true);
-                        player.onPlayerComplete
-                            .listen((_) => onPlayToggle(false));
+                        await n.load(
+                          path!,
+                          path!.split(Platform.pathSeparator).last,
+                        );
                       }
                     },
                     icon: Icon(isPlaying

@@ -6018,6 +6018,628 @@ class AudioTracksCompanion extends UpdateCompanion<AudioTrack> {
   }
 }
 
+class $TimelineClipsTable extends TimelineClips
+    with TableInfo<$TimelineClipsTable, TimelineClip> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TimelineClipsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectTypeMeta = const VerificationMeta(
+    'projectType',
+  );
+  @override
+  late final GeneratedColumn<String> projectType = GeneratedColumn<String>(
+    'project_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _laneIndexMeta = const VerificationMeta(
+    'laneIndex',
+  );
+  @override
+  late final GeneratedColumn<int> laneIndex = GeneratedColumn<int>(
+    'lane_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _startTimeMsMeta = const VerificationMeta(
+    'startTimeMs',
+  );
+  @override
+  late final GeneratedColumn<int> startTimeMs = GeneratedColumn<int>(
+    'start_time_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _durationSecMeta = const VerificationMeta(
+    'durationSec',
+  );
+  @override
+  late final GeneratedColumn<double> durationSec = GeneratedColumn<double>(
+    'duration_sec',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _audioPathMeta = const VerificationMeta(
+    'audioPath',
+  );
+  @override
+  late final GeneratedColumn<String> audioPath = GeneratedColumn<String>(
+    'audio_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceTypeMeta = const VerificationMeta(
+    'sourceType',
+  );
+  @override
+  late final GeneratedColumn<String> sourceType = GeneratedColumn<String>(
+    'source_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('generated'),
+  );
+  static const VerificationMeta _sourceLineIdMeta = const VerificationMeta(
+    'sourceLineId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceLineId = GeneratedColumn<String>(
+    'source_line_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _labelMeta = const VerificationMeta('label');
+  @override
+  late final GeneratedColumn<String> label = GeneratedColumn<String>(
+    'label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    projectType,
+    laneIndex,
+    startTimeMs,
+    durationSec,
+    audioPath,
+    sourceType,
+    sourceLineId,
+    label,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'timeline_clips';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TimelineClip> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('project_type')) {
+      context.handle(
+        _projectTypeMeta,
+        projectType.isAcceptableOrUnknown(
+          data['project_type']!,
+          _projectTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_projectTypeMeta);
+    }
+    if (data.containsKey('lane_index')) {
+      context.handle(
+        _laneIndexMeta,
+        laneIndex.isAcceptableOrUnknown(data['lane_index']!, _laneIndexMeta),
+      );
+    }
+    if (data.containsKey('start_time_ms')) {
+      context.handle(
+        _startTimeMsMeta,
+        startTimeMs.isAcceptableOrUnknown(
+          data['start_time_ms']!,
+          _startTimeMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('duration_sec')) {
+      context.handle(
+        _durationSecMeta,
+        durationSec.isAcceptableOrUnknown(
+          data['duration_sec']!,
+          _durationSecMeta,
+        ),
+      );
+    }
+    if (data.containsKey('audio_path')) {
+      context.handle(
+        _audioPathMeta,
+        audioPath.isAcceptableOrUnknown(data['audio_path']!, _audioPathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_audioPathMeta);
+    }
+    if (data.containsKey('source_type')) {
+      context.handle(
+        _sourceTypeMeta,
+        sourceType.isAcceptableOrUnknown(data['source_type']!, _sourceTypeMeta),
+      );
+    }
+    if (data.containsKey('source_line_id')) {
+      context.handle(
+        _sourceLineIdMeta,
+        sourceLineId.isAcceptableOrUnknown(
+          data['source_line_id']!,
+          _sourceLineIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('label')) {
+      context.handle(
+        _labelMeta,
+        label.isAcceptableOrUnknown(data['label']!, _labelMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TimelineClip map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TimelineClip(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      projectType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_type'],
+      )!,
+      laneIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}lane_index'],
+      )!,
+      startTimeMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_time_ms'],
+      )!,
+      durationSec: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}duration_sec'],
+      ),
+      audioPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}audio_path'],
+      )!,
+      sourceType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_type'],
+      )!,
+      sourceLineId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_line_id'],
+      ),
+      label: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}label'],
+      )!,
+    );
+  }
+
+  @override
+  $TimelineClipsTable createAlias(String alias) {
+    return $TimelineClipsTable(attachedDatabase, alias);
+  }
+}
+
+class TimelineClip extends DataClass implements Insertable<TimelineClip> {
+  final String id;
+  final String projectId;
+  final String projectType;
+  final int laneIndex;
+  final int startTimeMs;
+  final double? durationSec;
+  final String audioPath;
+  final String sourceType;
+  final String? sourceLineId;
+  final String label;
+  const TimelineClip({
+    required this.id,
+    required this.projectId,
+    required this.projectType,
+    required this.laneIndex,
+    required this.startTimeMs,
+    this.durationSec,
+    required this.audioPath,
+    required this.sourceType,
+    this.sourceLineId,
+    required this.label,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['project_type'] = Variable<String>(projectType);
+    map['lane_index'] = Variable<int>(laneIndex);
+    map['start_time_ms'] = Variable<int>(startTimeMs);
+    if (!nullToAbsent || durationSec != null) {
+      map['duration_sec'] = Variable<double>(durationSec);
+    }
+    map['audio_path'] = Variable<String>(audioPath);
+    map['source_type'] = Variable<String>(sourceType);
+    if (!nullToAbsent || sourceLineId != null) {
+      map['source_line_id'] = Variable<String>(sourceLineId);
+    }
+    map['label'] = Variable<String>(label);
+    return map;
+  }
+
+  TimelineClipsCompanion toCompanion(bool nullToAbsent) {
+    return TimelineClipsCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      projectType: Value(projectType),
+      laneIndex: Value(laneIndex),
+      startTimeMs: Value(startTimeMs),
+      durationSec: durationSec == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durationSec),
+      audioPath: Value(audioPath),
+      sourceType: Value(sourceType),
+      sourceLineId: sourceLineId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceLineId),
+      label: Value(label),
+    );
+  }
+
+  factory TimelineClip.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TimelineClip(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      projectType: serializer.fromJson<String>(json['projectType']),
+      laneIndex: serializer.fromJson<int>(json['laneIndex']),
+      startTimeMs: serializer.fromJson<int>(json['startTimeMs']),
+      durationSec: serializer.fromJson<double?>(json['durationSec']),
+      audioPath: serializer.fromJson<String>(json['audioPath']),
+      sourceType: serializer.fromJson<String>(json['sourceType']),
+      sourceLineId: serializer.fromJson<String?>(json['sourceLineId']),
+      label: serializer.fromJson<String>(json['label']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'projectType': serializer.toJson<String>(projectType),
+      'laneIndex': serializer.toJson<int>(laneIndex),
+      'startTimeMs': serializer.toJson<int>(startTimeMs),
+      'durationSec': serializer.toJson<double?>(durationSec),
+      'audioPath': serializer.toJson<String>(audioPath),
+      'sourceType': serializer.toJson<String>(sourceType),
+      'sourceLineId': serializer.toJson<String?>(sourceLineId),
+      'label': serializer.toJson<String>(label),
+    };
+  }
+
+  TimelineClip copyWith({
+    String? id,
+    String? projectId,
+    String? projectType,
+    int? laneIndex,
+    int? startTimeMs,
+    Value<double?> durationSec = const Value.absent(),
+    String? audioPath,
+    String? sourceType,
+    Value<String?> sourceLineId = const Value.absent(),
+    String? label,
+  }) => TimelineClip(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    projectType: projectType ?? this.projectType,
+    laneIndex: laneIndex ?? this.laneIndex,
+    startTimeMs: startTimeMs ?? this.startTimeMs,
+    durationSec: durationSec.present ? durationSec.value : this.durationSec,
+    audioPath: audioPath ?? this.audioPath,
+    sourceType: sourceType ?? this.sourceType,
+    sourceLineId: sourceLineId.present ? sourceLineId.value : this.sourceLineId,
+    label: label ?? this.label,
+  );
+  TimelineClip copyWithCompanion(TimelineClipsCompanion data) {
+    return TimelineClip(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      projectType: data.projectType.present
+          ? data.projectType.value
+          : this.projectType,
+      laneIndex: data.laneIndex.present ? data.laneIndex.value : this.laneIndex,
+      startTimeMs: data.startTimeMs.present
+          ? data.startTimeMs.value
+          : this.startTimeMs,
+      durationSec: data.durationSec.present
+          ? data.durationSec.value
+          : this.durationSec,
+      audioPath: data.audioPath.present ? data.audioPath.value : this.audioPath,
+      sourceType: data.sourceType.present
+          ? data.sourceType.value
+          : this.sourceType,
+      sourceLineId: data.sourceLineId.present
+          ? data.sourceLineId.value
+          : this.sourceLineId,
+      label: data.label.present ? data.label.value : this.label,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TimelineClip(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('projectType: $projectType, ')
+          ..write('laneIndex: $laneIndex, ')
+          ..write('startTimeMs: $startTimeMs, ')
+          ..write('durationSec: $durationSec, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('sourceType: $sourceType, ')
+          ..write('sourceLineId: $sourceLineId, ')
+          ..write('label: $label')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    projectType,
+    laneIndex,
+    startTimeMs,
+    durationSec,
+    audioPath,
+    sourceType,
+    sourceLineId,
+    label,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TimelineClip &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.projectType == this.projectType &&
+          other.laneIndex == this.laneIndex &&
+          other.startTimeMs == this.startTimeMs &&
+          other.durationSec == this.durationSec &&
+          other.audioPath == this.audioPath &&
+          other.sourceType == this.sourceType &&
+          other.sourceLineId == this.sourceLineId &&
+          other.label == this.label);
+}
+
+class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> projectType;
+  final Value<int> laneIndex;
+  final Value<int> startTimeMs;
+  final Value<double?> durationSec;
+  final Value<String> audioPath;
+  final Value<String> sourceType;
+  final Value<String?> sourceLineId;
+  final Value<String> label;
+  final Value<int> rowid;
+  const TimelineClipsCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.projectType = const Value.absent(),
+    this.laneIndex = const Value.absent(),
+    this.startTimeMs = const Value.absent(),
+    this.durationSec = const Value.absent(),
+    this.audioPath = const Value.absent(),
+    this.sourceType = const Value.absent(),
+    this.sourceLineId = const Value.absent(),
+    this.label = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TimelineClipsCompanion.insert({
+    required String id,
+    required String projectId,
+    required String projectType,
+    this.laneIndex = const Value.absent(),
+    this.startTimeMs = const Value.absent(),
+    this.durationSec = const Value.absent(),
+    required String audioPath,
+    this.sourceType = const Value.absent(),
+    this.sourceLineId = const Value.absent(),
+    this.label = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       projectType = Value(projectType),
+       audioPath = Value(audioPath);
+  static Insertable<TimelineClip> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? projectType,
+    Expression<int>? laneIndex,
+    Expression<int>? startTimeMs,
+    Expression<double>? durationSec,
+    Expression<String>? audioPath,
+    Expression<String>? sourceType,
+    Expression<String>? sourceLineId,
+    Expression<String>? label,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (projectType != null) 'project_type': projectType,
+      if (laneIndex != null) 'lane_index': laneIndex,
+      if (startTimeMs != null) 'start_time_ms': startTimeMs,
+      if (durationSec != null) 'duration_sec': durationSec,
+      if (audioPath != null) 'audio_path': audioPath,
+      if (sourceType != null) 'source_type': sourceType,
+      if (sourceLineId != null) 'source_line_id': sourceLineId,
+      if (label != null) 'label': label,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TimelineClipsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? projectType,
+    Value<int>? laneIndex,
+    Value<int>? startTimeMs,
+    Value<double?>? durationSec,
+    Value<String>? audioPath,
+    Value<String>? sourceType,
+    Value<String?>? sourceLineId,
+    Value<String>? label,
+    Value<int>? rowid,
+  }) {
+    return TimelineClipsCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      projectType: projectType ?? this.projectType,
+      laneIndex: laneIndex ?? this.laneIndex,
+      startTimeMs: startTimeMs ?? this.startTimeMs,
+      durationSec: durationSec ?? this.durationSec,
+      audioPath: audioPath ?? this.audioPath,
+      sourceType: sourceType ?? this.sourceType,
+      sourceLineId: sourceLineId ?? this.sourceLineId,
+      label: label ?? this.label,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (projectType.present) {
+      map['project_type'] = Variable<String>(projectType.value);
+    }
+    if (laneIndex.present) {
+      map['lane_index'] = Variable<int>(laneIndex.value);
+    }
+    if (startTimeMs.present) {
+      map['start_time_ms'] = Variable<int>(startTimeMs.value);
+    }
+    if (durationSec.present) {
+      map['duration_sec'] = Variable<double>(durationSec.value);
+    }
+    if (audioPath.present) {
+      map['audio_path'] = Variable<String>(audioPath.value);
+    }
+    if (sourceType.present) {
+      map['source_type'] = Variable<String>(sourceType.value);
+    }
+    if (sourceLineId.present) {
+      map['source_line_id'] = Variable<String>(sourceLineId.value);
+    }
+    if (label.present) {
+      map['label'] = Variable<String>(label.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TimelineClipsCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('projectType: $projectType, ')
+          ..write('laneIndex: $laneIndex, ')
+          ..write('startTimeMs: $startTimeMs, ')
+          ..write('durationSec: $durationSec, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('sourceType: $sourceType, ')
+          ..write('sourceLineId: $sourceLineId, ')
+          ..write('label: $label, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6041,6 +6663,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $DialogTtsProjectsTable(this);
   late final $DialogTtsLinesTable dialogTtsLines = $DialogTtsLinesTable(this);
   late final $AudioTracksTable audioTracks = $AudioTracksTable(this);
+  late final $TimelineClipsTable timelineClips = $TimelineClipsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6058,6 +6681,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     dialogTtsProjects,
     dialogTtsLines,
     audioTracks,
+    timelineClips,
   ];
 }
 
@@ -11349,6 +11973,311 @@ typedef $$AudioTracksTableProcessedTableManager =
       AudioTrack,
       PrefetchHooks Function()
     >;
+typedef $$TimelineClipsTableCreateCompanionBuilder =
+    TimelineClipsCompanion Function({
+      required String id,
+      required String projectId,
+      required String projectType,
+      Value<int> laneIndex,
+      Value<int> startTimeMs,
+      Value<double?> durationSec,
+      required String audioPath,
+      Value<String> sourceType,
+      Value<String?> sourceLineId,
+      Value<String> label,
+      Value<int> rowid,
+    });
+typedef $$TimelineClipsTableUpdateCompanionBuilder =
+    TimelineClipsCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> projectType,
+      Value<int> laneIndex,
+      Value<int> startTimeMs,
+      Value<double?> durationSec,
+      Value<String> audioPath,
+      Value<String> sourceType,
+      Value<String?> sourceLineId,
+      Value<String> label,
+      Value<int> rowid,
+    });
+
+class $$TimelineClipsTableFilterComposer
+    extends Composer<_$AppDatabase, $TimelineClipsTable> {
+  $$TimelineClipsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get projectId => $composableBuilder(
+    column: $table.projectId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get projectType => $composableBuilder(
+    column: $table.projectType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get laneIndex => $composableBuilder(
+    column: $table.laneIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startTimeMs => $composableBuilder(
+    column: $table.startTimeMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get durationSec => $composableBuilder(
+    column: $table.durationSec,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceType => $composableBuilder(
+    column: $table.sourceType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceLineId => $composableBuilder(
+    column: $table.sourceLineId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TimelineClipsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TimelineClipsTable> {
+  $$TimelineClipsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get projectId => $composableBuilder(
+    column: $table.projectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get projectType => $composableBuilder(
+    column: $table.projectType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get laneIndex => $composableBuilder(
+    column: $table.laneIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startTimeMs => $composableBuilder(
+    column: $table.startTimeMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get durationSec => $composableBuilder(
+    column: $table.durationSec,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceType => $composableBuilder(
+    column: $table.sourceType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceLineId => $composableBuilder(
+    column: $table.sourceLineId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TimelineClipsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TimelineClipsTable> {
+  $$TimelineClipsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get projectId =>
+      $composableBuilder(column: $table.projectId, builder: (column) => column);
+
+  GeneratedColumn<String> get projectType => $composableBuilder(
+    column: $table.projectType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get laneIndex =>
+      $composableBuilder(column: $table.laneIndex, builder: (column) => column);
+
+  GeneratedColumn<int> get startTimeMs => $composableBuilder(
+    column: $table.startTimeMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get durationSec => $composableBuilder(
+    column: $table.durationSec,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get audioPath =>
+      $composableBuilder(column: $table.audioPath, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceType => $composableBuilder(
+    column: $table.sourceType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceLineId => $composableBuilder(
+    column: $table.sourceLineId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => column);
+}
+
+class $$TimelineClipsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TimelineClipsTable,
+          TimelineClip,
+          $$TimelineClipsTableFilterComposer,
+          $$TimelineClipsTableOrderingComposer,
+          $$TimelineClipsTableAnnotationComposer,
+          $$TimelineClipsTableCreateCompanionBuilder,
+          $$TimelineClipsTableUpdateCompanionBuilder,
+          (
+            TimelineClip,
+            BaseReferences<_$AppDatabase, $TimelineClipsTable, TimelineClip>,
+          ),
+          TimelineClip,
+          PrefetchHooks Function()
+        > {
+  $$TimelineClipsTableTableManager(_$AppDatabase db, $TimelineClipsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TimelineClipsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TimelineClipsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TimelineClipsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> projectType = const Value.absent(),
+                Value<int> laneIndex = const Value.absent(),
+                Value<int> startTimeMs = const Value.absent(),
+                Value<double?> durationSec = const Value.absent(),
+                Value<String> audioPath = const Value.absent(),
+                Value<String> sourceType = const Value.absent(),
+                Value<String?> sourceLineId = const Value.absent(),
+                Value<String> label = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TimelineClipsCompanion(
+                id: id,
+                projectId: projectId,
+                projectType: projectType,
+                laneIndex: laneIndex,
+                startTimeMs: startTimeMs,
+                durationSec: durationSec,
+                audioPath: audioPath,
+                sourceType: sourceType,
+                sourceLineId: sourceLineId,
+                label: label,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String projectType,
+                Value<int> laneIndex = const Value.absent(),
+                Value<int> startTimeMs = const Value.absent(),
+                Value<double?> durationSec = const Value.absent(),
+                required String audioPath,
+                Value<String> sourceType = const Value.absent(),
+                Value<String?> sourceLineId = const Value.absent(),
+                Value<String> label = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TimelineClipsCompanion.insert(
+                id: id,
+                projectId: projectId,
+                projectType: projectType,
+                laneIndex: laneIndex,
+                startTimeMs: startTimeMs,
+                durationSec: durationSec,
+                audioPath: audioPath,
+                sourceType: sourceType,
+                sourceLineId: sourceLineId,
+                label: label,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TimelineClipsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TimelineClipsTable,
+      TimelineClip,
+      $$TimelineClipsTableFilterComposer,
+      $$TimelineClipsTableOrderingComposer,
+      $$TimelineClipsTableAnnotationComposer,
+      $$TimelineClipsTableCreateCompanionBuilder,
+      $$TimelineClipsTableUpdateCompanionBuilder,
+      (
+        TimelineClip,
+        BaseReferences<_$AppDatabase, $TimelineClipsTable, TimelineClip>,
+      ),
+      TimelineClip,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -11377,4 +12306,6 @@ class $AppDatabaseManager {
       $$DialogTtsLinesTableTableManager(_db, _db.dialogTtsLines);
   $$AudioTracksTableTableManager get audioTracks =>
       $$AudioTracksTableTableManager(_db, _db.audioTracks);
+  $$TimelineClipsTableTableManager get timelineClips =>
+      $$TimelineClipsTableTableManager(_db, _db.timelineClips);
 }

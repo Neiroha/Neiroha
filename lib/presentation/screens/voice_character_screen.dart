@@ -226,7 +226,7 @@ class _CharacterList extends StatelessWidget {
   }
 }
 
-// ─────────────────────────── Inspector Panel ────────────────────────────────
+// ─────────────────────────── Inspector Panel (inline editor) ────────────────
 
 class _CharacterInspector extends ConsumerStatefulWidget {
   final db.VoiceAsset asset;
@@ -240,31 +240,164 @@ class _CharacterInspector extends ConsumerStatefulWidget {
 class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
   final _player = AudioPlayer();
   bool _playing = false;
+  bool _saving = false;
+
+  late TextEditingController _nameCtrl;
+  late TextEditingController _descCtrl;
+  late TextEditingController _voiceNameCtrl;
+  late TextEditingController _modelNameCtrl;
+  late TextEditingController _speedCtrl;
+  late TextEditingController _promptTextCtrl;
+  late TextEditingController _promptLangCtrl;
+  late TextEditingController _textLangCtrl;
+  late TextEditingController _instructionCtrl;
+  late String _selectedProviderId;
+  String? _selectedSpeaker;
+
+  List<String> _speakers = [];
+  bool _loadingSpeakers = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initControllers(widget.asset);
+    _fetchSpeakers();
+  }
+
+  @override
+  void didUpdateWidget(covariant _CharacterInspector old) {
+    super.didUpdateWidget(old);
+    // Only reinitialize when switching to a different character
+    if (old.asset.id != widget.asset.id) {
+      _disposeControllers();
+      _initControllers(widget.asset);
+      _fetchSpeakers();
+    }
+  }
+
+  void _initControllers(db.VoiceAsset a) {
+    _nameCtrl = TextEditingController(text: a.name);
+    _descCtrl = TextEditingController(text: a.description ?? '');
+    _voiceNameCtrl = TextEditingController(text: a.presetVoiceName ?? '');
+    _modelNameCtrl = TextEditingController(text: a.modelName ?? '');
+    _speedCtrl = TextEditingController(text: a.speed.toString());
+    _promptTextCtrl = TextEditingController(text: a.promptText ?? '');
+    _promptLangCtrl = TextEditingController(text: a.promptLang ?? '');
+    _textLangCtrl = TextEditingController(text: a.modelName ?? 'zh');
+    _instructionCtrl = TextEditingController(text: a.voiceInstruction ?? '');
+    _selectedProviderId = a.providerId;
+    _selectedSpeaker = a.presetVoiceName;
+    _speakers = [];
+    _loadingSpeakers = false;
+  }
+
+  void _disposeControllers() {
+    _nameCtrl.dispose();
+    _descCtrl.dispose();
+    _voiceNameCtrl.dispose();
+    _modelNameCtrl.dispose();
+    _speedCtrl.dispose();
+    _promptTextCtrl.dispose();
+    _promptLangCtrl.dispose();
+    _textLangCtrl.dispose();
+    _instructionCtrl.dispose();
+  }
 
   @override
   void dispose() {
+    _disposeControllers();
     _player.dispose();
     super.dispose();
+  }
+
+  db.TtsProvider? get _selectedProvider {
+    final providers =
+        ref.read(ttsProvidersStreamProvider).valueOrNull ?? const [];
+    return providers
+        .where((p) => p.id == _selectedProviderId)
+        .cast<db.TtsProvider?>()
+        .firstOrNull;
+  }
+
+  bool get _isPresetVoiceProvider {
+    final t = _selectedProvider?.adapterType ?? '';
+    return t == 'azureTts' ||
+        t == 'systemTts' ||
+        t == 'openaiCompatible' ||
+        t == 'chatCompletionsTts';
+  }
+
+  bool get _isGptSovits => _selectedProvider?.adapterType == 'gptSovits';
+
+  bool get _hasModelField {
+    final t = _selectedProvider?.adapterType ?? '';
+    return t == 'openaiCompatible' || t == 'chatCompletionsTts';
+  }
+
+  Future<void> _fetchSpeakers() async {
+    if (!_isPresetVoiceProvider) return;
+    setState(() {
+      _loadingSpeakers = true;
+      _speakers = [];
+    });
+    final database = ref.read(databaseProvider);
+    final cached = await database.getBindingsForProvider(_selectedProviderId);
+    if (cached.isNotEmpty) {
+      final voices = cached.map((b) => b.modelKey).toList()..sort();
+      if (mounted) {
+        setState(() {
+          _speakers = voices;
+          _loadingSpeakers = false;
+        });
+      }
+      return;
+    }
+    final provider = _selectedProvider;
+    if (provider != null) {
+      try {
+        final adapter = createAdapter(provider);
+        final speakers = await adapter.getSpeakers();
+        if (mounted) {
+          setState(() {
+            _speakers = speakers;
+            _loadingSpeakers = false;
+          });
+        }
+      } catch (_) {
+        if (mounted) setState(() => _loadingSpeakers = false);
+      }
+    } else {
+      if (mounted) setState(() => _loadingSpeakers = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final a = widget.asset;
-    final providers = ref.watch(ttsProvidersStreamProvider).valueOrNull ??
-        const <db.TtsProvider>[];
-    final provider = providers.where((p) => p.id == a.providerId).firstOrNull;
-    final isGptSovits = provider?.adapterType == 'gptSovits';
-    final isCosyVoiceNative = provider?.adapterType == 'cosyvoice';
+    final allProviders =
+        ref.watch(ttsProvidersStreamProvider).valueOrNull ?? const <db.TtsProvider>[];
+    final enabledProviders = allProviders.where((p) => p.enabled).toList();
+    // Always include the current provider even if disabled
+    if (!enabledProviders.any((p) => p.id == _selectedProviderId)) {
+      final current =
+          allProviders.where((p) => p.id == _selectedProviderId).firstOrNull;
+      if (current != null) enabledProviders.insert(0, current);
+    }
+
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        // Avatar + change photo
+        // ── Avatar ──────────────────────────────────────────────────────────
         Center(
           child: GestureDetector(
             onTap: () => _pickAvatar(a),
             child: Stack(
               children: [
-                _Avatar(name: a.name, selected: true, radius: 36, avatarPath: a.avatarPath),
+                _Avatar(
+                    name: a.name,
+                    selected: true,
+                    radius: 36,
+                    avatarPath: a.avatarPath),
                 Positioned(
                   bottom: 0,
                   right: 0,
@@ -283,142 +416,268 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
             ),
           ),
         ),
+        const SizedBox(height: 16),
+
+        // ── Name ─────────────────────────────────────────────────────────────
+        TextField(
+          controller: _nameCtrl,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          decoration: const InputDecoration(labelText: 'Character Name *'),
+        ),
+        const SizedBox(height: 8),
+        Center(child: _ModeBadge(mode: a.taskMode)),
         const SizedBox(height: 12),
-        Center(
-          child: Text(a.name,
-              style: const TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.bold)),
+
+        // ── Description ──────────────────────────────────────────────────────
+        TextField(
+          controller: _descCtrl,
+          maxLines: 2,
+          decoration:
+              const InputDecoration(labelText: 'Description (optional)'),
         ),
-        const SizedBox(height: 4),
-        Center(
-          child: _ModeBadge(mode: a.taskMode),
-        ),
-        if (a.description != null && a.description!.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          Center(
-            child: Text(a.description!,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white.withValues(alpha: 0.5))),
-          ),
-        ],
         const SizedBox(height: 20),
         const Divider(),
         const SizedBox(height: 12),
 
-        // Fields
-        if (a.modelName != null)
-          _Field(
-            isGptSovits ? 'Output Language' :
-            isCosyVoiceNative ? 'CosyVoice Mode' :
-            'Model',
-            a.modelName!,
-          ),
-        if (a.presetVoiceName != null) _Field('Voice Name', a.presetVoiceName!),
-        _Field('Speed', '${a.speed}x'),
-
-        // Ref audio section
-        if (a.refAudioPath != null) ...[
-          const SizedBox(height: 4),
-          Text('REFERENCE AUDIO',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.4))),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceDim,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                IconButton.filled(
-                  onPressed: () async {
-                    if (_playing) {
-                      await _player.stop();
-                      setState(() => _playing = false);
-                    } else {
-                      await _player
-                          .play(DeviceFileSource(a.refAudioPath!));
-                      setState(() => _playing = true);
-                      _player.onPlayerComplete
-                          .listen((_) => setState(() => _playing = false));
-                    }
-                  },
-                  style: IconButton.styleFrom(
-                      backgroundColor: AppTheme.accentColor,
-                      minimumSize: const Size(36, 36)),
-                  icon: Icon(
-                      _playing ? Icons.stop_rounded : Icons.play_arrow_rounded,
-                      size: 18),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        a.refAudioPath!.split(Platform.pathSeparator).last,
-                        style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w500),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (a.refAudioTrimStart != null ||
-                          a.refAudioTrimEnd != null)
+        // ── Provider ─────────────────────────────────────────────────────────
+        _SectionLabel('PROVIDER'),
+        const SizedBox(height: 8),
+        if (enabledProviders.isEmpty)
+          Text('No providers available',
+              style:
+                  TextStyle(color: Colors.white.withValues(alpha: 0.4)))
+        else
+          DropdownButtonFormField<String>(
+            decoration: const InputDecoration(labelText: 'Provider'),
+            initialValue: enabledProviders.any((p) => p.id == _selectedProviderId)
+                ? _selectedProviderId
+                : null,
+            items: enabledProviders
+                .map((p) => DropdownMenuItem(
+                      value: p.id,
+                      child: Row(children: [
+                        Text(p.name),
+                        const SizedBox(width: 8),
                         Text(
-                          '${a.refAudioTrimStart?.toStringAsFixed(1) ?? '0.0'}s'
-                          ' → ${a.refAudioTrimEnd?.toStringAsFixed(1) ?? 'end'}s',
+                          '(${AdapterType.values.where((t) => t.name == p.adapterType).firstOrNull?.displayName ?? p.adapterType})',
                           style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 12,
                               color: Colors.white.withValues(alpha: 0.4)),
                         ),
-                    ],
-                  ),
-                ),
-              ],
+                      ]),
+                    ))
+                .toList(),
+            onChanged: (v) {
+              if (v != null) {
+                setState(() {
+                  _selectedProviderId = v;
+                  _speakers = [];
+                  _selectedSpeaker = null;
+                });
+                _fetchSpeakers();
+              }
+            },
+          ),
+        const SizedBox(height: 16),
+
+        // ── Speed ────────────────────────────────────────────────────────────
+        TextField(
+          controller: _speedCtrl,
+          keyboardType: TextInputType.number,
+          decoration:
+              const InputDecoration(labelText: 'Speed (1.0 = normal)'),
+        ),
+        const SizedBox(height: 20),
+
+        // ── Mode-specific fields ─────────────────────────────────────────────
+        if (a.taskMode == 'presetVoice') ...[
+          _SectionLabel('VOICE'),
+          const SizedBox(height: 8),
+          if (_loadingSpeakers)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Row(children: [
+                SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2)),
+                SizedBox(width: 10),
+                Text('Loading voices...'),
+              ]),
+            )
+          else if (_speakers.isNotEmpty) ...[
+            _VoiceSearchPicker(
+              label: 'Select Voice',
+              voices: _speakers,
+              selected: _selectedSpeaker,
+              onSelected: (v) => setState(() {
+                _selectedSpeaker = v;
+                _voiceNameCtrl.text = v;
+              }),
+            ),
+            const SizedBox(height: 8),
+          ],
+          TextField(
+            controller: _voiceNameCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Voice Name',
+              helperText:
+                  'Filled automatically when you pick above, or type manually',
             ),
           ),
-          if (a.promptText != null) ...[
-            const SizedBox(height: 8),
-            _Field('Prompt Text', a.promptText!),
+          if (_hasModelField) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: _modelNameCtrl,
+              decoration: const InputDecoration(
+                  labelText: 'Model Name', hintText: 'e.g. tts-1'),
+            ),
           ],
-          if (a.promptLang != null) _Field('Language', a.promptLang!),
         ],
 
-        if (a.voiceInstruction != null) ...[
-          const SizedBox(height: 4),
-          _Field('Voice Instruction', a.voiceInstruction!),
+        if (a.taskMode == 'cloneWithPrompt') ...[
+          _SectionLabel('VOICE CLONE'),
+          const SizedBox(height: 8),
+          if (a.refAudioPath != null) ...[
+            Text('REFERENCE AUDIO',
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                    color: Colors.white.withValues(alpha: 0.4))),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                  color: AppTheme.surfaceDim,
+                  borderRadius: BorderRadius.circular(10)),
+              child: Row(
+                children: [
+                  IconButton.filled(
+                    onPressed: () async {
+                      if (_playing) {
+                        await _player.stop();
+                        setState(() => _playing = false);
+                      } else {
+                        await _player
+                            .play(DeviceFileSource(a.refAudioPath!));
+                        setState(() => _playing = true);
+                        _player.onPlayerComplete
+                            .listen((_) => setState(() => _playing = false));
+                      }
+                    },
+                    style: IconButton.styleFrom(
+                        backgroundColor: AppTheme.accentColor,
+                        minimumSize: const Size(36, 36)),
+                    icon: Icon(
+                        _playing
+                            ? Icons.stop_rounded
+                            : Icons.play_arrow_rounded,
+                        size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          a.refAudioPath!.split(Platform.pathSeparator).last,
+                          style: const TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w500),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (a.refAudioTrimStart != null ||
+                            a.refAudioTrimEnd != null)
+                          Text(
+                            '${a.refAudioTrimStart?.toStringAsFixed(1) ?? '0.0'}s'
+                            ' → ${a.refAudioTrimEnd?.toStringAsFixed(1) ?? 'end'}s',
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.white.withValues(alpha: 0.4)),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          TextField(
+            controller: _promptTextCtrl,
+            maxLines: 3,
+            decoration:
+                const InputDecoration(labelText: 'Reference Transcript'),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _promptLangCtrl,
+            decoration: const InputDecoration(labelText: 'Language Code'),
+          ),
+          if (_isGptSovits) ...[
+            const SizedBox(height: 10),
+            TextField(
+              controller: _textLangCtrl,
+              decoration: const InputDecoration(
+                  labelText: 'Text Language (synthesis output)',
+                  hintText: 'zh / en / ja / ko ...'),
+            ),
+          ],
+          const SizedBox(height: 10),
+          TextField(
+            controller: _instructionCtrl,
+            decoration: const InputDecoration(
+                labelText: 'Style Instruction (optional)'),
+          ),
+        ],
+
+        if (a.taskMode == 'voiceDesign') ...[
+          _SectionLabel('VOICE DESIGN'),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _instructionCtrl,
+            maxLines: 4,
+            decoration:
+                const InputDecoration(labelText: 'Voice Instruction'),
+          ),
         ],
 
         const SizedBox(height: 16),
         const Divider(),
         const SizedBox(height: 12),
 
+        // ── Enabled toggle ───────────────────────────────────────────────────
         Row(
           children: [
             Text('Enabled',
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8))),
+                style:
+                    TextStyle(color: Colors.white.withValues(alpha: 0.8))),
             const Spacer(),
             Switch(
               value: a.enabled,
-              onChanged: (v) {
-                ref.read(databaseProvider).updateVoiceAsset(a.copyWith(enabled: v));
-              },
+              onChanged: (v) => ref
+                  .read(databaseProvider)
+                  .updateVoiceAsset(a.copyWith(enabled: v)),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
+
+        // ── Save ─────────────────────────────────────────────────────────────
         FilledButton.icon(
-          onPressed: () => _editCharacter(a),
-          icon: const Icon(Icons.edit_rounded, size: 18),
-          label: const Text('Edit Character'),
+          onPressed: _saving ? null : _save,
+          icon: _saving
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white))
+              : const Icon(Icons.check_rounded, size: 18),
+          label: const Text('Save Changes'),
         ),
         const SizedBox(height: 8),
+
+        // ── Duplicate / Delete ───────────────────────────────────────────────
         Row(
           children: [
             Expanded(
@@ -433,12 +692,14 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
               child: OutlinedButton.icon(
                 onPressed: () {
                   ref.read(databaseProvider).deleteVoiceAsset(a.id);
-                  ref.read(_selectedCharacterIdProvider.notifier).state = null;
+                  ref
+                      .read(_selectedCharacterIdProvider.notifier)
+                      .state = null;
                 },
                 icon: const Icon(Icons.delete_outline_rounded, size: 18),
                 label: const Text('Delete'),
-                style:
-                    OutlinedButton.styleFrom(foregroundColor: Colors.redAccent),
+                style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.redAccent),
               ),
             ),
           ],
@@ -455,7 +716,6 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
     if (result == null || result.files.single.path == null) return;
 
     final picked = result.files.single.path!;
-    // Copy to app support dir so it persists
     final appDir = await getApplicationSupportDirectory();
     final avatarDir = Directory(p.join(appDir.path, 'avatars'));
     if (!avatarDir.existsSync()) avatarDir.createSync(recursive: true);
@@ -468,33 +728,66 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
         .updateVoiceAsset(asset.copyWith(avatarPath: Value(dest)));
   }
 
-  void _editCharacter(db.VoiceAsset asset) {
-    final allProviders = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
-    final enabledProviders = allProviders.where((p) => p.enabled).toList();
-    // Include the asset's current provider even if disabled, so it's selectable
-    if (!enabledProviders.any((p) => p.id == asset.providerId)) {
-      final current = allProviders.where((p) => p.id == asset.providerId).firstOrNull;
-      if (current != null) enabledProviders.insert(0, current);
-    }
-    if (enabledProviders.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Enable at least one Provider first')));
+  Future<void> _save() async {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Name is required')));
       return;
     }
-    final existingAssets = ref.read(voiceAssetsStreamProvider).valueOrNull ?? [];
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => _EditCharacterDialog(
-        asset: asset,
-        providers: enabledProviders,
-        existingAssets: existingAssets,
-        database: ref.read(databaseProvider),
-        onSave: (updated) async {
-          await ref.read(databaseProvider).updateVoiceAsset(updated);
-        },
-      ),
+    final existingAssets =
+        ref.read(voiceAssetsStreamProvider).valueOrNull ?? [];
+    if (existingAssets
+        .any((x) => x.name == name && x.id != widget.asset.id)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('A character with this name already exists')));
+      return;
+    }
+
+    setState(() => _saving = true);
+
+    final speed = double.tryParse(_speedCtrl.text) ?? 1.0;
+    final a = widget.asset;
+    final textLang = _textLangCtrl.text.trim();
+
+    String? modelName;
+    if (_isGptSovits) {
+      modelName = textLang.isEmpty ? null : textLang;
+    } else if (_hasModelField) {
+      final v = _modelNameCtrl.text.trim();
+      modelName = v.isEmpty ? null : v;
+    } else {
+      modelName = a.modelName; // preserve (e.g. cosyvoice mode)
+    }
+
+    final updated = a.copyWith(
+      name: name,
+      description: Value(
+          _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim()),
+      providerId: _selectedProviderId,
+      modelName: Value(modelName),
+      speed: speed,
+      presetVoiceName: Value(_voiceNameCtrl.text.trim().isEmpty
+          ? null
+          : _voiceNameCtrl.text.trim()),
+      promptText: Value(_promptTextCtrl.text.trim().isEmpty
+          ? null
+          : _promptTextCtrl.text.trim()),
+      promptLang: Value(_promptLangCtrl.text.trim().isEmpty
+          ? null
+          : _promptLangCtrl.text.trim()),
+      voiceInstruction: Value(_instructionCtrl.text.trim().isEmpty
+          ? null
+          : _instructionCtrl.text.trim()),
     );
+
+    await ref.read(databaseProvider).updateVoiceAsset(updated);
+
+    if (mounted) {
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Saved'), duration: Duration(seconds: 1)));
+    }
   }
 
   Future<void> _duplicateCharacter(db.VoiceAsset asset) async {
@@ -1617,362 +1910,6 @@ class _RefAudioPicker extends StatelessWidget {
   }
 }
 
-// ─────────────────────────── Edit Character Dialog ────────────────────────────
-
-class _EditCharacterDialog extends StatefulWidget {
-  final db.VoiceAsset asset;
-  final List<db.TtsProvider> providers;
-  final Future<void> Function(db.VoiceAsset) onSave;
-  final List<db.VoiceAsset> existingAssets;
-  final db.AppDatabase database;
-
-  const _EditCharacterDialog({
-    required this.asset,
-    required this.providers,
-    required this.onSave,
-    required this.database,
-    this.existingAssets = const [],
-  });
-
-  @override
-  State<_EditCharacterDialog> createState() => _EditCharacterDialogState();
-}
-
-class _EditCharacterDialogState extends State<_EditCharacterDialog> {
-  late final TextEditingController _nameCtrl;
-  late final TextEditingController _descCtrl;
-  late final TextEditingController _voiceNameCtrl;
-  late final TextEditingController _speedCtrl;
-  late final TextEditingController _promptTextCtrl;
-  late final TextEditingController _promptLangCtrl;
-  late final TextEditingController _textLangCtrl;
-  late final TextEditingController _instructionCtrl;
-  late String _selectedProviderId;
-  late final bool _assetWasGptSovits;
-  bool _saving = false;
-
-  List<String> _speakers = [];
-  bool _loadingSpeakers = false;
-  String? _selectedSpeaker;
-
-  @override
-  void initState() {
-    super.initState();
-    final a = widget.asset;
-    _nameCtrl = TextEditingController(text: a.name);
-    _descCtrl = TextEditingController(text: a.description ?? '');
-    _voiceNameCtrl = TextEditingController(text: a.presetVoiceName ?? '');
-    _speedCtrl = TextEditingController(text: a.speed.toString());
-    _promptTextCtrl = TextEditingController(text: a.promptText ?? '');
-    _promptLangCtrl = TextEditingController(text: a.promptLang ?? '');
-    _assetWasGptSovits = widget.providers
-            .where((p) => p.id == a.providerId)
-            .firstOrNull
-            ?.adapterType ==
-        'gptSovits';
-    _textLangCtrl = TextEditingController(
-      text: _assetWasGptSovits ? (a.modelName ?? 'zh') : 'zh',
-    );
-    _instructionCtrl = TextEditingController(text: a.voiceInstruction ?? '');
-    _selectedProviderId = widget.providers.any((p) => p.id == a.providerId)
-        ? a.providerId
-        : widget.providers.first.id;
-    _selectedSpeaker = a.presetVoiceName;
-    _fetchSpeakers();
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _descCtrl.dispose();
-    _voiceNameCtrl.dispose();
-    _speedCtrl.dispose();
-    _promptTextCtrl.dispose();
-    _promptLangCtrl.dispose();
-    _textLangCtrl.dispose();
-    _instructionCtrl.dispose();
-    super.dispose();
-  }
-
-  db.TtsProvider get _selectedProvider =>
-      widget.providers.firstWhere((p) => p.id == _selectedProviderId);
-
-  bool get _isSelectedGptSovits => _selectedProvider.adapterType == 'gptSovits';
-
-  bool get _isPresetVoiceProvider {
-    final t = _selectedProvider.adapterType;
-    return t == 'azureTts' ||
-        t == 'systemTts' ||
-        t == 'openaiCompatible' ||
-        t == 'chatCompletionsTts';
-  }
-
-  Future<void> _fetchSpeakers() async {
-    if (!_isPresetVoiceProvider) return;
-    setState(() {
-      _loadingSpeakers = true;
-      _speakers = [];
-    });
-    final cached =
-        await widget.database.getBindingsForProvider(_selectedProviderId);
-    if (cached.isNotEmpty) {
-      final voices = cached.map((b) => b.modelKey).toList()..sort();
-      if (mounted) {
-        setState(() {
-          _speakers = voices;
-          _loadingSpeakers = false;
-        });
-      }
-      return;
-    }
-    try {
-      final adapter = createAdapter(_selectedProvider);
-      final speakers = await adapter.getSpeakers();
-      if (mounted) setState(() { _speakers = speakers; _loadingSpeakers = false; });
-    } catch (_) {
-      if (mounted) setState(() => _loadingSpeakers = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final a = widget.asset;
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: SizedBox(
-        width: 500,
-        height: 600,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 12, 0),
-              child: Row(
-                children: [
-                  const Text('Edit Character',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 24),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                children: [
-                  // Character info at top
-                  TextField(
-                    controller: _nameCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Character Name *'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _descCtrl,
-                    maxLines: 2,
-                    decoration: const InputDecoration(
-                        labelText: 'Description (optional)'),
-                  ),
-                  const SizedBox(height: 20),
-                  _SectionLabel('PROVIDER'),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    decoration:
-                        const InputDecoration(labelText: 'Provider'),
-                    items: widget.providers
-                        .map((p) => DropdownMenuItem(
-                            value: p.id,
-                            child: Row(
-                              children: [
-                                Text(p.name),
-                                const SizedBox(width: 8),
-                                Text(
-                                    '(${AdapterType.values.where((t) => t.name == p.adapterType).firstOrNull?.displayName ?? p.adapterType})',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.white
-                                            .withValues(alpha: 0.4))),
-                              ],
-                            )))
-                        .toList(),
-                    initialValue: _selectedProviderId,
-                    onChanged: (v) {
-                      if (v != null) setState(() => _selectedProviderId = v);
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _speedCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration:
-                        const InputDecoration(labelText: 'Speed (1.0 = normal)'),
-                  ),
-                  const SizedBox(height: 20),
-                  // Mode-specific fields
-                  if (a.taskMode == 'presetVoice') ...[
-                    _SectionLabel('PRESET VOICE'),
-                    const SizedBox(height: 8),
-                    if (_loadingSpeakers)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        child: Row(children: [
-                          SizedBox(
-                              width: 16,
-                              height: 16,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2)),
-                          SizedBox(width: 10),
-                          Text('Loading voices...'),
-                        ]),
-                      )
-                    else if (_speakers.isNotEmpty) ...[
-                      _VoiceSearchPicker(
-                        label: 'Select Voice',
-                        voices: _speakers,
-                        selected: _selectedSpeaker,
-                        onSelected: (v) => setState(() {
-                          _selectedSpeaker = v;
-                          _voiceNameCtrl.text = v;
-                        }),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    TextField(
-                      controller: _voiceNameCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'Voice Name',
-                          helperText: 'Filled automatically when you pick above, or type manually'),
-                    ),
-                  ],
-                  if (a.taskMode == 'cloneWithPrompt') ...[
-                    _SectionLabel('VOICE CLONE'),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _promptTextCtrl,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                          labelText: 'Reference Transcript'),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: _promptLangCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'Language Code'),
-                    ),
-                    if (_isSelectedGptSovits) ...[
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: _textLangCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Text Language (synthesis output)',
-                          hintText: 'zh / en / ja / ko ...',
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: _instructionCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'Style Instruction (optional)'),
-                    ),
-                  ],
-                  if (a.taskMode == 'voiceDesign') ...[
-                    _SectionLabel('VOICE DESIGN'),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _instructionCtrl,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                          labelText: 'Voice Instruction'),
-                    ),
-                  ],
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              child: Row(
-                children: [
-                  TextButton(
-                    onPressed: _saving ? null : () => Navigator.pop(context),
-                    child: const Text('Cancel'),
-                  ),
-                  const Spacer(),
-                  FilledButton.icon(
-                    onPressed: _saving ? null : _save,
-                    icon: _saving
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.check_rounded, size: 18),
-                    label: const Text('Save Changes'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _save() async {
-    final name = _nameCtrl.text.trim();
-    if (name.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Name is required')));
-      return;
-    }
-    // Uniqueness check (exclude self)
-    if (widget.existingAssets
-        .any((a) => a.name == name && a.id != widget.asset.id)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('A character with this name already exists')));
-      return;
-    }
-    setState(() => _saving = true);
-
-    final speed = double.tryParse(_speedCtrl.text) ?? 1.0;
-    final textLang = _textLangCtrl.text.trim();
-    final modelName = _isSelectedGptSovits
-        ? (textLang.isEmpty ? null : textLang)
-        : (_assetWasGptSovits ? null : widget.asset.modelName);
-    final updated = widget.asset.copyWith(
-      name: name,
-      description: Value(_descCtrl.text.trim().isEmpty
-          ? null
-          : _descCtrl.text.trim()),
-      providerId: _selectedProviderId,
-      modelName: Value(modelName),
-      speed: speed,
-      presetVoiceName: Value(_voiceNameCtrl.text.trim().isEmpty
-          ? null
-          : _voiceNameCtrl.text.trim()),
-      promptText: Value(_promptTextCtrl.text.trim().isEmpty
-          ? null
-          : _promptTextCtrl.text.trim()),
-      promptLang: Value(_promptLangCtrl.text.trim().isEmpty
-          ? null
-          : _promptLangCtrl.text.trim()),
-      voiceInstruction: Value(_instructionCtrl.text.trim().isEmpty
-          ? null
-          : _instructionCtrl.text.trim()),
-    );
-
-    await widget.onSave(updated);
-    if (mounted) Navigator.pop(context);
-  }
-}
-
 // ─────────────────────────── Shared helpers ─────────────────────────────────
 
 class _Avatar extends StatelessWidget {
@@ -2022,33 +1959,6 @@ class _ModeBadge extends StatelessWidget {
       child: Text(
         _modeLabel(mode),
         style: TextStyle(fontSize: 12, color: AppTheme.accentColor),
-      ),
-    );
-  }
-}
-
-class _Field extends StatelessWidget {
-  final String label;
-  final String value;
-  const _Field(this.label, this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white.withValues(alpha: 0.4))),
-          const SizedBox(height: 3),
-          Text(value,
-              style: const TextStyle(fontSize: 14),
-              overflow: TextOverflow.ellipsis),
-        ],
       ),
     );
   }

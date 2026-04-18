@@ -12,8 +12,10 @@ import 'package:uuid/uuid.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
-import 'package:neiroha/presentation/widgets/story_track_editor.dart';
+import 'package:neiroha/presentation/widgets/story_track_editor.dart'
+    show StoryTrackEditor, TimelineDragButton, TimelineDropPayload;
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 
@@ -278,6 +280,9 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
         ),
         // Action bar
         _buildChatActionBar(project, linesAsync, bankAssets),
+        // Inline audio player — sits directly above the text input
+        // instead of the global bottom bar.
+        const PersistentAudioBar(),
         // Input bar
         _buildInputBar(project, bankAssets),
       ],
@@ -382,6 +387,9 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
                     onGenerate: line.voiceAssetId == null || isGenerating
                         ? null
                         : () => _generateOne(project, line, bankAssets),
+                    onAddToTimeline: line.audioPath == null
+                        ? null
+                        : () => _addLineToTimeline(project, line, asset),
                     onDelete: () => ref
                         .read(databaseProvider)
                         .deleteDialogTtsLine(line.id),
@@ -617,6 +625,75 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
     _textController.clear();
   }
 
+  Future<void> _addLineToTimeline(
+    db.DialogTtsProject project,
+    db.DialogTtsLine line,
+    db.VoiceAsset? asset,
+  ) async {
+    if (line.audioPath == null) return;
+    final voiceName = asset?.name ?? 'Line';
+    double? duration = line.audioDuration;
+    if (duration == null || duration <= 0) {
+      duration = await measureAudioDuration(line.audioPath!);
+      if (duration != null) {
+        await ref.read(databaseProvider).updateDialogTtsLine(
+              line.copyWith(audioDuration: Value(duration)),
+            );
+      }
+    }
+    await _syncTimelineClip(
+      projectId: project.id,
+      sourceLineId: line.id,
+      audioPath: line.audioPath!,
+      durationSec: duration,
+      label: voiceName,
+    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Added "${line.lineText.characters.take(30)}…" to timeline'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  /// Upsert a lane-0 timeline clip for a line after generation.
+  /// Replaces any existing clip tied to the same [sourceLineId] so regenerations
+  /// don't stack. New clips are appended after the last lane-0 generated clip.
+  Future<void> _syncTimelineClip({
+    required String projectId,
+    required String sourceLineId,
+    required String audioPath,
+    required double? durationSec,
+    required String label,
+  }) async {
+    final database = ref.read(databaseProvider);
+    await database.deleteTimelineClipsByLine(sourceLineId);
+    final existing = await database.getTimelineClips(projectId, 'dialog');
+    int cursorMs = 0;
+    for (final c in existing) {
+      if (c.laneIndex != 0) continue;
+      if (c.sourceType != 'generated') continue;
+      final end = c.startTimeMs + ((c.durationSec ?? 0) * 1000).round();
+      if (end > cursorMs) cursorMs = end;
+    }
+    await database.insertTimelineClip(
+      db.TimelineClipsCompanion(
+        id: Value(const Uuid().v4()),
+        projectId: Value(projectId),
+        projectType: const Value('dialog'),
+        laneIndex: const Value(0),
+        startTimeMs: Value(cursorMs),
+        durationSec: Value(durationSec),
+        audioPath: Value(audioPath),
+        sourceType: const Value('generated'),
+        sourceLineId: Value(sourceLineId),
+        label: Value(label),
+      ),
+    );
+  }
+
   Future<void> _seedTimeline(
     String projectId,
     List<db.DialogTtsLine> lines,
@@ -751,11 +828,20 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
       final filePath = p.join(outDir.path,
           'line_${line.orderIndex}_${DateTime.now().millisecondsSinceEpoch}.$ext');
       await File(filePath).writeAsBytes(result.audioBytes);
+      final durationSec = await measureAudioDuration(filePath);
       await database.updateDialogTtsLine(
         line.copyWith(
           audioPath: Value(filePath),
+          audioDuration: Value(durationSec),
           error: const Value(null),
         ),
+      );
+      await _syncTimelineClip(
+        projectId: project.id,
+        sourceLineId: line.id,
+        audioPath: filePath,
+        durationSec: durationSec,
+        label: asset.name,
       );
     } catch (e) {
       await database.updateDialogTtsLine(
@@ -783,6 +869,7 @@ class _ChatBubble extends StatelessWidget {
   final VoidCallback onPlay;
   final VoidCallback? onPlayFrom;
   final VoidCallback? onGenerate;
+  final VoidCallback? onAddToTimeline;
   final VoidCallback onDelete;
 
   const _ChatBubble({
@@ -795,6 +882,7 @@ class _ChatBubble extends StatelessWidget {
     required this.onPlay,
     this.onPlayFrom,
     this.onGenerate,
+    this.onAddToTimeline,
     required this.onDelete,
   });
 
@@ -884,6 +972,19 @@ class _ChatBubble extends StatelessWidget {
               tooltip: 'Play from here',
               onPressed: onPlayFrom,
             ),
+          const SizedBox(width: 4),
+          TimelineDragButton(
+            enabled: onAddToTimeline != null,
+            payload: line.audioPath == null
+                ? null
+                : TimelineDropPayload(
+                    audioPath: line.audioPath!,
+                    label: asset?.name ?? 'Line',
+                    durationSec: line.audioDuration,
+                    sourceLineId: line.id,
+                  ),
+            onTap: onAddToTimeline,
+          ),
           const SizedBox(width: 4),
           IconButton(
             icon: Icon(Icons.close_rounded,

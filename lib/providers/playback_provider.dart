@@ -120,5 +120,20 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
   }
 }
 
+/// Measure the duration of an audio file without disturbing global playback.
+Future<double?> measureAudioDuration(String path) async {
+  final probe = AudioPlayer();
+  try {
+    await probe.setSourceDeviceFile(path);
+    final dur = await probe.getDuration();
+    if (dur == null) return null;
+    return dur.inMilliseconds / 1000.0;
+  } catch (_) {
+    return null;
+  } finally {
+    await probe.dispose();
+  }
+}
+
 final playbackNotifierProvider =
     NotifierProvider<PlaybackNotifier, PlaybackState>(PlaybackNotifier.new);

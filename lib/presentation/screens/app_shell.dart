@@ -26,6 +26,10 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedTab = ref.watch(selectedTabProvider);
+    // Dialog/Phase render their own inline player above the text input,
+    // so the global bottom bar is suppressed there to avoid a double UI.
+    final showGlobalPlayer =
+        selectedTab != NavTab.dialogTts && selectedTab != NavTab.phaseTts;
 
     return Scaffold(
       body: Column(
@@ -49,7 +53,7 @@ class AppShell extends ConsumerWidget {
               ],
             ),
           ),
-          const PersistentAudioBar(),
+          if (showGlobalPlayer) const PersistentAudioBar(),
         ],
       ),
     );

@@ -10,8 +10,10 @@ import 'package:uuid/uuid.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
-import 'package:neiroha/presentation/widgets/story_track_editor.dart';
+import 'package:neiroha/presentation/widgets/story_track_editor.dart'
+    show StoryTrackEditor, TimelineDragButton, TimelineDropPayload;
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 
@@ -263,22 +265,20 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         _buildProjectBar(project, bankAssets),
         const Divider(height: 1),
         Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(flex: 3, child: _buildScriptEditor(project)),
-              const VerticalDivider(width: 1),
-              Expanded(
-                  flex: 2,
-                  child: _buildSegmentPanel(
-                      project, segmentsAsync, bankAssets)),
-            ],
+          child: ResizableSplitPane(
+            initialLeftFraction: 0.6,
+            left: _buildScriptEditor(project),
+            rightBuilder: (_) =>
+                _buildSegmentPanel(project, segmentsAsync, bankAssets),
           ),
         ),
         StoryTrackEditor(
           projectId: project.id,
           projectType: 'phase',
         ),
+        // Inline audio player — replaces the global bottom bar so the
+        // current clip surfaces above the action/input row.
+        const PersistentAudioBar(),
         _buildActionBar(project, segmentsAsync, bankAssets),
       ],
     );
@@ -425,6 +425,14 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
                             _generatingSegmentIds.contains(seg.id)
                         ? null
                         : () => _generateOne(project, seg, bankAssets),
+                    onAddToTimeline: seg.audioPath == null
+                        ? null
+                        : () => _addSegmentToTimeline(
+                              project,
+                              seg,
+                              bankAssets,
+                              i,
+                            ),
                     onVoiceChanged: (voiceId) =>
                         _updateSegmentVoice(seg, voiceId),
                     onDelete: () => ref
@@ -654,8 +662,20 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
       final filePath = p.join(outDir.path,
           'seg_${seg.orderIndex}_${DateTime.now().millisecondsSinceEpoch}.$ext');
       await File(filePath).writeAsBytes(result.audioBytes);
+      final durationSec = await measureAudioDuration(filePath);
       await database.updatePhaseTtsSegment(
-        seg.copyWith(audioPath: Value(filePath), error: const Value(null)),
+        seg.copyWith(
+          audioPath: Value(filePath),
+          audioDuration: Value(durationSec),
+          error: const Value(null),
+        ),
+      );
+      await _syncTimelineClip(
+        projectId: project.id,
+        sourceLineId: seg.id,
+        audioPath: filePath,
+        durationSec: durationSec,
+        label: asset.name,
       );
     } catch (e) {
       await database.updatePhaseTtsSegment(
@@ -664,6 +684,80 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     } finally {
       if (mounted) setState(() => _generatingSegmentIds.remove(seg.id));
     }
+  }
+
+  Future<void> _addSegmentToTimeline(
+    db.PhaseTtsProject project,
+    db.PhaseTtsSegment seg,
+    List<db.VoiceAsset> bankAssets,
+    int index,
+  ) async {
+    if (seg.audioPath == null) return;
+    final voiceName = bankAssets
+            .where((a) => a.id == seg.voiceAssetId)
+            .firstOrNull
+            ?.name ??
+        'Segment ${index + 1}';
+    double? duration = seg.audioDuration;
+    if (duration == null || duration <= 0) {
+      duration = await measureAudioDuration(seg.audioPath!);
+      if (duration != null) {
+        await ref.read(databaseProvider).updatePhaseTtsSegment(
+              seg.copyWith(audioDuration: Value(duration)),
+            );
+      }
+    }
+    await _syncTimelineClip(
+      projectId: project.id,
+      sourceLineId: seg.id,
+      audioPath: seg.audioPath!,
+      durationSec: duration,
+      label: voiceName,
+    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Added "${seg.segmentText.characters.take(30)}…" to timeline'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  /// Upsert a lane-0 timeline clip for a segment after generation.
+  /// Replaces any existing clip tied to the same [sourceLineId] so regenerations
+  /// don't pile up. New clips are appended after the last lane-0 generated clip.
+  Future<void> _syncTimelineClip({
+    required String projectId,
+    required String sourceLineId,
+    required String audioPath,
+    required double? durationSec,
+    required String label,
+  }) async {
+    final database = ref.read(databaseProvider);
+    await database.deleteTimelineClipsByLine(sourceLineId);
+    final existing = await database.getTimelineClips(projectId, 'phase');
+    int cursorMs = 0;
+    for (final c in existing) {
+      if (c.laneIndex != 0) continue;
+      if (c.sourceType != 'generated') continue;
+      final end = c.startTimeMs + ((c.durationSec ?? 0) * 1000).round();
+      if (end > cursorMs) cursorMs = end;
+    }
+    await database.insertTimelineClip(
+      db.TimelineClipsCompanion(
+        id: Value(const Uuid().v4()),
+        projectId: Value(projectId),
+        projectType: const Value('phase'),
+        laneIndex: const Value(0),
+        startTimeMs: Value(cursorMs),
+        durationSec: Value(durationSec),
+        audioPath: Value(audioPath),
+        sourceType: const Value('generated'),
+        sourceLineId: Value(sourceLineId),
+        label: Value(label),
+      ),
+    );
   }
 
   Future<void> _seedTimeline(
@@ -711,6 +805,7 @@ class _SegmentCard extends StatelessWidget {
   final bool isGenerating;
   final VoidCallback onPlay;
   final VoidCallback? onGenerate;
+  final VoidCallback? onAddToTimeline;
   final ValueChanged<String?> onVoiceChanged;
   final VoidCallback onDelete;
 
@@ -721,6 +816,7 @@ class _SegmentCard extends StatelessWidget {
     required this.isGenerating,
     required this.onPlay,
     required this.onGenerate,
+    required this.onAddToTimeline,
     required this.onVoiceChanged,
     required this.onDelete,
   });
@@ -821,6 +917,23 @@ class _SegmentCard extends StatelessWidget {
                       ? 'Regenerate'
                       : 'Generate',
                   onPressed: onGenerate,
+                ),
+                const SizedBox(width: 4),
+                TimelineDragButton(
+                  enabled: onAddToTimeline != null,
+                  payload: segment.audioPath == null
+                      ? null
+                      : TimelineDropPayload(
+                          audioPath: segment.audioPath!,
+                          label: bankAssets
+                                  .where((a) => a.id == segment.voiceAssetId)
+                                  .firstOrNull
+                                  ?.name ??
+                              'Segment ${index + 1}',
+                          durationSec: segment.audioDuration,
+                          sourceLineId: segment.id,
+                        ),
+                  onTap: onAddToTimeline,
                 ),
                 const SizedBox(width: 4),
                 IconButton(

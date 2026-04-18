@@ -8,7 +8,6 @@ import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/presentation/widgets/sidebar.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'quick_tts_screen.dart';
 import 'phase_tts_screen.dart';
 import 'dialog_tts_screen.dart';
 import 'voice_asset_screen.dart';
@@ -17,7 +16,7 @@ import 'voice_design_screen.dart';
 import 'provider_screen.dart';
 import 'settings_screen.dart';
 
-final selectedTabProvider = StateProvider<NavTab>((ref) => NavTab.quickTts);
+final selectedTabProvider = StateProvider<NavTab>((ref) => NavTab.voiceBank);
 
 class AppShell extends ConsumerWidget {
   const AppShell({super.key});
@@ -60,7 +59,6 @@ class AppShell extends ConsumerWidget {
 
   Widget _buildPage(NavTab tab) {
     return switch (tab) {
-      NavTab.quickTts => const QuickTtsScreen(key: ValueKey('quickTts')),
       NavTab.phaseTts => const PhaseTtsScreen(key: ValueKey('phaseTts')),
       NavTab.dialogTts => const DialogTtsScreen(key: ValueKey('dialogTts')),
       NavTab.voiceDesign =>

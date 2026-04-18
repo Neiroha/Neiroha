@@ -416,6 +416,10 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> clearQuickTtsHistory() => delete(quickTtsHistories).go();
 
+  Future<int> clearQuickTtsHistoryForAsset(String assetId) =>
+      (delete(quickTtsHistories)..where((t) => t.voiceAssetId.equals(assetId)))
+          .go();
+
   Future<void> updateQuickTtsHistoryDuration(String id, double duration) =>
       (update(quickTtsHistories)..where((t) => t.id.equals(id)))
           .write(QuickTtsHistoriesCompanion(audioDuration: Value(duration)));

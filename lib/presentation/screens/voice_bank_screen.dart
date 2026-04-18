@@ -9,6 +9,7 @@ import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/screens/voice_character_screen.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/quick_tts_panel.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
@@ -447,11 +448,20 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                     color: Colors.white.withValues(alpha: 0.4))),
           );
         }
-        // `key` forces a fresh inspector state when the selected character
-        // changes, so controllers are re-initialized from the new asset.
-        return CharacterInspector(
-          key: ValueKey(asset.id),
-          asset: asset,
+        // Quick Test sits on top so the user can audition the voice while
+        // editing; inspector sits below. `ValueKey(asset.id)` forces fresh
+        // state on both panes when switching characters.
+        return VerticalResizableSplitPane(
+          initialTopFraction: 0.5,
+          minPaneHeight: 140,
+          top: QuickTtsPanel(
+            key: ValueKey('qtts_${asset.id}'),
+            asset: asset,
+          ),
+          bottom: CharacterInspector(
+            key: ValueKey(asset.id),
+            asset: asset,
+          ),
         );
       },
     );

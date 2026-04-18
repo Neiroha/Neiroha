@@ -14,230 +14,65 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/domain/enums/task_mode.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
-import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 
-final _selectedCharacterIdProvider = StateProvider<String?>((ref) => null);
+/// Currently-selected character id. Shared between the merged Voice Bank
+/// screen (bank-filtered character list) and [CharacterInspector] so the
+/// inspector can clear the selection after delete/duplicate.
+final selectedCharacterIdProvider = StateProvider<String?>((ref) => null);
 
-class VoiceCharacterScreen extends ConsumerWidget {
-  const VoiceCharacterScreen({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final assetsAsync = ref.watch(voiceAssetsStreamProvider);
-    final providersAsync = ref.watch(ttsProvidersStreamProvider);
-    final selectedId = ref.watch(_selectedCharacterIdProvider);
-
-    return Column(
-      children: [
-        _buildHeader(context, ref, providersAsync),
-        const Divider(height: 1),
-        Expanded(
-          child: assetsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
-            data: (assets) {
-              if (assets.isEmpty) return _buildEmpty(context, ref, providersAsync);
-              final selected =
-                  assets.where((a) => a.id == selectedId).firstOrNull;
-              return ResizableSplitPane(
-                initialLeftFraction: 0.6,
-                left: _CharacterList(
-                  assets: assets,
-                  selectedId: selectedId,
-                  onSelect: (id) => ref
-                      .read(_selectedCharacterIdProvider.notifier)
-                      .state = id,
-                ),
-                rightBuilder: (_) => selected != null
-                    ? _CharacterInspector(asset: selected)
-                    : Center(
-                        child: Text('Select a character',
-                            style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.4)))),
-              );
-            },
-          ),
-        ),
-      ],
-    );
+/// Opens the "Create Character" dialog. Caller can hook [onCreated] to
+/// receive the new asset id — used by Voice Bank to auto-add the new
+/// character as a member of the currently-selected bank.
+void openCreateCharacterDialog(
+  BuildContext context,
+  WidgetRef ref, {
+  void Function(String assetId)? onCreated,
+}) {
+  final allProviders =
+      ref.read(ttsProvidersStreamProvider).valueOrNull ?? const [];
+  final enabledProviders = allProviders.where((p) => p.enabled).toList();
+  if (enabledProviders.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Enable at least one Provider first (Providers tab)')));
+    return;
   }
-
-  Widget _buildHeader(BuildContext context, WidgetRef ref,
-      AsyncValue<List<db.TtsProvider>> providersAsync) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-      child: Row(
-        children: [
-          Text('Voice Characters',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(width: 8),
-          Text('Named voice identities',
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5), fontSize: 14)),
-          const Spacer(),
-          FilledButton.icon(
-            onPressed: () => _openCreateDialog(context, ref, providersAsync),
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('New Character'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmpty(BuildContext context, WidgetRef ref,
-      AsyncValue<List<db.TtsProvider>> providersAsync) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.person_outline_rounded,
-              size: 64, color: Colors.white.withValues(alpha: 0.1)),
-          const SizedBox(height: 16),
-          Text('No characters yet',
-              style: TextStyle(
-                  fontSize: 16, color: Colors.white.withValues(alpha: 0.4))),
-          const SizedBox(height: 8),
-          Text(
-            'A Character is a named voice entity backed by a TTS provider.',
-            style: TextStyle(
-                fontSize: 13, color: Colors.white.withValues(alpha: 0.25)),
-          ),
-          const SizedBox(height: 20),
-          FilledButton.icon(
-            onPressed: () => _openCreateDialog(context, ref, providersAsync),
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('New Character'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _openCreateDialog(BuildContext context, WidgetRef ref,
-      AsyncValue<List<db.TtsProvider>> providersAsync) {
-    final allProviders = providersAsync.valueOrNull ?? [];
-    final enabledProviders = allProviders.where((p) => p.enabled).toList();
-    if (enabledProviders.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content:
-              Text('Enable at least one Provider first (Providers tab)')));
-      return;
-    }
-    final existingAssets = ref.read(voiceAssetsStreamProvider).valueOrNull ?? [];
-    final audioTracks = ref.read(audioTracksStreamProvider).valueOrNull ?? [];
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => _CreateCharacterDialog(
-        providers: enabledProviders,
-        existingAssets: existingAssets,
-        audioTracks: audioTracks,
-        database: ref.read(databaseProvider),
-        onSave: (companion) async {
-          await ref.read(databaseProvider).insertVoiceAsset(companion);
-        },
-        onSaveAudioTrack: (track) async {
-          await ref.read(databaseProvider).insertAudioTrack(track);
-        },
-      ),
-    );
-  }
-}
-
-// ─────────────────────────── Character List ────────────────────────────────
-
-class _CharacterList extends StatelessWidget {
-  final List<db.VoiceAsset> assets;
-  final String? selectedId;
-  final ValueChanged<String> onSelect;
-
-  const _CharacterList({
-    required this.assets,
-    required this.selectedId,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(8),
-      itemCount: assets.length,
-      itemBuilder: (context, index) {
-        final a = assets[index];
-        final isSelected = a.id == selectedId;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 2),
-          child: Material(
-            color: isSelected
-                ? AppTheme.accentColor.withValues(alpha: 0.12)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(10),
-              onTap: () => onSelect(a.id),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                child: Row(
-                  children: [
-                    _Avatar(name: a.name, selected: isSelected, avatarPath: a.avatarPath),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(a.name,
-                              style: const TextStyle(
-                                  fontSize: 14, fontWeight: FontWeight.w500)),
-                          Text(_modeLabel(a.taskMode),
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white.withValues(alpha: 0.4))),
-                        ],
-                      ),
-                    ),
-                    if (a.description != null && a.description!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: Icon(Icons.notes_rounded,
-                            size: 14,
-                            color: Colors.white.withValues(alpha: 0.25)),
-                      ),
-                    Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: a.enabled ? Colors.green : Colors.grey)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
+  final existingAssets =
+      ref.read(voiceAssetsStreamProvider).valueOrNull ?? [];
+  final audioTracks =
+      ref.read(audioTracksStreamProvider).valueOrNull ?? [];
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => CreateCharacterDialog(
+      providers: enabledProviders,
+      existingAssets: existingAssets,
+      audioTracks: audioTracks,
+      database: ref.read(databaseProvider),
+      onSave: (companion) async {
+        await ref.read(databaseProvider).insertVoiceAsset(companion);
+        onCreated?.call(companion.id.value);
       },
-    );
-  }
+      onSaveAudioTrack: (track) async {
+        await ref.read(databaseProvider).insertAudioTrack(track);
+      },
+    ),
+  );
 }
 
 // ─────────────────────────── Inspector Panel (inline editor) ────────────────
 
-class _CharacterInspector extends ConsumerStatefulWidget {
+class CharacterInspector extends ConsumerStatefulWidget {
   final db.VoiceAsset asset;
-  const _CharacterInspector({required this.asset});
+  const CharacterInspector({super.key, required this.asset});
 
   @override
-  ConsumerState<_CharacterInspector> createState() =>
+  ConsumerState<CharacterInspector> createState() =>
       _CharacterInspectorState();
 }
 
-class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
+class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
   bool _saving = false;
 
   late TextEditingController _nameCtrl;
@@ -263,7 +98,7 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
   }
 
   @override
-  void didUpdateWidget(covariant _CharacterInspector old) {
+  void didUpdateWidget(covariant CharacterInspector old) {
     super.didUpdateWidget(old);
     // Only reinitialize when switching to a different character
     if (old.asset.id != widget.asset.id) {
@@ -697,7 +532,7 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
                 onPressed: () {
                   ref.read(databaseProvider).deleteVoiceAsset(a.id);
                   ref
-                      .read(_selectedCharacterIdProvider.notifier)
+                      .read(selectedCharacterIdProvider.notifier)
                       .state = null;
                 },
                 icon: const Icon(Icons.delete_outline_rounded, size: 18),
@@ -815,13 +650,13 @@ class _CharacterInspectorState extends ConsumerState<_CharacterInspector> {
           speed: Value(asset.speed),
           enabled: Value(asset.enabled),
         ));
-    ref.read(_selectedCharacterIdProvider.notifier).state = newId;
+    ref.read(selectedCharacterIdProvider.notifier).state = newId;
   }
 }
 
 // ─────────────────────────── Create Dialog ──────────────────────────────────
 
-class _CreateCharacterDialog extends StatefulWidget {
+class CreateCharacterDialog extends StatefulWidget {
   final List<db.TtsProvider> providers;
   final List<db.VoiceAsset> existingAssets;
   final List<db.AudioTrack> audioTracks;
@@ -829,7 +664,8 @@ class _CreateCharacterDialog extends StatefulWidget {
   final Future<void> Function(db.AudioTracksCompanion) onSaveAudioTrack;
   final db.AppDatabase database;
 
-  const _CreateCharacterDialog({
+  const CreateCharacterDialog({
+    super.key,
     required this.providers,
     required this.onSave,
     required this.onSaveAudioTrack,
@@ -839,10 +675,10 @@ class _CreateCharacterDialog extends StatefulWidget {
   });
 
   @override
-  State<_CreateCharacterDialog> createState() => _CreateCharacterDialogState();
+  State<CreateCharacterDialog> createState() => _CreateCharacterDialogState();
 }
 
-class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
+class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   final _nameCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _voiceNameCtrl = TextEditingController();

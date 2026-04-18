@@ -22,7 +22,6 @@ class Sidebar extends StatelessWidget {
       NavTab.phaseTts,
       NavTab.dialogTts,
       NavTab.voiceAssets,
-      NavTab.voiceCharacters,
       NavTab.voiceBank,
     ];
 

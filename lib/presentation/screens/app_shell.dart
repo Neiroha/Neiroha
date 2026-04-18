@@ -12,7 +12,6 @@ import 'quick_tts_screen.dart';
 import 'phase_tts_screen.dart';
 import 'dialog_tts_screen.dart';
 import 'voice_asset_screen.dart';
-import 'voice_character_screen.dart';
 import 'voice_bank_screen.dart';
 import 'voice_design_screen.dart';
 import 'provider_screen.dart';
@@ -68,8 +67,6 @@ class AppShell extends ConsumerWidget {
         const VoiceDesignScreen(key: ValueKey('voiceDesign')),
       NavTab.voiceAssets =>
         const VoiceAssetScreen(key: ValueKey('voiceAssets')),
-      NavTab.voiceCharacters =>
-        const VoiceCharacterScreen(key: ValueKey('voiceCharacters')),
       NavTab.voiceBank => const VoiceBankScreen(key: ValueKey('voiceBank')),
       NavTab.providers => const ProviderScreen(key: ValueKey('providers')),
       NavTab.settings => const SettingsScreen(key: ValueKey('settings')),

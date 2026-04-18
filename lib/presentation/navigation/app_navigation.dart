@@ -6,7 +6,6 @@ enum NavTab {
   dialogTts(Icons.forum_rounded, 'Dialog TTS'),
   voiceDesign(Icons.auto_fix_high_rounded, 'Voice Design'),
   voiceAssets(Icons.library_music_rounded, 'Voice Assets'),
-  voiceCharacters(Icons.person_rounded, 'Voice Characters'),
   voiceBank(Icons.people_alt_rounded, 'Voice Bank'),
   providers(Icons.dns_rounded, 'Providers'),
   settings(Icons.settings_rounded, 'Settings');

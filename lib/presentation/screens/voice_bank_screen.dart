@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,12 +7,21 @@ import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/presentation/screens/voice_character_screen.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
-/// Voice Bank — a named collection of Characters persisted in SQLite.
-/// Only one bank can be "active" at a time; active bank is used for TTS.
+/// Merged Voice Bank + Voice Characters screen.
+///
+/// Three columns:
+///   • Left   — Bank list (select / create / rename / duplicate / activate)
+///   • Middle — Characters in the selected bank (search, new, import-from-other-bank)
+///   • Right  — Character inspector (inline editor, from voice_character_screen.dart)
+///
+/// "Import from other bank" just adds an existing [db.VoiceAsset] as a
+/// [db.VoiceBankMember] of the current bank — characters are shared across
+/// banks, never deep-copied.
 class VoiceBankScreen extends ConsumerStatefulWidget {
   const VoiceBankScreen({super.key});
 
@@ -20,20 +31,39 @@ class VoiceBankScreen extends ConsumerStatefulWidget {
 
 class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
   String? _selectedBankId;
+  String _characterFilter = '';
+  late final TextEditingController _searchCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl = TextEditingController();
+    _searchCtrl.addListener(() {
+      setState(() => _characterFilter = _searchCtrl.text);
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final banksAsync = ref.watch(voiceBanksStreamProvider);
-
     return Column(
       children: [
         _buildHeader(context),
         const Divider(height: 1),
         Expanded(
           child: ResizableSplitPane(
-            initialLeftFraction: 0.35,
-            left: _buildBankList(banksAsync),
-            rightBuilder: (_) => _buildRoster(),
+            initialLeftFraction: 0.22,
+            left: _buildBankList(),
+            rightBuilder: (_) => ResizableSplitPane(
+              initialLeftFraction: 0.45,
+              left: _buildCharacterColumn(),
+              rightBuilder: (_) => _buildInspectorColumn(),
+            ),
           ),
         ),
       ],
@@ -53,7 +83,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                   .headlineSmall
                   ?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(width: 8),
-          Text('Character rosters for projects',
+          Text('Banks, characters and inspector',
               style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.5), fontSize: 14)),
           const Spacer(),
@@ -67,9 +97,10 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     );
   }
 
-  // ───────────────── Bank List (left) ─────────────────
+  // ───────────────── Left column: Bank list ─────────────────
 
-  Widget _buildBankList(AsyncValue<List<db.VoiceBank>> banksAsync) {
+  Widget _buildBankList() {
+    final banksAsync = ref.watch(voiceBanksStreamProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -104,7 +135,13 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                   return _BankTile(
                     bank: bank,
                     isSelected: selected,
-                    onTap: () => setState(() => _selectedBankId = bank.id),
+                    onTap: () => setState(() {
+                      _selectedBankId = bank.id;
+                      // Reset character selection when switching banks.
+                      ref
+                          .read(selectedCharacterIdProvider.notifier)
+                          .state = null;
+                    }),
                     onDelete: () async {
                       await ref.read(databaseProvider).deleteBank(bank.id);
                       if (_selectedBankId == bank.id) {
@@ -136,9 +173,9 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     );
   }
 
-  // ───────────────── Roster (right) ─────────────────
+  // ───────────────── Middle column: Characters in bank ─────────────────
 
-  Widget _buildRoster() {
+  Widget _buildCharacterColumn() {
     if (_selectedBankId == null) {
       return Center(
         child: Column(
@@ -149,7 +186,8 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
             const SizedBox(height: 16),
             Text('Select or create a Voice Bank',
                 style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4), fontSize: 15)),
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 15)),
             const SizedBox(height: 8),
             Text(
               'A Voice Bank groups characters for a project.\n'
@@ -169,7 +207,8 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     final assetsAsync = ref.watch(voiceAssetsStreamProvider);
     final providersAsync = ref.watch(ttsProvidersStreamProvider);
 
-    final bank = banksAsync.valueOrNull?.where((b) => b.id == bankId).firstOrNull;
+    final bank =
+        banksAsync.valueOrNull?.where((b) => b.id == bankId).firstOrNull;
     if (bank == null) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -177,101 +216,248 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Bank info bar
-        Container(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
-          child: Row(
-            children: [
-              Icon(Icons.people_alt_rounded,
-                  color: bank.isActive ? Colors.green : AppTheme.accentColor,
-                  size: 20),
-              const SizedBox(width: 10),
-              Text(bank.name,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600)),
-              const SizedBox(width: 10),
-              if (bank.isActive)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                    border:
-                        Border.all(color: Colors.green.withValues(alpha: 0.3)),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.check_circle, size: 12, color: Colors.green),
-                      SizedBox(width: 4),
-                      Text('Active',
-                          style: TextStyle(color: Colors.green, fontSize: 12)),
-                    ],
-                  ),
-                ),
-              const Spacer(),
-              // Health check button
-              OutlinedButton.icon(
-                onPressed: () => _healthCheckBank(bank, membersAsync, assetsAsync, providersAsync),
-                icon: const Icon(Icons.favorite_border_rounded, size: 16),
-                label: const Text('Health Check'),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: () => _showAddCharacterDialog(bank),
-                icon: const Icon(Icons.person_add_rounded, size: 16),
-                label: const Text('Add Character'),
-              ),
-            ],
-          ),
-        ),
+        _buildCharacterColumnHeader(bank, membersAsync, assetsAsync,
+            providersAsync),
         const Divider(height: 1),
-
-        // Members list
+        _buildCharacterSearchBar(),
         Expanded(
           child: membersAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(child: Text('Error: $e')),
-            data: (members) {
-              if (members.isEmpty) {
-                return Center(
-                  child: Text('No characters in this bank yet',
-                      style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.3))),
-                );
-              }
-              return assetsAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text('Error: $e')),
-                data: (allAssets) {
-                  final assetMap = {for (final a in allAssets) a.id: a};
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: members.length,
-                    itemBuilder: (ctx, i) {
-                      final member = members[i];
-                      final asset = assetMap[member.voiceAssetId];
-                      if (asset == null) return const SizedBox.shrink();
-                      return _RosterCard(
-                        asset: asset,
-                        onRemove: () => ref
-                            .read(databaseProvider)
-                            .removeMemberByAssetAndBank(
-                                bankId, asset.id),
-                      );
-                    },
-                  );
-                },
-              );
-            },
+            data: (members) => assetsAsync.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error: $e')),
+              data: (allAssets) =>
+                  _buildMemberList(bank, members, allAssets),
+            ),
           ),
         ),
       ],
     );
   }
 
-  // ───────────────── Actions ─────────────────
+  Widget _buildCharacterColumnHeader(
+    db.VoiceBank bank,
+    AsyncValue<List<db.VoiceBankMember>> membersAsync,
+    AsyncValue<List<db.VoiceAsset>> assetsAsync,
+    AsyncValue<List<db.TtsProvider>> providersAsync,
+  ) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Row(
+        children: [
+          Icon(Icons.people_alt_rounded,
+              color: bank.isActive ? Colors.green : AppTheme.accentColor,
+              size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(bank.name,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w600)),
+                    ),
+                    if (bank.isActive) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color:
+                                  Colors.green.withValues(alpha: 0.3)),
+                        ),
+                        child: const Text('Active',
+                            style: TextStyle(
+                                color: Colors.green, fontSize: 11)),
+                      ),
+                    ],
+                  ],
+                ),
+                Text('CHARACTERS',
+                    style: TextStyle(
+                        fontSize: 10,
+                        letterSpacing: 1.2,
+                        color: Colors.white.withValues(alpha: 0.35))),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Health Check',
+            onPressed: () => _healthCheckBank(
+                bank, membersAsync, assetsAsync, providersAsync),
+            icon: const Icon(Icons.favorite_border_rounded, size: 18),
+          ),
+          IconButton(
+            tooltip: 'Import from another bank',
+            onPressed: () => _openImportDialog(bank),
+            icon: const Icon(Icons.download_rounded, size: 18),
+          ),
+          IconButton(
+            tooltip: 'New Character (added to this bank)',
+            onPressed: () => _createCharacterForBank(bank),
+            icon: const Icon(Icons.person_add_rounded, size: 18),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCharacterSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+      child: TextField(
+        controller: _searchCtrl,
+        decoration: InputDecoration(
+          hintText: 'Search characters...',
+          prefixIcon: const Icon(Icons.search_rounded, size: 18),
+          suffixIcon: _characterFilter.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.clear_rounded, size: 16),
+                  onPressed: () => _searchCtrl.clear(),
+                ),
+          isDense: true,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMemberList(
+    db.VoiceBank bank,
+    List<db.VoiceBankMember> members,
+    List<db.VoiceAsset> allAssets,
+  ) {
+    if (members.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.person_outline_rounded,
+                size: 48, color: Colors.white.withValues(alpha: 0.1)),
+            const SizedBox(height: 12),
+            Text('No characters in this bank yet',
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 13)),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: () => _createCharacterForBank(bank),
+              icon: const Icon(Icons.person_add_rounded, size: 16),
+              label: const Text('New Character'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => _openImportDialog(bank),
+              icon: const Icon(Icons.download_rounded, size: 16),
+              label: const Text('Import from another bank'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final assetMap = {for (final a in allAssets) a.id: a};
+    final q = _characterFilter.trim().toLowerCase();
+    final filtered = members
+        .map((m) => assetMap[m.voiceAssetId])
+        .whereType<db.VoiceAsset>()
+        .where((a) {
+      if (q.isEmpty) return true;
+      return a.name.toLowerCase().contains(q) ||
+          (a.description?.toLowerCase().contains(q) ?? false) ||
+          a.taskMode.toLowerCase().contains(q);
+    }).toList();
+
+    if (filtered.isEmpty) {
+      return Center(
+        child: Text('No characters match "$_characterFilter"',
+            style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
+      );
+    }
+
+    final selectedId = ref.watch(selectedCharacterIdProvider);
+    return ListView.builder(
+      padding: const EdgeInsets.all(8),
+      itemCount: filtered.length,
+      itemBuilder: (ctx, i) {
+        final asset = filtered[i];
+        final isSelected = asset.id == selectedId;
+        return _CharacterTile(
+          asset: asset,
+          isSelected: isSelected,
+          onTap: () => ref
+              .read(selectedCharacterIdProvider.notifier)
+              .state = asset.id,
+          onRemove: () async {
+            await ref
+                .read(databaseProvider)
+                .removeMemberByAssetAndBank(bank.id, asset.id);
+            if (selectedId == asset.id) {
+              ref
+                  .read(selectedCharacterIdProvider.notifier)
+                  .state = null;
+            }
+          },
+        );
+      },
+    );
+  }
+
+  // ───────────────── Right column: Inspector ─────────────────
+
+  Widget _buildInspectorColumn() {
+    final selectedId = ref.watch(selectedCharacterIdProvider);
+    if (selectedId == null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.person_search_rounded,
+                size: 48, color: Colors.white.withValues(alpha: 0.1)),
+            const SizedBox(height: 12),
+            Text('Select a character to edit',
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 13)),
+          ],
+        ),
+      );
+    }
+    final assetsAsync = ref.watch(voiceAssetsStreamProvider);
+    return assetsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Error: $e')),
+      data: (assets) {
+        final asset =
+            assets.where((a) => a.id == selectedId).firstOrNull;
+        if (asset == null) {
+          return Center(
+            child: Text('Character not found',
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4))),
+          );
+        }
+        // `key` forces a fresh inspector state when the selected character
+        // changes, so controllers are re-initialized from the new asset.
+        return CharacterInspector(
+          key: ValueKey(asset.id),
+          asset: asset,
+        );
+      },
+    );
+  }
+
+  // ───────────────── Bank actions ─────────────────
 
   void _createBank() async {
     final banks = ref.read(voiceBanksStreamProvider).valueOrNull ?? [];
@@ -298,8 +484,8 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     if (result != null && result.isNotEmpty) {
       if (banks.any((b) => b.name == result)) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('A bank with this name already exists')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('A bank with this name already exists')));
         }
         return;
       }
@@ -337,8 +523,8 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     if (result != null && result.isNotEmpty && result != bank.name) {
       if (allBanks.any((b) => b.name == result && b.id != bank.id)) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('A bank with this name already exists')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('A bank with this name already exists')));
         }
         return;
       }
@@ -348,19 +534,34 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     }
   }
 
-  void _showAddCharacterDialog(db.VoiceBank bank) {
-    showDialog(
-      context: context,
-      builder: (ctx) => _AddCharacterDialog(
-        bankId: bank.id,
-        database: ref.read(databaseProvider),
-        assetsAsync: ref.read(voiceAssetsStreamProvider),
-        existingMembers: ref.read(bankMembersStreamProvider(bank.id)),
-      ),
+  // ───────────────── Character actions ─────────────────
+
+  void _createCharacterForBank(db.VoiceBank bank) {
+    openCreateCharacterDialog(
+      context,
+      ref,
+      onCreated: (assetId) async {
+        // Auto-add the freshly-created character to this bank.
+        await ref.read(databaseProvider).addMemberToBank(
+              db.VoiceBankMembersCompanion(
+                id: Value(const Uuid().v4()),
+                bankId: Value(bank.id),
+                voiceAssetId: Value(assetId),
+              ),
+            );
+        ref.read(selectedCharacterIdProvider.notifier).state = assetId;
+      },
     );
   }
 
-  void _healthCheckBank(
+  void _openImportDialog(db.VoiceBank targetBank) {
+    showDialog(
+      context: context,
+      builder: (ctx) => _ImportFromBankDialog(targetBank: targetBank),
+    );
+  }
+
+  Future<void> _healthCheckBank(
     db.VoiceBank bank,
     AsyncValue<List<db.VoiceBankMember>> membersAsync,
     AsyncValue<List<db.VoiceAsset>> assetsAsync,
@@ -486,6 +687,7 @@ class _BankTile extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(bank.name,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                           fontSize: 14, fontWeight: FontWeight.w500)),
                 ),
@@ -537,28 +739,138 @@ class _BankTile extends StatelessWidget {
   }
 }
 
-// ─────────────────────── Add Character Dialog ───────────────────────
+// ─────────────────────── Character Tile ───────────────────────
 
-class _AddCharacterDialog extends StatefulWidget {
-  final String bankId;
-  final db.AppDatabase database;
-  final AsyncValue<List<db.VoiceAsset>> assetsAsync;
-  final AsyncValue<List<db.VoiceBankMember>> existingMembers;
+class _CharacterTile extends StatelessWidget {
+  final db.VoiceAsset asset;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final VoidCallback onRemove;
 
-  const _AddCharacterDialog({
-    required this.bankId,
-    required this.database,
-    required this.assetsAsync,
-    required this.existingMembers,
+  const _CharacterTile({
+    required this.asset,
+    required this.isSelected,
+    required this.onTap,
+    required this.onRemove,
   });
 
   @override
-  State<_AddCharacterDialog> createState() => _AddCharacterDialogState();
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Material(
+        color: isSelected
+            ? AppTheme.accentColor.withValues(alpha: 0.12)
+            : AppTheme.surfaceDim,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onTap,
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                _MiniAvatar(
+                    name: asset.name,
+                    avatarPath: asset.avatarPath,
+                    selected: isSelected),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(asset.name,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w500)),
+                      Text(_modeLabel(asset.taskMode),
+                          style: TextStyle(
+                              fontSize: 11,
+                              color:
+                                  Colors.white.withValues(alpha: 0.4))),
+                    ],
+                  ),
+                ),
+                Container(
+                    width: 8,
+                    height: 8,
+                    margin: const EdgeInsets.only(right: 4),
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color:
+                            asset.enabled ? Colors.green : Colors.grey)),
+                IconButton(
+                  tooltip: 'Remove from bank',
+                  icon: Icon(Icons.remove_circle_outline_rounded,
+                      size: 18,
+                      color: Colors.white.withValues(alpha: 0.4)),
+                  onPressed: onRemove,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _AddCharacterDialogState extends State<_AddCharacterDialog> {
+class _MiniAvatar extends StatelessWidget {
+  final String name;
+  final String? avatarPath;
+  final bool selected;
+
+  const _MiniAvatar({
+    required this.name,
+    required this.avatarPath,
+    required this.selected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (avatarPath != null && File(avatarPath!).existsSync()) {
+      return CircleAvatar(
+        radius: 16,
+        backgroundImage: FileImage(File(avatarPath!)),
+      );
+    }
+    return CircleAvatar(
+      radius: 16,
+      backgroundColor:
+          selected ? AppTheme.accentColor : const Color(0xFF2A2A36),
+      child: Text(
+        name.isNotEmpty ? name[0].toUpperCase() : '?',
+        style: const TextStyle(fontSize: 12, color: Colors.white),
+      ),
+    );
+  }
+}
+
+String _modeLabel(String mode) => switch (mode) {
+      'cloneWithPrompt' => 'Voice Clone',
+      'presetVoice' => 'Preset Voice',
+      'voiceDesign' => 'Voice Design',
+      _ => mode,
+    };
+
+// ─────────────────── Import From Another Bank dialog ────────────────────
+
+class _ImportFromBankDialog extends ConsumerStatefulWidget {
+  final db.VoiceBank targetBank;
+  const _ImportFromBankDialog({required this.targetBank});
+
+  @override
+  ConsumerState<_ImportFromBankDialog> createState() =>
+      _ImportFromBankDialogState();
+}
+
+class _ImportFromBankDialogState
+    extends ConsumerState<_ImportFromBankDialog> {
+  String? _sourceBankId;
   final _searchCtrl = TextEditingController();
   String _filter = '';
+  bool _busy = false;
 
   @override
   void initState() {
@@ -574,101 +886,118 @@ class _AddCharacterDialogState extends State<_AddCharacterDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final allAssets = widget.assetsAsync.valueOrNull ?? [];
-    final existingIds = (widget.existingMembers.valueOrNull ?? [])
-        .map((m) => m.voiceAssetId)
-        .toSet();
-
-    final available =
-        allAssets.where((a) => !existingIds.contains(a.id)).toList();
-    final filtered = _filter.isEmpty
-        ? available
-        : available
-            .where(
-                (a) => a.name.toLowerCase().contains(_filter.toLowerCase()))
-            .toList();
+    final banks =
+        ref.watch(voiceBanksStreamProvider).valueOrNull ?? const [];
+    final otherBanks =
+        banks.where((b) => b.id != widget.targetBank.id).toList();
+    final allAssets =
+        ref.watch(voiceAssetsStreamProvider).valueOrNull ?? const [];
+    final targetMembers =
+        ref.watch(bankMembersStreamProvider(widget.targetBank.id)).valueOrNull ??
+            const [];
+    final targetAssetIds = targetMembers.map((m) => m.voiceAssetId).toSet();
 
     return Dialog(
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: 420,
-          maxHeight: MediaQuery.of(context).size.height * 0.7,
+          maxWidth: 460,
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-              child: Text('Add Characters',
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+              child: Text('Import into "${widget.targetBank.name}"',
                   style: Theme.of(context).textTheme.titleLarge),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
-              child: TextField(
-                controller: _searchCtrl,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search by name...',
-                  prefixIcon: Icon(Icons.search_rounded, size: 20),
-                  isDense: true,
-                ),
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
+              child: Text(
+                'Characters are shared — importing just adds them as '
+                'members of this bank.',
+                style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.5)),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
+              child: DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'Source Bank',
+                  prefixIcon:
+                      Icon(Icons.account_tree_rounded, size: 18),
+                  isDense: true,
+                ),
+                initialValue: _sourceBankId,
+                isExpanded: true,
+                items: otherBanks
+                    .map((b) => DropdownMenuItem(
+                          value: b.id,
+                          child: Text(b.name,
+                              overflow: TextOverflow.ellipsis),
+                        ))
+                    .toList(),
+                onChanged: (v) => setState(() => _sourceBankId = v),
+              ),
+            ),
+            if (_sourceBankId != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                child: TextField(
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Search characters...',
+                    prefixIcon:
+                        const Icon(Icons.search_rounded, size: 18),
+                    suffixIcon: _filter.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.clear_rounded, size: 16),
+                            onPressed: () => _searchCtrl.clear(),
+                          ),
+                    isDense: true,
+                  ),
+                ),
+              ),
             Flexible(
-              child: available.isEmpty
+              child: _sourceBankId == null
                   ? Padding(
                       padding: const EdgeInsets.all(24),
                       child: Center(
                         child: Text(
-                          existingIds.length == allAssets.length
-                              ? 'All characters already in this bank'
-                              : 'No voice characters created yet',
+                          otherBanks.isEmpty
+                              ? 'No other banks to import from'
+                              : 'Select a source bank above',
                           style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4)),
+                              color:
+                                  Colors.white.withValues(alpha: 0.4)),
                         ),
                       ),
                     )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      shrinkWrap: true,
-                      itemCount: filtered.length,
-                      itemBuilder: (ctx, i) {
-                        final a = filtered[i];
-                        return ListTile(
-                          leading: CircleAvatar(
-                            radius: 16,
-                            backgroundColor:
-                                AppTheme.accentColor.withValues(alpha: 0.2),
-                            child: Text(a.name[0].toUpperCase(),
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 13)),
-                          ),
-                          title: Text(a.name, style: const TextStyle(fontSize: 14)),
-                          subtitle: Text(a.taskMode,
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color:
-                                      Colors.white.withValues(alpha: 0.4))),
-                          onTap: () => _addSingle(a),
-                        );
-                      },
-                    ),
+                  : _buildAvailableList(allAssets, targetAssetIds),
             ),
             const Divider(height: 1),
             Padding(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   TextButton(
-                    onPressed: filtered.isEmpty ? null : () => _addAll(filtered),
-                    child: const Text('Add All'),
+                    onPressed: _sourceBankId == null || _busy
+                        ? null
+                        : () => _addAll(allAssets, targetAssetIds),
+                    child: const Text('Import All'),
                   ),
                   TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Done')),
+                    onPressed: _busy
+                        ? null
+                        : () => Navigator.pop(context),
+                    child: const Text('Done'),
+                  ),
                 ],
               ),
             ),
@@ -678,89 +1007,122 @@ class _AddCharacterDialogState extends State<_AddCharacterDialog> {
     );
   }
 
-  Future<void> _addSingle(db.VoiceAsset asset) async {
-    await widget.database
-        .addMemberToBank(db.VoiceBankMembersCompanion(
-      id: Value(const Uuid().v4()),
-      bankId: Value(widget.bankId),
-      voiceAssetId: Value(asset.id),
-    ));
-    if (mounted) Navigator.pop(context);
+  Widget _buildAvailableList(
+    List<db.VoiceAsset> allAssets,
+    Set<String> targetAssetIds,
+  ) {
+    final sourceMembersAsync =
+        ref.watch(bankMembersStreamProvider(_sourceBankId!));
+    return sourceMembersAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Error: $e')),
+      data: (sourceMembers) {
+        final assetMap = {for (final a in allAssets) a.id: a};
+        final candidates = sourceMembers
+            .map((m) => assetMap[m.voiceAssetId])
+            .whereType<db.VoiceAsset>()
+            .where((a) => !targetAssetIds.contains(a.id))
+            .toList();
+        final q = _filter.trim().toLowerCase();
+        final filtered = q.isEmpty
+            ? candidates
+            : candidates
+                .where((a) => a.name.toLowerCase().contains(q))
+                .toList();
+
+        if (candidates.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: Text(
+                'All characters from this bank are already members',
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4)),
+              ),
+            ),
+          );
+        }
+        if (filtered.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: Text('No characters match "$_filter"',
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.4))),
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          shrinkWrap: true,
+          itemCount: filtered.length,
+          itemBuilder: (ctx, i) {
+            final a = filtered[i];
+            return ListTile(
+              leading: _MiniAvatar(
+                  name: a.name,
+                  avatarPath: a.avatarPath,
+                  selected: false),
+              title:
+                  Text(a.name, style: const TextStyle(fontSize: 14)),
+              subtitle: Text(_modeLabel(a.taskMode),
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.4))),
+              trailing: IconButton(
+                icon: const Icon(Icons.add_circle_outline_rounded,
+                    size: 20),
+                tooltip: 'Import this character',
+                onPressed: _busy ? null : () => _addOne(a),
+              ),
+              onTap: _busy ? null : () => _addOne(a),
+            );
+          },
+        );
+      },
+    );
   }
 
-  Future<void> _addAll(List<db.VoiceAsset> assets) async {
-    for (final a in assets) {
-      await widget.database
-          .addMemberToBank(db.VoiceBankMembersCompanion(
+  Future<void> _addOne(db.VoiceAsset asset) async {
+    setState(() => _busy = true);
+    await ref.read(databaseProvider).addMemberToBank(
+          db.VoiceBankMembersCompanion(
+            id: Value(const Uuid().v4()),
+            bankId: Value(widget.targetBank.id),
+            voiceAssetId: Value(asset.id),
+          ),
+        );
+    if (mounted) setState(() => _busy = false);
+  }
+
+  Future<void> _addAll(
+    List<db.VoiceAsset> allAssets,
+    Set<String> targetAssetIds,
+  ) async {
+    final sourceMembers = ref
+            .read(bankMembersStreamProvider(_sourceBankId!))
+            .valueOrNull ??
+        const [];
+    final assetMap = {for (final a in allAssets) a.id: a};
+    final toAdd = sourceMembers
+        .map((m) => assetMap[m.voiceAssetId])
+        .whereType<db.VoiceAsset>()
+        .where((a) => !targetAssetIds.contains(a.id))
+        .toList();
+    if (toAdd.isEmpty) return;
+    setState(() => _busy = true);
+    final database = ref.read(databaseProvider);
+    for (final a in toAdd) {
+      await database.addMemberToBank(db.VoiceBankMembersCompanion(
         id: Value(const Uuid().v4()),
-        bankId: Value(widget.bankId),
+        bankId: Value(widget.targetBank.id),
         voiceAssetId: Value(a.id),
       ));
     }
-    if (mounted) Navigator.pop(context);
-  }
-}
-
-// ─────────────────────── Roster Card ───────────────────────
-
-class _RosterCard extends StatelessWidget {
-  final db.VoiceAsset asset;
-  final VoidCallback onRemove;
-
-  const _RosterCard({required this.asset, required this.onRemove});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: AppTheme.accentColor.withValues(alpha: 0.2),
-              child: Text(asset.name[0].toUpperCase(),
-                  style: const TextStyle(color: Colors.white)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(asset.name,
-                      style: const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w500)),
-                  Text(asset.taskMode,
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.4))),
-                ],
-              ),
-            ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceDim,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text('voice: "${asset.name}"',
-                  style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontFamily: 'monospace')),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: Icon(Icons.remove_circle_outline_rounded,
-                  size: 18, color: Colors.white.withValues(alpha: 0.4)),
-              onPressed: onRemove,
-              tooltip: 'Remove from bank',
-            ),
-          ],
-        ),
-      ),
-    );
+    if (mounted) {
+      setState(() => _busy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Imported ${toAdd.length} character(s)')));
+    }
   }
 }

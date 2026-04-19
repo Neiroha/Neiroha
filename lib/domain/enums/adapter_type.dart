@@ -2,6 +2,7 @@ enum AdapterType {
   openaiCompatible,
   gptSovits,
   cosyvoice,
+  voxcpm2Native,
   chatCompletionsTts,
   azureTts,
   systemTts;
@@ -10,6 +11,7 @@ enum AdapterType {
         openaiCompatible => 'OpenAI TTS API Compatible',
         gptSovits => 'GPT-SoVITS',
         cosyvoice => 'CosyVoice Native',
+        voxcpm2Native => 'VoxCPM2 Native',
         chatCompletionsTts => 'OpenAI Chat Completions TTS',
         azureTts => 'Azure Speech Service',
         systemTts => 'Windows System TTS',
@@ -19,6 +21,7 @@ enum AdapterType {
         openaiCompatible => 'tts-1',
         gptSovits => 'gpt-sovits',
         cosyvoice => '',
+        voxcpm2Native => 'voxcpm2',
         chatCompletionsTts => 'mimo-v2-tts',
         azureTts => '',
         systemTts => '',

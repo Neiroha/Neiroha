@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/cosyvoice_adapter.dart';
+import 'package:neiroha/data/adapters/voxcpm2_native_adapter.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/enums/adapter_type.dart';
@@ -529,8 +530,11 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
             const SizedBox(width: 8),
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () {
-                  ref.read(databaseProvider).deleteVoiceAsset(a.id);
+                onPressed: () async {
+                  await ref
+                      .read(playbackNotifierProvider.notifier)
+                      .stopIfSourceTag(voiceBankQuickTestPlaybackSource);
+                  await ref.read(databaseProvider).deleteVoiceAsset(a.id);
                   ref
                       .read(selectedCharacterIdProvider.notifier)
                       .state = null;
@@ -715,6 +719,15 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   bool _loadingCosyProfiles = false;
   String? _selectedCosyProfileId;
 
+  // VoxCPM2 mode: 'design' | 'clone' | 'ultimate_clone'.
+  String? _voxcpmMode;
+
+  // VoxCPM2 registered voices (from `/voxcpm/voices`). Used as `voice_id`
+  // in clone mode — only server-registered ids are accepted.
+  List<VoxCpm2Voice> _voxcpmVoices = [];
+  bool _loadingVoxcpmVoices = false;
+  String? _selectedVoxcpmVoiceId;
+
   // Reference audio: from voice assets OR manual upload
   String? _selectedAudioTrackId;
   String? _uploadedRefAudioPath;
@@ -754,6 +767,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
   String get _adapterType => _selectedProvider.adapterType;
   bool get _isCosyVoice => _adapterType == 'cosyvoice';
+  bool get _isVoxCpm2 => _adapterType == 'voxcpm2Native';
   bool get _isGptSovits => _adapterType == 'gptSovits';
   bool get _isPresetVoiceProvider =>
       _adapterType == 'chatCompletionsTts' ||
@@ -810,6 +824,13 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       if (_isCosyVoice) {
         if (mounted) setState(() { _loadingSpeakers = false; _loadingModels = false; });
         _fetchCosyVoiceProfiles();
+        return;
+      }
+      // VoxCPM2 native exposes registered voices via /voxcpm/voices — same
+      // rationale: clone mode's `voice_id` must match a registered id.
+      if (_isVoxCpm2) {
+        if (mounted) setState(() { _loadingSpeakers = false; _loadingModels = false; });
+        _fetchVoxCpm2Voices();
         return;
       }
       // Voice-only providers (Azure, System TTS, GPT-SoVITS)
@@ -870,6 +891,30 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       }
     } catch (_) {}
     if (mounted) setState(() => _loadingCosyProfiles = false);
+  }
+
+  /// Live-fetch VoxCPM2 registered voices from `/voxcpm/voices`.
+  Future<void> _fetchVoxCpm2Voices() async {
+    if (!_isVoxCpm2) return;
+    setState(() {
+      _loadingVoxcpmVoices = true;
+      _voxcpmVoices = [];
+      _selectedVoxcpmVoiceId = null;
+    });
+    try {
+      final adapter = createAdapter(_selectedProvider);
+      if (adapter is VoxCpm2NativeAdapter) {
+        final voices = await adapter.getVoices();
+        if (mounted) {
+          setState(() {
+            _voxcpmVoices = voices;
+            _loadingVoxcpmVoices = false;
+          });
+        }
+        return;
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _loadingVoxcpmVoices = false);
   }
 
   /// Reusable searchable speaker picker + loading indicator.
@@ -1130,6 +1175,8 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                       setState(() {
                         _selectedProviderId = v;
                         _cosyVoiceMode = null;
+                        _voxcpmMode = null;
+                        _selectedVoxcpmVoiceId = null;
                         _selectedAudioTrackId = null;
                         _uploadedRefAudioPath = null;
                         _voiceNameCtrl.clear();
@@ -1359,6 +1406,133 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         ..._buildRefAudioPicker(),
                       ],
                     ],
+                  ] else if (_isVoxCpm2) ...[
+                    // ── VoxCPM2 Native: 3 modes ──
+                    _SectionLabel('VOXCPM2 MODE'),
+                    const SizedBox(height: 8),
+                    _VoxCpm2ModeSelector(
+                      selected: _voxcpmMode,
+                      onChanged: (mode) {
+                        setState(() {
+                          _voxcpmMode = mode;
+                          // design: text-only → voiceDesign task mode.
+                          // clone / ultimate_clone: require audio → cloneWithPrompt.
+                          if (mode == 'design') {
+                            _taskMode = TaskMode.voiceDesign;
+                          } else {
+                            _taskMode = TaskMode.cloneWithPrompt;
+                          }
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    if (_voxcpmMode != null) ...[
+                      // Registered voice picker (optional — only meaningful in
+                      // clone / ultimate_clone; for design we still show it
+                      // disabled-via-empty-list so the UI is consistent).
+                      if (_voxcpmMode != 'design') ...[
+                        _SectionLabel('REGISTERED VOICE (optional)'),
+                        const SizedBox(height: 4),
+                        Text(
+                          'A voice profile registered on the server. Leave '
+                          'as "None" to synthesise purely from your uploaded '
+                          'reference audio — sending an unregistered id is '
+                          'rejected.',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.4)),
+                        ),
+                        const SizedBox(height: 8),
+                        if (_loadingVoxcpmVoices)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: Row(children: [
+                              SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2)),
+                              SizedBox(width: 10),
+                              Text('Loading registered voices...'),
+                            ]),
+                          )
+                        else
+                          DropdownButtonFormField<String?>(
+                            decoration: const InputDecoration(
+                              labelText: 'Registered Voice',
+                              prefixIcon:
+                                  Icon(Icons.folder_shared_rounded, size: 18),
+                            ),
+                            isExpanded: true,
+                            initialValue: _selectedVoxcpmVoiceId,
+                            items: [
+                              const DropdownMenuItem<String?>(
+                                value: null,
+                                child: Text('None (use uploaded audio only)',
+                                    style: TextStyle(
+                                        fontStyle: FontStyle.italic)),
+                              ),
+                              ..._voxcpmVoices
+                                  .map((v) => DropdownMenuItem<String?>(
+                                        value: v.id,
+                                        child: Text(
+                                          v.displayName.isNotEmpty
+                                              ? '${v.displayName}  ·  ${v.id}'
+                                              : v.id,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      )),
+                            ],
+                            onChanged: (v) => setState(() {
+                              _selectedVoxcpmVoiceId = v;
+                              _voiceNameCtrl.text = v ?? '';
+                            }),
+                          ),
+                        const SizedBox(height: 12),
+                      ],
+
+                      // ── Design ─────────────────────────────────────────────
+                      if (_voxcpmMode == 'design') ...[
+                        _SectionLabel('VOICE DESCRIPTION'),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Natural-language voice description. At synthesis '
+                          'time, prepend it to the text in parentheses — e.g.\n'
+                          '(A young woman, gentle and sweet voice)',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.4)),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _instructionCtrl,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            labelText: 'Voice Description *',
+                            hintText:
+                                'A young woman, gentle and sweet voice',
+                          ),
+                        ),
+                      ],
+
+                      // ── Clone ──────────────────────────────────────────────
+                      if (_voxcpmMode == 'clone') ...[
+                        ..._buildRefAudioPicker(),
+                      ],
+
+                      // ── Ultimate Clone ─────────────────────────────────────
+                      if (_voxcpmMode == 'ultimate_clone') ...[
+                        ..._buildRefAudioPicker(),
+                        TextField(
+                          controller: _promptTextCtrl,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            labelText: 'Prompt Text (spoken in ref audio) *',
+                            hintText: 'Transcript of the reference audio',
+                          ),
+                        ),
+                      ],
+                    ],
                   ] else if (_isGptSovits) ...[
                     // ── GPT-SoVITS: always ref audio mode ──
                     ..._buildRefAudioPicker(),
@@ -1452,16 +1626,43 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     final refAudio = _effectiveRefAudioPath;
     // GPT-SoVITS and CosyVoice zero_shot / cross_lingual require ref audio.
     // cross_lingual can skip it only if a profile name is given instead.
+    // VoxCPM2 clone / ultimate_clone need ref audio unless a registered
+    // voice_id is chosen.
+    final voxcpmNeedsAudio = _isVoxCpm2 &&
+        (_voxcpmMode == 'clone' || _voxcpmMode == 'ultimate_clone') &&
+        _voiceNameCtrl.text.trim().isEmpty;
     final needsRefAudio = _isGptSovits ||
         (_isCosyVoice && _cosyVoiceMode == 'zero_shot') ||
         (_isCosyVoice &&
             _cosyVoiceMode == 'cross_lingual' &&
-            _voiceNameCtrl.text.trim().isEmpty);
+            _voiceNameCtrl.text.trim().isEmpty) ||
+        voxcpmNeedsAudio;
     if (needsRefAudio && refAudio == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(_isCosyVoice && _cosyVoiceMode == 'cross_lingual'
               ? 'Cross Lingual mode requires a Reference Audio or a Profile Name'
-              : 'Reference audio is required')));
+              : _isVoxCpm2
+                  ? 'VoxCPM2 ${_voxcpmMode == 'ultimate_clone' ? 'Ultra Clone' : 'Clone'} needs a Reference Audio or a Registered Voice'
+                  : 'Reference audio is required')));
+      return;
+    }
+    if (_isVoxCpm2 && _voxcpmMode == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Select a VoxCPM2 mode')));
+      return;
+    }
+    if (_isVoxCpm2 &&
+        _voxcpmMode == 'design' &&
+        _instructionCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Design mode requires a Voice Description')));
+      return;
+    }
+    if (_isVoxCpm2 &&
+        _voxcpmMode == 'ultimate_clone' &&
+        _promptTextCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Ultra Clone mode requires a Prompt Text')));
       return;
     }
 
@@ -1541,7 +1742,11 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
               // can route zero_shot / cross_lingual / instruct correctly.
               : _isCosyVoice
                   ? _cosyVoiceMode
-                  : null),
+                  // VoxCPM2 native: same pattern — store design / clone /
+                  // ultimate_clone so the adapter routes requests correctly.
+                  : _isVoxCpm2
+                      ? _voxcpmMode
+                      : null),
       taskMode: Value(effectiveMode.name),
       refAudioPath: Value(refAudio),
       refAudioTrimStart: const Value(null),
@@ -1566,6 +1771,83 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 }
 
 // ─────────────────────────── Sub-widgets ────────────────────────────────────
+
+class _VoxCpm2ModeSelector extends StatelessWidget {
+  final String? selected;
+  final ValueChanged<String> onChanged;
+
+  const _VoxCpm2ModeSelector({
+    required this.selected,
+    required this.onChanged,
+  });
+
+  static const _modes = [
+    ('design', Icons.text_fields_rounded, 'Design',
+        'Describe the voice\nin natural language'),
+    ('clone', Icons.mic_rounded, 'Clone',
+        'Clone voice from\nreference audio'),
+    ('ultimate_clone', Icons.auto_awesome_rounded, 'Ultra Clone',
+        'Clone with prompt\ntranscript + audio'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: _modes.map((rec) {
+        final (mode, icon, label, hint) = rec;
+        final isSelected = selected == mode;
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(right: mode != 'ultimate_clone' ? 8 : 0),
+            child: InkWell(
+              onTap: () => onChanged(mode),
+              borderRadius: BorderRadius.circular(10),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: isSelected
+                      ? AppTheme.accentColor.withValues(alpha: 0.15)
+                      : AppTheme.surfaceDim,
+                  border: Border.all(
+                    color: isSelected
+                        ? AppTheme.accentColor.withValues(alpha: 0.5)
+                        : Colors.transparent,
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(icon,
+                        size: 20,
+                        color: isSelected
+                            ? AppTheme.accentColor
+                            : Colors.white.withValues(alpha: 0.5)),
+                    const SizedBox(height: 6),
+                    Text(label,
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.7))),
+                    const SizedBox(height: 4),
+                    Text(hint,
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.white.withValues(alpha: 0.4))),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
 
 class _CosyVoiceModeSelector extends StatelessWidget {
   final String? selected;

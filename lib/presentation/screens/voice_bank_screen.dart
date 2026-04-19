@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
@@ -12,6 +13,7 @@ import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/quick_tts_panel.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/providers/playback_provider.dart';
 
 /// Merged Voice Bank + Voice Characters screen.
 ///
@@ -35,9 +37,18 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
   String _characterFilter = '';
   late final TextEditingController _searchCtrl;
 
+  // Cached notifier references captured while the widget is still mounted.
+  // Reading via `ref` inside [dispose] throws — the ConsumerStatefulElement
+  // has already been disposed by then. Notifiers themselves live in the
+  // enclosing ProviderScope, so calling them after widget dispose is safe.
+  late final StateController<String?> _selectedCharacterCtl;
+  late final PlaybackNotifier _playbackNotifier;
+
   @override
   void initState() {
     super.initState();
+    _selectedCharacterCtl = ref.read(selectedCharacterIdProvider.notifier);
+    _playbackNotifier = ref.read(playbackNotifierProvider.notifier);
     _searchCtrl = TextEditingController();
     _searchCtrl.addListener(() {
       setState(() => _characterFilter = _searchCtrl.text);
@@ -46,8 +57,28 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
 
   @override
   void dispose() {
+    // Capture locally — fields become unreadable after super.dispose().
+    final selectedCtl = _selectedCharacterCtl;
+    final playback = _playbackNotifier;
+    // Defer provider mutations: writing to a StateProvider while the widget
+    // tree is being torn down raises "Tried to modify a provider while the
+    // widget tree was building". Future(...) schedules it on the next event-
+    // loop tick, after finalizeTree completes.
+    Future(() {
+      selectedCtl.state = null;
+      unawaited(
+          playback.stopIfSourceTag(voiceBankQuickTestPlaybackSource));
+    });
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  /// Call while the widget is still mounted (e.g. from a button handler).
+  /// Not safe from [dispose] — that path uses a deferred variant inline.
+  void _clearVoiceBankInspectorState() {
+    _selectedCharacterCtl.state = null;
+    unawaited(
+        _playbackNotifier.stopIfSourceTag(voiceBankQuickTestPlaybackSource));
   }
 
   @override
@@ -136,16 +167,14 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                   return _BankTile(
                     bank: bank,
                     isSelected: selected,
-                    onTap: () => setState(() {
-                      _selectedBankId = bank.id;
-                      // Reset character selection when switching banks.
-                      ref
-                          .read(selectedCharacterIdProvider.notifier)
-                          .state = null;
-                    }),
+                    onTap: () {
+                      _clearVoiceBankInspectorState();
+                      setState(() => _selectedBankId = bank.id);
+                    },
                     onDelete: () async {
                       await ref.read(databaseProvider).deleteBank(bank.id);
                       if (_selectedBankId == bank.id) {
+                        _clearVoiceBankInspectorState();
                         setState(() => _selectedBankId = null);
                       }
                     },
@@ -153,6 +182,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                       final newBank = await ref
                           .read(databaseProvider)
                           .duplicateBank(bank.id, '${bank.name} (copy)');
+                      _clearVoiceBankInspectorState();
                       setState(() => _selectedBankId = newBank.id);
                     },
                     onToggleActive: () async {
@@ -404,9 +434,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                 .read(databaseProvider)
                 .removeMemberByAssetAndBank(bank.id, asset.id);
             if (selectedId == asset.id) {
-              ref
-                  .read(selectedCharacterIdProvider.notifier)
-                  .state = null;
+              _clearVoiceBankInspectorState();
             }
           },
         );
@@ -417,6 +445,23 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
   // ───────────────── Right column: Inspector ─────────────────
 
   Widget _buildInspectorColumn() {
+    if (_selectedBankId == null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.tune_rounded,
+                size: 48, color: Colors.white.withValues(alpha: 0.1)),
+            const SizedBox(height: 12),
+            Text('Select a bank and character to edit',
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 13)),
+          ],
+        ),
+      );
+    }
+
     final selectedId = ref.watch(selectedCharacterIdProvider);
     if (selectedId == null) {
       return Center(
@@ -505,6 +550,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
             name: Value(result),
             createdAt: Value(DateTime.now()),
           ));
+      _clearVoiceBankInspectorState();
       setState(() => _selectedBankId = id);
     }
   }

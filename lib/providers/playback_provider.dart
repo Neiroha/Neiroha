@@ -5,10 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_providers.dart';
 
+const voiceBankQuickTestPlaybackSource = 'voice_bank.quick_tts';
+
 class PlaybackState {
   final String? audioPath;
   final String? title;
   final String? subtitle;
+  final String? sourceTag;
   final bool isPlaying;
   final Duration position;
   final Duration duration;
@@ -17,6 +20,7 @@ class PlaybackState {
     this.audioPath,
     this.title,
     this.subtitle,
+    this.sourceTag,
     this.isPlaying = false,
     this.position = Duration.zero,
     this.duration = Duration.zero,
@@ -26,15 +30,20 @@ class PlaybackState {
     String? audioPath,
     String? title,
     String? subtitle,
+    String? sourceTag,
     bool? isPlaying,
     Duration? position,
     Duration? duration,
     bool clearMedia = false,
+    bool clearSourceTag = false,
   }) {
     return PlaybackState(
       audioPath: clearMedia ? null : (audioPath ?? this.audioPath),
       title: clearMedia ? null : (title ?? this.title),
       subtitle: clearMedia ? null : (subtitle ?? this.subtitle),
+      sourceTag: clearMedia || clearSourceTag
+          ? null
+          : (sourceTag ?? this.sourceTag),
       isPlaying: isPlaying ?? this.isPlaying,
       position: position ?? this.position,
       duration: duration ?? this.duration,
@@ -72,12 +81,14 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
     String audioPath,
     String title, {
     String? subtitle,
+    String? sourceTag,
   }) async {
     await _player.stop();
     state = state.copyWith(
       audioPath: audioPath,
       title: title,
       subtitle: subtitle,
+      sourceTag: sourceTag,
       position: Duration.zero,
       duration: Duration.zero,
       isPlaying: true,
@@ -99,6 +110,11 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
   Future<void> stop() async {
     await _player.stop();
     state = const PlaybackState();
+  }
+
+  Future<void> stopIfSourceTag(String sourceTag) async {
+    if (state.sourceTag != sourceTag) return;
+    await stop();
   }
 
   Future<void> seek(Duration position) async {

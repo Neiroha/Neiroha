@@ -5,12 +5,20 @@ import '../../providers/playback_provider.dart';
 import '../theme/app_theme.dart';
 
 class PersistentAudioBar extends ConsumerWidget {
-  const PersistentAudioBar({super.key});
+  final String? onlyForSourceTag;
+
+  const PersistentAudioBar({
+    super.key,
+    this.onlyForSourceTag,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(playbackNotifierProvider);
     if (state.audioPath == null) return const SizedBox.shrink();
+    if (onlyForSourceTag != null && state.sourceTag != onlyForSourceTag) {
+      return const SizedBox.shrink();
+    }
 
     final notifier = ref.read(playbackNotifierProvider.notifier);
     final durMs = state.duration.inMilliseconds;

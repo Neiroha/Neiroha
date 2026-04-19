@@ -6,6 +6,7 @@ import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/presentation/widgets/sidebar.dart';
+import 'package:neiroha/providers/playback_provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'phase_tts_screen.dart';
@@ -24,10 +25,14 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedTab = ref.watch(selectedTabProvider);
+    final playback = ref.watch(playbackNotifierProvider);
     // Dialog/Phase render their own inline player above the text input,
     // so the global bottom bar is suppressed there to avoid a double UI.
-    final showGlobalPlayer =
-        selectedTab != NavTab.dialogTts && selectedTab != NavTab.phaseTts;
+    // Voice Bank quick tests also render inline above the test input.
+    final showGlobalPlayer = selectedTab != NavTab.dialogTts &&
+        selectedTab != NavTab.phaseTts &&
+        !(selectedTab == NavTab.voiceBank &&
+            playback.sourceTag == voiceBankQuickTestPlaybackSource);
 
     return Scaffold(
       body: Column(

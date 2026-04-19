@@ -4,6 +4,7 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/adapters/openai_compatible_adapter.dart';
 import 'package:neiroha/data/adapters/chat_completions_tts_adapter.dart';
 import 'package:neiroha/data/adapters/cosyvoice_adapter.dart';
+import 'package:neiroha/data/adapters/voxcpm2_native_adapter.dart';
 import 'package:neiroha/data/adapters/gpt_sovits_adapter.dart';
 import 'package:neiroha/data/adapters/azure_tts_adapter.dart';
 import 'package:neiroha/data/adapters/system_tts_adapter.dart';
@@ -97,6 +98,12 @@ TtsAdapter createAdapter(db.TtsProvider provider, {String? modelName}) {
         apiKey: provider.apiKey,
         modelName: model,
       );
+    case 'voxcpm2Native':
+      return VoxCpm2NativeAdapter(
+        baseUrl: provider.baseUrl,
+        apiKey: provider.apiKey,
+        modelName: model,
+      );
     case 'gptSovits':
       return GptSovitsAdapter(
         baseUrl: provider.baseUrl,
@@ -115,7 +122,6 @@ TtsAdapter createAdapter(db.TtsProvider provider, {String? modelName}) {
         apiKey: provider.apiKey,
         modelName: model,
       );
-    // TODO: Add qwen3Native adapter
     default:
       throw UnimplementedError(
           'Adapter not implemented for: ${provider.adapterType}');

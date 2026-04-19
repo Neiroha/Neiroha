@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
@@ -12,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 
@@ -49,7 +48,6 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
   Widget build(BuildContext context) {
     final asset = widget.asset;
     final historyAsync = ref.watch(quickTtsHistoryStreamProvider);
-    final assetsAsync = ref.watch(voiceAssetsStreamProvider);
 
     if (asset == null) {
       return _buildEmptyState();
@@ -64,7 +62,10 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
     return Column(
       children: [
         _buildHeader(asset, filteredHistory),
-        Expanded(child: _buildHistory(filteredHistory, assetsAsync)),
+        Expanded(child: _buildHistory(filteredHistory)),
+        const PersistentAudioBar(
+          onlyForSourceTag: voiceBankQuickTestPlaybackSource,
+        ),
         _buildGenerateBar(asset),
       ],
     );
@@ -149,10 +150,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
     );
   }
 
-  Widget _buildHistory(
-    AsyncValue<List<db.QuickTtsHistory>> historyAsync,
-    AsyncValue<List<db.VoiceAsset>> assetsAsync,
-  ) {
+  Widget _buildHistory(AsyncValue<List<db.QuickTtsHistory>> historyAsync) {
     return historyAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Error: $e')),
@@ -238,6 +236,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                       const SizedBox(height: 6),
                       _buildAudioRow(entry, isPlaying),
                     ],
+                    if (hasAudio) _buildAssetActionRow(entry),
                   ],
                 ),
               ),
@@ -270,6 +269,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                 entry.audioPath!,
                 entry.inputText,
                 subtitle: entry.voiceName,
+                sourceTag: voiceBankQuickTestPlaybackSource,
               );
             }
           },
@@ -289,38 +289,17 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
             ),
           ),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: SizedBox(
-            height: 20,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: List.generate(24, (i) {
-                final progress = i / 24.0;
-                final wave1 = math.sin(progress * math.pi * 4).abs();
-                final wave2 = math.sin(progress * math.pi * 7 + 1.2).abs();
-                final wave3 = math.sin(progress * math.pi * 2.5 + 0.5).abs();
-                final h =
-                    3.0 + (wave1 * 0.4 + wave2 * 0.35 + wave3 * 0.25) * 14.0;
-                return Expanded(
-                  child: Center(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 0.5),
-                      height: h,
-                      decoration: BoxDecoration(
-                        color: isPlaying
-                            ? AppTheme.accentColor.withValues(alpha: 0.7)
-                            : Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(1.5),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
+        const SizedBox(width: 10),
+        Text(
+          isPlaying ? 'Playing…' : 'Tap to play',
+          style: TextStyle(
+            fontSize: 11,
+            color: isPlaying
+                ? AppTheme.accentColor
+                : Colors.white.withValues(alpha: 0.4),
           ),
         ),
-        const SizedBox(width: 8),
+        const Spacer(),
         Text(
           durationText,
           style: TextStyle(
@@ -333,6 +312,82 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
         ),
       ],
     );
+  }
+
+  Widget _buildAssetActionRow(db.QuickTtsHistory entry) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          TextButton.icon(
+            onPressed: () => _saveEntryAsVoiceAsset(entry),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.accentColor,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: const Size(0, 24),
+              textStyle: const TextStyle(fontSize: 11),
+            ),
+            icon: const Icon(Icons.library_add_rounded, size: 14),
+            label: const Text('Save as Voice Asset'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveEntryAsVoiceAsset(db.QuickTtsHistory entry) async {
+    final src = entry.audioPath;
+    if (src == null || !File(src).existsSync()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Audio file is missing — cannot save')));
+      }
+      return;
+    }
+    final asset = widget.asset;
+    final database = ref.read(databaseProvider);
+    try {
+      final appDir = await getApplicationSupportDirectory();
+      final vaDir = Directory(p.join(appDir.path, 'voice_assets'));
+      if (!vaDir.existsSync()) vaDir.createSync(recursive: true);
+      final trackId = const Uuid().v4();
+      final ext = p.extension(src).isEmpty ? '.wav' : p.extension(src);
+      final dest = p.join(vaDir.path, '$trackId$ext');
+      await File(src).copy(dest);
+
+      // Trim the input text for the asset name so long prompts don't create
+      // unusable labels.
+      final raw = entry.inputText.trim();
+      final shortText =
+          raw.length > 24 ? '${raw.substring(0, 24)}…' : raw;
+      final assetName = shortText.isEmpty
+          ? '${entry.voiceName} quicktest'
+          : '${entry.voiceName} · $shortText';
+
+      await database.insertAudioTrack(db.AudioTracksCompanion(
+        id: Value(trackId),
+        name: Value(assetName),
+        description: Value('Saved from Quick Test'),
+        audioPath: Value(dest),
+        refText: Value(raw.isEmpty ? null : raw),
+        refLang: Value(asset?.promptLang),
+        durationSec: Value(entry.audioDuration),
+        sourceType: const Value('quickTts'),
+        createdAt: Value(DateTime.now()),
+      ));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Saved "$assetName" to Voice Assets'),
+          duration: const Duration(seconds: 2),
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to save: $e')));
+      }
+    }
   }
 
   Widget _buildGenerateBar(db.VoiceAsset asset) {
@@ -451,6 +506,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
             filePath,
             text,
             subtitle: asset.name,
+            sourceTag: voiceBankQuickTestPlaybackSource,
           );
       player.onDurationChanged.first.then((d) async {
         final secs = d.inMilliseconds / 1000.0;

@@ -31,7 +31,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -97,6 +97,17 @@ class AppDatabase extends _$AppDatabase {
       position: const Value(2),
     ));
 
+    const providerVoxCpm2 = 'default-voxcpm2-native';
+    await into(ttsProviders).insert(TtsProvidersCompanion(
+      id: const Value(providerVoxCpm2),
+      name: const Value('VoxCPM2 Native'),
+      adapterType: const Value('voxcpm2Native'),
+      baseUrl: const Value('http://127.0.0.1:8000'),
+      defaultModelName: const Value('voxcpm2'),
+      enabled: const Value(false),
+      position: const Value(3),
+    ));
+
     const providerGptSovits = 'default-gpt-sovits';
     await into(ttsProviders).insert(TtsProvidersCompanion(
       id: const Value(providerGptSovits),
@@ -105,7 +116,7 @@ class AppDatabase extends _$AppDatabase {
       baseUrl: const Value('http://127.0.0.1:9880'),
       defaultModelName: const Value('gpt-sovits'),
       enabled: const Value(false),
-      position: const Value(3),
+      position: const Value(4),
     ));
 
     const providerAzure = 'default-azure-tts';
@@ -116,7 +127,7 @@ class AppDatabase extends _$AppDatabase {
       baseUrl: const Value('https://eastus.tts.speech.microsoft.com'),
       defaultModelName: const Value(''),
       enabled: const Value(false),
-      position: const Value(4),
+      position: const Value(5),
     ));
 
     const providerSystem = 'default-system-tts';
@@ -127,7 +138,7 @@ class AppDatabase extends _$AppDatabase {
       baseUrl: const Value(''),
       defaultModelName: const Value(''),
       enabled: const Value(false),
-      position: const Value(5),
+      position: const Value(6),
     ));
 
     // ── Default voice character ──

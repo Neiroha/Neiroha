@@ -3,11 +3,18 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
+
+import 'data/storage/path_service.dart';
 import 'presentation/screens/app_shell.dart';
 import 'presentation/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Resolve data/ and voice_asset/ before any DB or file access so the very
+  // first DB open lands in the right place (portable EXE dir when writable,
+  // OS app-support dir otherwise).
+  await PathService.instance.init();
 
   if (Platform.isWindows) {
     await windowManager.ensureInitialized();

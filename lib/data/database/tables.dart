@@ -1,5 +1,18 @@
 import 'package:drift/drift.dart';
 
+// ─────────────── App Settings (key/value store) ───────────────
+//
+// Holds app-wide preferences that are not tied to a particular domain entity.
+// Known keys:
+//   'voiceAssetRoot' → absolute path chosen by the user for the audio library.
+class AppSettings extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}
+
 class TtsProviders extends Table {
   TextColumn get id => text()();
   TextColumn get name => text().withLength(min: 1)();
@@ -32,6 +45,7 @@ class AudioTracks extends Table {
   TextColumn get sourceType => text().withDefault(const Constant('upload'))();
   // upload | record | quickTts | phaseTts | dialogTts
   DateTimeColumn get createdAt => dateTime()();
+  BoolColumn get missing => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -67,6 +81,9 @@ class VoiceAssets extends Table {
   TextColumn get avatarPath => text().nullable()();
   RealColumn get speed => real().withDefault(const Constant(1.0))();
   BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+  // Pinned folder name used under voice_asset/quick_tts/. Set once at first
+  // generation so renaming the display name doesn't rehome the folder.
+  TextColumn get folderSlug => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -117,6 +134,7 @@ class QuickTtsHistories extends Table {
   RealColumn get audioDuration => real().nullable()();
   TextColumn get error => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
+  BoolColumn get missing => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -131,6 +149,7 @@ class PhaseTtsProjects extends Table {
   TextColumn get scriptText => text().withDefault(const Constant(''))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get folderSlug => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -145,6 +164,7 @@ class PhaseTtsSegments extends Table {
   TextColumn get audioPath => text().nullable()();
   RealColumn get audioDuration => real().nullable()();
   TextColumn get error => text().nullable()();
+  BoolColumn get missing => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -158,6 +178,7 @@ class DialogTtsProjects extends Table {
   TextColumn get bankId => text().references(VoiceBanks, #id)();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get folderSlug => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -172,6 +193,7 @@ class DialogTtsLines extends Table {
   TextColumn get audioPath => text().nullable()();
   RealColumn get audioDuration => real().nullable()();
   TextColumn get error => text().nullable()();
+  BoolColumn get missing => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -204,6 +226,7 @@ class TimelineClips extends Table {
   TextColumn get sourceLineId => text().nullable()();
   // Display label (voice name, filename, etc.).
   TextColumn get label => text().withDefault(const Constant(''))();
+  BoolColumn get missing => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};

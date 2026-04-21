@@ -5,8 +5,7 @@ import 'dart:math' as math;
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
+import 'package:neiroha/data/storage/path_service.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
@@ -679,9 +678,10 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
     final provider = providerMap[asset.providerId];
     if (provider == null) return;
 
-    final dir = await getApplicationSupportDirectory();
-    final outDir = Directory(p.join(dir.path, 'dialog_tts', project.id));
-    if (!outDir.existsSync()) outDir.createSync(recursive: true);
+    final slug = await ref
+        .read(storageServiceProvider)
+        .ensureDialogProjectSlug(project.id);
+    final outDir = await PathService.instance.dialogTtsDir(slug);
     final database = ref.read(databaseProvider);
 
     setState(() => _generatingLineIds.add(line.id));
@@ -698,9 +698,12 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
         promptText: asset.promptText,
         promptLang: asset.promptLang,
       ));
-      final ext = result.contentType.contains('wav') ? 'wav' : 'mp3';
-      final filePath = p.join(outDir.path,
-          'line_${line.orderIndex}_${DateTime.now().millisecondsSinceEpoch}.$ext');
+      final ext = result.contentType.contains('wav') ? '.wav' : '.mp3';
+      final filePath = PathService.dedupeFilename(
+        outDir,
+        'line_${line.orderIndex}_${PathService.formatTimestamp()}',
+        ext,
+      );
       await File(filePath).writeAsBytes(result.audioBytes);
       final durationSec = await measureAudioDuration(filePath);
       await database.updateDialogTtsLine(

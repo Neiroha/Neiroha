@@ -3,6 +3,214 @@
 part of 'app_database.dart';
 
 // ignore_for_file: type=lint
+class $AppSettingsTable extends AppSettings
+    with TableInfo<$AppSettingsTable, AppSetting> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AppSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [key, value];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'app_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AppSetting> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  AppSetting map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AppSetting(
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+    );
+  }
+
+  @override
+  $AppSettingsTable createAlias(String alias) {
+    return $AppSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class AppSetting extends DataClass implements Insertable<AppSetting> {
+  final String key;
+  final String value;
+  const AppSetting({required this.key, required this.value});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['value'] = Variable<String>(value);
+    return map;
+  }
+
+  AppSettingsCompanion toCompanion(bool nullToAbsent) {
+    return AppSettingsCompanion(key: Value(key), value: Value(value));
+  }
+
+  factory AppSetting.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AppSetting(
+      key: serializer.fromJson<String>(json['key']),
+      value: serializer.fromJson<String>(json['value']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'value': serializer.toJson<String>(value),
+    };
+  }
+
+  AppSetting copyWith({String? key, String? value}) =>
+      AppSetting(key: key ?? this.key, value: value ?? this.value);
+  AppSetting copyWithCompanion(AppSettingsCompanion data) {
+    return AppSetting(
+      key: data.key.present ? data.key.value : this.key,
+      value: data.value.present ? data.value.value : this.value,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSetting(')
+          ..write('key: $key, ')
+          ..write('value: $value')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, value);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AppSetting &&
+          other.key == this.key &&
+          other.value == this.value);
+}
+
+class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
+  final Value<String> key;
+  final Value<String> value;
+  final Value<int> rowid;
+  const AppSettingsCompanion({
+    this.key = const Value.absent(),
+    this.value = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AppSettingsCompanion.insert({
+    required String key,
+    required String value,
+    this.rowid = const Value.absent(),
+  }) : key = Value(key),
+       value = Value(value);
+  static Insertable<AppSetting> custom({
+    Expression<String>? key,
+    Expression<String>? value,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (value != null) 'value': value,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AppSettingsCompanion copyWith({
+    Value<String>? key,
+    Value<String>? value,
+    Value<int>? rowid,
+  }) {
+    return AppSettingsCompanion(
+      key: key ?? this.key,
+      value: value ?? this.value,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSettingsCompanion(')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $TtsProvidersTable extends TtsProviders
     with TableInfo<$TtsProvidersTable, TtsProvider> {
   @override
@@ -1040,6 +1248,17 @@ class $VoiceAssetsTable extends VoiceAssets
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _folderSlugMeta = const VerificationMeta(
+    'folderSlug',
+  );
+  @override
+  late final GeneratedColumn<String> folderSlug = GeneratedColumn<String>(
+    'folder_slug',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1059,6 +1278,7 @@ class $VoiceAssetsTable extends VoiceAssets
     avatarPath,
     speed,
     enabled,
+    folderSlug,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1200,6 +1420,12 @@ class $VoiceAssetsTable extends VoiceAssets
         enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
       );
     }
+    if (data.containsKey('folder_slug')) {
+      context.handle(
+        _folderSlugMeta,
+        folderSlug.isAcceptableOrUnknown(data['folder_slug']!, _folderSlugMeta),
+      );
+    }
     return context;
   }
 
@@ -1277,6 +1503,10 @@ class $VoiceAssetsTable extends VoiceAssets
         DriftSqlType.bool,
         data['${effectivePrefix}enabled'],
       )!,
+      folderSlug: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}folder_slug'],
+      ),
     );
   }
 
@@ -1304,6 +1534,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
   final String? avatarPath;
   final double speed;
   final bool enabled;
+  final String? folderSlug;
   const VoiceAsset({
     required this.id,
     required this.name,
@@ -1322,6 +1553,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     this.avatarPath,
     required this.speed,
     required this.enabled,
+    this.folderSlug,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1365,6 +1597,9 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     }
     map['speed'] = Variable<double>(speed);
     map['enabled'] = Variable<bool>(enabled);
+    if (!nullToAbsent || folderSlug != null) {
+      map['folder_slug'] = Variable<String>(folderSlug);
+    }
     return map;
   }
 
@@ -1409,6 +1644,9 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
           : Value(avatarPath),
       speed: Value(speed),
       enabled: Value(enabled),
+      folderSlug: folderSlug == null && nullToAbsent
+          ? const Value.absent()
+          : Value(folderSlug),
     );
   }
 
@@ -1437,6 +1675,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
       avatarPath: serializer.fromJson<String?>(json['avatarPath']),
       speed: serializer.fromJson<double>(json['speed']),
       enabled: serializer.fromJson<bool>(json['enabled']),
+      folderSlug: serializer.fromJson<String?>(json['folderSlug']),
     );
   }
   @override
@@ -1460,6 +1699,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
       'avatarPath': serializer.toJson<String?>(avatarPath),
       'speed': serializer.toJson<double>(speed),
       'enabled': serializer.toJson<bool>(enabled),
+      'folderSlug': serializer.toJson<String?>(folderSlug),
     };
   }
 
@@ -1481,6 +1721,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     Value<String?> avatarPath = const Value.absent(),
     double? speed,
     bool? enabled,
+    Value<String?> folderSlug = const Value.absent(),
   }) => VoiceAsset(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -1509,6 +1750,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     avatarPath: avatarPath.present ? avatarPath.value : this.avatarPath,
     speed: speed ?? this.speed,
     enabled: enabled ?? this.enabled,
+    folderSlug: folderSlug.present ? folderSlug.value : this.folderSlug,
   );
   VoiceAsset copyWithCompanion(VoiceAssetsCompanion data) {
     return VoiceAsset(
@@ -1551,6 +1793,9 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
           : this.avatarPath,
       speed: data.speed.present ? data.speed.value : this.speed,
       enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      folderSlug: data.folderSlug.present
+          ? data.folderSlug.value
+          : this.folderSlug,
     );
   }
 
@@ -1573,7 +1818,8 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
           ..write('presetVoiceName: $presetVoiceName, ')
           ..write('avatarPath: $avatarPath, ')
           ..write('speed: $speed, ')
-          ..write('enabled: $enabled')
+          ..write('enabled: $enabled, ')
+          ..write('folderSlug: $folderSlug')
           ..write(')'))
         .toString();
   }
@@ -1597,6 +1843,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     avatarPath,
     speed,
     enabled,
+    folderSlug,
   );
   @override
   bool operator ==(Object other) =>
@@ -1618,7 +1865,8 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
           other.presetVoiceName == this.presetVoiceName &&
           other.avatarPath == this.avatarPath &&
           other.speed == this.speed &&
-          other.enabled == this.enabled);
+          other.enabled == this.enabled &&
+          other.folderSlug == this.folderSlug);
 }
 
 class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
@@ -1639,6 +1887,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
   final Value<String?> avatarPath;
   final Value<double> speed;
   final Value<bool> enabled;
+  final Value<String?> folderSlug;
   final Value<int> rowid;
   const VoiceAssetsCompanion({
     this.id = const Value.absent(),
@@ -1658,6 +1907,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     this.avatarPath = const Value.absent(),
     this.speed = const Value.absent(),
     this.enabled = const Value.absent(),
+    this.folderSlug = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VoiceAssetsCompanion.insert({
@@ -1678,6 +1928,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     this.avatarPath = const Value.absent(),
     this.speed = const Value.absent(),
     this.enabled = const Value.absent(),
+    this.folderSlug = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -1701,6 +1952,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     Expression<String>? avatarPath,
     Expression<double>? speed,
     Expression<bool>? enabled,
+    Expression<String>? folderSlug,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1721,6 +1973,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
       if (avatarPath != null) 'avatar_path': avatarPath,
       if (speed != null) 'speed': speed,
       if (enabled != null) 'enabled': enabled,
+      if (folderSlug != null) 'folder_slug': folderSlug,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1743,6 +1996,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     Value<String?>? avatarPath,
     Value<double>? speed,
     Value<bool>? enabled,
+    Value<String?>? folderSlug,
     Value<int>? rowid,
   }) {
     return VoiceAssetsCompanion(
@@ -1763,6 +2017,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
       avatarPath: avatarPath ?? this.avatarPath,
       speed: speed ?? this.speed,
       enabled: enabled ?? this.enabled,
+      folderSlug: folderSlug ?? this.folderSlug,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1821,6 +2076,9 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     if (enabled.present) {
       map['enabled'] = Variable<bool>(enabled.value);
     }
+    if (folderSlug.present) {
+      map['folder_slug'] = Variable<String>(folderSlug.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1847,6 +2105,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
           ..write('avatarPath: $avatarPath, ')
           ..write('speed: $speed, ')
           ..write('enabled: $enabled, ')
+          ..write('folderSlug: $folderSlug, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3119,6 +3378,21 @@ class $QuickTtsHistoriesTable extends QuickTtsHistories
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _missingMeta = const VerificationMeta(
+    'missing',
+  );
+  @override
+  late final GeneratedColumn<bool> missing = GeneratedColumn<bool>(
+    'missing',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("missing" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3129,6 +3403,7 @@ class $QuickTtsHistoriesTable extends QuickTtsHistories
     audioDuration,
     error,
     createdAt,
+    missing,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3203,6 +3478,12 @@ class $QuickTtsHistoriesTable extends QuickTtsHistories
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('missing')) {
+      context.handle(
+        _missingMeta,
+        missing.isAcceptableOrUnknown(data['missing']!, _missingMeta),
+      );
+    }
     return context;
   }
 
@@ -3244,6 +3525,10 @@ class $QuickTtsHistoriesTable extends QuickTtsHistories
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      missing: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}missing'],
+      )!,
     );
   }
 
@@ -3262,6 +3547,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
   final double? audioDuration;
   final String? error;
   final DateTime createdAt;
+  final bool missing;
   const QuickTtsHistory({
     required this.id,
     required this.voiceAssetId,
@@ -3271,6 +3557,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
     this.audioDuration,
     this.error,
     required this.createdAt,
+    required this.missing,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3289,6 +3576,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
       map['error'] = Variable<String>(error);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    map['missing'] = Variable<bool>(missing);
     return map;
   }
 
@@ -3308,6 +3596,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
           ? const Value.absent()
           : Value(error),
       createdAt: Value(createdAt),
+      missing: Value(missing),
     );
   }
 
@@ -3325,6 +3614,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
       audioDuration: serializer.fromJson<double?>(json['audioDuration']),
       error: serializer.fromJson<String?>(json['error']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      missing: serializer.fromJson<bool>(json['missing']),
     );
   }
   @override
@@ -3339,6 +3629,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
       'audioDuration': serializer.toJson<double?>(audioDuration),
       'error': serializer.toJson<String?>(error),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'missing': serializer.toJson<bool>(missing),
     };
   }
 
@@ -3351,6 +3642,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
     Value<double?> audioDuration = const Value.absent(),
     Value<String?> error = const Value.absent(),
     DateTime? createdAt,
+    bool? missing,
   }) => QuickTtsHistory(
     id: id ?? this.id,
     voiceAssetId: voiceAssetId ?? this.voiceAssetId,
@@ -3362,6 +3654,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
         : this.audioDuration,
     error: error.present ? error.value : this.error,
     createdAt: createdAt ?? this.createdAt,
+    missing: missing ?? this.missing,
   );
   QuickTtsHistory copyWithCompanion(QuickTtsHistoriesCompanion data) {
     return QuickTtsHistory(
@@ -3377,6 +3670,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
           : this.audioDuration,
       error: data.error.present ? data.error.value : this.error,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      missing: data.missing.present ? data.missing.value : this.missing,
     );
   }
 
@@ -3390,7 +3684,8 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
           ..write('audioPath: $audioPath, ')
           ..write('audioDuration: $audioDuration, ')
           ..write('error: $error, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('missing: $missing')
           ..write(')'))
         .toString();
   }
@@ -3405,6 +3700,7 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
     audioDuration,
     error,
     createdAt,
+    missing,
   );
   @override
   bool operator ==(Object other) =>
@@ -3417,7 +3713,8 @@ class QuickTtsHistory extends DataClass implements Insertable<QuickTtsHistory> {
           other.audioPath == this.audioPath &&
           other.audioDuration == this.audioDuration &&
           other.error == this.error &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.missing == this.missing);
 }
 
 class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
@@ -3429,6 +3726,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
   final Value<double?> audioDuration;
   final Value<String?> error;
   final Value<DateTime> createdAt;
+  final Value<bool> missing;
   final Value<int> rowid;
   const QuickTtsHistoriesCompanion({
     this.id = const Value.absent(),
@@ -3439,6 +3737,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
     this.audioDuration = const Value.absent(),
     this.error = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.missing = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   QuickTtsHistoriesCompanion.insert({
@@ -3450,6 +3749,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
     this.audioDuration = const Value.absent(),
     this.error = const Value.absent(),
     required DateTime createdAt,
+    this.missing = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        voiceAssetId = Value(voiceAssetId),
@@ -3465,6 +3765,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
     Expression<double>? audioDuration,
     Expression<String>? error,
     Expression<DateTime>? createdAt,
+    Expression<bool>? missing,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3476,6 +3777,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
       if (audioDuration != null) 'audio_duration': audioDuration,
       if (error != null) 'error': error,
       if (createdAt != null) 'created_at': createdAt,
+      if (missing != null) 'missing': missing,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3489,6 +3791,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
     Value<double?>? audioDuration,
     Value<String?>? error,
     Value<DateTime>? createdAt,
+    Value<bool>? missing,
     Value<int>? rowid,
   }) {
     return QuickTtsHistoriesCompanion(
@@ -3500,6 +3803,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
       audioDuration: audioDuration ?? this.audioDuration,
       error: error ?? this.error,
       createdAt: createdAt ?? this.createdAt,
+      missing: missing ?? this.missing,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3531,6 +3835,9 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (missing.present) {
+      map['missing'] = Variable<bool>(missing.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3548,6 +3855,7 @@ class QuickTtsHistoriesCompanion extends UpdateCompanion<QuickTtsHistory> {
           ..write('audioDuration: $audioDuration, ')
           ..write('error: $error, ')
           ..write('createdAt: $createdAt, ')
+          ..write('missing: $missing, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3625,6 +3933,17 @@ class $PhaseTtsProjectsTable extends PhaseTtsProjects
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _folderSlugMeta = const VerificationMeta(
+    'folderSlug',
+  );
+  @override
+  late final GeneratedColumn<String> folderSlug = GeneratedColumn<String>(
+    'folder_slug',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3633,6 +3952,7 @@ class $PhaseTtsProjectsTable extends PhaseTtsProjects
     scriptText,
     createdAt,
     updatedAt,
+    folderSlug,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3689,6 +4009,12 @@ class $PhaseTtsProjectsTable extends PhaseTtsProjects
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('folder_slug')) {
+      context.handle(
+        _folderSlugMeta,
+        folderSlug.isAcceptableOrUnknown(data['folder_slug']!, _folderSlugMeta),
+      );
+    }
     return context;
   }
 
@@ -3722,6 +4048,10 @@ class $PhaseTtsProjectsTable extends PhaseTtsProjects
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
+      folderSlug: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}folder_slug'],
+      ),
     );
   }
 
@@ -3738,6 +4068,7 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
   final String scriptText;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? folderSlug;
   const PhaseTtsProject({
     required this.id,
     required this.name,
@@ -3745,6 +4076,7 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
     required this.scriptText,
     required this.createdAt,
     required this.updatedAt,
+    this.folderSlug,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3755,6 +4087,9 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
     map['script_text'] = Variable<String>(scriptText);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || folderSlug != null) {
+      map['folder_slug'] = Variable<String>(folderSlug);
+    }
     return map;
   }
 
@@ -3766,6 +4101,9 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
       scriptText: Value(scriptText),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      folderSlug: folderSlug == null && nullToAbsent
+          ? const Value.absent()
+          : Value(folderSlug),
     );
   }
 
@@ -3781,6 +4119,7 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
       scriptText: serializer.fromJson<String>(json['scriptText']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      folderSlug: serializer.fromJson<String?>(json['folderSlug']),
     );
   }
   @override
@@ -3793,6 +4132,7 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
       'scriptText': serializer.toJson<String>(scriptText),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'folderSlug': serializer.toJson<String?>(folderSlug),
     };
   }
 
@@ -3803,6 +4143,7 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
     String? scriptText,
     DateTime? createdAt,
     DateTime? updatedAt,
+    Value<String?> folderSlug = const Value.absent(),
   }) => PhaseTtsProject(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -3810,6 +4151,7 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
     scriptText: scriptText ?? this.scriptText,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    folderSlug: folderSlug.present ? folderSlug.value : this.folderSlug,
   );
   PhaseTtsProject copyWithCompanion(PhaseTtsProjectsCompanion data) {
     return PhaseTtsProject(
@@ -3821,6 +4163,9 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
           : this.scriptText,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      folderSlug: data.folderSlug.present
+          ? data.folderSlug.value
+          : this.folderSlug,
     );
   }
 
@@ -3832,14 +4177,22 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
           ..write('bankId: $bankId, ')
           ..write('scriptText: $scriptText, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('folderSlug: $folderSlug')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, bankId, scriptText, createdAt, updatedAt);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    bankId,
+    scriptText,
+    createdAt,
+    updatedAt,
+    folderSlug,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3849,7 +4202,8 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
           other.bankId == this.bankId &&
           other.scriptText == this.scriptText &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.folderSlug == this.folderSlug);
 }
 
 class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
@@ -3859,6 +4213,7 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
   final Value<String> scriptText;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
+  final Value<String?> folderSlug;
   final Value<int> rowid;
   const PhaseTtsProjectsCompanion({
     this.id = const Value.absent(),
@@ -3867,6 +4222,7 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
     this.scriptText = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.folderSlug = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PhaseTtsProjectsCompanion.insert({
@@ -3876,6 +4232,7 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
     this.scriptText = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
+    this.folderSlug = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -3889,6 +4246,7 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
     Expression<String>? scriptText,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<String>? folderSlug,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3898,6 +4256,7 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
       if (scriptText != null) 'script_text': scriptText,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (folderSlug != null) 'folder_slug': folderSlug,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3909,6 +4268,7 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
     Value<String>? scriptText,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
+    Value<String?>? folderSlug,
     Value<int>? rowid,
   }) {
     return PhaseTtsProjectsCompanion(
@@ -3918,6 +4278,7 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
       scriptText: scriptText ?? this.scriptText,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      folderSlug: folderSlug ?? this.folderSlug,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3943,6 +4304,9 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (folderSlug.present) {
+      map['folder_slug'] = Variable<String>(folderSlug.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3958,6 +4322,7 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
           ..write('scriptText: $scriptText, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('folderSlug: $folderSlug, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4057,6 +4422,21 @@ class $PhaseTtsSegmentsTable extends PhaseTtsSegments
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _missingMeta = const VerificationMeta(
+    'missing',
+  );
+  @override
+  late final GeneratedColumn<bool> missing = GeneratedColumn<bool>(
+    'missing',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("missing" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4067,6 +4447,7 @@ class $PhaseTtsSegmentsTable extends PhaseTtsSegments
     audioPath,
     audioDuration,
     error,
+    missing,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4142,6 +4523,12 @@ class $PhaseTtsSegmentsTable extends PhaseTtsSegments
         error.isAcceptableOrUnknown(data['error']!, _errorMeta),
       );
     }
+    if (data.containsKey('missing')) {
+      context.handle(
+        _missingMeta,
+        missing.isAcceptableOrUnknown(data['missing']!, _missingMeta),
+      );
+    }
     return context;
   }
 
@@ -4183,6 +4570,10 @@ class $PhaseTtsSegmentsTable extends PhaseTtsSegments
         DriftSqlType.string,
         data['${effectivePrefix}error'],
       ),
+      missing: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}missing'],
+      )!,
     );
   }
 
@@ -4201,6 +4592,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
   final String? audioPath;
   final double? audioDuration;
   final String? error;
+  final bool missing;
   const PhaseTtsSegment({
     required this.id,
     required this.projectId,
@@ -4210,6 +4602,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
     this.audioPath,
     this.audioDuration,
     this.error,
+    required this.missing,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4230,6 +4623,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
     if (!nullToAbsent || error != null) {
       map['error'] = Variable<String>(error);
     }
+    map['missing'] = Variable<bool>(missing);
     return map;
   }
 
@@ -4251,6 +4645,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
       error: error == null && nullToAbsent
           ? const Value.absent()
           : Value(error),
+      missing: Value(missing),
     );
   }
 
@@ -4268,6 +4663,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
       audioPath: serializer.fromJson<String?>(json['audioPath']),
       audioDuration: serializer.fromJson<double?>(json['audioDuration']),
       error: serializer.fromJson<String?>(json['error']),
+      missing: serializer.fromJson<bool>(json['missing']),
     );
   }
   @override
@@ -4282,6 +4678,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
       'audioPath': serializer.toJson<String?>(audioPath),
       'audioDuration': serializer.toJson<double?>(audioDuration),
       'error': serializer.toJson<String?>(error),
+      'missing': serializer.toJson<bool>(missing),
     };
   }
 
@@ -4294,6 +4691,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
     Value<String?> audioPath = const Value.absent(),
     Value<double?> audioDuration = const Value.absent(),
     Value<String?> error = const Value.absent(),
+    bool? missing,
   }) => PhaseTtsSegment(
     id: id ?? this.id,
     projectId: projectId ?? this.projectId,
@@ -4305,6 +4703,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
         ? audioDuration.value
         : this.audioDuration,
     error: error.present ? error.value : this.error,
+    missing: missing ?? this.missing,
   );
   PhaseTtsSegment copyWithCompanion(PhaseTtsSegmentsCompanion data) {
     return PhaseTtsSegment(
@@ -4324,6 +4723,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
           ? data.audioDuration.value
           : this.audioDuration,
       error: data.error.present ? data.error.value : this.error,
+      missing: data.missing.present ? data.missing.value : this.missing,
     );
   }
 
@@ -4337,7 +4737,8 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
           ..write('voiceAssetId: $voiceAssetId, ')
           ..write('audioPath: $audioPath, ')
           ..write('audioDuration: $audioDuration, ')
-          ..write('error: $error')
+          ..write('error: $error, ')
+          ..write('missing: $missing')
           ..write(')'))
         .toString();
   }
@@ -4352,6 +4753,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
     audioPath,
     audioDuration,
     error,
+    missing,
   );
   @override
   bool operator ==(Object other) =>
@@ -4364,7 +4766,8 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
           other.voiceAssetId == this.voiceAssetId &&
           other.audioPath == this.audioPath &&
           other.audioDuration == this.audioDuration &&
-          other.error == this.error);
+          other.error == this.error &&
+          other.missing == this.missing);
 }
 
 class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
@@ -4376,6 +4779,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
   final Value<String?> audioPath;
   final Value<double?> audioDuration;
   final Value<String?> error;
+  final Value<bool> missing;
   final Value<int> rowid;
   const PhaseTtsSegmentsCompanion({
     this.id = const Value.absent(),
@@ -4386,6 +4790,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
     this.audioPath = const Value.absent(),
     this.audioDuration = const Value.absent(),
     this.error = const Value.absent(),
+    this.missing = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PhaseTtsSegmentsCompanion.insert({
@@ -4397,6 +4802,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
     this.audioPath = const Value.absent(),
     this.audioDuration = const Value.absent(),
     this.error = const Value.absent(),
+    this.missing = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        projectId = Value(projectId),
@@ -4411,6 +4817,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
     Expression<String>? audioPath,
     Expression<double>? audioDuration,
     Expression<String>? error,
+    Expression<bool>? missing,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4422,6 +4829,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
       if (audioPath != null) 'audio_path': audioPath,
       if (audioDuration != null) 'audio_duration': audioDuration,
       if (error != null) 'error': error,
+      if (missing != null) 'missing': missing,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4435,6 +4843,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
     Value<String?>? audioPath,
     Value<double?>? audioDuration,
     Value<String?>? error,
+    Value<bool>? missing,
     Value<int>? rowid,
   }) {
     return PhaseTtsSegmentsCompanion(
@@ -4446,6 +4855,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
       audioPath: audioPath ?? this.audioPath,
       audioDuration: audioDuration ?? this.audioDuration,
       error: error ?? this.error,
+      missing: missing ?? this.missing,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4477,6 +4887,9 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
     if (error.present) {
       map['error'] = Variable<String>(error.value);
     }
+    if (missing.present) {
+      map['missing'] = Variable<bool>(missing.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4494,6 +4907,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
           ..write('audioPath: $audioPath, ')
           ..write('audioDuration: $audioDuration, ')
           ..write('error: $error, ')
+          ..write('missing: $missing, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4559,6 +4973,17 @@ class $DialogTtsProjectsTable extends DialogTtsProjects
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _folderSlugMeta = const VerificationMeta(
+    'folderSlug',
+  );
+  @override
+  late final GeneratedColumn<String> folderSlug = GeneratedColumn<String>(
+    'folder_slug',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4566,6 +4991,7 @@ class $DialogTtsProjectsTable extends DialogTtsProjects
     bankId,
     createdAt,
     updatedAt,
+    folderSlug,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4616,6 +5042,12 @@ class $DialogTtsProjectsTable extends DialogTtsProjects
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('folder_slug')) {
+      context.handle(
+        _folderSlugMeta,
+        folderSlug.isAcceptableOrUnknown(data['folder_slug']!, _folderSlugMeta),
+      );
+    }
     return context;
   }
 
@@ -4645,6 +5077,10 @@ class $DialogTtsProjectsTable extends DialogTtsProjects
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
+      folderSlug: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}folder_slug'],
+      ),
     );
   }
 
@@ -4661,12 +5097,14 @@ class DialogTtsProject extends DataClass
   final String bankId;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? folderSlug;
   const DialogTtsProject({
     required this.id,
     required this.name,
     required this.bankId,
     required this.createdAt,
     required this.updatedAt,
+    this.folderSlug,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4676,6 +5114,9 @@ class DialogTtsProject extends DataClass
     map['bank_id'] = Variable<String>(bankId);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || folderSlug != null) {
+      map['folder_slug'] = Variable<String>(folderSlug);
+    }
     return map;
   }
 
@@ -4686,6 +5127,9 @@ class DialogTtsProject extends DataClass
       bankId: Value(bankId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      folderSlug: folderSlug == null && nullToAbsent
+          ? const Value.absent()
+          : Value(folderSlug),
     );
   }
 
@@ -4700,6 +5144,7 @@ class DialogTtsProject extends DataClass
       bankId: serializer.fromJson<String>(json['bankId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      folderSlug: serializer.fromJson<String?>(json['folderSlug']),
     );
   }
   @override
@@ -4711,6 +5156,7 @@ class DialogTtsProject extends DataClass
       'bankId': serializer.toJson<String>(bankId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'folderSlug': serializer.toJson<String?>(folderSlug),
     };
   }
 
@@ -4720,12 +5166,14 @@ class DialogTtsProject extends DataClass
     String? bankId,
     DateTime? createdAt,
     DateTime? updatedAt,
+    Value<String?> folderSlug = const Value.absent(),
   }) => DialogTtsProject(
     id: id ?? this.id,
     name: name ?? this.name,
     bankId: bankId ?? this.bankId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    folderSlug: folderSlug.present ? folderSlug.value : this.folderSlug,
   );
   DialogTtsProject copyWithCompanion(DialogTtsProjectsCompanion data) {
     return DialogTtsProject(
@@ -4734,6 +5182,9 @@ class DialogTtsProject extends DataClass
       bankId: data.bankId.present ? data.bankId.value : this.bankId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      folderSlug: data.folderSlug.present
+          ? data.folderSlug.value
+          : this.folderSlug,
     );
   }
 
@@ -4744,13 +5195,15 @@ class DialogTtsProject extends DataClass
           ..write('name: $name, ')
           ..write('bankId: $bankId, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('folderSlug: $folderSlug')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, bankId, createdAt, updatedAt);
+  int get hashCode =>
+      Object.hash(id, name, bankId, createdAt, updatedAt, folderSlug);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -4759,7 +5212,8 @@ class DialogTtsProject extends DataClass
           other.name == this.name &&
           other.bankId == this.bankId &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.folderSlug == this.folderSlug);
 }
 
 class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
@@ -4768,6 +5222,7 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
   final Value<String> bankId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
+  final Value<String?> folderSlug;
   final Value<int> rowid;
   const DialogTtsProjectsCompanion({
     this.id = const Value.absent(),
@@ -4775,6 +5230,7 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
     this.bankId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.folderSlug = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DialogTtsProjectsCompanion.insert({
@@ -4783,6 +5239,7 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
     required String bankId,
     required DateTime createdAt,
     required DateTime updatedAt,
+    this.folderSlug = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -4795,6 +5252,7 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
     Expression<String>? bankId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<String>? folderSlug,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4803,6 +5261,7 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
       if (bankId != null) 'bank_id': bankId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (folderSlug != null) 'folder_slug': folderSlug,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4813,6 +5272,7 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
     Value<String>? bankId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
+    Value<String?>? folderSlug,
     Value<int>? rowid,
   }) {
     return DialogTtsProjectsCompanion(
@@ -4821,6 +5281,7 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
       bankId: bankId ?? this.bankId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      folderSlug: folderSlug ?? this.folderSlug,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4843,6 +5304,9 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (folderSlug.present) {
+      map['folder_slug'] = Variable<String>(folderSlug.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4857,6 +5321,7 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
           ..write('bankId: $bankId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('folderSlug: $folderSlug, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4956,6 +5421,21 @@ class $DialogTtsLinesTable extends DialogTtsLines
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _missingMeta = const VerificationMeta(
+    'missing',
+  );
+  @override
+  late final GeneratedColumn<bool> missing = GeneratedColumn<bool>(
+    'missing',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("missing" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4966,6 +5446,7 @@ class $DialogTtsLinesTable extends DialogTtsLines
     audioPath,
     audioDuration,
     error,
+    missing,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5038,6 +5519,12 @@ class $DialogTtsLinesTable extends DialogTtsLines
         error.isAcceptableOrUnknown(data['error']!, _errorMeta),
       );
     }
+    if (data.containsKey('missing')) {
+      context.handle(
+        _missingMeta,
+        missing.isAcceptableOrUnknown(data['missing']!, _missingMeta),
+      );
+    }
     return context;
   }
 
@@ -5079,6 +5566,10 @@ class $DialogTtsLinesTable extends DialogTtsLines
         DriftSqlType.string,
         data['${effectivePrefix}error'],
       ),
+      missing: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}missing'],
+      )!,
     );
   }
 
@@ -5097,6 +5588,7 @@ class DialogTtsLine extends DataClass implements Insertable<DialogTtsLine> {
   final String? audioPath;
   final double? audioDuration;
   final String? error;
+  final bool missing;
   const DialogTtsLine({
     required this.id,
     required this.projectId,
@@ -5106,6 +5598,7 @@ class DialogTtsLine extends DataClass implements Insertable<DialogTtsLine> {
     this.audioPath,
     this.audioDuration,
     this.error,
+    required this.missing,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5126,6 +5619,7 @@ class DialogTtsLine extends DataClass implements Insertable<DialogTtsLine> {
     if (!nullToAbsent || error != null) {
       map['error'] = Variable<String>(error);
     }
+    map['missing'] = Variable<bool>(missing);
     return map;
   }
 
@@ -5147,6 +5641,7 @@ class DialogTtsLine extends DataClass implements Insertable<DialogTtsLine> {
       error: error == null && nullToAbsent
           ? const Value.absent()
           : Value(error),
+      missing: Value(missing),
     );
   }
 
@@ -5164,6 +5659,7 @@ class DialogTtsLine extends DataClass implements Insertable<DialogTtsLine> {
       audioPath: serializer.fromJson<String?>(json['audioPath']),
       audioDuration: serializer.fromJson<double?>(json['audioDuration']),
       error: serializer.fromJson<String?>(json['error']),
+      missing: serializer.fromJson<bool>(json['missing']),
     );
   }
   @override
@@ -5178,6 +5674,7 @@ class DialogTtsLine extends DataClass implements Insertable<DialogTtsLine> {
       'audioPath': serializer.toJson<String?>(audioPath),
       'audioDuration': serializer.toJson<double?>(audioDuration),
       'error': serializer.toJson<String?>(error),
+      'missing': serializer.toJson<bool>(missing),
     };
   }
 
@@ -5190,6 +5687,7 @@ class DialogTtsLine extends DataClass implements Insertable<DialogTtsLine> {
     Value<String?> audioPath = const Value.absent(),
     Value<double?> audioDuration = const Value.absent(),
     Value<String?> error = const Value.absent(),
+    bool? missing,
   }) => DialogTtsLine(
     id: id ?? this.id,
     projectId: projectId ?? this.projectId,
@@ -5201,6 +5699,7 @@ class DialogTtsLine extends DataClass implements Insertable<DialogTtsLine> {
         ? audioDuration.value
         : this.audioDuration,
     error: error.present ? error.value : this.error,
+    missing: missing ?? this.missing,
   );
   DialogTtsLine copyWithCompanion(DialogTtsLinesCompanion data) {
     return DialogTtsLine(
@@ -5218,6 +5717,7 @@ class DialogTtsLine extends DataClass implements Insertable<DialogTtsLine> {
           ? data.audioDuration.value
           : this.audioDuration,
       error: data.error.present ? data.error.value : this.error,
+      missing: data.missing.present ? data.missing.value : this.missing,
     );
   }
 
@@ -5231,7 +5731,8 @@ class DialogTtsLine extends DataClass implements Insertable<DialogTtsLine> {
           ..write('voiceAssetId: $voiceAssetId, ')
           ..write('audioPath: $audioPath, ')
           ..write('audioDuration: $audioDuration, ')
-          ..write('error: $error')
+          ..write('error: $error, ')
+          ..write('missing: $missing')
           ..write(')'))
         .toString();
   }
@@ -5246,6 +5747,7 @@ class DialogTtsLine extends DataClass implements Insertable<DialogTtsLine> {
     audioPath,
     audioDuration,
     error,
+    missing,
   );
   @override
   bool operator ==(Object other) =>
@@ -5258,7 +5760,8 @@ class DialogTtsLine extends DataClass implements Insertable<DialogTtsLine> {
           other.voiceAssetId == this.voiceAssetId &&
           other.audioPath == this.audioPath &&
           other.audioDuration == this.audioDuration &&
-          other.error == this.error);
+          other.error == this.error &&
+          other.missing == this.missing);
 }
 
 class DialogTtsLinesCompanion extends UpdateCompanion<DialogTtsLine> {
@@ -5270,6 +5773,7 @@ class DialogTtsLinesCompanion extends UpdateCompanion<DialogTtsLine> {
   final Value<String?> audioPath;
   final Value<double?> audioDuration;
   final Value<String?> error;
+  final Value<bool> missing;
   final Value<int> rowid;
   const DialogTtsLinesCompanion({
     this.id = const Value.absent(),
@@ -5280,6 +5784,7 @@ class DialogTtsLinesCompanion extends UpdateCompanion<DialogTtsLine> {
     this.audioPath = const Value.absent(),
     this.audioDuration = const Value.absent(),
     this.error = const Value.absent(),
+    this.missing = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DialogTtsLinesCompanion.insert({
@@ -5291,6 +5796,7 @@ class DialogTtsLinesCompanion extends UpdateCompanion<DialogTtsLine> {
     this.audioPath = const Value.absent(),
     this.audioDuration = const Value.absent(),
     this.error = const Value.absent(),
+    this.missing = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        projectId = Value(projectId),
@@ -5305,6 +5811,7 @@ class DialogTtsLinesCompanion extends UpdateCompanion<DialogTtsLine> {
     Expression<String>? audioPath,
     Expression<double>? audioDuration,
     Expression<String>? error,
+    Expression<bool>? missing,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5316,6 +5823,7 @@ class DialogTtsLinesCompanion extends UpdateCompanion<DialogTtsLine> {
       if (audioPath != null) 'audio_path': audioPath,
       if (audioDuration != null) 'audio_duration': audioDuration,
       if (error != null) 'error': error,
+      if (missing != null) 'missing': missing,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5329,6 +5837,7 @@ class DialogTtsLinesCompanion extends UpdateCompanion<DialogTtsLine> {
     Value<String?>? audioPath,
     Value<double?>? audioDuration,
     Value<String?>? error,
+    Value<bool>? missing,
     Value<int>? rowid,
   }) {
     return DialogTtsLinesCompanion(
@@ -5340,6 +5849,7 @@ class DialogTtsLinesCompanion extends UpdateCompanion<DialogTtsLine> {
       audioPath: audioPath ?? this.audioPath,
       audioDuration: audioDuration ?? this.audioDuration,
       error: error ?? this.error,
+      missing: missing ?? this.missing,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5371,6 +5881,9 @@ class DialogTtsLinesCompanion extends UpdateCompanion<DialogTtsLine> {
     if (error.present) {
       map['error'] = Variable<String>(error.value);
     }
+    if (missing.present) {
+      map['missing'] = Variable<bool>(missing.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5388,6 +5901,7 @@ class DialogTtsLinesCompanion extends UpdateCompanion<DialogTtsLine> {
           ..write('audioPath: $audioPath, ')
           ..write('audioDuration: $audioDuration, ')
           ..write('error: $error, ')
+          ..write('missing: $missing, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5508,6 +6022,21 @@ class $AudioTracksTable extends AudioTracks
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _missingMeta = const VerificationMeta(
+    'missing',
+  );
+  @override
+  late final GeneratedColumn<bool> missing = GeneratedColumn<bool>(
+    'missing',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("missing" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5520,6 +6049,7 @@ class $AudioTracksTable extends AudioTracks
     durationSec,
     sourceType,
     createdAt,
+    missing,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5604,6 +6134,12 @@ class $AudioTracksTable extends AudioTracks
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('missing')) {
+      context.handle(
+        _missingMeta,
+        missing.isAcceptableOrUnknown(data['missing']!, _missingMeta),
+      );
+    }
     return context;
   }
 
@@ -5653,6 +6189,10 @@ class $AudioTracksTable extends AudioTracks
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      missing: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}missing'],
+      )!,
     );
   }
 
@@ -5673,6 +6213,7 @@ class AudioTrack extends DataClass implements Insertable<AudioTrack> {
   final double? durationSec;
   final String sourceType;
   final DateTime createdAt;
+  final bool missing;
   const AudioTrack({
     required this.id,
     required this.name,
@@ -5684,6 +6225,7 @@ class AudioTrack extends DataClass implements Insertable<AudioTrack> {
     this.durationSec,
     required this.sourceType,
     required this.createdAt,
+    required this.missing,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5708,6 +6250,7 @@ class AudioTrack extends DataClass implements Insertable<AudioTrack> {
     }
     map['source_type'] = Variable<String>(sourceType);
     map['created_at'] = Variable<DateTime>(createdAt);
+    map['missing'] = Variable<bool>(missing);
     return map;
   }
 
@@ -5733,6 +6276,7 @@ class AudioTrack extends DataClass implements Insertable<AudioTrack> {
           : Value(durationSec),
       sourceType: Value(sourceType),
       createdAt: Value(createdAt),
+      missing: Value(missing),
     );
   }
 
@@ -5752,6 +6296,7 @@ class AudioTrack extends DataClass implements Insertable<AudioTrack> {
       durationSec: serializer.fromJson<double?>(json['durationSec']),
       sourceType: serializer.fromJson<String>(json['sourceType']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      missing: serializer.fromJson<bool>(json['missing']),
     );
   }
   @override
@@ -5768,6 +6313,7 @@ class AudioTrack extends DataClass implements Insertable<AudioTrack> {
       'durationSec': serializer.toJson<double?>(durationSec),
       'sourceType': serializer.toJson<String>(sourceType),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'missing': serializer.toJson<bool>(missing),
     };
   }
 
@@ -5782,6 +6328,7 @@ class AudioTrack extends DataClass implements Insertable<AudioTrack> {
     Value<double?> durationSec = const Value.absent(),
     String? sourceType,
     DateTime? createdAt,
+    bool? missing,
   }) => AudioTrack(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -5793,6 +6340,7 @@ class AudioTrack extends DataClass implements Insertable<AudioTrack> {
     durationSec: durationSec.present ? durationSec.value : this.durationSec,
     sourceType: sourceType ?? this.sourceType,
     createdAt: createdAt ?? this.createdAt,
+    missing: missing ?? this.missing,
   );
   AudioTrack copyWithCompanion(AudioTracksCompanion data) {
     return AudioTrack(
@@ -5814,6 +6362,7 @@ class AudioTrack extends DataClass implements Insertable<AudioTrack> {
           ? data.sourceType.value
           : this.sourceType,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      missing: data.missing.present ? data.missing.value : this.missing,
     );
   }
 
@@ -5829,7 +6378,8 @@ class AudioTrack extends DataClass implements Insertable<AudioTrack> {
           ..write('refLang: $refLang, ')
           ..write('durationSec: $durationSec, ')
           ..write('sourceType: $sourceType, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('missing: $missing')
           ..write(')'))
         .toString();
   }
@@ -5846,6 +6396,7 @@ class AudioTrack extends DataClass implements Insertable<AudioTrack> {
     durationSec,
     sourceType,
     createdAt,
+    missing,
   );
   @override
   bool operator ==(Object other) =>
@@ -5860,7 +6411,8 @@ class AudioTrack extends DataClass implements Insertable<AudioTrack> {
           other.refLang == this.refLang &&
           other.durationSec == this.durationSec &&
           other.sourceType == this.sourceType &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.missing == this.missing);
 }
 
 class AudioTracksCompanion extends UpdateCompanion<AudioTrack> {
@@ -5874,6 +6426,7 @@ class AudioTracksCompanion extends UpdateCompanion<AudioTrack> {
   final Value<double?> durationSec;
   final Value<String> sourceType;
   final Value<DateTime> createdAt;
+  final Value<bool> missing;
   final Value<int> rowid;
   const AudioTracksCompanion({
     this.id = const Value.absent(),
@@ -5886,6 +6439,7 @@ class AudioTracksCompanion extends UpdateCompanion<AudioTrack> {
     this.durationSec = const Value.absent(),
     this.sourceType = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.missing = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AudioTracksCompanion.insert({
@@ -5899,6 +6453,7 @@ class AudioTracksCompanion extends UpdateCompanion<AudioTrack> {
     this.durationSec = const Value.absent(),
     this.sourceType = const Value.absent(),
     required DateTime createdAt,
+    this.missing = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -5915,6 +6470,7 @@ class AudioTracksCompanion extends UpdateCompanion<AudioTrack> {
     Expression<double>? durationSec,
     Expression<String>? sourceType,
     Expression<DateTime>? createdAt,
+    Expression<bool>? missing,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5928,6 +6484,7 @@ class AudioTracksCompanion extends UpdateCompanion<AudioTrack> {
       if (durationSec != null) 'duration_sec': durationSec,
       if (sourceType != null) 'source_type': sourceType,
       if (createdAt != null) 'created_at': createdAt,
+      if (missing != null) 'missing': missing,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5943,6 +6500,7 @@ class AudioTracksCompanion extends UpdateCompanion<AudioTrack> {
     Value<double?>? durationSec,
     Value<String>? sourceType,
     Value<DateTime>? createdAt,
+    Value<bool>? missing,
     Value<int>? rowid,
   }) {
     return AudioTracksCompanion(
@@ -5956,6 +6514,7 @@ class AudioTracksCompanion extends UpdateCompanion<AudioTrack> {
       durationSec: durationSec ?? this.durationSec,
       sourceType: sourceType ?? this.sourceType,
       createdAt: createdAt ?? this.createdAt,
+      missing: missing ?? this.missing,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5993,6 +6552,9 @@ class AudioTracksCompanion extends UpdateCompanion<AudioTrack> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (missing.present) {
+      map['missing'] = Variable<bool>(missing.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -6012,6 +6574,7 @@ class AudioTracksCompanion extends UpdateCompanion<AudioTrack> {
           ..write('durationSec: $durationSec, ')
           ..write('sourceType: $sourceType, ')
           ..write('createdAt: $createdAt, ')
+          ..write('missing: $missing, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6134,6 +6697,21 @@ class $TimelineClipsTable extends TimelineClips
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _missingMeta = const VerificationMeta(
+    'missing',
+  );
+  @override
+  late final GeneratedColumn<bool> missing = GeneratedColumn<bool>(
+    'missing',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("missing" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -6146,6 +6724,7 @@ class $TimelineClipsTable extends TimelineClips
     sourceType,
     sourceLineId,
     label,
+    missing,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -6236,6 +6815,12 @@ class $TimelineClipsTable extends TimelineClips
         label.isAcceptableOrUnknown(data['label']!, _labelMeta),
       );
     }
+    if (data.containsKey('missing')) {
+      context.handle(
+        _missingMeta,
+        missing.isAcceptableOrUnknown(data['missing']!, _missingMeta),
+      );
+    }
     return context;
   }
 
@@ -6285,6 +6870,10 @@ class $TimelineClipsTable extends TimelineClips
         DriftSqlType.string,
         data['${effectivePrefix}label'],
       )!,
+      missing: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}missing'],
+      )!,
     );
   }
 
@@ -6305,6 +6894,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
   final String sourceType;
   final String? sourceLineId;
   final String label;
+  final bool missing;
   const TimelineClip({
     required this.id,
     required this.projectId,
@@ -6316,6 +6906,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
     required this.sourceType,
     this.sourceLineId,
     required this.label,
+    required this.missing,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -6334,6 +6925,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
       map['source_line_id'] = Variable<String>(sourceLineId);
     }
     map['label'] = Variable<String>(label);
+    map['missing'] = Variable<bool>(missing);
     return map;
   }
 
@@ -6353,6 +6945,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
           ? const Value.absent()
           : Value(sourceLineId),
       label: Value(label),
+      missing: Value(missing),
     );
   }
 
@@ -6372,6 +6965,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
       sourceType: serializer.fromJson<String>(json['sourceType']),
       sourceLineId: serializer.fromJson<String?>(json['sourceLineId']),
       label: serializer.fromJson<String>(json['label']),
+      missing: serializer.fromJson<bool>(json['missing']),
     );
   }
   @override
@@ -6388,6 +6982,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
       'sourceType': serializer.toJson<String>(sourceType),
       'sourceLineId': serializer.toJson<String?>(sourceLineId),
       'label': serializer.toJson<String>(label),
+      'missing': serializer.toJson<bool>(missing),
     };
   }
 
@@ -6402,6 +6997,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
     String? sourceType,
     Value<String?> sourceLineId = const Value.absent(),
     String? label,
+    bool? missing,
   }) => TimelineClip(
     id: id ?? this.id,
     projectId: projectId ?? this.projectId,
@@ -6413,6 +7009,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
     sourceType: sourceType ?? this.sourceType,
     sourceLineId: sourceLineId.present ? sourceLineId.value : this.sourceLineId,
     label: label ?? this.label,
+    missing: missing ?? this.missing,
   );
   TimelineClip copyWithCompanion(TimelineClipsCompanion data) {
     return TimelineClip(
@@ -6436,6 +7033,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
           ? data.sourceLineId.value
           : this.sourceLineId,
       label: data.label.present ? data.label.value : this.label,
+      missing: data.missing.present ? data.missing.value : this.missing,
     );
   }
 
@@ -6451,7 +7049,8 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
           ..write('audioPath: $audioPath, ')
           ..write('sourceType: $sourceType, ')
           ..write('sourceLineId: $sourceLineId, ')
-          ..write('label: $label')
+          ..write('label: $label, ')
+          ..write('missing: $missing')
           ..write(')'))
         .toString();
   }
@@ -6468,6 +7067,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
     sourceType,
     sourceLineId,
     label,
+    missing,
   );
   @override
   bool operator ==(Object other) =>
@@ -6482,7 +7082,8 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
           other.audioPath == this.audioPath &&
           other.sourceType == this.sourceType &&
           other.sourceLineId == this.sourceLineId &&
-          other.label == this.label);
+          other.label == this.label &&
+          other.missing == this.missing);
 }
 
 class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
@@ -6496,6 +7097,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
   final Value<String> sourceType;
   final Value<String?> sourceLineId;
   final Value<String> label;
+  final Value<bool> missing;
   final Value<int> rowid;
   const TimelineClipsCompanion({
     this.id = const Value.absent(),
@@ -6508,6 +7110,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
     this.sourceType = const Value.absent(),
     this.sourceLineId = const Value.absent(),
     this.label = const Value.absent(),
+    this.missing = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TimelineClipsCompanion.insert({
@@ -6521,6 +7124,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
     this.sourceType = const Value.absent(),
     this.sourceLineId = const Value.absent(),
     this.label = const Value.absent(),
+    this.missing = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        projectId = Value(projectId),
@@ -6537,6 +7141,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
     Expression<String>? sourceType,
     Expression<String>? sourceLineId,
     Expression<String>? label,
+    Expression<bool>? missing,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -6550,6 +7155,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
       if (sourceType != null) 'source_type': sourceType,
       if (sourceLineId != null) 'source_line_id': sourceLineId,
       if (label != null) 'label': label,
+      if (missing != null) 'missing': missing,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -6565,6 +7171,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
     Value<String>? sourceType,
     Value<String?>? sourceLineId,
     Value<String>? label,
+    Value<bool>? missing,
     Value<int>? rowid,
   }) {
     return TimelineClipsCompanion(
@@ -6578,6 +7185,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
       sourceType: sourceType ?? this.sourceType,
       sourceLineId: sourceLineId ?? this.sourceLineId,
       label: label ?? this.label,
+      missing: missing ?? this.missing,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -6615,6 +7223,9 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
     if (label.present) {
       map['label'] = Variable<String>(label.value);
     }
+    if (missing.present) {
+      map['missing'] = Variable<bool>(missing.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -6634,6 +7245,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
           ..write('sourceType: $sourceType, ')
           ..write('sourceLineId: $sourceLineId, ')
           ..write('label: $label, ')
+          ..write('missing: $missing, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6643,6 +7255,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
+  late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   late final $TtsProvidersTable ttsProviders = $TtsProvidersTable(this);
   late final $ModelBindingsTable modelBindings = $ModelBindingsTable(this);
   late final $VoiceAssetsTable voiceAssets = $VoiceAssetsTable(this);
@@ -6669,6 +7282,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
+    appSettings,
     ttsProviders,
     modelBindings,
     voiceAssets,
@@ -6685,6 +7299,145 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   ];
 }
 
+typedef $$AppSettingsTableCreateCompanionBuilder =
+    AppSettingsCompanion Function({
+      required String key,
+      required String value,
+      Value<int> rowid,
+    });
+typedef $$AppSettingsTableUpdateCompanionBuilder =
+    AppSettingsCompanion Function({
+      Value<String> key,
+      Value<String> value,
+      Value<int> rowid,
+    });
+
+class $$AppSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AppSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AppSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+}
+
+class $$AppSettingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AppSettingsTable,
+          AppSetting,
+          $$AppSettingsTableFilterComposer,
+          $$AppSettingsTableOrderingComposer,
+          $$AppSettingsTableAnnotationComposer,
+          $$AppSettingsTableCreateCompanionBuilder,
+          $$AppSettingsTableUpdateCompanionBuilder,
+          (
+            AppSetting,
+            BaseReferences<_$AppDatabase, $AppSettingsTable, AppSetting>,
+          ),
+          AppSetting,
+          PrefetchHooks Function()
+        > {
+  $$AppSettingsTableTableManager(_$AppDatabase db, $AppSettingsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AppSettingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AppSettingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AppSettingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> key = const Value.absent(),
+                Value<String> value = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AppSettingsCompanion(key: key, value: value, rowid: rowid),
+          createCompanionCallback:
+              ({
+                required String key,
+                required String value,
+                Value<int> rowid = const Value.absent(),
+              }) => AppSettingsCompanion.insert(
+                key: key,
+                value: value,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AppSettingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AppSettingsTable,
+      AppSetting,
+      $$AppSettingsTableFilterComposer,
+      $$AppSettingsTableOrderingComposer,
+      $$AppSettingsTableAnnotationComposer,
+      $$AppSettingsTableCreateCompanionBuilder,
+      $$AppSettingsTableUpdateCompanionBuilder,
+      (
+        AppSetting,
+        BaseReferences<_$AppDatabase, $AppSettingsTable, AppSetting>,
+      ),
+      AppSetting,
+      PrefetchHooks Function()
+    >;
 typedef $$TtsProvidersTableCreateCompanionBuilder =
     TtsProvidersCompanion Function({
       required String id,
@@ -7473,6 +8226,7 @@ typedef $$VoiceAssetsTableCreateCompanionBuilder =
       Value<String?> avatarPath,
       Value<double> speed,
       Value<bool> enabled,
+      Value<String?> folderSlug,
       Value<int> rowid,
     });
 typedef $$VoiceAssetsTableUpdateCompanionBuilder =
@@ -7494,6 +8248,7 @@ typedef $$VoiceAssetsTableUpdateCompanionBuilder =
       Value<String?> avatarPath,
       Value<double> speed,
       Value<bool> enabled,
+      Value<String?> folderSlug,
       Value<int> rowid,
     });
 
@@ -7673,6 +8428,11 @@ class $$VoiceAssetsTableFilterComposer
 
   ColumnFilters<bool> get enabled => $composableBuilder(
     column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get folderSlug => $composableBuilder(
+    column: $table.folderSlug,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7864,6 +8624,11 @@ class $$VoiceAssetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get folderSlug => $composableBuilder(
+    column: $table.folderSlug,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TtsProvidersTableOrderingComposer get providerId {
     final $$TtsProvidersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -7964,6 +8729,11 @@ class $$VoiceAssetsTableAnnotationComposer
 
   GeneratedColumn<bool> get enabled =>
       $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<String> get folderSlug => $composableBuilder(
+    column: $table.folderSlug,
+    builder: (column) => column,
+  );
 
   $$TtsProvidersTableAnnotationComposer get providerId {
     final $$TtsProvidersTableAnnotationComposer composer = $composerBuilder(
@@ -8115,6 +8885,7 @@ class $$VoiceAssetsTableTableManager
                 Value<String?> avatarPath = const Value.absent(),
                 Value<double> speed = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
+                Value<String?> folderSlug = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VoiceAssetsCompanion(
                 id: id,
@@ -8134,6 +8905,7 @@ class $$VoiceAssetsTableTableManager
                 avatarPath: avatarPath,
                 speed: speed,
                 enabled: enabled,
+                folderSlug: folderSlug,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -8155,6 +8927,7 @@ class $$VoiceAssetsTableTableManager
                 Value<String?> avatarPath = const Value.absent(),
                 Value<double> speed = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
+                Value<String?> folderSlug = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VoiceAssetsCompanion.insert(
                 id: id,
@@ -8174,6 +8947,7 @@ class $$VoiceAssetsTableTableManager
                 avatarPath: avatarPath,
                 speed: speed,
                 enabled: enabled,
+                folderSlug: folderSlug,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -9616,6 +10390,7 @@ typedef $$QuickTtsHistoriesTableCreateCompanionBuilder =
       Value<double?> audioDuration,
       Value<String?> error,
       required DateTime createdAt,
+      Value<bool> missing,
       Value<int> rowid,
     });
 typedef $$QuickTtsHistoriesTableUpdateCompanionBuilder =
@@ -9628,6 +10403,7 @@ typedef $$QuickTtsHistoriesTableUpdateCompanionBuilder =
       Value<double?> audioDuration,
       Value<String?> error,
       Value<DateTime> createdAt,
+      Value<bool> missing,
       Value<int> rowid,
     });
 
@@ -9711,6 +10487,11 @@ class $$QuickTtsHistoriesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get missing => $composableBuilder(
+    column: $table.missing,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$VoiceAssetsTableFilterComposer get voiceAssetId {
     final $$VoiceAssetsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -9779,6 +10560,11 @@ class $$QuickTtsHistoriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get missing => $composableBuilder(
+    column: $table.missing,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$VoiceAssetsTableOrderingComposer get voiceAssetId {
     final $$VoiceAssetsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -9834,6 +10620,9 @@ class $$QuickTtsHistoriesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get missing =>
+      $composableBuilder(column: $table.missing, builder: (column) => column);
 
   $$VoiceAssetsTableAnnotationComposer get voiceAssetId {
     final $$VoiceAssetsTableAnnotationComposer composer = $composerBuilder(
@@ -9900,6 +10689,7 @@ class $$QuickTtsHistoriesTableTableManager
                 Value<double?> audioDuration = const Value.absent(),
                 Value<String?> error = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> missing = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuickTtsHistoriesCompanion(
                 id: id,
@@ -9910,6 +10700,7 @@ class $$QuickTtsHistoriesTableTableManager
                 audioDuration: audioDuration,
                 error: error,
                 createdAt: createdAt,
+                missing: missing,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -9922,6 +10713,7 @@ class $$QuickTtsHistoriesTableTableManager
                 Value<double?> audioDuration = const Value.absent(),
                 Value<String?> error = const Value.absent(),
                 required DateTime createdAt,
+                Value<bool> missing = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuickTtsHistoriesCompanion.insert(
                 id: id,
@@ -9932,6 +10724,7 @@ class $$QuickTtsHistoriesTableTableManager
                 audioDuration: audioDuration,
                 error: error,
                 createdAt: createdAt,
+                missing: missing,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -10011,6 +10804,7 @@ typedef $$PhaseTtsProjectsTableCreateCompanionBuilder =
       Value<String> scriptText,
       required DateTime createdAt,
       required DateTime updatedAt,
+      Value<String?> folderSlug,
       Value<int> rowid,
     });
 typedef $$PhaseTtsProjectsTableUpdateCompanionBuilder =
@@ -10021,6 +10815,7 @@ typedef $$PhaseTtsProjectsTableUpdateCompanionBuilder =
       Value<String> scriptText,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<String?> folderSlug,
       Value<int> rowid,
     });
 
@@ -10110,6 +10905,11 @@ class $$PhaseTtsProjectsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get folderSlug => $composableBuilder(
+    column: $table.folderSlug,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$VoiceBanksTableFilterComposer get bankId {
     final $$VoiceBanksTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -10193,6 +10993,11 @@ class $$PhaseTtsProjectsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get folderSlug => $composableBuilder(
+    column: $table.folderSlug,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$VoiceBanksTableOrderingComposer get bankId {
     final $$VoiceBanksTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -10242,6 +11047,11 @@ class $$PhaseTtsProjectsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get folderSlug => $composableBuilder(
+    column: $table.folderSlug,
+    builder: (column) => column,
+  );
 
   $$VoiceBanksTableAnnotationComposer get bankId {
     final $$VoiceBanksTableAnnotationComposer composer = $composerBuilder(
@@ -10328,6 +11138,7 @@ class $$PhaseTtsProjectsTableTableManager
                 Value<String> scriptText = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> folderSlug = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PhaseTtsProjectsCompanion(
                 id: id,
@@ -10336,6 +11147,7 @@ class $$PhaseTtsProjectsTableTableManager
                 scriptText: scriptText,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                folderSlug: folderSlug,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -10346,6 +11158,7 @@ class $$PhaseTtsProjectsTableTableManager
                 Value<String> scriptText = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
+                Value<String?> folderSlug = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PhaseTtsProjectsCompanion.insert(
                 id: id,
@@ -10354,6 +11167,7 @@ class $$PhaseTtsProjectsTableTableManager
                 scriptText: scriptText,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                folderSlug: folderSlug,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -10460,6 +11274,7 @@ typedef $$PhaseTtsSegmentsTableCreateCompanionBuilder =
       Value<String?> audioPath,
       Value<double?> audioDuration,
       Value<String?> error,
+      Value<bool> missing,
       Value<int> rowid,
     });
 typedef $$PhaseTtsSegmentsTableUpdateCompanionBuilder =
@@ -10472,6 +11287,7 @@ typedef $$PhaseTtsSegmentsTableUpdateCompanionBuilder =
       Value<String?> audioPath,
       Value<double?> audioDuration,
       Value<String?> error,
+      Value<bool> missing,
       Value<int> rowid,
     });
 
@@ -10551,6 +11367,11 @@ class $$PhaseTtsSegmentsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get missing => $composableBuilder(
+    column: $table.missing,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$PhaseTtsProjectsTableFilterComposer get projectId {
     final $$PhaseTtsProjectsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -10619,6 +11440,11 @@ class $$PhaseTtsSegmentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get missing => $composableBuilder(
+    column: $table.missing,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$PhaseTtsProjectsTableOrderingComposer get projectId {
     final $$PhaseTtsProjectsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -10680,6 +11506,9 @@ class $$PhaseTtsSegmentsTableAnnotationComposer
 
   GeneratedColumn<String> get error =>
       $composableBuilder(column: $table.error, builder: (column) => column);
+
+  GeneratedColumn<bool> get missing =>
+      $composableBuilder(column: $table.missing, builder: (column) => column);
 
   $$PhaseTtsProjectsTableAnnotationComposer get projectId {
     final $$PhaseTtsProjectsTableAnnotationComposer composer = $composerBuilder(
@@ -10743,6 +11572,7 @@ class $$PhaseTtsSegmentsTableTableManager
                 Value<String?> audioPath = const Value.absent(),
                 Value<double?> audioDuration = const Value.absent(),
                 Value<String?> error = const Value.absent(),
+                Value<bool> missing = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PhaseTtsSegmentsCompanion(
                 id: id,
@@ -10753,6 +11583,7 @@ class $$PhaseTtsSegmentsTableTableManager
                 audioPath: audioPath,
                 audioDuration: audioDuration,
                 error: error,
+                missing: missing,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -10765,6 +11596,7 @@ class $$PhaseTtsSegmentsTableTableManager
                 Value<String?> audioPath = const Value.absent(),
                 Value<double?> audioDuration = const Value.absent(),
                 Value<String?> error = const Value.absent(),
+                Value<bool> missing = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PhaseTtsSegmentsCompanion.insert(
                 id: id,
@@ -10775,6 +11607,7 @@ class $$PhaseTtsSegmentsTableTableManager
                 audioPath: audioPath,
                 audioDuration: audioDuration,
                 error: error,
+                missing: missing,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -10853,6 +11686,7 @@ typedef $$DialogTtsProjectsTableCreateCompanionBuilder =
       required String bankId,
       required DateTime createdAt,
       required DateTime updatedAt,
+      Value<String?> folderSlug,
       Value<int> rowid,
     });
 typedef $$DialogTtsProjectsTableUpdateCompanionBuilder =
@@ -10862,6 +11696,7 @@ typedef $$DialogTtsProjectsTableUpdateCompanionBuilder =
       Value<String> bankId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<String?> folderSlug,
       Value<int> rowid,
     });
 
@@ -10948,6 +11783,11 @@ class $$DialogTtsProjectsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get folderSlug => $composableBuilder(
+    column: $table.folderSlug,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$VoiceBanksTableFilterComposer get bankId {
     final $$VoiceBanksTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -11026,6 +11866,11 @@ class $$DialogTtsProjectsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get folderSlug => $composableBuilder(
+    column: $table.folderSlug,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$VoiceBanksTableOrderingComposer get bankId {
     final $$VoiceBanksTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -11070,6 +11915,11 @@ class $$DialogTtsProjectsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get folderSlug => $composableBuilder(
+    column: $table.folderSlug,
+    builder: (column) => column,
+  );
 
   $$VoiceBanksTableAnnotationComposer get bankId {
     final $$VoiceBanksTableAnnotationComposer composer = $composerBuilder(
@@ -11158,6 +12008,7 @@ class $$DialogTtsProjectsTableTableManager
                 Value<String> bankId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> folderSlug = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DialogTtsProjectsCompanion(
                 id: id,
@@ -11165,6 +12016,7 @@ class $$DialogTtsProjectsTableTableManager
                 bankId: bankId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                folderSlug: folderSlug,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -11174,6 +12026,7 @@ class $$DialogTtsProjectsTableTableManager
                 required String bankId,
                 required DateTime createdAt,
                 required DateTime updatedAt,
+                Value<String?> folderSlug = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DialogTtsProjectsCompanion.insert(
                 id: id,
@@ -11181,6 +12034,7 @@ class $$DialogTtsProjectsTableTableManager
                 bankId: bankId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                folderSlug: folderSlug,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -11287,6 +12141,7 @@ typedef $$DialogTtsLinesTableCreateCompanionBuilder =
       Value<String?> audioPath,
       Value<double?> audioDuration,
       Value<String?> error,
+      Value<bool> missing,
       Value<int> rowid,
     });
 typedef $$DialogTtsLinesTableUpdateCompanionBuilder =
@@ -11299,6 +12154,7 @@ typedef $$DialogTtsLinesTableUpdateCompanionBuilder =
       Value<String?> audioPath,
       Value<double?> audioDuration,
       Value<String?> error,
+      Value<bool> missing,
       Value<int> rowid,
     });
 
@@ -11377,6 +12233,11 @@ class $$DialogTtsLinesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get missing => $composableBuilder(
+    column: $table.missing,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$DialogTtsProjectsTableFilterComposer get projectId {
     final $$DialogTtsProjectsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -11445,6 +12306,11 @@ class $$DialogTtsLinesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get missing => $composableBuilder(
+    column: $table.missing,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$DialogTtsProjectsTableOrderingComposer get projectId {
     final $$DialogTtsProjectsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -11504,6 +12370,9 @@ class $$DialogTtsLinesTableAnnotationComposer
 
   GeneratedColumn<String> get error =>
       $composableBuilder(column: $table.error, builder: (column) => column);
+
+  GeneratedColumn<bool> get missing =>
+      $composableBuilder(column: $table.missing, builder: (column) => column);
 
   $$DialogTtsProjectsTableAnnotationComposer get projectId {
     final $$DialogTtsProjectsTableAnnotationComposer composer =
@@ -11568,6 +12437,7 @@ class $$DialogTtsLinesTableTableManager
                 Value<String?> audioPath = const Value.absent(),
                 Value<double?> audioDuration = const Value.absent(),
                 Value<String?> error = const Value.absent(),
+                Value<bool> missing = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DialogTtsLinesCompanion(
                 id: id,
@@ -11578,6 +12448,7 @@ class $$DialogTtsLinesTableTableManager
                 audioPath: audioPath,
                 audioDuration: audioDuration,
                 error: error,
+                missing: missing,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -11590,6 +12461,7 @@ class $$DialogTtsLinesTableTableManager
                 Value<String?> audioPath = const Value.absent(),
                 Value<double?> audioDuration = const Value.absent(),
                 Value<String?> error = const Value.absent(),
+                Value<bool> missing = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DialogTtsLinesCompanion.insert(
                 id: id,
@@ -11600,6 +12472,7 @@ class $$DialogTtsLinesTableTableManager
                 audioPath: audioPath,
                 audioDuration: audioDuration,
                 error: error,
+                missing: missing,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -11682,6 +12555,7 @@ typedef $$AudioTracksTableCreateCompanionBuilder =
       Value<double?> durationSec,
       Value<String> sourceType,
       required DateTime createdAt,
+      Value<bool> missing,
       Value<int> rowid,
     });
 typedef $$AudioTracksTableUpdateCompanionBuilder =
@@ -11696,6 +12570,7 @@ typedef $$AudioTracksTableUpdateCompanionBuilder =
       Value<double?> durationSec,
       Value<String> sourceType,
       Value<DateTime> createdAt,
+      Value<bool> missing,
       Value<int> rowid,
     });
 
@@ -11755,6 +12630,11 @@ class $$AudioTracksTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get missing => $composableBuilder(
+    column: $table.missing,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -11817,6 +12697,11 @@ class $$AudioTracksTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get missing => $composableBuilder(
+    column: $table.missing,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AudioTracksTableAnnotationComposer
@@ -11865,6 +12750,9 @@ class $$AudioTracksTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get missing =>
+      $composableBuilder(column: $table.missing, builder: (column) => column);
 }
 
 class $$AudioTracksTableTableManager
@@ -11908,6 +12796,7 @@ class $$AudioTracksTableTableManager
                 Value<double?> durationSec = const Value.absent(),
                 Value<String> sourceType = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> missing = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AudioTracksCompanion(
                 id: id,
@@ -11920,6 +12809,7 @@ class $$AudioTracksTableTableManager
                 durationSec: durationSec,
                 sourceType: sourceType,
                 createdAt: createdAt,
+                missing: missing,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -11934,6 +12824,7 @@ class $$AudioTracksTableTableManager
                 Value<double?> durationSec = const Value.absent(),
                 Value<String> sourceType = const Value.absent(),
                 required DateTime createdAt,
+                Value<bool> missing = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AudioTracksCompanion.insert(
                 id: id,
@@ -11946,6 +12837,7 @@ class $$AudioTracksTableTableManager
                 durationSec: durationSec,
                 sourceType: sourceType,
                 createdAt: createdAt,
+                missing: missing,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -11985,6 +12877,7 @@ typedef $$TimelineClipsTableCreateCompanionBuilder =
       Value<String> sourceType,
       Value<String?> sourceLineId,
       Value<String> label,
+      Value<bool> missing,
       Value<int> rowid,
     });
 typedef $$TimelineClipsTableUpdateCompanionBuilder =
@@ -11999,6 +12892,7 @@ typedef $$TimelineClipsTableUpdateCompanionBuilder =
       Value<String> sourceType,
       Value<String?> sourceLineId,
       Value<String> label,
+      Value<bool> missing,
       Value<int> rowid,
     });
 
@@ -12058,6 +12952,11 @@ class $$TimelineClipsTableFilterComposer
 
   ColumnFilters<String> get label => $composableBuilder(
     column: $table.label,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get missing => $composableBuilder(
+    column: $table.missing,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -12120,6 +13019,11 @@ class $$TimelineClipsTableOrderingComposer
     column: $table.label,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get missing => $composableBuilder(
+    column: $table.missing,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TimelineClipsTableAnnotationComposer
@@ -12170,6 +13074,9 @@ class $$TimelineClipsTableAnnotationComposer
 
   GeneratedColumn<String> get label =>
       $composableBuilder(column: $table.label, builder: (column) => column);
+
+  GeneratedColumn<bool> get missing =>
+      $composableBuilder(column: $table.missing, builder: (column) => column);
 }
 
 class $$TimelineClipsTableTableManager
@@ -12213,6 +13120,7 @@ class $$TimelineClipsTableTableManager
                 Value<String> sourceType = const Value.absent(),
                 Value<String?> sourceLineId = const Value.absent(),
                 Value<String> label = const Value.absent(),
+                Value<bool> missing = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TimelineClipsCompanion(
                 id: id,
@@ -12225,6 +13133,7 @@ class $$TimelineClipsTableTableManager
                 sourceType: sourceType,
                 sourceLineId: sourceLineId,
                 label: label,
+                missing: missing,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -12239,6 +13148,7 @@ class $$TimelineClipsTableTableManager
                 Value<String> sourceType = const Value.absent(),
                 Value<String?> sourceLineId = const Value.absent(),
                 Value<String> label = const Value.absent(),
+                Value<bool> missing = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TimelineClipsCompanion.insert(
                 id: id,
@@ -12251,6 +13161,7 @@ class $$TimelineClipsTableTableManager
                 sourceType: sourceType,
                 sourceLineId: sourceLineId,
                 label: label,
+                missing: missing,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -12282,6 +13193,8 @@ typedef $$TimelineClipsTableProcessedTableManager =
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
+  $$AppSettingsTableTableManager get appSettings =>
+      $$AppSettingsTableTableManager(_db, _db.appSettings);
   $$TtsProvidersTableTableManager get ttsProviders =>
       $$TtsProvidersTableTableManager(_db, _db.ttsProviders);
   $$ModelBindingsTableTableManager get modelBindings =>

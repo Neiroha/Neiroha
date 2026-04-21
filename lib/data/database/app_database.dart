@@ -2,15 +2,16 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
+import '../storage/path_service.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
 
 @DriftDatabase(tables: [
+  AppSettings,
   TtsProviders,
   ModelBindings,
   VoiceAssets,
@@ -31,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -54,6 +55,7 @@ class AppDatabase extends _$AppDatabase {
           await m.drop(voiceAssets);
           await m.drop(modelBindings);
           await m.drop(ttsProviders);
+          await m.drop(appSettings);
           await m.createAll();
           await _seedDefaults();
         },
@@ -284,6 +286,10 @@ class AppDatabase extends _$AppDatabase {
       (select(voiceAssets)..where((t) => t.name.equals(name)))
           .getSingleOrNull();
 
+  Future<VoiceAsset?> getVoiceAssetById(String id) =>
+      (select(voiceAssets)..where((t) => t.id.equals(id)))
+          .getSingleOrNull();
+
   Future<int> insertVoiceAsset(VoiceAssetsCompanion asset) =>
       into(voiceAssets).insert(asset);
 
@@ -445,6 +451,13 @@ class AppDatabase extends _$AppDatabase {
   Future<int> insertPhaseTtsProject(PhaseTtsProjectsCompanion project) =>
       into(phaseTtsProjects).insert(project);
 
+  Future<List<PhaseTtsProject>> getAllPhaseTtsProjects() =>
+      select(phaseTtsProjects).get();
+
+  Future<PhaseTtsProject?> getPhaseTtsProjectById(String id) =>
+      (select(phaseTtsProjects)..where((t) => t.id.equals(id)))
+          .getSingleOrNull();
+
   Future<bool> updatePhaseTtsProject(PhaseTtsProject project) =>
       update(phaseTtsProjects).replace(project);
 
@@ -492,6 +505,13 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> insertDialogTtsProject(DialogTtsProjectsCompanion project) =>
       into(dialogTtsProjects).insert(project);
+
+  Future<List<DialogTtsProject>> getAllDialogTtsProjects() =>
+      select(dialogTtsProjects).get();
+
+  Future<DialogTtsProject?> getDialogTtsProjectById(String id) =>
+      (select(dialogTtsProjects)..where((t) => t.id.equals(id)))
+          .getSingleOrNull();
 
   Future<bool> updateDialogTtsProject(DialogTtsProject project) =>
       update(dialogTtsProjects).replace(project);
@@ -628,24 +648,98 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteAudioTrack(String id) =>
       (delete(audioTracks)..where((t) => t.id.equals(id))).go();
+
+  // --- App Settings (key/value) ---
+
+  Future<String?> getSetting(String key) async {
+    final row = await (select(appSettings)..where((t) => t.key.equals(key)))
+        .getSingleOrNull();
+    return row?.value;
+  }
+
+  Future<void> setSetting(String key, String value) => into(appSettings)
+      .insertOnConflictUpdate(
+          AppSettingsCompanion(key: Value(key), value: Value(value)));
+
+  Future<int> deleteSetting(String key) =>
+      (delete(appSettings)..where((t) => t.key.equals(key))).go();
+
+  // --- Storage health / sync ---
+
+  /// Every audio-path column grouped with its update hook. Used by the
+  /// startup health check to mark rows whose files no longer exist.
+  Future<int> markQuickTtsMissing(String id, bool missing) =>
+      (update(quickTtsHistories)..where((t) => t.id.equals(id)))
+          .write(QuickTtsHistoriesCompanion(missing: Value(missing)));
+
+  Future<int> markPhaseSegmentMissing(String id, bool missing) =>
+      (update(phaseTtsSegments)..where((t) => t.id.equals(id)))
+          .write(PhaseTtsSegmentsCompanion(missing: Value(missing)));
+
+  Future<int> markDialogLineMissing(String id, bool missing) =>
+      (update(dialogTtsLines)..where((t) => t.id.equals(id)))
+          .write(DialogTtsLinesCompanion(missing: Value(missing)));
+
+  Future<int> markAudioTrackMissing(String id, bool missing) =>
+      (update(audioTracks)..where((t) => t.id.equals(id)))
+          .write(AudioTracksCompanion(missing: Value(missing)));
+
+  Future<int> markTimelineClipMissing(String id, bool missing) =>
+      (update(timelineClips)..where((t) => t.id.equals(id)))
+          .write(TimelineClipsCompanion(missing: Value(missing)));
+
+  Future<List<QuickTtsHistory>> getAllQuickTtsHistoryRaw() =>
+      select(quickTtsHistories).get();
+
+  Future<List<PhaseTtsSegment>> getAllPhaseSegmentsRaw() =>
+      select(phaseTtsSegments).get();
+
+  Future<List<DialogTtsLine>> getAllDialogLinesRaw() =>
+      select(dialogTtsLines).get();
+
+  Future<List<AudioTrack>> getAllAudioTracksRaw() =>
+      select(audioTracks).get();
+
+  Future<List<TimelineClip>> getAllTimelineClipsRaw() =>
+      select(timelineClips).get();
+
+  /// Wipe every audio row + clear audio-path on project scripts. Providers,
+  /// characters, banks, project scripts themselves are preserved — only the
+  /// archived takes vanish. Caller is responsible for deleting files on disk.
+  Future<void> clearAllAudioArchives() => transaction(() async {
+        await delete(timelineClips).go();
+        await delete(audioTracks).go();
+        await delete(quickTtsHistories).go();
+        // Preserve the scripts — null out their audio so regeneration works.
+        await update(phaseTtsSegments).write(const PhaseTtsSegmentsCompanion(
+          audioPath: Value(null),
+          audioDuration: Value(null),
+          error: Value(null),
+          missing: Value(false),
+        ));
+        await update(dialogTtsLines).write(const DialogTtsLinesCompanion(
+          audioPath: Value(null),
+          audioDuration: Value(null),
+          error: Value(null),
+          missing: Value(false),
+        ));
+      });
 }
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    final dir = await getApplicationSupportDirectory();
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
-    }
-    final file = await _resolveDatabaseFile(dir);
+    await PathService.instance.init();
+    final dataDir = PathService.instance.dataRoot;
+    final file = await _resolveDatabaseFile(dataDir);
     return NativeDatabase.createInBackground(file);
   });
 }
 
-Future<File> _resolveDatabaseFile(Directory currentDir) async {
-  final currentFile = File(p.join(currentDir.path, 'neiroha.db'));
+Future<File> _resolveDatabaseFile(Directory dataDir) async {
+  final currentFile = File(p.join(dataDir.path, 'neiroha.db'));
   if (await currentFile.exists()) return currentFile;
 
-  for (final legacyFile in _legacyDatabaseCandidates(currentDir)) {
+  for (final legacyFile in _legacyDatabaseCandidates(dataDir)) {
     if (await legacyFile.exists()) {
       await legacyFile.copy(currentFile.path);
       return currentFile;
@@ -655,26 +749,34 @@ Future<File> _resolveDatabaseFile(Directory currentDir) async {
   return currentFile;
 }
 
-Iterable<File> _legacyDatabaseCandidates(Directory currentDir) sync* {
-  yield File(p.join(currentDir.path, 'q_vox_lab.db'));
+Iterable<File> _legacyDatabaseCandidates(Directory dataDir) sync* {
+  // The previous (v0.1.x) database lived directly in the OS app-support
+  // directory, not inside a `data/` subfolder. Copy from there if present.
+  final legacySupport = PathService.instance.legacyAppSupportDir;
+  yield File(p.join(legacySupport.path, 'neiroha.db'));
+  yield File(p.join(legacySupport.path, 'q_vox_lab.db'));
+  // Also check the parent of data/ for apps that used to put the DB in the
+  // appRoot (portable-mode pre-migration).
+  yield File(p.join(dataDir.parent.path, 'neiroha.db'));
+  yield File(p.join(dataDir.parent.path, 'q_vox_lab.db'));
 
   final candidateDirs = <String>{};
 
   void addCandidate(String path) {
-    if (path != currentDir.path) {
+    if (path != legacySupport.path) {
       candidateDirs.add(path);
     }
   }
 
-  addCandidate(currentDir.path.replaceAll(
+  addCandidate(legacySupport.path.replaceAll(
     'com.neiroha.neiroha',
     'com.qvoxlab.q_vox_lab',
   ));
-  addCandidate(currentDir.path.replaceAll(
+  addCandidate(legacySupport.path.replaceAll(
     '${Platform.pathSeparator}neiroha',
     '${Platform.pathSeparator}q_vox_lab',
   ));
-  addCandidate(currentDir.path.replaceAll(
+  addCandidate(legacySupport.path.replaceAll(
     '${Platform.pathSeparator}Neiroha',
     '${Platform.pathSeparator}q_vox_lab',
   ));

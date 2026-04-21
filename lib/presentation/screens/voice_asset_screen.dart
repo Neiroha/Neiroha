@@ -6,7 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import 'package:neiroha/data/storage/path_service.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/database/app_database.dart' as db;
@@ -131,13 +131,17 @@ class VoiceAssetScreen extends ConsumerWidget {
     final src = File(result.files.single.path!);
     if (!await src.exists()) return;
 
-    // Copy into AppSupportDir/voice_assets/
-    final dir = await getApplicationSupportDirectory();
-    final assetDir = Directory(p.join(dir.path, 'voice_assets'));
-    if (!await assetDir.exists()) await assetDir.create(recursive: true);
+    // Copy into the managed voice_character_ref/ folder so the library is
+    // always discoverable under the user's configured voice-asset root.
+    final assetDir = await PathService.instance.voiceCharacterRefDir();
     final id = const Uuid().v4();
     final ext = p.extension(src.path).isEmpty ? '.wav' : p.extension(src.path);
-    final dstPath = p.join(assetDir.path, '$id$ext');
+    final base = p.basenameWithoutExtension(src.path);
+    final dstPath = PathService.dedupeFilename(
+      assetDir,
+      '${PathService.sanitizeSegment(base, fallback: 'track')}_${PathService.formatTimestamp()}',
+      ext,
+    );
     await src.copy(dstPath);
 
     // Detect duration
@@ -349,9 +353,7 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
     final result = await FilePicker.platform.pickFiles(type: FileType.image);
     if (result == null || result.files.single.path == null) return;
     final src = File(result.files.single.path!);
-    final dir = await getApplicationSupportDirectory();
-    final avatarDir = Directory(p.join(dir.path, 'avatars'));
-    if (!await avatarDir.exists()) await avatarDir.create(recursive: true);
+    final avatarDir = await PathService.instance.avatarsDir();
     final ext = p.extension(src.path).isEmpty ? '.png' : p.extension(src.path);
     final dst = p.join(avatarDir.path, '${widget.track.id}$ext');
     await src.copy(dst);

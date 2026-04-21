@@ -30,6 +30,7 @@ const _$AdapterTypeEnumMap = {
   AdapterType.openaiCompatible: 'openaiCompatible',
   AdapterType.gptSovits: 'gptSovits',
   AdapterType.cosyvoice: 'cosyvoice',
+  AdapterType.voxcpm2Native: 'voxcpm2Native',
   AdapterType.chatCompletionsTts: 'chatCompletionsTts',
   AdapterType.azureTts: 'azureTts',
   AdapterType.systemTts: 'systemTts',

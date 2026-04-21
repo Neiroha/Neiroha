@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
+import 'package:neiroha/data/storage/storage_service.dart';
 import 'package:neiroha/server/api_server.dart';
 
 /// Single database instance for the app.
@@ -8,6 +9,24 @@ final databaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
   ref.onDispose(() => db.close());
   return db;
+});
+
+/// Disk-backed storage orchestration (voice-asset root, sync, clear-all).
+final storageServiceProvider = Provider<StorageService>((ref) {
+  return StorageService(ref.watch(databaseProvider));
+});
+
+/// Fires on startup: loads the user's voice-asset root override from SQLite
+/// and runs an initial missing-file scan. UI can watch this to show a badge
+/// when archived audio has drifted out of sync with disk.
+///
+/// The future is resolved once per app session; call
+/// `ref.invalidate(storageStartupProvider)` after the user changes the root
+/// or runs a manual sync to refresh.
+final storageStartupProvider = FutureProvider<StorageScanReport>((ref) async {
+  final storage = ref.watch(storageServiceProvider);
+  await storage.applyPersistedRoot();
+  return storage.scan();
 });
 
 /// API server instance.

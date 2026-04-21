@@ -6,7 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:neiroha/data/storage/path_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
@@ -104,11 +104,13 @@ class TimelineDragButton extends StatelessWidget {
 class StoryTrackEditor extends ConsumerStatefulWidget {
   final String projectId;
   final String projectType; // 'dialog' | 'phase'
+  final String projectName;
 
   const StoryTrackEditor({
     super.key,
     required this.projectId,
     required this.projectType,
+    required this.projectName,
   });
 
   @override
@@ -986,13 +988,20 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
     final src = result.files.single.path;
     if (src == null) return;
 
-    final dir = await getApplicationSupportDirectory();
-    final outDir = Directory(p.join(
-        dir.path, 'timeline_sfx', widget.projectType, widget.projectId));
-    if (!outDir.existsSync()) outDir.createSync(recursive: true);
+    final storage = ref.read(storageServiceProvider);
+    final slug = widget.projectType == 'phase'
+        ? await storage.ensurePhaseProjectSlug(widget.projectId)
+        : await storage.ensureDialogProjectSlug(widget.projectId);
+    final outDir = await PathService.instance.timelineSfxDir(
+      projectType: widget.projectType,
+      projectName: slug,
+    );
     final ext = p.extension(src);
-    final destPath = p.join(outDir.path,
-        'sfx_${DateTime.now().millisecondsSinceEpoch}$ext');
+    final destPath = PathService.dedupeFilename(
+      outDir,
+      'sfx_${PathService.formatTimestamp()}',
+      ext,
+    );
     await File(src).copy(destPath);
 
     final label = p.basenameWithoutExtension(src);

@@ -3,8 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
+import 'package:neiroha/data/storage/path_service.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
@@ -275,6 +274,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         StoryTrackEditor(
           projectId: project.id,
           projectType: 'phase',
+          projectName: project.name,
         ),
         // Inline audio player — replaces the global bottom bar so the
         // current clip surfaces above the action/input row.
@@ -639,9 +639,9 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     final provider = providerMap[asset.providerId];
     if (provider == null) return;
 
-    final dir = await getApplicationSupportDirectory();
-    final outDir = Directory(p.join(dir.path, 'phase_tts', project.id));
-    if (!outDir.existsSync()) outDir.createSync(recursive: true);
+    final slug =
+        await ref.read(storageServiceProvider).ensurePhaseProjectSlug(project.id);
+    final outDir = await PathService.instance.phaseTtsDir(slug);
     final database = ref.read(databaseProvider);
 
     setState(() => _generatingSegmentIds.add(seg.id));
@@ -658,9 +658,12 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         promptText: asset.promptText,
         promptLang: asset.promptLang,
       ));
-      final ext = result.contentType.contains('wav') ? 'wav' : 'mp3';
-      final filePath = p.join(outDir.path,
-          'seg_${seg.orderIndex}_${DateTime.now().millisecondsSinceEpoch}.$ext');
+      final ext = result.contentType.contains('wav') ? '.wav' : '.mp3';
+      final filePath = PathService.dedupeFilename(
+        outDir,
+        'seg_${seg.orderIndex}_${PathService.formatTimestamp()}',
+        ext,
+      );
       await File(filePath).writeAsBytes(result.audioBytes);
       final durationSec = await measureAudioDuration(filePath);
       await database.updatePhaseTtsSegment(

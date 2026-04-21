@@ -5,7 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import 'package:neiroha/data/storage/path_service.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/cosyvoice_adapter.dart';
@@ -559,9 +559,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
     if (result == null || result.files.single.path == null) return;
 
     final picked = result.files.single.path!;
-    final appDir = await getApplicationSupportDirectory();
-    final avatarDir = Directory(p.join(appDir.path, 'avatars'));
-    if (!avatarDir.existsSync()) avatarDir.createSync(recursive: true);
+    final avatarDir = await PathService.instance.avatarsDir();
     final ext = p.extension(picked);
     final dest = p.join(avatarDir.path, '${asset.id}$ext');
     await File(picked).copy(dest);
@@ -1684,9 +1682,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     String? persistedAvatarPath;
     if (_avatarPath != null) {
       try {
-        final appDir = await getApplicationSupportDirectory();
-        final avatarDir = Directory(p.join(appDir.path, 'avatars'));
-        if (!avatarDir.existsSync()) avatarDir.createSync(recursive: true);
+        final avatarDir = await PathService.instance.avatarsDir();
         final ext = p.extension(_avatarPath!);
         final dest = p.join(avatarDir.path, '$assetId$ext');
         await File(_avatarPath!).copy(dest);
@@ -1697,17 +1693,19 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     // Auto-save manually uploaded ref audio to voice assets library
     if (_uploadedRefAudioPath != null && _selectedAudioTrackId == null) {
       try {
-        final appDir = await getApplicationSupportDirectory();
-        final vaDir =
-            Directory(p.join(appDir.path, 'voice_assets'));
-        if (!vaDir.existsSync()) vaDir.createSync(recursive: true);
+        final vaDir = await PathService.instance.voiceCharacterRefDir();
         final trackId = const Uuid().v4();
         final ext = p.extension(_uploadedRefAudioPath!);
-        final dest = p.join(vaDir.path, '$trackId$ext');
+        final base = p.basenameWithoutExtension(_uploadedRefAudioPath!);
+        final dest = PathService.dedupeFilename(
+          vaDir,
+          '${PathService.sanitizeSegment(base, fallback: 'ref')}_${PathService.formatTimestamp()}',
+          ext,
+        );
         await File(_uploadedRefAudioPath!).copy(dest);
         await widget.onSaveAudioTrack(db.AudioTracksCompanion(
           id: Value(trackId),
-          name: Value(p.basenameWithoutExtension(_uploadedRefAudioPath!)),
+          name: Value(base),
           audioPath: Value(dest),
           refText: Value(_promptTextCtrl.text.trim().isEmpty
               ? null

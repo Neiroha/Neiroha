@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:neiroha/data/storage/path_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
@@ -348,13 +348,9 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
     final asset = widget.asset;
     final database = ref.read(databaseProvider);
     try {
-      final appDir = await getApplicationSupportDirectory();
-      final vaDir = Directory(p.join(appDir.path, 'voice_assets'));
-      if (!vaDir.existsSync()) vaDir.createSync(recursive: true);
+      final vaDir = await PathService.instance.voiceCharacterRefDir();
       final trackId = const Uuid().v4();
       final ext = p.extension(src).isEmpty ? '.wav' : p.extension(src);
-      final dest = p.join(vaDir.path, '$trackId$ext');
-      await File(src).copy(dest);
 
       // Trim the input text for the asset name so long prompts don't create
       // unusable labels.
@@ -364,6 +360,16 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
       final assetName = shortText.isEmpty
           ? '${entry.voiceName} quicktest'
           : '${entry.voiceName} · $shortText';
+
+      final fileBase = shortText.isEmpty
+          ? '${entry.voiceName}_${PathService.formatTimestamp()}'
+          : '${entry.voiceName}_${raw.length > 24 ? raw.substring(0, 24) : raw}_${PathService.formatTimestamp()}';
+      final dest = PathService.dedupeFilename(
+        vaDir,
+        PathService.sanitizeSegment(fileBase, fallback: 'quicktest'),
+        ext,
+      );
+      await File(src).copy(dest);
 
       await database.insertAudioTrack(db.AudioTracksCompanion(
         id: Value(trackId),
@@ -482,12 +488,12 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
         promptLang: asset.promptLang,
       ));
 
-      final dir = await getApplicationSupportDirectory();
-      final outDir = Directory(p.join(dir.path, 'quick_tts'));
-      if (!outDir.existsSync()) outDir.createSync(recursive: true);
-      final ext = result.contentType.contains('wav') ? 'wav' : 'mp3';
-      final filePath = p.join(
-          outDir.path, '${DateTime.now().millisecondsSinceEpoch}.$ext');
+      final slug =
+          await ref.read(storageServiceProvider).ensureVoiceAssetSlug(asset.id);
+      final outDir = await PathService.instance.quickTtsDir(slug);
+      final ext = result.contentType.contains('wav') ? '.wav' : '.mp3';
+      final filePath = PathService.dedupeFilename(
+          outDir, PathService.formatTimestamp(), ext);
       await File(filePath).writeAsBytes(result.audioBytes);
 
       await database.insertQuickTtsHistory(

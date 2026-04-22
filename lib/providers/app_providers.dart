@@ -98,6 +98,19 @@ final dialogTtsLinesStreamProvider =
   return db.watchDialogTtsLines(projectId);
 });
 
+/// Video Dub projects stream (dubbing workstation projects).
+final videoDubProjectsStreamProvider = StreamProvider((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.watchVideoDubProjects();
+});
+
+/// Subtitle cues for a Video Dub project.
+final subtitleCuesStreamProvider =
+    StreamProvider.family<List<SubtitleCue>, String>((ref, projectId) {
+  final db = ref.watch(databaseProvider);
+  return db.watchSubtitleCues(projectId);
+});
+
 /// Timeline clips for a project. Key is "$projectType:$projectId" so the
 /// family works across both Dialog and Phase TTS projects.
 final timelineClipsStreamProvider =

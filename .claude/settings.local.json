@@ -1,7 +1,6 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls /tmp/voicebox/landing/public/assets/app-screenshot*)",
       "Bash(export PATH=\"$PATH:/d/Programs/Flutter_SDK/flutter/bin\")",
       "Bash(flutter pub:*)",
       "Bash(flutter analyze:*)"

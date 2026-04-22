@@ -199,6 +199,39 @@ class DialogTtsLines extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+// ─────────────── Video Dub Projects & Subtitle Cues ───────────────
+
+class VideoDubProjects extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text().withLength(min: 1)();
+  TextColumn get bankId => text().references(VoiceBanks, #id)();
+  TextColumn get videoPath => text().nullable()();
+  RealColumn get videoDurationSec => real().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get folderSlug => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class SubtitleCues extends Table {
+  TextColumn get id => text()();
+  TextColumn get projectId => text().references(VideoDubProjects, #id)();
+  IntColumn get orderIndex => integer()();
+  IntColumn get startMs => integer()();
+  IntColumn get endMs => integer()();
+  TextColumn get cueText => text()();
+  TextColumn get voiceAssetId => text().nullable()();
+  TextColumn get audioPath => text().nullable()();
+  RealColumn get audioDuration => real().nullable()();
+  TextColumn get error => text().nullable()();
+  BoolColumn get missing => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 // ─────────────── Timeline Clips ───────────────
 //
 // Editable timeline model for Dialog/Phase TTS projects. Each clip is a freely

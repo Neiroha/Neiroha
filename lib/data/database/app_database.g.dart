@@ -5908,6 +5908,1204 @@ class DialogTtsLinesCompanion extends UpdateCompanion<DialogTtsLine> {
   }
 }
 
+class $VideoDubProjectsTable extends VideoDubProjects
+    with TableInfo<$VideoDubProjectsTable, VideoDubProject> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VideoDubProjectsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(minTextLength: 1),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bankIdMeta = const VerificationMeta('bankId');
+  @override
+  late final GeneratedColumn<String> bankId = GeneratedColumn<String>(
+    'bank_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES voice_banks (id)',
+    ),
+  );
+  static const VerificationMeta _videoPathMeta = const VerificationMeta(
+    'videoPath',
+  );
+  @override
+  late final GeneratedColumn<String> videoPath = GeneratedColumn<String>(
+    'video_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _videoDurationSecMeta = const VerificationMeta(
+    'videoDurationSec',
+  );
+  @override
+  late final GeneratedColumn<double> videoDurationSec = GeneratedColumn<double>(
+    'video_duration_sec',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _folderSlugMeta = const VerificationMeta(
+    'folderSlug',
+  );
+  @override
+  late final GeneratedColumn<String> folderSlug = GeneratedColumn<String>(
+    'folder_slug',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    bankId,
+    videoPath,
+    videoDurationSec,
+    createdAt,
+    updatedAt,
+    folderSlug,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'video_dub_projects';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VideoDubProject> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('bank_id')) {
+      context.handle(
+        _bankIdMeta,
+        bankId.isAcceptableOrUnknown(data['bank_id']!, _bankIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bankIdMeta);
+    }
+    if (data.containsKey('video_path')) {
+      context.handle(
+        _videoPathMeta,
+        videoPath.isAcceptableOrUnknown(data['video_path']!, _videoPathMeta),
+      );
+    }
+    if (data.containsKey('video_duration_sec')) {
+      context.handle(
+        _videoDurationSecMeta,
+        videoDurationSec.isAcceptableOrUnknown(
+          data['video_duration_sec']!,
+          _videoDurationSecMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('folder_slug')) {
+      context.handle(
+        _folderSlugMeta,
+        folderSlug.isAcceptableOrUnknown(data['folder_slug']!, _folderSlugMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  VideoDubProject map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VideoDubProject(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      bankId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank_id'],
+      )!,
+      videoPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}video_path'],
+      ),
+      videoDurationSec: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}video_duration_sec'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      folderSlug: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}folder_slug'],
+      ),
+    );
+  }
+
+  @override
+  $VideoDubProjectsTable createAlias(String alias) {
+    return $VideoDubProjectsTable(attachedDatabase, alias);
+  }
+}
+
+class VideoDubProject extends DataClass implements Insertable<VideoDubProject> {
+  final String id;
+  final String name;
+  final String bankId;
+  final String? videoPath;
+  final double? videoDurationSec;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? folderSlug;
+  const VideoDubProject({
+    required this.id,
+    required this.name,
+    required this.bankId,
+    this.videoPath,
+    this.videoDurationSec,
+    required this.createdAt,
+    required this.updatedAt,
+    this.folderSlug,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['bank_id'] = Variable<String>(bankId);
+    if (!nullToAbsent || videoPath != null) {
+      map['video_path'] = Variable<String>(videoPath);
+    }
+    if (!nullToAbsent || videoDurationSec != null) {
+      map['video_duration_sec'] = Variable<double>(videoDurationSec);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || folderSlug != null) {
+      map['folder_slug'] = Variable<String>(folderSlug);
+    }
+    return map;
+  }
+
+  VideoDubProjectsCompanion toCompanion(bool nullToAbsent) {
+    return VideoDubProjectsCompanion(
+      id: Value(id),
+      name: Value(name),
+      bankId: Value(bankId),
+      videoPath: videoPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(videoPath),
+      videoDurationSec: videoDurationSec == null && nullToAbsent
+          ? const Value.absent()
+          : Value(videoDurationSec),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      folderSlug: folderSlug == null && nullToAbsent
+          ? const Value.absent()
+          : Value(folderSlug),
+    );
+  }
+
+  factory VideoDubProject.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VideoDubProject(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      bankId: serializer.fromJson<String>(json['bankId']),
+      videoPath: serializer.fromJson<String?>(json['videoPath']),
+      videoDurationSec: serializer.fromJson<double?>(json['videoDurationSec']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      folderSlug: serializer.fromJson<String?>(json['folderSlug']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'bankId': serializer.toJson<String>(bankId),
+      'videoPath': serializer.toJson<String?>(videoPath),
+      'videoDurationSec': serializer.toJson<double?>(videoDurationSec),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'folderSlug': serializer.toJson<String?>(folderSlug),
+    };
+  }
+
+  VideoDubProject copyWith({
+    String? id,
+    String? name,
+    String? bankId,
+    Value<String?> videoPath = const Value.absent(),
+    Value<double?> videoDurationSec = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<String?> folderSlug = const Value.absent(),
+  }) => VideoDubProject(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    bankId: bankId ?? this.bankId,
+    videoPath: videoPath.present ? videoPath.value : this.videoPath,
+    videoDurationSec: videoDurationSec.present
+        ? videoDurationSec.value
+        : this.videoDurationSec,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    folderSlug: folderSlug.present ? folderSlug.value : this.folderSlug,
+  );
+  VideoDubProject copyWithCompanion(VideoDubProjectsCompanion data) {
+    return VideoDubProject(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      bankId: data.bankId.present ? data.bankId.value : this.bankId,
+      videoPath: data.videoPath.present ? data.videoPath.value : this.videoPath,
+      videoDurationSec: data.videoDurationSec.present
+          ? data.videoDurationSec.value
+          : this.videoDurationSec,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      folderSlug: data.folderSlug.present
+          ? data.folderSlug.value
+          : this.folderSlug,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VideoDubProject(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('bankId: $bankId, ')
+          ..write('videoPath: $videoPath, ')
+          ..write('videoDurationSec: $videoDurationSec, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('folderSlug: $folderSlug')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    bankId,
+    videoPath,
+    videoDurationSec,
+    createdAt,
+    updatedAt,
+    folderSlug,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VideoDubProject &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.bankId == this.bankId &&
+          other.videoPath == this.videoPath &&
+          other.videoDurationSec == this.videoDurationSec &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.folderSlug == this.folderSlug);
+}
+
+class VideoDubProjectsCompanion extends UpdateCompanion<VideoDubProject> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> bankId;
+  final Value<String?> videoPath;
+  final Value<double?> videoDurationSec;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> folderSlug;
+  final Value<int> rowid;
+  const VideoDubProjectsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.bankId = const Value.absent(),
+    this.videoPath = const Value.absent(),
+    this.videoDurationSec = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.folderSlug = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VideoDubProjectsCompanion.insert({
+    required String id,
+    required String name,
+    required String bankId,
+    this.videoPath = const Value.absent(),
+    this.videoDurationSec = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.folderSlug = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       bankId = Value(bankId),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<VideoDubProject> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? bankId,
+    Expression<String>? videoPath,
+    Expression<double>? videoDurationSec,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? folderSlug,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (bankId != null) 'bank_id': bankId,
+      if (videoPath != null) 'video_path': videoPath,
+      if (videoDurationSec != null) 'video_duration_sec': videoDurationSec,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (folderSlug != null) 'folder_slug': folderSlug,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VideoDubProjectsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? bankId,
+    Value<String?>? videoPath,
+    Value<double?>? videoDurationSec,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String?>? folderSlug,
+    Value<int>? rowid,
+  }) {
+    return VideoDubProjectsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      bankId: bankId ?? this.bankId,
+      videoPath: videoPath ?? this.videoPath,
+      videoDurationSec: videoDurationSec ?? this.videoDurationSec,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      folderSlug: folderSlug ?? this.folderSlug,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (bankId.present) {
+      map['bank_id'] = Variable<String>(bankId.value);
+    }
+    if (videoPath.present) {
+      map['video_path'] = Variable<String>(videoPath.value);
+    }
+    if (videoDurationSec.present) {
+      map['video_duration_sec'] = Variable<double>(videoDurationSec.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (folderSlug.present) {
+      map['folder_slug'] = Variable<String>(folderSlug.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VideoDubProjectsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('bankId: $bankId, ')
+          ..write('videoPath: $videoPath, ')
+          ..write('videoDurationSec: $videoDurationSec, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('folderSlug: $folderSlug, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SubtitleCuesTable extends SubtitleCues
+    with TableInfo<$SubtitleCuesTable, SubtitleCue> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SubtitleCuesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES video_dub_projects (id)',
+    ),
+  );
+  static const VerificationMeta _orderIndexMeta = const VerificationMeta(
+    'orderIndex',
+  );
+  @override
+  late final GeneratedColumn<int> orderIndex = GeneratedColumn<int>(
+    'order_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startMsMeta = const VerificationMeta(
+    'startMs',
+  );
+  @override
+  late final GeneratedColumn<int> startMs = GeneratedColumn<int>(
+    'start_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endMsMeta = const VerificationMeta('endMs');
+  @override
+  late final GeneratedColumn<int> endMs = GeneratedColumn<int>(
+    'end_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cueTextMeta = const VerificationMeta(
+    'cueText',
+  );
+  @override
+  late final GeneratedColumn<String> cueText = GeneratedColumn<String>(
+    'cue_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _voiceAssetIdMeta = const VerificationMeta(
+    'voiceAssetId',
+  );
+  @override
+  late final GeneratedColumn<String> voiceAssetId = GeneratedColumn<String>(
+    'voice_asset_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _audioPathMeta = const VerificationMeta(
+    'audioPath',
+  );
+  @override
+  late final GeneratedColumn<String> audioPath = GeneratedColumn<String>(
+    'audio_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _audioDurationMeta = const VerificationMeta(
+    'audioDuration',
+  );
+  @override
+  late final GeneratedColumn<double> audioDuration = GeneratedColumn<double>(
+    'audio_duration',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _errorMeta = const VerificationMeta('error');
+  @override
+  late final GeneratedColumn<String> error = GeneratedColumn<String>(
+    'error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _missingMeta = const VerificationMeta(
+    'missing',
+  );
+  @override
+  late final GeneratedColumn<bool> missing = GeneratedColumn<bool>(
+    'missing',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("missing" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    orderIndex,
+    startMs,
+    endMs,
+    cueText,
+    voiceAssetId,
+    audioPath,
+    audioDuration,
+    error,
+    missing,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'subtitle_cues';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SubtitleCue> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('order_index')) {
+      context.handle(
+        _orderIndexMeta,
+        orderIndex.isAcceptableOrUnknown(data['order_index']!, _orderIndexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_orderIndexMeta);
+    }
+    if (data.containsKey('start_ms')) {
+      context.handle(
+        _startMsMeta,
+        startMs.isAcceptableOrUnknown(data['start_ms']!, _startMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startMsMeta);
+    }
+    if (data.containsKey('end_ms')) {
+      context.handle(
+        _endMsMeta,
+        endMs.isAcceptableOrUnknown(data['end_ms']!, _endMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endMsMeta);
+    }
+    if (data.containsKey('cue_text')) {
+      context.handle(
+        _cueTextMeta,
+        cueText.isAcceptableOrUnknown(data['cue_text']!, _cueTextMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cueTextMeta);
+    }
+    if (data.containsKey('voice_asset_id')) {
+      context.handle(
+        _voiceAssetIdMeta,
+        voiceAssetId.isAcceptableOrUnknown(
+          data['voice_asset_id']!,
+          _voiceAssetIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('audio_path')) {
+      context.handle(
+        _audioPathMeta,
+        audioPath.isAcceptableOrUnknown(data['audio_path']!, _audioPathMeta),
+      );
+    }
+    if (data.containsKey('audio_duration')) {
+      context.handle(
+        _audioDurationMeta,
+        audioDuration.isAcceptableOrUnknown(
+          data['audio_duration']!,
+          _audioDurationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('error')) {
+      context.handle(
+        _errorMeta,
+        error.isAcceptableOrUnknown(data['error']!, _errorMeta),
+      );
+    }
+    if (data.containsKey('missing')) {
+      context.handle(
+        _missingMeta,
+        missing.isAcceptableOrUnknown(data['missing']!, _missingMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SubtitleCue map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SubtitleCue(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      orderIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}order_index'],
+      )!,
+      startMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_ms'],
+      )!,
+      endMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_ms'],
+      )!,
+      cueText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cue_text'],
+      )!,
+      voiceAssetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}voice_asset_id'],
+      ),
+      audioPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}audio_path'],
+      ),
+      audioDuration: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}audio_duration'],
+      ),
+      error: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error'],
+      ),
+      missing: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}missing'],
+      )!,
+    );
+  }
+
+  @override
+  $SubtitleCuesTable createAlias(String alias) {
+    return $SubtitleCuesTable(attachedDatabase, alias);
+  }
+}
+
+class SubtitleCue extends DataClass implements Insertable<SubtitleCue> {
+  final String id;
+  final String projectId;
+  final int orderIndex;
+  final int startMs;
+  final int endMs;
+  final String cueText;
+  final String? voiceAssetId;
+  final String? audioPath;
+  final double? audioDuration;
+  final String? error;
+  final bool missing;
+  const SubtitleCue({
+    required this.id,
+    required this.projectId,
+    required this.orderIndex,
+    required this.startMs,
+    required this.endMs,
+    required this.cueText,
+    this.voiceAssetId,
+    this.audioPath,
+    this.audioDuration,
+    this.error,
+    required this.missing,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['order_index'] = Variable<int>(orderIndex);
+    map['start_ms'] = Variable<int>(startMs);
+    map['end_ms'] = Variable<int>(endMs);
+    map['cue_text'] = Variable<String>(cueText);
+    if (!nullToAbsent || voiceAssetId != null) {
+      map['voice_asset_id'] = Variable<String>(voiceAssetId);
+    }
+    if (!nullToAbsent || audioPath != null) {
+      map['audio_path'] = Variable<String>(audioPath);
+    }
+    if (!nullToAbsent || audioDuration != null) {
+      map['audio_duration'] = Variable<double>(audioDuration);
+    }
+    if (!nullToAbsent || error != null) {
+      map['error'] = Variable<String>(error);
+    }
+    map['missing'] = Variable<bool>(missing);
+    return map;
+  }
+
+  SubtitleCuesCompanion toCompanion(bool nullToAbsent) {
+    return SubtitleCuesCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      orderIndex: Value(orderIndex),
+      startMs: Value(startMs),
+      endMs: Value(endMs),
+      cueText: Value(cueText),
+      voiceAssetId: voiceAssetId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voiceAssetId),
+      audioPath: audioPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(audioPath),
+      audioDuration: audioDuration == null && nullToAbsent
+          ? const Value.absent()
+          : Value(audioDuration),
+      error: error == null && nullToAbsent
+          ? const Value.absent()
+          : Value(error),
+      missing: Value(missing),
+    );
+  }
+
+  factory SubtitleCue.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SubtitleCue(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      orderIndex: serializer.fromJson<int>(json['orderIndex']),
+      startMs: serializer.fromJson<int>(json['startMs']),
+      endMs: serializer.fromJson<int>(json['endMs']),
+      cueText: serializer.fromJson<String>(json['cueText']),
+      voiceAssetId: serializer.fromJson<String?>(json['voiceAssetId']),
+      audioPath: serializer.fromJson<String?>(json['audioPath']),
+      audioDuration: serializer.fromJson<double?>(json['audioDuration']),
+      error: serializer.fromJson<String?>(json['error']),
+      missing: serializer.fromJson<bool>(json['missing']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'orderIndex': serializer.toJson<int>(orderIndex),
+      'startMs': serializer.toJson<int>(startMs),
+      'endMs': serializer.toJson<int>(endMs),
+      'cueText': serializer.toJson<String>(cueText),
+      'voiceAssetId': serializer.toJson<String?>(voiceAssetId),
+      'audioPath': serializer.toJson<String?>(audioPath),
+      'audioDuration': serializer.toJson<double?>(audioDuration),
+      'error': serializer.toJson<String?>(error),
+      'missing': serializer.toJson<bool>(missing),
+    };
+  }
+
+  SubtitleCue copyWith({
+    String? id,
+    String? projectId,
+    int? orderIndex,
+    int? startMs,
+    int? endMs,
+    String? cueText,
+    Value<String?> voiceAssetId = const Value.absent(),
+    Value<String?> audioPath = const Value.absent(),
+    Value<double?> audioDuration = const Value.absent(),
+    Value<String?> error = const Value.absent(),
+    bool? missing,
+  }) => SubtitleCue(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    orderIndex: orderIndex ?? this.orderIndex,
+    startMs: startMs ?? this.startMs,
+    endMs: endMs ?? this.endMs,
+    cueText: cueText ?? this.cueText,
+    voiceAssetId: voiceAssetId.present ? voiceAssetId.value : this.voiceAssetId,
+    audioPath: audioPath.present ? audioPath.value : this.audioPath,
+    audioDuration: audioDuration.present
+        ? audioDuration.value
+        : this.audioDuration,
+    error: error.present ? error.value : this.error,
+    missing: missing ?? this.missing,
+  );
+  SubtitleCue copyWithCompanion(SubtitleCuesCompanion data) {
+    return SubtitleCue(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      orderIndex: data.orderIndex.present
+          ? data.orderIndex.value
+          : this.orderIndex,
+      startMs: data.startMs.present ? data.startMs.value : this.startMs,
+      endMs: data.endMs.present ? data.endMs.value : this.endMs,
+      cueText: data.cueText.present ? data.cueText.value : this.cueText,
+      voiceAssetId: data.voiceAssetId.present
+          ? data.voiceAssetId.value
+          : this.voiceAssetId,
+      audioPath: data.audioPath.present ? data.audioPath.value : this.audioPath,
+      audioDuration: data.audioDuration.present
+          ? data.audioDuration.value
+          : this.audioDuration,
+      error: data.error.present ? data.error.value : this.error,
+      missing: data.missing.present ? data.missing.value : this.missing,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SubtitleCue(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('orderIndex: $orderIndex, ')
+          ..write('startMs: $startMs, ')
+          ..write('endMs: $endMs, ')
+          ..write('cueText: $cueText, ')
+          ..write('voiceAssetId: $voiceAssetId, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('audioDuration: $audioDuration, ')
+          ..write('error: $error, ')
+          ..write('missing: $missing')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    orderIndex,
+    startMs,
+    endMs,
+    cueText,
+    voiceAssetId,
+    audioPath,
+    audioDuration,
+    error,
+    missing,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SubtitleCue &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.orderIndex == this.orderIndex &&
+          other.startMs == this.startMs &&
+          other.endMs == this.endMs &&
+          other.cueText == this.cueText &&
+          other.voiceAssetId == this.voiceAssetId &&
+          other.audioPath == this.audioPath &&
+          other.audioDuration == this.audioDuration &&
+          other.error == this.error &&
+          other.missing == this.missing);
+}
+
+class SubtitleCuesCompanion extends UpdateCompanion<SubtitleCue> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<int> orderIndex;
+  final Value<int> startMs;
+  final Value<int> endMs;
+  final Value<String> cueText;
+  final Value<String?> voiceAssetId;
+  final Value<String?> audioPath;
+  final Value<double?> audioDuration;
+  final Value<String?> error;
+  final Value<bool> missing;
+  final Value<int> rowid;
+  const SubtitleCuesCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.orderIndex = const Value.absent(),
+    this.startMs = const Value.absent(),
+    this.endMs = const Value.absent(),
+    this.cueText = const Value.absent(),
+    this.voiceAssetId = const Value.absent(),
+    this.audioPath = const Value.absent(),
+    this.audioDuration = const Value.absent(),
+    this.error = const Value.absent(),
+    this.missing = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SubtitleCuesCompanion.insert({
+    required String id,
+    required String projectId,
+    required int orderIndex,
+    required int startMs,
+    required int endMs,
+    required String cueText,
+    this.voiceAssetId = const Value.absent(),
+    this.audioPath = const Value.absent(),
+    this.audioDuration = const Value.absent(),
+    this.error = const Value.absent(),
+    this.missing = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       orderIndex = Value(orderIndex),
+       startMs = Value(startMs),
+       endMs = Value(endMs),
+       cueText = Value(cueText);
+  static Insertable<SubtitleCue> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<int>? orderIndex,
+    Expression<int>? startMs,
+    Expression<int>? endMs,
+    Expression<String>? cueText,
+    Expression<String>? voiceAssetId,
+    Expression<String>? audioPath,
+    Expression<double>? audioDuration,
+    Expression<String>? error,
+    Expression<bool>? missing,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (orderIndex != null) 'order_index': orderIndex,
+      if (startMs != null) 'start_ms': startMs,
+      if (endMs != null) 'end_ms': endMs,
+      if (cueText != null) 'cue_text': cueText,
+      if (voiceAssetId != null) 'voice_asset_id': voiceAssetId,
+      if (audioPath != null) 'audio_path': audioPath,
+      if (audioDuration != null) 'audio_duration': audioDuration,
+      if (error != null) 'error': error,
+      if (missing != null) 'missing': missing,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SubtitleCuesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<int>? orderIndex,
+    Value<int>? startMs,
+    Value<int>? endMs,
+    Value<String>? cueText,
+    Value<String?>? voiceAssetId,
+    Value<String?>? audioPath,
+    Value<double?>? audioDuration,
+    Value<String?>? error,
+    Value<bool>? missing,
+    Value<int>? rowid,
+  }) {
+    return SubtitleCuesCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      orderIndex: orderIndex ?? this.orderIndex,
+      startMs: startMs ?? this.startMs,
+      endMs: endMs ?? this.endMs,
+      cueText: cueText ?? this.cueText,
+      voiceAssetId: voiceAssetId ?? this.voiceAssetId,
+      audioPath: audioPath ?? this.audioPath,
+      audioDuration: audioDuration ?? this.audioDuration,
+      error: error ?? this.error,
+      missing: missing ?? this.missing,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (orderIndex.present) {
+      map['order_index'] = Variable<int>(orderIndex.value);
+    }
+    if (startMs.present) {
+      map['start_ms'] = Variable<int>(startMs.value);
+    }
+    if (endMs.present) {
+      map['end_ms'] = Variable<int>(endMs.value);
+    }
+    if (cueText.present) {
+      map['cue_text'] = Variable<String>(cueText.value);
+    }
+    if (voiceAssetId.present) {
+      map['voice_asset_id'] = Variable<String>(voiceAssetId.value);
+    }
+    if (audioPath.present) {
+      map['audio_path'] = Variable<String>(audioPath.value);
+    }
+    if (audioDuration.present) {
+      map['audio_duration'] = Variable<double>(audioDuration.value);
+    }
+    if (error.present) {
+      map['error'] = Variable<String>(error.value);
+    }
+    if (missing.present) {
+      map['missing'] = Variable<bool>(missing.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SubtitleCuesCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('orderIndex: $orderIndex, ')
+          ..write('startMs: $startMs, ')
+          ..write('endMs: $endMs, ')
+          ..write('cueText: $cueText, ')
+          ..write('voiceAssetId: $voiceAssetId, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('audioDuration: $audioDuration, ')
+          ..write('error: $error, ')
+          ..write('missing: $missing, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $AudioTracksTable extends AudioTracks
     with TableInfo<$AudioTracksTable, AudioTrack> {
   @override
@@ -7275,6 +8473,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DialogTtsProjectsTable dialogTtsProjects =
       $DialogTtsProjectsTable(this);
   late final $DialogTtsLinesTable dialogTtsLines = $DialogTtsLinesTable(this);
+  late final $VideoDubProjectsTable videoDubProjects = $VideoDubProjectsTable(
+    this,
+  );
+  late final $SubtitleCuesTable subtitleCues = $SubtitleCuesTable(this);
   late final $AudioTracksTable audioTracks = $AudioTracksTable(this);
   late final $TimelineClipsTable timelineClips = $TimelineClipsTable(this);
   @override
@@ -7294,6 +8496,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     phaseTtsSegments,
     dialogTtsProjects,
     dialogTtsLines,
+    videoDubProjects,
+    subtitleCues,
     audioTracks,
     timelineClips,
   ];
@@ -9190,6 +10394,29 @@ final class $$VoiceBanksTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$VideoDubProjectsTable, List<VideoDubProject>>
+  _videoDubProjectsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.videoDubProjects,
+    aliasName: $_aliasNameGenerator(
+      db.voiceBanks.id,
+      db.videoDubProjects.bankId,
+    ),
+  );
+
+  $$VideoDubProjectsTableProcessedTableManager get videoDubProjectsRefs {
+    final manager = $$VideoDubProjectsTableTableManager(
+      $_db,
+      $_db.videoDubProjects,
+    ).filter((f) => f.bankId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _videoDubProjectsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$VoiceBanksTableFilterComposer
@@ -9292,6 +10519,31 @@ class $$VoiceBanksTableFilterComposer
           }) => $$DialogTtsProjectsTableFilterComposer(
             $db: $db,
             $table: $db.dialogTtsProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> videoDubProjectsRefs(
+    Expression<bool> Function($$VideoDubProjectsTableFilterComposer f) f,
+  ) {
+    final $$VideoDubProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.videoDubProjects,
+      getReferencedColumn: (t) => t.bankId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VideoDubProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.videoDubProjects,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -9438,6 +10690,31 @@ class $$VoiceBanksTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> videoDubProjectsRefs<T extends Object>(
+    Expression<T> Function($$VideoDubProjectsTableAnnotationComposer a) f,
+  ) {
+    final $$VideoDubProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.videoDubProjects,
+      getReferencedColumn: (t) => t.bankId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VideoDubProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.videoDubProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$VoiceBanksTableTableManager
@@ -9457,6 +10734,7 @@ class $$VoiceBanksTableTableManager
             bool voiceBankMembersRefs,
             bool phaseTtsProjectsRefs,
             bool dialogTtsProjectsRefs,
+            bool videoDubProjectsRefs,
           })
         > {
   $$VoiceBanksTableTableManager(_$AppDatabase db, $VoiceBanksTable table)
@@ -9515,6 +10793,7 @@ class $$VoiceBanksTableTableManager
                 voiceBankMembersRefs = false,
                 phaseTtsProjectsRefs = false,
                 dialogTtsProjectsRefs = false,
+                videoDubProjectsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -9522,6 +10801,7 @@ class $$VoiceBanksTableTableManager
                     if (voiceBankMembersRefs) db.voiceBankMembers,
                     if (phaseTtsProjectsRefs) db.phaseTtsProjects,
                     if (dialogTtsProjectsRefs) db.dialogTtsProjects,
+                    if (videoDubProjectsRefs) db.videoDubProjects,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -9589,6 +10869,27 @@ class $$VoiceBanksTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (videoDubProjectsRefs)
+                        await $_getPrefetchedData<
+                          VoiceBank,
+                          $VoiceBanksTable,
+                          VideoDubProject
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VoiceBanksTableReferences
+                              ._videoDubProjectsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VoiceBanksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).videoDubProjectsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.bankId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -9613,6 +10914,7 @@ typedef $$VoiceBanksTableProcessedTableManager =
         bool voiceBankMembersRefs,
         bool phaseTtsProjectsRefs,
         bool dialogTtsProjectsRefs,
+        bool videoDubProjectsRefs,
       })
     >;
 typedef $$VoiceBankMembersTableCreateCompanionBuilder =
@@ -12543,6 +13845,925 @@ typedef $$DialogTtsLinesTableProcessedTableManager =
       DialogTtsLine,
       PrefetchHooks Function({bool projectId})
     >;
+typedef $$VideoDubProjectsTableCreateCompanionBuilder =
+    VideoDubProjectsCompanion Function({
+      required String id,
+      required String name,
+      required String bankId,
+      Value<String?> videoPath,
+      Value<double?> videoDurationSec,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<String?> folderSlug,
+      Value<int> rowid,
+    });
+typedef $$VideoDubProjectsTableUpdateCompanionBuilder =
+    VideoDubProjectsCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> bankId,
+      Value<String?> videoPath,
+      Value<double?> videoDurationSec,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String?> folderSlug,
+      Value<int> rowid,
+    });
+
+final class $$VideoDubProjectsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $VideoDubProjectsTable, VideoDubProject> {
+  $$VideoDubProjectsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $VoiceBanksTable _bankIdTable(_$AppDatabase db) =>
+      db.voiceBanks.createAlias(
+        $_aliasNameGenerator(db.videoDubProjects.bankId, db.voiceBanks.id),
+      );
+
+  $$VoiceBanksTableProcessedTableManager get bankId {
+    final $_column = $_itemColumn<String>('bank_id')!;
+
+    final manager = $$VoiceBanksTableTableManager(
+      $_db,
+      $_db.voiceBanks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bankIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$SubtitleCuesTable, List<SubtitleCue>>
+  _subtitleCuesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.subtitleCues,
+    aliasName: $_aliasNameGenerator(
+      db.videoDubProjects.id,
+      db.subtitleCues.projectId,
+    ),
+  );
+
+  $$SubtitleCuesTableProcessedTableManager get subtitleCuesRefs {
+    final manager = $$SubtitleCuesTableTableManager(
+      $_db,
+      $_db.subtitleCues,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_subtitleCuesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$VideoDubProjectsTableFilterComposer
+    extends Composer<_$AppDatabase, $VideoDubProjectsTable> {
+  $$VideoDubProjectsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get videoPath => $composableBuilder(
+    column: $table.videoPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get videoDurationSec => $composableBuilder(
+    column: $table.videoDurationSec,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get folderSlug => $composableBuilder(
+    column: $table.folderSlug,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VoiceBanksTableFilterComposer get bankId {
+    final $$VoiceBanksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bankId,
+      referencedTable: $db.voiceBanks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBanksTableFilterComposer(
+            $db: $db,
+            $table: $db.voiceBanks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> subtitleCuesRefs(
+    Expression<bool> Function($$SubtitleCuesTableFilterComposer f) f,
+  ) {
+    final $$SubtitleCuesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.subtitleCues,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SubtitleCuesTableFilterComposer(
+            $db: $db,
+            $table: $db.subtitleCues,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$VideoDubProjectsTableOrderingComposer
+    extends Composer<_$AppDatabase, $VideoDubProjectsTable> {
+  $$VideoDubProjectsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get videoPath => $composableBuilder(
+    column: $table.videoPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get videoDurationSec => $composableBuilder(
+    column: $table.videoDurationSec,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get folderSlug => $composableBuilder(
+    column: $table.folderSlug,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VoiceBanksTableOrderingComposer get bankId {
+    final $$VoiceBanksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bankId,
+      referencedTable: $db.voiceBanks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBanksTableOrderingComposer(
+            $db: $db,
+            $table: $db.voiceBanks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VideoDubProjectsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VideoDubProjectsTable> {
+  $$VideoDubProjectsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get videoPath =>
+      $composableBuilder(column: $table.videoPath, builder: (column) => column);
+
+  GeneratedColumn<double> get videoDurationSec => $composableBuilder(
+    column: $table.videoDurationSec,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get folderSlug => $composableBuilder(
+    column: $table.folderSlug,
+    builder: (column) => column,
+  );
+
+  $$VoiceBanksTableAnnotationComposer get bankId {
+    final $$VoiceBanksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bankId,
+      referencedTable: $db.voiceBanks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBanksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.voiceBanks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> subtitleCuesRefs<T extends Object>(
+    Expression<T> Function($$SubtitleCuesTableAnnotationComposer a) f,
+  ) {
+    final $$SubtitleCuesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.subtitleCues,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SubtitleCuesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.subtitleCues,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$VideoDubProjectsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $VideoDubProjectsTable,
+          VideoDubProject,
+          $$VideoDubProjectsTableFilterComposer,
+          $$VideoDubProjectsTableOrderingComposer,
+          $$VideoDubProjectsTableAnnotationComposer,
+          $$VideoDubProjectsTableCreateCompanionBuilder,
+          $$VideoDubProjectsTableUpdateCompanionBuilder,
+          (VideoDubProject, $$VideoDubProjectsTableReferences),
+          VideoDubProject,
+          PrefetchHooks Function({bool bankId, bool subtitleCuesRefs})
+        > {
+  $$VideoDubProjectsTableTableManager(
+    _$AppDatabase db,
+    $VideoDubProjectsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VideoDubProjectsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VideoDubProjectsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VideoDubProjectsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> bankId = const Value.absent(),
+                Value<String?> videoPath = const Value.absent(),
+                Value<double?> videoDurationSec = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> folderSlug = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VideoDubProjectsCompanion(
+                id: id,
+                name: name,
+                bankId: bankId,
+                videoPath: videoPath,
+                videoDurationSec: videoDurationSec,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                folderSlug: folderSlug,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String bankId,
+                Value<String?> videoPath = const Value.absent(),
+                Value<double?> videoDurationSec = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<String?> folderSlug = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VideoDubProjectsCompanion.insert(
+                id: id,
+                name: name,
+                bankId: bankId,
+                videoPath: videoPath,
+                videoDurationSec: videoDurationSec,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                folderSlug: folderSlug,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$VideoDubProjectsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({bankId = false, subtitleCuesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (subtitleCuesRefs) db.subtitleCues],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (bankId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.bankId,
+                                referencedTable:
+                                    $$VideoDubProjectsTableReferences
+                                        ._bankIdTable(db),
+                                referencedColumn:
+                                    $$VideoDubProjectsTableReferences
+                                        ._bankIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (subtitleCuesRefs)
+                    await $_getPrefetchedData<
+                      VideoDubProject,
+                      $VideoDubProjectsTable,
+                      SubtitleCue
+                    >(
+                      currentTable: table,
+                      referencedTable: $$VideoDubProjectsTableReferences
+                          ._subtitleCuesRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$VideoDubProjectsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).subtitleCuesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.projectId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$VideoDubProjectsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $VideoDubProjectsTable,
+      VideoDubProject,
+      $$VideoDubProjectsTableFilterComposer,
+      $$VideoDubProjectsTableOrderingComposer,
+      $$VideoDubProjectsTableAnnotationComposer,
+      $$VideoDubProjectsTableCreateCompanionBuilder,
+      $$VideoDubProjectsTableUpdateCompanionBuilder,
+      (VideoDubProject, $$VideoDubProjectsTableReferences),
+      VideoDubProject,
+      PrefetchHooks Function({bool bankId, bool subtitleCuesRefs})
+    >;
+typedef $$SubtitleCuesTableCreateCompanionBuilder =
+    SubtitleCuesCompanion Function({
+      required String id,
+      required String projectId,
+      required int orderIndex,
+      required int startMs,
+      required int endMs,
+      required String cueText,
+      Value<String?> voiceAssetId,
+      Value<String?> audioPath,
+      Value<double?> audioDuration,
+      Value<String?> error,
+      Value<bool> missing,
+      Value<int> rowid,
+    });
+typedef $$SubtitleCuesTableUpdateCompanionBuilder =
+    SubtitleCuesCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<int> orderIndex,
+      Value<int> startMs,
+      Value<int> endMs,
+      Value<String> cueText,
+      Value<String?> voiceAssetId,
+      Value<String?> audioPath,
+      Value<double?> audioDuration,
+      Value<String?> error,
+      Value<bool> missing,
+      Value<int> rowid,
+    });
+
+final class $$SubtitleCuesTableReferences
+    extends BaseReferences<_$AppDatabase, $SubtitleCuesTable, SubtitleCue> {
+  $$SubtitleCuesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $VideoDubProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.videoDubProjects.createAlias(
+        $_aliasNameGenerator(db.subtitleCues.projectId, db.videoDubProjects.id),
+      );
+
+  $$VideoDubProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$VideoDubProjectsTableTableManager(
+      $_db,
+      $_db.videoDubProjects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$SubtitleCuesTableFilterComposer
+    extends Composer<_$AppDatabase, $SubtitleCuesTable> {
+  $$SubtitleCuesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startMs => $composableBuilder(
+    column: $table.startMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endMs => $composableBuilder(
+    column: $table.endMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cueText => $composableBuilder(
+    column: $table.cueText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get voiceAssetId => $composableBuilder(
+    column: $table.voiceAssetId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get audioDuration => $composableBuilder(
+    column: $table.audioDuration,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get error => $composableBuilder(
+    column: $table.error,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get missing => $composableBuilder(
+    column: $table.missing,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VideoDubProjectsTableFilterComposer get projectId {
+    final $$VideoDubProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.videoDubProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VideoDubProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.videoDubProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SubtitleCuesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SubtitleCuesTable> {
+  $$SubtitleCuesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startMs => $composableBuilder(
+    column: $table.startMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endMs => $composableBuilder(
+    column: $table.endMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cueText => $composableBuilder(
+    column: $table.cueText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get voiceAssetId => $composableBuilder(
+    column: $table.voiceAssetId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get audioDuration => $composableBuilder(
+    column: $table.audioDuration,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get error => $composableBuilder(
+    column: $table.error,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get missing => $composableBuilder(
+    column: $table.missing,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VideoDubProjectsTableOrderingComposer get projectId {
+    final $$VideoDubProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.videoDubProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VideoDubProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.videoDubProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SubtitleCuesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SubtitleCuesTable> {
+  $$SubtitleCuesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get startMs =>
+      $composableBuilder(column: $table.startMs, builder: (column) => column);
+
+  GeneratedColumn<int> get endMs =>
+      $composableBuilder(column: $table.endMs, builder: (column) => column);
+
+  GeneratedColumn<String> get cueText =>
+      $composableBuilder(column: $table.cueText, builder: (column) => column);
+
+  GeneratedColumn<String> get voiceAssetId => $composableBuilder(
+    column: $table.voiceAssetId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get audioPath =>
+      $composableBuilder(column: $table.audioPath, builder: (column) => column);
+
+  GeneratedColumn<double> get audioDuration => $composableBuilder(
+    column: $table.audioDuration,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get error =>
+      $composableBuilder(column: $table.error, builder: (column) => column);
+
+  GeneratedColumn<bool> get missing =>
+      $composableBuilder(column: $table.missing, builder: (column) => column);
+
+  $$VideoDubProjectsTableAnnotationComposer get projectId {
+    final $$VideoDubProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.videoDubProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VideoDubProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.videoDubProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SubtitleCuesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SubtitleCuesTable,
+          SubtitleCue,
+          $$SubtitleCuesTableFilterComposer,
+          $$SubtitleCuesTableOrderingComposer,
+          $$SubtitleCuesTableAnnotationComposer,
+          $$SubtitleCuesTableCreateCompanionBuilder,
+          $$SubtitleCuesTableUpdateCompanionBuilder,
+          (SubtitleCue, $$SubtitleCuesTableReferences),
+          SubtitleCue,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$SubtitleCuesTableTableManager(_$AppDatabase db, $SubtitleCuesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SubtitleCuesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SubtitleCuesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SubtitleCuesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<int> orderIndex = const Value.absent(),
+                Value<int> startMs = const Value.absent(),
+                Value<int> endMs = const Value.absent(),
+                Value<String> cueText = const Value.absent(),
+                Value<String?> voiceAssetId = const Value.absent(),
+                Value<String?> audioPath = const Value.absent(),
+                Value<double?> audioDuration = const Value.absent(),
+                Value<String?> error = const Value.absent(),
+                Value<bool> missing = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SubtitleCuesCompanion(
+                id: id,
+                projectId: projectId,
+                orderIndex: orderIndex,
+                startMs: startMs,
+                endMs: endMs,
+                cueText: cueText,
+                voiceAssetId: voiceAssetId,
+                audioPath: audioPath,
+                audioDuration: audioDuration,
+                error: error,
+                missing: missing,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required int orderIndex,
+                required int startMs,
+                required int endMs,
+                required String cueText,
+                Value<String?> voiceAssetId = const Value.absent(),
+                Value<String?> audioPath = const Value.absent(),
+                Value<double?> audioDuration = const Value.absent(),
+                Value<String?> error = const Value.absent(),
+                Value<bool> missing = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SubtitleCuesCompanion.insert(
+                id: id,
+                projectId: projectId,
+                orderIndex: orderIndex,
+                startMs: startMs,
+                endMs: endMs,
+                cueText: cueText,
+                voiceAssetId: voiceAssetId,
+                audioPath: audioPath,
+                audioDuration: audioDuration,
+                error: error,
+                missing: missing,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SubtitleCuesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable: $$SubtitleCuesTableReferences
+                                    ._projectIdTable(db),
+                                referencedColumn: $$SubtitleCuesTableReferences
+                                    ._projectIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SubtitleCuesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SubtitleCuesTable,
+      SubtitleCue,
+      $$SubtitleCuesTableFilterComposer,
+      $$SubtitleCuesTableOrderingComposer,
+      $$SubtitleCuesTableAnnotationComposer,
+      $$SubtitleCuesTableCreateCompanionBuilder,
+      $$SubtitleCuesTableUpdateCompanionBuilder,
+      (SubtitleCue, $$SubtitleCuesTableReferences),
+      SubtitleCue,
+      PrefetchHooks Function({bool projectId})
+    >;
 typedef $$AudioTracksTableCreateCompanionBuilder =
     AudioTracksCompanion Function({
       required String id,
@@ -13217,6 +15438,10 @@ class $AppDatabaseManager {
       $$DialogTtsProjectsTableTableManager(_db, _db.dialogTtsProjects);
   $$DialogTtsLinesTableTableManager get dialogTtsLines =>
       $$DialogTtsLinesTableTableManager(_db, _db.dialogTtsLines);
+  $$VideoDubProjectsTableTableManager get videoDubProjects =>
+      $$VideoDubProjectsTableTableManager(_db, _db.videoDubProjects);
+  $$SubtitleCuesTableTableManager get subtitleCues =>
+      $$SubtitleCuesTableTableManager(_db, _db.subtitleCues);
   $$AudioTracksTableTableManager get audioTracks =>
       $$AudioTracksTableTableManager(_db, _db.audioTracks);
   $$TimelineClipsTableTableManager get timelineClips =>

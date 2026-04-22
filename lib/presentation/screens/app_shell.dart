@@ -9,11 +9,11 @@ import 'package:neiroha/presentation/widgets/sidebar.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'phase_tts_screen.dart';
 import 'dialog_tts_screen.dart';
+import 'phase_tts_screen.dart';
+import 'video_dub_screen.dart';
 import 'voice_asset_screen.dart';
 import 'voice_bank_screen.dart';
-import 'voice_design_screen.dart';
 import 'provider_screen.dart';
 import 'settings_screen.dart';
 
@@ -66,8 +66,7 @@ class AppShell extends ConsumerWidget {
     return switch (tab) {
       NavTab.phaseTts => const PhaseTtsScreen(key: ValueKey('phaseTts')),
       NavTab.dialogTts => const DialogTtsScreen(key: ValueKey('dialogTts')),
-      NavTab.voiceDesign =>
-        const VoiceDesignScreen(key: ValueKey('voiceDesign')),
+      NavTab.videoDub => const VideoDubScreen(key: ValueKey('videoDub')),
       NavTab.voiceAssets =>
         const VoiceAssetScreen(key: ValueKey('voiceAssets')),
       NavTab.voiceBank => const VoiceBankScreen(key: ValueKey('voiceBank')),

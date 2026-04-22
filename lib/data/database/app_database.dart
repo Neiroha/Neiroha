@@ -23,6 +23,8 @@ part 'app_database.g.dart';
   PhaseTtsSegments,
   DialogTtsProjects,
   DialogTtsLines,
+  VideoDubProjects,
+  SubtitleCues,
   AudioTracks,
   TimelineClips,
 ])
@@ -32,7 +34,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -44,6 +46,8 @@ class AppDatabase extends _$AppDatabase {
           // Development: drop and recreate in reverse FK order
           await m.drop(timelineClips);
           await m.drop(audioTracks);
+          await m.drop(subtitleCues);
+          await m.drop(videoDubProjects);
           await m.drop(dialogTtsLines);
           await m.drop(dialogTtsProjects);
           await m.drop(phaseTtsSegments);
@@ -579,6 +583,57 @@ class AppDatabase extends _$AppDatabase {
       }
     });
   }
+
+  // --- Video Dub Projects ---
+
+  Stream<List<VideoDubProject>> watchVideoDubProjects() =>
+      (select(videoDubProjects)
+            ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
+          .watch();
+
+  Future<int> insertVideoDubProject(VideoDubProjectsCompanion project) =>
+      into(videoDubProjects).insert(project);
+
+  Future<List<VideoDubProject>> getAllVideoDubProjects() =>
+      select(videoDubProjects).get();
+
+  Future<VideoDubProject?> getVideoDubProjectById(String id) =>
+      (select(videoDubProjects)..where((t) => t.id.equals(id)))
+          .getSingleOrNull();
+
+  Future<bool> updateVideoDubProject(VideoDubProject project) =>
+      update(videoDubProjects).replace(project);
+
+  Future<int> deleteVideoDubProject(String id) => transaction(() async {
+        await (delete(subtitleCues)..where((t) => t.projectId.equals(id))).go();
+        return (delete(videoDubProjects)..where((t) => t.id.equals(id))).go();
+      });
+
+  // --- Subtitle Cues ---
+
+  Stream<List<SubtitleCue>> watchSubtitleCues(String projectId) =>
+      (select(subtitleCues)
+            ..where((t) => t.projectId.equals(projectId))
+            ..orderBy([(t) => OrderingTerm.asc(t.orderIndex)]))
+          .watch();
+
+  Future<List<SubtitleCue>> getSubtitleCues(String projectId) =>
+      (select(subtitleCues)
+            ..where((t) => t.projectId.equals(projectId))
+            ..orderBy([(t) => OrderingTerm.asc(t.orderIndex)]))
+          .get();
+
+  Future<int> insertSubtitleCue(SubtitleCuesCompanion cue) =>
+      into(subtitleCues).insert(cue);
+
+  Future<bool> updateSubtitleCue(SubtitleCue cue) =>
+      update(subtitleCues).replace(cue);
+
+  Future<int> deleteSubtitleCue(String id) =>
+      (delete(subtitleCues)..where((t) => t.id.equals(id))).go();
+
+  Future<int> clearSubtitleCues(String projectId) =>
+      (delete(subtitleCues)..where((t) => t.projectId.equals(projectId))).go();
 
   // --- Timeline Clips ---
 

@@ -34,6 +34,11 @@ dependencies:
   # Audio playback
   audioplayers: ^6.0.0
 
+  # Video playback (libmpv-based — desktop-capable across Win/macOS/Linux)
+  media_kit: ^1.1.11
+  media_kit_video: ^1.2.5
+  media_kit_libs_video: ^1.0.5
+
   # File picker for ref audio upload
   file_picker: ^8.0.0
 

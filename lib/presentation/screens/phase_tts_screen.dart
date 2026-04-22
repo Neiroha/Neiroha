@@ -10,6 +10,7 @@ import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
+import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/presentation/widgets/story_track_editor.dart'
     show StoryTrackEditor, TimelineDragButton, TimelineDropPayload;
@@ -40,26 +41,51 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final projectsAsync = ref.watch(phaseTtsProjectsStreamProvider);
+    if (_selectedProjectId == null) {
+      return _buildProjectListScreen();
+    }
+    return _buildProjectContent();
+  }
 
+  // ───────────────── List mode (card grid) ─────────────────
+
+  Widget _buildProjectListScreen() {
+    final projectsAsync = ref.watch(phaseTtsProjectsStreamProvider);
     return Column(
       children: [
-        _buildHeader(context),
+        _buildListHeader(context),
         const Divider(height: 1),
         Expanded(
-          child: ResizableSplitPane(
-            initialLeftFraction: 0.3,
-            left: _buildProjectList(projectsAsync),
-            rightBuilder: (_) => _buildProjectContent(),
+          child: projectsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text('Error: $e')),
+            data: (projects) => ProjectCardGrid(
+              projects: [
+                for (final p in projects)
+                  ProjectCardData(
+                    id: p.id,
+                    name: p.name,
+                    updatedAt: p.updatedAt,
+                    icon: Icons.auto_stories_rounded,
+                    subtitle: _scriptPreview(p.scriptText),
+                  ),
+              ],
+              onOpen: (id) {
+                final proj = projects.firstWhere((p) => p.id == id);
+                setState(() => _selectedProjectId = id);
+                _scriptController.text = proj.scriptText;
+              },
+              onDelete: (id) {
+                ref.read(databaseProvider).deletePhaseTtsProject(id);
+              },
+            ),
           ),
         ),
       ],
     );
   }
 
-  // ───────────────── Header ─────────────────
-
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildListHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
       child: Row(
@@ -84,144 +110,15 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     );
   }
 
-  // ───────────────── Project List (left) ─────────────────
-
-  Widget _buildProjectList(
-      AsyncValue<List<db.PhaseTtsProject>> projectsAsync) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Text('PROJECTS',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.4))),
-        ),
-        Expanded(
-          child: projectsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
-            data: (projects) {
-              if (projects.isEmpty) {
-                return Center(
-                  child: Text('No projects yet',
-                      style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.3),
-                          fontSize: 13)),
-                );
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: projects.length,
-                itemBuilder: (ctx, i) {
-                  final proj = projects[i];
-                  final selected = _selectedProjectId == proj.id;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: Material(
-                      color: selected
-                          ? AppTheme.accentColor.withValues(alpha: 0.12)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(10),
-                        onTap: () {
-                          setState(() => _selectedProjectId = proj.id);
-                          _scriptController.text = proj.scriptText;
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
-                          child: Row(
-                            children: [
-                              Icon(Icons.auto_stories_rounded,
-                                  size: 18,
-                                  color: selected
-                                      ? AppTheme.accentColor
-                                      : Colors.white.withValues(alpha: 0.4)),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(proj.name,
-                                        style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500)),
-                                    Text(
-                                      _formatDate(proj.updatedAt),
-                                      style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.white
-                                              .withValues(alpha: 0.3)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuButton<String>(
-                                padding: EdgeInsets.zero,
-                                iconSize: 16,
-                                icon: Icon(Icons.more_vert_rounded,
-                                    size: 16,
-                                    color:
-                                        Colors.white.withValues(alpha: 0.3)),
-                                onSelected: (v) {
-                                  if (v == 'delete') {
-                                    ref
-                                        .read(databaseProvider)
-                                        .deletePhaseTtsProject(proj.id);
-                                    if (_selectedProjectId == proj.id) {
-                                      setState(
-                                          () => _selectedProjectId = null);
-                                    }
-                                  }
-                                },
-                                itemBuilder: (_) => [
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: Text('Delete',
-                                        style: TextStyle(
-                                            color: Colors.redAccent)),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-      ],
-    );
+  String? _scriptPreview(String scriptText) {
+    final trimmed = scriptText.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (trimmed.isEmpty) return null;
+    return trimmed.length > 60 ? '${trimmed.substring(0, 60)}…' : trimmed;
   }
 
-  // ───────────────── Project Content (right) ─────────────────
+  // ───────────────── Editor mode ─────────────────
 
   Widget _buildProjectContent() {
-    if (_selectedProjectId == null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.auto_stories_rounded,
-                size: 64, color: Colors.white.withValues(alpha: 0.1)),
-            const SizedBox(height: 16),
-            Text('Select or create a project',
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4), fontSize: 15)),
-          ],
-        ),
-      );
-    }
-
     final projectId = _selectedProjectId!;
     final projectsAsync = ref.watch(phaseTtsProjectsStreamProvider);
     final segmentsAsync = ref.watch(phaseTtsSegmentsStreamProvider(projectId));
@@ -287,15 +184,24 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
   Widget _buildProjectBar(
       db.PhaseTtsProject project, List<db.VoiceAsset> bankAssets) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+      padding: const EdgeInsets.fromLTRB(12, 10, 20, 10),
       child: Row(
         children: [
+          IconButton(
+            tooltip: 'Back to projects',
+            onPressed: () => _closeEditor(project),
+            icon: const Icon(Icons.arrow_back_rounded, size: 20),
+          ),
+          const SizedBox(width: 4),
           Icon(Icons.auto_stories_rounded,
               color: AppTheme.accentColor, size: 18),
           const SizedBox(width: 10),
-          Text(project.name,
-              style:
-                  const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          Expanded(
+            child: Text(project.name,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.w600)),
+          ),
           const SizedBox(width: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -308,15 +214,42 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
                     fontSize: 11,
                     color: Colors.white.withValues(alpha: 0.5))),
           ),
-          const Spacer(),
+          const SizedBox(width: 12),
           TextButton.icon(
             onPressed: _autoSplit,
             icon: const Icon(Icons.splitscreen_rounded, size: 16),
             label: const Text('Auto Split'),
           ),
+          const SizedBox(width: 8),
+          FilledButton.icon(
+            onPressed: () => _closeEditor(project),
+            icon: const Icon(Icons.save_rounded, size: 16),
+            label: const Text('Save'),
+          ),
         ],
       ),
     );
+  }
+
+  /// Persist the current script (edits autosave on change, but flushing here
+  /// covers the case where the user clicks Save before the debounce lands)
+  /// and return to the project grid.
+  void _closeEditor(db.PhaseTtsProject project) {
+    ref.read(databaseProvider).updatePhaseTtsProject(
+          project.copyWith(
+            scriptText: _scriptController.text,
+            updatedAt: DateTime.now(),
+          ),
+        );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Saved'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+      setState(() => _selectedProjectId = null);
+    }
   }
 
   Widget _buildScriptEditor(db.PhaseTtsProject project) {
@@ -792,10 +725,6 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
       );
       cursorMs += (dur * 1000).round();
     }
-  }
-
-  String _formatDate(DateTime dt) {
-    return '${dt.month}/${dt.day} ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
   }
 }
 

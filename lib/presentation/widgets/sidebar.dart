@@ -15,11 +15,10 @@ class Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Tabs shown in main area (top)
-    // NOTE: voiceDesign is hidden until a voice design model interface is wired up.
     const mainTabs = [
-      NavTab.phaseTts,
       NavTab.dialogTts,
+      NavTab.phaseTts,
+      NavTab.videoDub,
       NavTab.voiceAssets,
       NavTab.voiceBank,
     ];

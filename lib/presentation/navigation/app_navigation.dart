@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 enum NavTab {
-  phaseTts(Icons.auto_stories_rounded, 'Phase TTS'),
   dialogTts(Icons.forum_rounded, 'Dialog TTS'),
-  voiceDesign(Icons.auto_fix_high_rounded, 'Voice Design'),
+  phaseTts(Icons.auto_stories_rounded, 'Phase TTS'),
+  videoDub(Icons.movie_filter_rounded, 'Video Dub'),
   voiceAssets(Icons.library_music_rounded, 'Voice Assets'),
   voiceBank(Icons.people_alt_rounded, 'Voice Bank'),
   providers(Icons.dns_rounded, 'Providers'),

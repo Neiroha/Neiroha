@@ -330,16 +330,50 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     });
   }
 
-  /// Called every video position tick. If the active cue changed, stop the
-  /// current dub audio and start the new cue's audio at the right offset.
+  // Last A1-coverage state, so we only push a setVolume when it flips.
+  bool? _a1Covers;
+
+  /// Mute / unmute the video player based on whether any A1 clip covers
+  /// [ms]. The `_muteVideoAudio` toggle is an additional override —
+  /// if the user muted the video, it stays muted regardless of A1.
+  void _applyA1Gating(int ms) {
+    final clips =
+        ref.read(timelineClipsStreamProvider('videodub:${widget.projectId}'))
+            .valueOrNull;
+    bool covered = false;
+    if (clips != null) {
+      for (final c in clips) {
+        if (c.laneIndex != DubLanes.a1) continue;
+        final end = c.startTimeMs + ((c.durationSec ?? 0) * 1000).round();
+        if (ms >= c.startTimeMs && ms < end) {
+          covered = true;
+          break;
+        }
+      }
+    }
+    if (covered == _a1Covers) return;
+    _a1Covers = covered;
+    final target = (_muteVideoAudio || !covered) ? 0.0 : 100.0;
+    _player.setVolume(target);
+  }
+
+  /// Called every video position tick. Two concerns:
+  ///   1. Cue-synced dub audio (A2): if the active TTS cue changed, stop
+  ///      the current dub audio and start the new cue at the right offset.
+  ///   2. A1-gated video audio: V1's own audio only plays when an A1
+  ///      clip covers the current ms. Deleting an A1 clip silences V1's
+  ///      audio in that window; splitting an A1 clip later will create
+  ///      gaps naturally.
   Future<void> _onVideoTick(Duration pos) async {
     if (_ticking) return;
     _ticking = true;
     try {
+      final ms = pos.inMilliseconds;
+      _applyA1Gating(ms);
+
       final cues =
           ref.read(subtitleCuesStreamProvider(widget.projectId)).valueOrNull;
       if (cues == null || cues.isEmpty) return;
-      final ms = pos.inMilliseconds;
 
       // Find cue whose window contains current ms.
       db.SubtitleCue? active;
@@ -652,7 +686,10 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
               ),
               onPressed: () async {
                 setState(() => _muteVideoAudio = !_muteVideoAudio);
-                await _player.setVolume(_muteVideoAudio ? 0 : 100);
+                // Invalidate the A1-gating latch so the next tick (or an
+                // immediate re-apply while paused) picks up the new state.
+                _a1Covers = null;
+                _applyA1Gating(_position.inMilliseconds);
               },
             ),
           ),
@@ -809,6 +846,13 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
   /// Start time = end of the last clip on the same lane (stacked append).
   /// Duration is probed via audioplayers where applicable; image clips
   /// default to 3 s so they have something visible until the user stretches.
+  /// Premiere-style import: references the source file in place (no
+  /// copy into the project folder). The DB row stores the absolute path;
+  /// a missing source later lights up as a red "missing" clip.
+  ///
+  /// A `video` import inserts **two** linked rows — V1 (video) + A1
+  /// (video-audio) — sharing a `linkGroupId` so subsequent drag/trim
+  /// work can move them in lock-step.
   Future<void> _importMedia(
     db.VideoDubProject project,
     DubImportKind kind,
@@ -827,72 +871,85 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     if (src == null) return;
     if (!await File(src).exists()) return;
 
-    final slug = await ref
-        .read(storageServiceProvider)
-        .ensureVideoDubProjectSlug(project.id);
-    final assetsDir = await _ensureAssetsDir(slug);
-    final ext = p.extension(src);
     final base = p.basenameWithoutExtension(src);
-    final destPath = PathService.dedupeFilename(
-      assetsDir,
-      '${base}_${PathService.formatTimestamp()}',
-      ext,
-    );
-    try {
-      await File(src).copy(destPath);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Copy failed: $e')),
-        );
-      }
-      return;
+    final ffmpeg = ref.read(ffmpegServiceProvider);
+
+    double? duration;
+    switch (kind) {
+      case DubImportKind.video:
+        duration = await ffmpeg.probeDurationSeconds(src);
+        break;
+      case DubImportKind.audio:
+        duration = await ffmpeg.probeDurationSeconds(src) ??
+            await measureAudioDuration(src);
+        break;
+      case DubImportKind.image:
+        duration = 3.0; // still image default; user resizes later
+        break;
     }
 
     final assignment = laneAndSourceForImport(kind);
-    double? duration;
-    if (kind == DubImportKind.audio) {
-      duration = await measureAudioDuration(destPath);
-    } else if (kind == DubImportKind.image) {
-      duration = 3.0;
-    }
-    // For video, leave duration null — a probe via ffmpeg would be ideal
-    // but for now the user trims manually and the block shows at a
-    // minimum width until probing is wired in.
 
-    // Stack append on this lane: start at the end of the last clip there.
+    // Stack append on the target lane: start at the end of the last clip
+    // already on it, so successive imports don't stack on top of each other.
     var startMs = 0;
     for (final c in existing) {
       if (c.laneIndex != assignment.lane) continue;
-      final end =
-          c.startTimeMs + ((c.durationSec ?? 0) * 1000).round();
+      final end = c.startTimeMs + ((c.durationSec ?? 0) * 1000).round();
       if (end > startMs) startMs = end;
     }
 
-    await ref.read(databaseProvider).insertTimelineClip(
-          makeDubClipCompanion(
-            id: const Uuid().v4(),
-            projectId: project.id,
-            lane: assignment.lane,
-            startTimeMs: startMs,
-            sourceType: assignment.sourceType,
-            audioPath: destPath,
-            label: base,
-            durationSec: duration,
-          ),
-        );
+    final database = ref.read(databaseProvider);
+    final uuid = const Uuid();
+
+    if (kind == DubImportKind.video) {
+      final linkId = uuid.v4();
+      await database.insertTimelineClip(
+        makeDubClipCompanion(
+          id: uuid.v4(),
+          projectId: project.id,
+          lane: DubLanes.v1,
+          startTimeMs: startMs,
+          sourceType: 'video',
+          audioPath: src,
+          label: base,
+          durationSec: duration,
+          linkGroupId: linkId,
+        ),
+      );
+      await database.insertTimelineClip(
+        makeDubClipCompanion(
+          id: uuid.v4(),
+          projectId: project.id,
+          lane: DubLanes.a1,
+          startTimeMs: startMs,
+          sourceType: 'video-audio',
+          audioPath: src,
+          label: base,
+          durationSec: duration,
+          linkGroupId: linkId,
+        ),
+      );
+    } else {
+      await database.insertTimelineClip(
+        makeDubClipCompanion(
+          id: uuid.v4(),
+          projectId: project.id,
+          lane: assignment.lane,
+          startTimeMs: startMs,
+          sourceType: assignment.sourceType,
+          audioPath: src,
+          label: base,
+          durationSec: duration,
+        ),
+      );
+    }
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Imported "$base"')),
       );
     }
-  }
-
-  Future<Directory> _ensureAssetsDir(String slug) async {
-    final base = await PathService.instance.videoDubDir(slug);
-    final dir = Directory(p.join(base.path, 'assets'));
-    if (!await dir.exists()) await dir.create(recursive: true);
-    return dir;
   }
 
   Future<void> _pickVideo(db.VideoDubProject project) async {

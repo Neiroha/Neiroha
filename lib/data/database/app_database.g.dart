@@ -7910,6 +7910,17 @@ class $TimelineClipsTable extends TimelineClips
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _linkGroupIdMeta = const VerificationMeta(
+    'linkGroupId',
+  );
+  @override
+  late final GeneratedColumn<String> linkGroupId = GeneratedColumn<String>(
+    'link_group_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -7923,6 +7934,7 @@ class $TimelineClipsTable extends TimelineClips
     sourceLineId,
     label,
     missing,
+    linkGroupId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -8019,6 +8031,15 @@ class $TimelineClipsTable extends TimelineClips
         missing.isAcceptableOrUnknown(data['missing']!, _missingMeta),
       );
     }
+    if (data.containsKey('link_group_id')) {
+      context.handle(
+        _linkGroupIdMeta,
+        linkGroupId.isAcceptableOrUnknown(
+          data['link_group_id']!,
+          _linkGroupIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -8072,6 +8093,10 @@ class $TimelineClipsTable extends TimelineClips
         DriftSqlType.bool,
         data['${effectivePrefix}missing'],
       )!,
+      linkGroupId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}link_group_id'],
+      ),
     );
   }
 
@@ -8093,6 +8118,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
   final String? sourceLineId;
   final String label;
   final bool missing;
+  final String? linkGroupId;
   const TimelineClip({
     required this.id,
     required this.projectId,
@@ -8105,6 +8131,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
     this.sourceLineId,
     required this.label,
     required this.missing,
+    this.linkGroupId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -8124,6 +8151,9 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
     }
     map['label'] = Variable<String>(label);
     map['missing'] = Variable<bool>(missing);
+    if (!nullToAbsent || linkGroupId != null) {
+      map['link_group_id'] = Variable<String>(linkGroupId);
+    }
     return map;
   }
 
@@ -8144,6 +8174,9 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
           : Value(sourceLineId),
       label: Value(label),
       missing: Value(missing),
+      linkGroupId: linkGroupId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(linkGroupId),
     );
   }
 
@@ -8164,6 +8197,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
       sourceLineId: serializer.fromJson<String?>(json['sourceLineId']),
       label: serializer.fromJson<String>(json['label']),
       missing: serializer.fromJson<bool>(json['missing']),
+      linkGroupId: serializer.fromJson<String?>(json['linkGroupId']),
     );
   }
   @override
@@ -8181,6 +8215,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
       'sourceLineId': serializer.toJson<String?>(sourceLineId),
       'label': serializer.toJson<String>(label),
       'missing': serializer.toJson<bool>(missing),
+      'linkGroupId': serializer.toJson<String?>(linkGroupId),
     };
   }
 
@@ -8196,6 +8231,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
     Value<String?> sourceLineId = const Value.absent(),
     String? label,
     bool? missing,
+    Value<String?> linkGroupId = const Value.absent(),
   }) => TimelineClip(
     id: id ?? this.id,
     projectId: projectId ?? this.projectId,
@@ -8208,6 +8244,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
     sourceLineId: sourceLineId.present ? sourceLineId.value : this.sourceLineId,
     label: label ?? this.label,
     missing: missing ?? this.missing,
+    linkGroupId: linkGroupId.present ? linkGroupId.value : this.linkGroupId,
   );
   TimelineClip copyWithCompanion(TimelineClipsCompanion data) {
     return TimelineClip(
@@ -8232,6 +8269,9 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
           : this.sourceLineId,
       label: data.label.present ? data.label.value : this.label,
       missing: data.missing.present ? data.missing.value : this.missing,
+      linkGroupId: data.linkGroupId.present
+          ? data.linkGroupId.value
+          : this.linkGroupId,
     );
   }
 
@@ -8248,7 +8288,8 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
           ..write('sourceType: $sourceType, ')
           ..write('sourceLineId: $sourceLineId, ')
           ..write('label: $label, ')
-          ..write('missing: $missing')
+          ..write('missing: $missing, ')
+          ..write('linkGroupId: $linkGroupId')
           ..write(')'))
         .toString();
   }
@@ -8266,6 +8307,7 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
     sourceLineId,
     label,
     missing,
+    linkGroupId,
   );
   @override
   bool operator ==(Object other) =>
@@ -8281,7 +8323,8 @@ class TimelineClip extends DataClass implements Insertable<TimelineClip> {
           other.sourceType == this.sourceType &&
           other.sourceLineId == this.sourceLineId &&
           other.label == this.label &&
-          other.missing == this.missing);
+          other.missing == this.missing &&
+          other.linkGroupId == this.linkGroupId);
 }
 
 class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
@@ -8296,6 +8339,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
   final Value<String?> sourceLineId;
   final Value<String> label;
   final Value<bool> missing;
+  final Value<String?> linkGroupId;
   final Value<int> rowid;
   const TimelineClipsCompanion({
     this.id = const Value.absent(),
@@ -8309,6 +8353,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
     this.sourceLineId = const Value.absent(),
     this.label = const Value.absent(),
     this.missing = const Value.absent(),
+    this.linkGroupId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TimelineClipsCompanion.insert({
@@ -8323,6 +8368,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
     this.sourceLineId = const Value.absent(),
     this.label = const Value.absent(),
     this.missing = const Value.absent(),
+    this.linkGroupId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        projectId = Value(projectId),
@@ -8340,6 +8386,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
     Expression<String>? sourceLineId,
     Expression<String>? label,
     Expression<bool>? missing,
+    Expression<String>? linkGroupId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -8354,6 +8401,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
       if (sourceLineId != null) 'source_line_id': sourceLineId,
       if (label != null) 'label': label,
       if (missing != null) 'missing': missing,
+      if (linkGroupId != null) 'link_group_id': linkGroupId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -8370,6 +8418,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
     Value<String?>? sourceLineId,
     Value<String>? label,
     Value<bool>? missing,
+    Value<String?>? linkGroupId,
     Value<int>? rowid,
   }) {
     return TimelineClipsCompanion(
@@ -8384,6 +8433,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
       sourceLineId: sourceLineId ?? this.sourceLineId,
       label: label ?? this.label,
       missing: missing ?? this.missing,
+      linkGroupId: linkGroupId ?? this.linkGroupId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -8424,6 +8474,9 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
     if (missing.present) {
       map['missing'] = Variable<bool>(missing.value);
     }
+    if (linkGroupId.present) {
+      map['link_group_id'] = Variable<String>(linkGroupId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -8444,6 +8497,7 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
           ..write('sourceLineId: $sourceLineId, ')
           ..write('label: $label, ')
           ..write('missing: $missing, ')
+          ..write('linkGroupId: $linkGroupId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -15099,6 +15153,7 @@ typedef $$TimelineClipsTableCreateCompanionBuilder =
       Value<String?> sourceLineId,
       Value<String> label,
       Value<bool> missing,
+      Value<String?> linkGroupId,
       Value<int> rowid,
     });
 typedef $$TimelineClipsTableUpdateCompanionBuilder =
@@ -15114,6 +15169,7 @@ typedef $$TimelineClipsTableUpdateCompanionBuilder =
       Value<String?> sourceLineId,
       Value<String> label,
       Value<bool> missing,
+      Value<String?> linkGroupId,
       Value<int> rowid,
     });
 
@@ -15178,6 +15234,11 @@ class $$TimelineClipsTableFilterComposer
 
   ColumnFilters<bool> get missing => $composableBuilder(
     column: $table.missing,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get linkGroupId => $composableBuilder(
+    column: $table.linkGroupId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -15245,6 +15306,11 @@ class $$TimelineClipsTableOrderingComposer
     column: $table.missing,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get linkGroupId => $composableBuilder(
+    column: $table.linkGroupId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TimelineClipsTableAnnotationComposer
@@ -15298,6 +15364,11 @@ class $$TimelineClipsTableAnnotationComposer
 
   GeneratedColumn<bool> get missing =>
       $composableBuilder(column: $table.missing, builder: (column) => column);
+
+  GeneratedColumn<String> get linkGroupId => $composableBuilder(
+    column: $table.linkGroupId,
+    builder: (column) => column,
+  );
 }
 
 class $$TimelineClipsTableTableManager
@@ -15342,6 +15413,7 @@ class $$TimelineClipsTableTableManager
                 Value<String?> sourceLineId = const Value.absent(),
                 Value<String> label = const Value.absent(),
                 Value<bool> missing = const Value.absent(),
+                Value<String?> linkGroupId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TimelineClipsCompanion(
                 id: id,
@@ -15355,6 +15427,7 @@ class $$TimelineClipsTableTableManager
                 sourceLineId: sourceLineId,
                 label: label,
                 missing: missing,
+                linkGroupId: linkGroupId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -15370,6 +15443,7 @@ class $$TimelineClipsTableTableManager
                 Value<String?> sourceLineId = const Value.absent(),
                 Value<String> label = const Value.absent(),
                 Value<bool> missing = const Value.absent(),
+                Value<String?> linkGroupId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TimelineClipsCompanion.insert(
                 id: id,
@@ -15383,6 +15457,7 @@ class $$TimelineClipsTableTableManager
                 sourceLineId: sourceLineId,
                 label: label,
                 missing: missing,
+                linkGroupId: linkGroupId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

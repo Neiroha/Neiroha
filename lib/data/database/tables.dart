@@ -252,7 +252,9 @@ class TimelineClips extends Table {
   RealColumn get durationSec => real().nullable()();
   // On-disk audio path.
   TextColumn get audioPath => text()();
-  // 'generated' | 'imported' | 'sfx' — drives visual + delete semantics.
+  // 'generated' | 'imported' | 'sfx' | 'video' | 'image' | 'video-audio' —
+  // drives visual + delete semantics. Video-dub clips may carry any of
+  // the latter three.
   TextColumn get sourceType =>
       text().withDefault(const Constant('generated'))();
   // Optional id of the originating DialogTtsLine or PhaseTtsSegment.
@@ -260,6 +262,10 @@ class TimelineClips extends Table {
   // Display label (voice name, filename, etc.).
   TextColumn get label => text().withDefault(const Constant(''))();
   BoolColumn get missing => boolean().withDefault(const Constant(false))();
+  // Premiere-style link group: V1 video + A1 video-audio clips share the
+  // same id so a drag/trim on V1 can move its A1 sibling in lock-step.
+  // Null = not linked.
+  TextColumn get linkGroupId => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

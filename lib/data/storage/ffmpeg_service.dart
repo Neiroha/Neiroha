@@ -111,7 +111,7 @@ class FFmpegService {
 
     // Sample count is needed up front to size buckets. ffprobe ships
     // alongside ffmpeg in every mainstream distro.
-    final durationSec = await _probeDurationSeconds(mediaPath);
+    final durationSec = await probeDurationSeconds(mediaPath);
     if (durationSec == null || durationSec <= 0) return null;
     final expectedSampleCount = (durationSec * sampleRate).round();
     if (expectedSampleCount < 2 || bucketCount <= 0) return null;
@@ -146,8 +146,9 @@ class FFmpegService {
   }
 
   /// Probe media duration (seconds) via `ffprobe`. Returns `null` if
-  /// ffprobe is missing or the probe fails.
-  Future<double?> _probeDurationSeconds(String mediaPath) async {
+  /// ffprobe is missing or the probe fails. Images report 0 — callers
+  /// should substitute a sensible default (e.g. 3 s still frame).
+  Future<double?> probeDurationSeconds(String mediaPath) async {
     final ffmpegPath = await resolvePath();
     final ffprobePath = _deriveFfprobePath(ffmpegPath);
     try {

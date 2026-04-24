@@ -3,21 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 
-/// Track addressing inside `TimelineClips` for video-dub projects:
+/// Track addressing inside `TimelineClips` for video-dub projects.
+/// Premiere-style layout, all 5 tracks always visible:
 ///
-///   V2  → laneIndex -2 (hidden by default)
-///   V1  → laneIndex -1 (always visible)
-///   A1  → SubtitleCues (synthesised from the TTS rows; not a TimelineClip)
-///   A2  → laneIndex  1 (always visible)
-///   A3  → laneIndex  2 (hidden by default)
+///   V2 → laneIndex -2 — images (renders above V1)
+///   V1 → laneIndex -1 — video clips
+///   A1 → laneIndex  1 — the V1 video's audio (auto-linked to V1 on
+///                       import, can be split/deleted to mute those regions)
+///   A2 → (virtual)    — TTS cues, sourced directly from `SubtitleCues`.
+///                       No `TimelineClip` rows live here.
+///   A3 → laneIndex  3 — free-form imported audio (SFX, music).
 ///
-/// `A1` is special — it's sourced directly from the SubtitleCues table so
-/// the cue list stays the single source of truth for spoken content.
+/// Lane index 2 is reserved for A2's future if cues ever migrate into
+/// `TimelineClips`. Until then, A2 is rendered from `SubtitleCues`.
 class DubLanes {
   static const int v2 = -2;
   static const int v1 = -1;
-  static const int a2 = 1;
-  static const int a3 = 2;
+  static const int a1 = 1;
+  static const int a3 = 3;
 }
 
 /// Which import bucket a file should be placed in. The caller resolves the
@@ -82,8 +85,6 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
   // Visible window in ms — the range scrubber drives these.
   int _viewLeftMs = 0;
   int? _viewRightMs; // null = fit to content on first build
-  bool _showV2 = false;
-  bool _showA3 = false;
 
   int get _contentTotalMs {
     final durMs = widget.duration.inMilliseconds;
@@ -179,7 +180,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
                   child: Row(children: [
                     Icon(Icons.movie_outlined, size: 16),
                     SizedBox(width: 8),
-                    Text('Video → V1'),
+                    Text('Video → V1 (+ A1 audio)'),
                   ]),
                 ),
                 PopupMenuItem(
@@ -187,7 +188,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
                   child: Row(children: [
                     Icon(Icons.image_outlined, size: 16),
                     SizedBox(width: 8),
-                    Text('Image → V1'),
+                    Text('Image → V2'),
                   ]),
                 ),
                 PopupMenuItem(
@@ -195,7 +196,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
                   child: Row(children: [
                     Icon(Icons.audiotrack_rounded, size: 16),
                     SizedBox(width: 8),
-                    Text('Audio → A2'),
+                    Text('Audio → A3'),
                   ]),
                 ),
               ],
@@ -210,44 +211,10 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
                 ),
               ),
             ),
-            const SizedBox(width: 4),
-            PopupMenuButton<String>(
-              tooltip: 'Add / remove tracks',
-              onSelected: _onTrackMenuSelected,
-              itemBuilder: (_) => [
-                CheckedPopupMenuItem(
-                  value: 'v2',
-                  checked: _showV2,
-                  child: const Text('Show V2'),
-                ),
-                CheckedPopupMenuItem(
-                  value: 'a3',
-                  checked: _showA3,
-                  child: const Text('Show A3'),
-                ),
-              ],
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                child: Row(
-                  children: [
-                    Icon(Icons.view_agenda_outlined, size: 14),
-                    SizedBox(width: 4),
-                    Text('Tracks', style: TextStyle(fontSize: 11)),
-                  ],
-                ),
-              ),
-            ),
           ],
         ),
       ),
     );
-  }
-
-  void _onTrackMenuSelected(String key) {
-    setState(() {
-      if (key == 'v2') _showV2 = !_showV2;
-      if (key == 'a3') _showA3 = !_showA3;
-    });
   }
 
   // ─────────────── FFmpeg banner ───────────────
@@ -285,12 +252,13 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
   // ─────────────── track layout ───────────────
 
   List<_TrackRow> _buildTrackList() {
-    return [
-      if (_showV2) _TrackRow.video(kind: _TrackKind.v2, label: 'V2', removable: true),
-      _TrackRow.video(kind: _TrackKind.v1, label: 'V1', removable: false),
-      _TrackRow.tts(label: 'A1 · TTS'),
-      _TrackRow.audio(kind: _TrackKind.a2, label: 'A2', removable: false),
-      if (_showA3) _TrackRow.audio(kind: _TrackKind.a3, label: 'A3', removable: true),
+    // Premiere ordering top→bottom: V2 above V1, then A1/A2/A3.
+    return const [
+      _TrackRow.video(kind: _TrackKind.v2, label: 'V2 · Image'),
+      _TrackRow.video(kind: _TrackKind.v1, label: 'V1 · Video'),
+      _TrackRow.videoAudio(label: 'A1 · Video'),
+      _TrackRow.tts(label: 'A2 · TTS'),
+      _TrackRow.audio(kind: _TrackKind.a3, label: 'A3 · Audio'),
     ];
   }
 
@@ -304,31 +272,17 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
             height: _trackHeight,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      t.label,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: t.accent,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  t.label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: t.accent,
                   ),
-                  if (t.removable)
-                    IconButton(
-                      icon: const Icon(Icons.visibility_off_outlined, size: 14),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints.tightFor(
-                          width: 22, height: 22),
-                      tooltip: 'Hide track',
-                      onPressed: () => _onTrackMenuSelected(
-                        t.kind == _TrackKind.v2 ? 'v2' : 'a3',
-                      ),
-                    ),
-                ],
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
           ),
@@ -391,7 +345,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
   Widget _buildTrackContent(_TrackRow row, int index, double pxPerMs) {
     final top = _rulerHeight + index * _trackHeight;
     switch (row.kind) {
-      case _TrackKind.a1:
+      case _TrackKind.tts:
         return Positioned(
           top: top,
           left: 0,
@@ -401,7 +355,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
         );
       case _TrackKind.v1:
       case _TrackKind.v2:
-      case _TrackKind.a2:
+      case _TrackKind.a1:
       case _TrackKind.a3:
         return Positioned(
           top: top,
@@ -416,22 +370,6 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
   Widget _buildCueLane(double pxPerMs) {
     return Stack(
       children: [
-        // Waveform behind cues, if we have peaks.
-        if (widget.waveformPeaks != null &&
-            widget.waveformPeaks!.isNotEmpty)
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _WaveformPainter(
-                peaks: widget.waveformPeaks!,
-                viewLeftMs: _viewLeftMs,
-                viewSpanMs: _viewSpanMs,
-                totalMs: widget.duration.inMilliseconds > 0
-                    ? widget.duration.inMilliseconds
-                    : _contentTotalMs,
-                color: Colors.white.withValues(alpha: 0.12),
-              ),
-            ),
-          ),
         for (final cue in widget.cues) _buildCueBlock(cue, pxPerMs),
       ],
     );
@@ -510,15 +448,34 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
 
   Widget _buildClipLane(_TrackKind kind, double pxPerMs) {
     final lane = switch (kind) {
-      _TrackKind.v2 => DubLanes.v2,
       _TrackKind.v1 => DubLanes.v1,
-      _TrackKind.a2 => DubLanes.a2,
+      _TrackKind.v2 => DubLanes.v2,
+      _TrackKind.a1 => DubLanes.a1,
       _TrackKind.a3 => DubLanes.a3,
-      _TrackKind.a1 => 0, // unreachable
+      _TrackKind.tts => null, // rendered via _buildCueLane
     };
+    if (lane == null) return const SizedBox.shrink();
     final clips = widget.clips.where((c) => c.laneIndex == lane).toList();
     return Stack(
       children: [
+        // Waveform rendered as the A1 lane's background so the user sees
+        // the audio envelope directly on the track it belongs to.
+        if (kind == _TrackKind.a1 &&
+            widget.waveformPeaks != null &&
+            widget.waveformPeaks!.isNotEmpty)
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _WaveformPainter(
+                peaks: widget.waveformPeaks!,
+                viewLeftMs: _viewLeftMs,
+                viewSpanMs: _viewSpanMs,
+                totalMs: widget.duration.inMilliseconds > 0
+                    ? widget.duration.inMilliseconds
+                    : _contentTotalMs,
+                color: Colors.white.withValues(alpha: 0.12),
+              ),
+            ),
+          ),
         for (final c in clips) _buildClipBlock(c, kind, pxPerMs),
       ],
     );
@@ -531,6 +488,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
     final width = (durMs * pxPerMs).clamp(8.0, 20000.0);
     final isSelected = widget.selectedClipId == clip.id;
 
+    final isMissing = clip.missing;
     Color bg;
     IconData icon;
     switch (clip.sourceType) {
@@ -542,10 +500,17 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
         bg = const Color(0xFF2C8F7A);
         icon = Icons.image_outlined;
         break;
+      case 'video-audio':
+        bg = const Color(0xFF5C7AB0);
+        icon = Icons.graphic_eq_rounded;
+        break;
       default:
-        // audio on A2/A3
+        // imported audio on A3 (and any legacy A2 rows)
         bg = const Color(0xFF8A6A2C);
         icon = Icons.audiotrack_rounded;
+    }
+    if (isMissing) {
+      bg = Colors.redAccent.withValues(alpha: 0.55);
     }
 
     return Positioned(
@@ -656,49 +621,41 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
 
 // ─────────────── internal track row ───────────────
 
-enum _TrackKind { v2, v1, a1, a2, a3 }
+enum _TrackKind { v1, v2, a1, tts, a3 }
 
 class _TrackRow {
   final _TrackKind kind;
   final String label;
-  final bool removable;
   final Color accent;
 
-  const _TrackRow._({
-    required this.kind,
-    required this.label,
-    required this.removable,
-    required this.accent,
-  });
+  const factory _TrackRow.video({
+    required _TrackKind kind,
+    required String label,
+  }) = _TrackRow._video;
 
-  factory _TrackRow.video(
-          {required _TrackKind kind,
-          required String label,
-          required bool removable}) =>
-      _TrackRow._(
-        kind: kind,
-        label: label,
-        removable: removable,
-        accent: const Color(0xFF8AA4E0),
-      );
+  const factory _TrackRow.audio({
+    required _TrackKind kind,
+    required String label,
+  }) = _TrackRow._audio;
 
-  factory _TrackRow.audio(
-          {required _TrackKind kind,
-          required String label,
-          required bool removable}) =>
-      _TrackRow._(
-        kind: kind,
-        label: label,
-        removable: removable,
-        accent: const Color(0xFFE0B97A),
-      );
+  const factory _TrackRow.tts({required String label}) = _TrackRow._ttsRow;
 
-  factory _TrackRow.tts({required String label}) => _TrackRow._(
-        kind: _TrackKind.a1,
-        label: label,
-        removable: false,
-        accent: AppTheme.accentColor,
-      );
+  const factory _TrackRow.videoAudio({required String label}) =
+      _TrackRow._videoAudioRow;
+
+  const _TrackRow._video({required this.kind, required this.label})
+      : accent = const Color(0xFF8AA4E0);
+
+  const _TrackRow._audio({required this.kind, required this.label})
+      : accent = const Color(0xFFE0B97A);
+
+  const _TrackRow._ttsRow({required this.label})
+      : kind = _TrackKind.tts,
+        accent = const Color(0xFF7EC8A8);
+
+  const _TrackRow._videoAudioRow({required this.label})
+      : kind = _TrackKind.a1,
+        accent = const Color(0xFFE0B97A);
 }
 
 // ─────────────── range scrubber widget ───────────────
@@ -1056,20 +1013,23 @@ class _MiniOverviewPainter extends CustomPainter {
       old.cues != cues;
 }
 
-/// Helper for the caller: resolve an import kind → (lane, sourceType).
+/// Helper for the caller: resolve an import kind → (primary lane, sourceType).
+/// `DubImportKind.video` yields the V1 entry; the caller is responsible
+/// for also inserting the linked A1 sibling.
 ({int lane, String sourceType}) laneAndSourceForImport(DubImportKind kind) {
   switch (kind) {
     case DubImportKind.video:
       return (lane: DubLanes.v1, sourceType: 'video');
     case DubImportKind.image:
-      return (lane: DubLanes.v1, sourceType: 'image');
+      return (lane: DubLanes.v2, sourceType: 'image');
     case DubImportKind.audio:
-      return (lane: DubLanes.a2, sourceType: 'imported');
+      return (lane: DubLanes.a3, sourceType: 'imported');
   }
 }
 
 /// Companion factory so the caller doesn't have to import drift's `Value`.
 /// Caller fills id/uuid + label + path + optional duration.
+/// [linkGroupId] pairs this clip with a sibling (e.g. V1 + its A1 audio).
 db.TimelineClipsCompanion makeDubClipCompanion({
   required String id,
   required String projectId,
@@ -1079,6 +1039,7 @@ db.TimelineClipsCompanion makeDubClipCompanion({
   required String audioPath,
   required String label,
   double? durationSec,
+  String? linkGroupId,
 }) {
   return db.TimelineClipsCompanion(
     id: Value(id),
@@ -1090,5 +1051,6 @@ db.TimelineClipsCompanion makeDubClipCompanion({
     audioPath: Value(audioPath),
     sourceType: Value(sourceType),
     label: Value(label),
+    linkGroupId: Value(linkGroupId),
   );
 }

@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
+import 'package:neiroha/data/storage/ffmpeg_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
 import 'package:neiroha/server/api_server.dart';
 
@@ -14,6 +15,20 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 /// Disk-backed storage orchestration (voice-asset root, sync, clear-all).
 final storageServiceProvider = Provider<StorageService>((ref) {
   return StorageService(ref.watch(databaseProvider));
+});
+
+/// System `ffmpeg` resolver. Used by waveform extraction + media import.
+final ffmpegServiceProvider = Provider<FFmpegService>((ref) {
+  return FFmpegService(ref.watch(databaseProvider));
+});
+
+/// Probes `ffmpeg -version` once per session. Watch this in the Settings
+/// screen (so the badge updates after the user changes the path) and in
+/// the Video Dub editor (so the waveform banner toggles). Invalidate via
+/// `ref.invalidate(ffmpegAvailabilityProvider)` after the override changes.
+final ffmpegAvailabilityProvider = FutureProvider<bool>((ref) async {
+  final svc = ref.watch(ffmpegServiceProvider);
+  return svc.isAvailable();
 });
 
 /// Fires on startup: loads the user's voice-asset root override from SQLite

@@ -13,7 +13,6 @@
 .swiftpm/
 .vscode/
 temp/
-docs/
 migrate_working_dir/
 
 # IntelliJ related

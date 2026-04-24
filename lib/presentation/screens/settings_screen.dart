@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:neiroha/data/storage/ffmpeg_service.dart';
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
 import 'package:neiroha/providers/app_providers.dart';
@@ -69,6 +70,11 @@ class SettingsScreen extends ConsumerWidget {
         _SectionHeader(title: 'STORAGE'),
         const SizedBox(height: 8),
         _StorageCard(startup: startup),
+        const SizedBox(height: 24),
+
+        _SectionHeader(title: 'MEDIA TOOLS'),
+        const SizedBox(height: 8),
+        const _FfmpegCard(),
         const SizedBox(height: 24),
 
         _SectionHeader(title: 'ABOUT'),
@@ -257,6 +263,188 @@ class _StorageCard extends ConsumerWidget {
         const SnackBar(content: Text('Archived audio cleared.')),
       );
     }
+  }
+}
+
+// ───────────────────────────── FFmpeg card ─────────────────────────────
+
+class _FfmpegCard extends ConsumerStatefulWidget {
+  const _FfmpegCard();
+
+  @override
+  ConsumerState<_FfmpegCard> createState() => _FfmpegCardState();
+}
+
+class _FfmpegCardState extends ConsumerState<_FfmpegCard> {
+  final _pathCtrl = TextEditingController();
+  String? _loadedOverride;
+  bool _hydrated = false;
+
+  @override
+  void dispose() {
+    _pathCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _hydrate(FFmpegService svc) async {
+    final stored = await svc.getOverride();
+    if (!mounted) return;
+    setState(() {
+      _loadedOverride = stored;
+      _pathCtrl.text = stored ?? '';
+      _hydrated = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final svc = ref.watch(ffmpegServiceProvider);
+    final availability = ref.watch(ffmpegAvailabilityProvider);
+
+    if (!_hydrated) {
+      // Lazy one-shot load of the persisted override.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _hydrate(svc));
+    }
+
+    final isAvailable = availability.maybeWhen(
+      data: (v) => v,
+      orElse: () => false,
+    );
+    final loading = availability.isLoading;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _SettingsRow(
+              icon: isAvailable
+                  ? Icons.check_circle_rounded
+                  : Icons.error_outline_rounded,
+              title: 'FFmpeg',
+              subtitle: loading
+                  ? 'Probing…'
+                  : (isAvailable
+                      ? 'Detected. Used for waveform extraction and imported-media analysis.'
+                      : 'Not found. Install ffmpeg (or set a path below) — the app works without it, but waveforms and media probing will be skipped.'),
+              trailing: loading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : TextButton(
+                      onPressed: () {
+                        ref.read(ffmpegServiceProvider).invalidate();
+                        ref.invalidate(ffmpegAvailabilityProvider);
+                      },
+                      child: const Text('Re-check'),
+                    ),
+            ),
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Icon(Icons.terminal_rounded,
+                        size: 20, color: AppTheme.accentColor),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Executable Path',
+                            style: TextStyle(fontSize: 14)),
+                        Text(
+                          _loadedOverride == null || _loadedOverride!.isEmpty
+                              ? 'Auto-detect from PATH'
+                              : 'Using override',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _pathCtrl,
+                          decoration: InputDecoration(
+                            isDense: true,
+                            hintText:
+                                'Leave blank to auto-detect (e.g. C:\\ffmpeg\\bin\\ffmpeg.exe)',
+                            hintStyle: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              fontSize: 12,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.folder_open_rounded,
+                                  size: 18),
+                              tooltip: 'Browse…',
+                              onPressed: _browse,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    children: [
+                      TextButton(
+                        onPressed: _save,
+                        child: const Text('Save'),
+                      ),
+                      if (_loadedOverride != null && _loadedOverride!.isNotEmpty)
+                        TextButton(
+                          onPressed: _clear,
+                          child: const Text('Reset'),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _browse() async {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['exe', ''],
+      allowMultiple: false,
+    );
+    final path = picked?.files.single.path;
+    if (path == null) return;
+    setState(() => _pathCtrl.text = path);
+  }
+
+  Future<void> _save() async {
+    final path = _pathCtrl.text.trim();
+    await ref
+        .read(ffmpegServiceProvider)
+        .setOverride(path.isEmpty ? null : path);
+    ref.invalidate(ffmpegAvailabilityProvider);
+    setState(() => _loadedOverride = path.isEmpty ? null : path);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(path.isEmpty
+          ? 'FFmpeg path cleared — will auto-detect from PATH.'
+          : 'FFmpeg path saved.'),
+    ));
+  }
+
+  Future<void> _clear() async {
+    await ref.read(ffmpegServiceProvider).setOverride(null);
+    ref.invalidate(ffmpegAvailabilityProvider);
+    setState(() {
+      _loadedOverride = null;
+      _pathCtrl.clear();
+    });
   }
 }
 

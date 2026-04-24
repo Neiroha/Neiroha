@@ -183,6 +183,33 @@ class StorageService {
         return slug;
       });
 
+  /// Same as [ensureVoiceAssetSlug] but for Video Dub projects.
+  Future<String> ensureVideoDubProjectSlug(String projectId) =>
+      _db.transaction(() async {
+        final project = await _db.getVideoDubProjectById(projectId);
+        if (project == null) {
+          throw StateError('Video dub project $projectId not found');
+        }
+        final existing = project.folderSlug;
+        if (existing != null && existing.isNotEmpty) return existing;
+
+        final all = await _db.getAllVideoDubProjects();
+        final taken = <String>{
+          for (final p in all)
+            if (p.id != projectId &&
+                p.folderSlug != null &&
+                p.folderSlug!.isNotEmpty)
+              p.folderSlug!,
+        };
+        final slug = _dedupeSlug(
+          PathService.sanitizeSegment(project.name, fallback: 'unnamed_project'),
+          taken,
+        );
+        await _db.updateVideoDubProject(
+            project.copyWith(folderSlug: Value(slug)));
+        return slug;
+      });
+
   /// Same as [ensureVoiceAssetSlug] but for Dialog TTS projects.
   Future<String> ensureDialogProjectSlug(String projectId) =>
       _db.transaction(() async {
@@ -231,6 +258,7 @@ class StorageService {
         'quick_tts',
         'phase_tts',
         'dialog_tts',
+        'video_dub',
         'voice_character_ref',
       ]) {
         final sub = Directory('${root.path}${Platform.pathSeparator}$name');

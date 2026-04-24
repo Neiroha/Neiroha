@@ -145,6 +145,10 @@ class PathService {
       p.join(voiceAssetRoot.path, 'dialog_tts',
           sanitizeSegment(projectName, fallback: 'unnamed_project'))));
 
+  Future<Directory> videoDubDir(String projectName) => _ensure(Directory(
+      p.join(voiceAssetRoot.path, 'video_dub',
+          sanitizeSegment(projectName, fallback: 'unnamed_project'))));
+
   Future<Directory> voiceCharacterRefDir() => _ensure(
       Directory(p.join(voiceAssetRoot.path, 'voice_character_ref')));
 

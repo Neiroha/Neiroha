@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:audioplayers/audioplayers.dart' as ap;
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -12,15 +11,18 @@ import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/data/storage/subtitle_parser.dart';
-import 'package:neiroha/presentation/widgets/export_progress.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
-import 'package:neiroha/presentation/screens/app_shell.dart' show selectedTabProvider;
+import 'package:neiroha/presentation/screens/app_shell.dart'
+    show selectedTabProvider;
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/screens/video_dub/exporter.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
-import 'package:neiroha/presentation/widgets/video_dub_timeline.dart';
+import 'package:neiroha/presentation/widgets/video_dub/cue_card.dart';
+import 'package:neiroha/presentation/widgets/video_dub/cue_dialogs.dart';
+import 'package:neiroha/presentation/widgets/video_dub/timeline.dart';
+import 'package:neiroha/presentation/widgets/video_dub/tracks.dart';
 import 'package:neiroha/providers/app_providers.dart';
-import 'package:neiroha/providers/playback_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
@@ -93,15 +95,20 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
       child: Row(
         children: [
-          Text('Video Dub',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Video Dub',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(width: 8),
-          Text('Dub video with TTS from subtitle cues',
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5), fontSize: 14)),
+          Text(
+            'Dub video with TTS from subtitle cues',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
+              fontSize: 14,
+            ),
+          ),
           const Spacer(),
           FilledButton.icon(
             onPressed: _createProject,
@@ -118,7 +125,8 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
     if (banks.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Create a Voice Bank first')));
+          const SnackBar(content: Text('Create a Voice Bank first')),
+        );
       }
       return;
     }
@@ -145,8 +153,9 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
                 isExpanded: true,
                 initialValue: selectedBankId,
                 items: banks
-                    .map((b) => DropdownMenuItem(
-                        value: b.id, child: Text(b.name)))
+                    .map(
+                      (b) => DropdownMenuItem(value: b.id, child: Text(b.name)),
+                    )
                     .toList(),
                 onChanged: (v) {
                   if (v != null) {
@@ -158,12 +167,14 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel')),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
             FilledButton(
-                onPressed: () =>
-                    Navigator.pop(ctx, (nameCtrl.text, selectedBankId)),
-                child: const Text('Create')),
+              onPressed: () =>
+                  Navigator.pop(ctx, (nameCtrl.text, selectedBankId)),
+              child: const Text('Create'),
+            ),
           ],
         ),
       ),
@@ -172,7 +183,9 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
     if (result != null && result.$1.trim().isNotEmpty) {
       final id = const Uuid().v4();
       final now = DateTime.now();
-      await ref.read(databaseProvider).insertVideoDubProject(
+      await ref
+          .read(databaseProvider)
+          .insertVideoDubProject(
             db.VideoDubProjectsCompanion(
               id: Value(id),
               name: Value(result.$1.trim()),
@@ -211,14 +224,22 @@ class _VideoDubEditor extends ConsumerStatefulWidget {
 class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
   late final Player _player;
   late final VideoController _controller;
-  late final ap.AudioPlayer _cuePlayer;
+  late final Player _cuePlayer;
+  late final Player _previewPlayer;
 
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<bool>? _playingSub;
   StreamSubscription<Duration>? _durationSub;
+  StreamSubscription<bool>? _previewCompletedSub;
 
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
+  final ValueNotifier<Duration> _positionNotifier = ValueNotifier(
+    Duration.zero,
+  );
+  final ValueNotifier<Duration> _durationNotifier = ValueNotifier(
+    Duration.zero,
+  );
   bool _playing = false;
   String? _currentVideoPath;
 
@@ -271,16 +292,23 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
   List<double>? _waveformPeaks;
   bool _extractingWaveform = false;
 
+  late final Listenable _playbackTimelineListenable = Listenable.merge([
+    _positionNotifier,
+    _durationNotifier,
+  ]);
+
   @override
   void initState() {
     super.initState();
     _player = Player();
     _controller = VideoController(_player);
-    _cuePlayer = ap.AudioPlayer();
+    _cuePlayer = Player();
+    _previewPlayer = Player();
 
     _positionSub = _player.stream.position.listen((p) {
       if (!mounted) return;
-      setState(() => _position = p);
+      _position = p;
+      _positionNotifier.value = p;
       if (_syncDub) _onVideoTick(p);
     });
     _playingSub = _player.stream.playing.listen((p) async {
@@ -289,14 +317,20 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
       if (_syncDub) {
         if (p) {
           // Video resumed — resume whatever cue is currently active.
-          await _cuePlayer.resume();
+          await _cuePlayer.play();
         } else {
           await _cuePlayer.pause();
         }
       }
     });
     _durationSub = _player.stream.duration.listen((d) {
-      if (mounted) setState(() => _duration = d);
+      if (!mounted) return;
+      _duration = d;
+      _durationNotifier.value = d;
+    });
+    _previewCompletedSub = _previewPlayer.stream.completed.listen((done) {
+      if (!mounted || !done) return;
+      setState(() => _previewCueId = null);
     });
   }
 
@@ -305,8 +339,12 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     _positionSub?.cancel();
     _playingSub?.cancel();
     _durationSub?.cancel();
+    _previewCompletedSub?.cancel();
+    _positionNotifier.dispose();
+    _durationNotifier.dispose();
     _player.dispose();
     _cuePlayer.dispose();
+    _previewPlayer.dispose();
     super.dispose();
   }
 
@@ -342,8 +380,7 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
       }
       return;
     }
-    final peaks =
-        await svc.extractWaveformPeaks(videoPath, bucketCount: 800);
+    final peaks = await svc.extractWaveformPeaks(videoPath, bucketCount: 800);
     if (!mounted) {
       _extractingWaveform = false;
       return;
@@ -362,9 +399,9 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
   /// [ms]. The `_muteVideoAudio` toggle is an additional override —
   /// if the user muted the video, it stays muted regardless of A1.
   void _applyA1Gating(int ms) {
-    final clips =
-        ref.read(timelineClipsStreamProvider('videodub:${widget.projectId}'))
-            .valueOrNull;
+    final clips = ref
+        .read(timelineClipsStreamProvider('videodub:${widget.projectId}'))
+        .valueOrNull;
     bool covered = false;
     if (clips != null) {
       for (final c in clips) {
@@ -396,8 +433,9 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
       final ms = pos.inMilliseconds;
       _applyA1Gating(ms);
 
-      final cues =
-          ref.read(subtitleCuesStreamProvider(widget.projectId)).valueOrNull;
+      final cues = ref
+          .read(subtitleCuesStreamProvider(widget.projectId))
+          .valueOrNull;
       if (cues == null || cues.isEmpty) return;
 
       // Find cue whose window contains current ms.
@@ -430,12 +468,11 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
       // Offset into the cue audio = how far past cue.startMs the video is.
       final offsetMs = ms - active.startMs;
       try {
-        await _cuePlayer.play(ap.DeviceFileSource(active.audioPath!));
+        await _cuePlayer.open(Media(active.audioPath!), play: false);
         if (offsetMs > 50) {
-          // Give audioplayers a beat to resolve duration before seeking.
-          await Future.delayed(const Duration(milliseconds: 40));
           await _cuePlayer.seek(Duration(milliseconds: offsetMs));
         }
+        await _cuePlayer.play();
       } catch (_) {}
       if (mounted) setState(() {});
     } finally {
@@ -464,7 +501,8 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     final membersAsync = ref.watch(bankMembersStreamProvider(project.bankId));
     final allAssets = assetsAsync.valueOrNull ?? const <db.VoiceAsset>[];
     final assetMap = {for (final a in allAssets) a.id: a};
-    final bankMembers = membersAsync.valueOrNull ?? const <db.VoiceBankMember>[];
+    final bankMembers =
+        membersAsync.valueOrNull ?? const <db.VoiceBankMember>[];
     final bankAssets = bankMembers
         .map((m) => assetMap[m.voiceAssetId])
         .whereType<db.VoiceAsset>()
@@ -472,11 +510,12 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
 
     final cues = cuesAsync.valueOrNull ?? const <db.SubtitleCue>[];
     final clipsAsync = ref.watch(
-        timelineClipsStreamProvider('videodub:${widget.projectId}'));
+      timelineClipsStreamProvider('videodub:${widget.projectId}'),
+    );
     final clips = clipsAsync.valueOrNull ?? const <db.TimelineClip>[];
     final ffmpegAvailable = ref
-            .watch(ffmpegAvailabilityProvider)
-            .maybeWhen(data: (v) => v, orElse: () => false);
+        .watch(ffmpegAvailabilityProvider)
+        .maybeWhen(data: (v) => v, orElse: () => false);
 
     return Column(
       children: [
@@ -493,68 +532,77 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
                 children: [
                   Expanded(child: _buildVideoSurface(project)),
                   const Divider(height: 1),
-                  SizedBox(height: 64, child: _buildTransport(project)),
+                  SizedBox(
+                    height: 64,
+                    child: AnimatedBuilder(
+                      animation: _playbackTimelineListenable,
+                      builder: (context, _) => _buildTransport(project),
+                    ),
+                  ),
                 ],
               ),
-              bottom: VideoDubTimeline(
-                    cues: cues,
-                    clips: clips,
-                    assetMap: assetMap,
-                    position: _position,
-                    duration: _duration,
-                    selectedCueId: _selectedCueId,
-                    selectedClipId: _selectedClipId,
-                    waveformPeaks: _waveformPeaks,
-                    ffmpegAvailable: ffmpegAvailable,
-                    onConfigureFfmpeg: () {
-                      ref.read(selectedTabProvider.notifier).state =
-                          NavTab.settings;
-                    },
-                    onSeek: (d) async {
-                      await _cuePlayer.stop();
-                      _activeCueId = null;
-                      await _player.seek(d);
-                    },
-                    onTapCue: (cue) async {
-                      setState(() {
-                        _selectedCueId = cue.id;
-                        _selectedClipId = null;
-                      });
-                      await _cuePlayer.stop();
-                      _activeCueId = null;
-                      await _player
-                          .seek(Duration(milliseconds: cue.startMs));
-                    },
-                    onTapClip: (clip) async {
-                      setState(() {
-                        _selectedClipId = clip.id;
-                        _selectedCueId = null;
-                      });
-                      await _player
-                          .seek(Duration(milliseconds: clip.startTimeMs));
-                    },
-                    onDeleteClip: (clip) async {
-                      if (_selectedClipId == clip.id) {
-                        setState(() => _selectedClipId = null);
-                      }
-                      // NOTE: intentionally does NOT delete the file on
-                      // disk. The startup storage scan flags orphans;
-                      // the same media may be referenced by other rows
-                      // (re-imported or cue-generated).
-                      await ref
-                          .read(databaseProvider)
-                          .deleteTimelineClip(clip.id);
-                      _markDirty();
-                    },
-                onImport: (kind) => _importMedia(project, kind, clips),
-                onMoveCue: (cue, newStartMs) => _moveCueTo(cue, newStartMs),
-                v1Occupied: clips.any((c) => c.laneIndex == DubLanes.v1),
-                a1Muted: _muteVideoAudio,
-                onToggleA1Mute: () async {
-                  setState(() => _muteVideoAudio = !_muteVideoAudio);
-                  _a1Covers = null;
-                  _applyA1Gating(_position.inMilliseconds);
-                },
+              bottom: AnimatedBuilder(
+                animation: _playbackTimelineListenable,
+                builder: (context, _) => VideoDubTimeline(
+                  cues: cues,
+                  clips: clips,
+                  assetMap: assetMap,
+                  position: _position,
+                  duration: _duration,
+                  selectedCueId: _selectedCueId,
+                  selectedClipId: _selectedClipId,
+                  waveformPeaks: _waveformPeaks,
+                  ffmpegAvailable: ffmpegAvailable,
+                  onConfigureFfmpeg: () {
+                    ref.read(selectedTabProvider.notifier).state =
+                        NavTab.settings;
+                  },
+                  onSeek: (d) async {
+                    await _cuePlayer.stop();
+                    _activeCueId = null;
+                    await _player.seek(d);
+                  },
+                  onTapCue: (cue) async {
+                    setState(() {
+                      _selectedCueId = cue.id;
+                      _selectedClipId = null;
+                    });
+                    await _cuePlayer.stop();
+                    _activeCueId = null;
+                    await _player.seek(Duration(milliseconds: cue.startMs));
+                  },
+                  onTapClip: (clip) async {
+                    setState(() {
+                      _selectedClipId = clip.id;
+                      _selectedCueId = null;
+                    });
+                    await _player.seek(
+                      Duration(milliseconds: clip.startTimeMs),
+                    );
+                  },
+                  onDeleteClip: (clip) async {
+                    if (_selectedClipId == clip.id) {
+                      setState(() => _selectedClipId = null);
+                    }
+                    // NOTE: intentionally does NOT delete the file on
+                    // disk. The startup storage scan flags orphans;
+                    // the same media may be referenced by other rows
+                    // (re-imported or cue-generated).
+                    await ref
+                        .read(databaseProvider)
+                        .deleteTimelineClip(clip.id);
+                    _markDirty();
+                  },
+                  onImport: (kind) => _importMedia(project, kind, clips),
+                  onMoveCue: (cue, newStartMs) => _moveCueTo(cue, newStartMs),
+                  v1Occupied: clips.any((c) => c.laneIndex == DubLanes.v1),
+                  a1Muted: _muteVideoAudio,
+                  onToggleA1Mute: () async {
+                    setState(() => _muteVideoAudio = !_muteVideoAudio);
+                    _a1Covers = null;
+                    _applyA1Gating(_position.inMilliseconds);
+                  },
+                ),
               ),
             ),
             right: _buildSubtitlePanel(project, cues, bankAssets, assetMap),
@@ -575,14 +623,18 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
             icon: const Icon(Icons.arrow_back_rounded, size: 20),
           ),
           const SizedBox(width: 4),
-          Icon(Icons.movie_filter_rounded,
-              color: AppTheme.accentColor, size: 18),
+          Icon(
+            Icons.movie_filter_rounded,
+            color: AppTheme.accentColor,
+            size: 18,
+          ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(_dirty ? '• ${project.name}' : project.name,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600)),
+            child: Text(
+              _dirty ? '• ${project.name}' : project.name,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -590,10 +642,13 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
               color: AppTheme.surfaceDim,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: Text('$voiceCount voices',
-                style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.5))),
+            child: Text(
+              '$voiceCount voices',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.white.withValues(alpha: 0.5),
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           OutlinedButton.icon(
@@ -640,18 +695,27 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.movie_outlined,
-                  size: 56, color: Colors.white.withValues(alpha: 0.25)),
+              Icon(
+                Icons.movie_outlined,
+                size: 56,
+                color: Colors.white.withValues(alpha: 0.25),
+              ),
               const SizedBox(height: 12),
-              Text('No video loaded',
-                  style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
-                      fontSize: 14)),
+              Text(
+                'No video loaded',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.4),
+                  fontSize: 14,
+                ),
+              ),
               const SizedBox(height: 6),
-              Text('Import a video onto the V1 track from the timeline.',
-                  style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.3),
-                      fontSize: 12)),
+              Text(
+                'Import a video onto the V1 track from the timeline.',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  fontSize: 12,
+                ),
+              ),
             ],
           ),
         ),
@@ -659,7 +723,7 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     }
     return Container(
       color: Colors.black,
-      child: Video(controller: _controller),
+      child: ExcludeSemantics(child: Video(controller: _controller)),
     );
   }
 
@@ -671,97 +735,99 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
         .toDouble()
         .clamp(0.0, sliderMaxMs)
         .toDouble();
-    return Container(
-      color: AppTheme.surfaceDim,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: canPlay
-                ? () async {
+    return ExcludeSemantics(
+      child: Container(
+        color: AppTheme.surfaceDim,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+            IconButton(
+              onPressed: canPlay
+                  ? () async {
+                      await _cuePlayer.stop();
+                      _activeCueId = null;
+                      await _player.seek(Duration.zero);
+                    }
+                  : null,
+              icon: const Icon(Icons.skip_previous_rounded),
+            ),
+            IconButton(
+              onPressed: canPlay ? () => _player.playOrPause() : null,
+              icon: Icon(
+                _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _formatDuration(_position),
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Slider(
+                  min: 0,
+                  max: sliderMaxMs,
+                  value: sliderValueMs,
+                  onChanged: canPlay && _duration.inMilliseconds > 0
+                      ? (v) async {
+                          await _cuePlayer.stop();
+                          _activeCueId = null;
+                          await _player.seek(Duration(milliseconds: v.round()));
+                        }
+                      : null,
+                ),
+              ),
+            ),
+            Text(
+              _formatDuration(_duration),
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+            ),
+            const SizedBox(width: 12),
+            // Mute original video audio (default on — dubbing use case).
+            Tooltip(
+              message: _muteVideoAudio
+                  ? 'Original audio muted'
+                  : 'Original audio on',
+              child: IconButton(
+                icon: Icon(
+                  _muteVideoAudio
+                      ? Icons.volume_off_rounded
+                      : Icons.volume_up_rounded,
+                  size: 18,
+                ),
+                onPressed: () async {
+                  setState(() => _muteVideoAudio = !_muteVideoAudio);
+                  // Invalidate the A1-gating latch so the next tick (or an
+                  // immediate re-apply while paused) picks up the new state.
+                  _a1Covers = null;
+                  _applyA1Gating(_position.inMilliseconds);
+                },
+              ),
+            ),
+            Tooltip(
+              message: _syncDub ? 'Dub playback synced' : 'Dub playback off',
+              child: IconButton(
+                icon: Icon(
+                  _syncDub
+                      ? Icons.record_voice_over_rounded
+                      : Icons.voice_over_off_rounded,
+                  size: 18,
+                  color: _syncDub
+                      ? AppTheme.accentColor
+                      : Colors.white.withValues(alpha: 0.4),
+                ),
+                onPressed: () async {
+                  setState(() => _syncDub = !_syncDub);
+                  if (!_syncDub) {
                     await _cuePlayer.stop();
                     _activeCueId = null;
-                    await _player.seek(Duration.zero);
                   }
-                : null,
-            icon: const Icon(Icons.skip_previous_rounded),
-          ),
-          IconButton(
-            onPressed: canPlay ? () => _player.playOrPause() : null,
-            icon: Icon(_playing
-                ? Icons.pause_rounded
-                : Icons.play_arrow_rounded),
-          ),
-          const SizedBox(width: 8),
-          Text(_formatDuration(_position),
-              style: const TextStyle(
-                  fontFamily: 'monospace', fontSize: 12)),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Slider(
-                min: 0,
-                max: sliderMaxMs,
-                value: sliderValueMs,
-                onChanged: canPlay && _duration.inMilliseconds > 0
-                    ? (v) async {
-                        await _cuePlayer.stop();
-                        _activeCueId = null;
-                        await _player.seek(Duration(milliseconds: v.round()));
-                      }
-                    : null,
+                },
               ),
             ),
-          ),
-          Text(_formatDuration(_duration),
-              style: const TextStyle(
-                  fontFamily: 'monospace', fontSize: 12)),
-          const SizedBox(width: 12),
-          // Mute original video audio (default on — dubbing use case).
-          Tooltip(
-            message: _muteVideoAudio
-                ? 'Original audio muted'
-                : 'Original audio on',
-            child: IconButton(
-              icon: Icon(
-                _muteVideoAudio
-                    ? Icons.volume_off_rounded
-                    : Icons.volume_up_rounded,
-                size: 18,
-              ),
-              onPressed: () async {
-                setState(() => _muteVideoAudio = !_muteVideoAudio);
-                // Invalidate the A1-gating latch so the next tick (or an
-                // immediate re-apply while paused) picks up the new state.
-                _a1Covers = null;
-                _applyA1Gating(_position.inMilliseconds);
-              },
-            ),
-          ),
-          Tooltip(
-            message: _syncDub
-                ? 'Dub playback synced'
-                : 'Dub playback off',
-            child: IconButton(
-              icon: Icon(
-                _syncDub
-                    ? Icons.record_voice_over_rounded
-                    : Icons.voice_over_off_rounded,
-                size: 18,
-                color: _syncDub
-                    ? AppTheme.accentColor
-                    : Colors.white.withValues(alpha: 0.4),
-              ),
-              onPressed: () async {
-                setState(() => _syncDub = !_syncDub);
-                if (!_syncDub) {
-                  await _cuePlayer.stop();
-                  _activeCueId = null;
-                }
-              },
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -788,9 +854,10 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
             padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
             child: Row(
               children: [
-                const Text('Subtitles',
-                    style: TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w600)),
+                const Text(
+                  'Subtitles',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
                 const Spacer(),
                 IconButton(
                   tooltip: 'Add cue',
@@ -834,9 +901,11 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.subtitles_off_outlined,
-                              size: 42,
-                              color: Colors.white.withValues(alpha: 0.2)),
+                          Icon(
+                            Icons.subtitles_off_outlined,
+                            size: 42,
+                            color: Colors.white.withValues(alpha: 0.2),
+                          ),
                           const SizedBox(height: 10),
                           Text(
                             'No cues yet.\nImport an SRT/LRC file or add one manually.',
@@ -852,11 +921,14 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 6),
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
                     itemCount: cues.length,
                     itemBuilder: (_, i) {
                       final cue = cues[i];
-                      return _CueCard(
+                      return CueCard(
+                        key: ValueKey(cue.id),
                         cue: cue,
                         index: i,
                         bankAssets: bankAssets,
@@ -868,7 +940,8 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
                           await _cuePlayer.stop();
                           _activeCueId = null;
                           await _player.seek(
-                              Duration(milliseconds: cue.startMs));
+                            Duration(milliseconds: cue.startMs),
+                          );
                         },
                         onVoiceChanged: (voiceId) =>
                             _updateCueVoice(cue, voiceId),
@@ -905,14 +978,17 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
                 FilledButton.icon(
                   onPressed:
                       cues.isEmpty || _generatingAll || bankAssets.isEmpty
-                          ? null
-                          : () => _generateAll(project, cues, bankAssets),
+                      ? null
+                      : () => _generateAll(project, cues, bankAssets),
                   icon: _generatingAll
                       ? const SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Icon(Icons.auto_awesome, size: 18),
                   label: const Text('Generate All'),
                 ),
@@ -926,12 +1002,31 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
 
   // ───────────────── Actions ─────────────────
 
+  Future<double?> _probeMediaDuration(String path) async {
+    final ffmpeg = ref.read(ffmpegServiceProvider);
+    final viaFfmpeg = await ffmpeg.probeDurationSeconds(path);
+    if (viaFfmpeg != null && viaFfmpeg > 0) return viaFfmpeg;
+
+    final probe = Player();
+    try {
+      await probe.open(Media(path), play: false);
+      final duration = await probe.stream.duration
+          .firstWhere((d) => d > Duration.zero)
+          .timeout(const Duration(seconds: 2), onTimeout: () => Duration.zero);
+      return duration > Duration.zero ? duration.inMilliseconds / 1000.0 : null;
+    } catch (_) {
+      return null;
+    } finally {
+      await probe.dispose();
+    }
+  }
+
   /// Import video, image, or audio onto the multi-track timeline.
   /// Files are copied into `{voiceAssetRoot}/video_dub/{slug}/assets/`
   /// and registered as TimelineClips under `projectType='videodub'`.
   /// Start time = end of the last clip on the same lane (stacked append).
-  /// Duration is probed via audioplayers where applicable; image clips
-  /// default to 3 s so they have something visible until the user stretches.
+  /// Duration is probed via ffprobe first, then media_kit as a local fallback;
+  /// image clips default to 3 s so they have something visible until stretched.
   /// Premiere-style import: references the source file in place (no
   /// copy into the project folder). The DB row stores the absolute path;
   /// a missing source later lights up as a red "missing" clip.
@@ -966,16 +1061,13 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     if (!await File(src).exists()) return;
 
     final base = p.basenameWithoutExtension(src);
-    final ffmpeg = ref.read(ffmpegServiceProvider);
-
     double? duration;
     switch (kind) {
       case DubImportKind.video:
-        duration = await ffmpeg.probeDurationSeconds(src);
+        duration = await _probeMediaDuration(src);
         break;
       case DubImportKind.audio:
-        duration = await ffmpeg.probeDurationSeconds(src) ??
-            await measureAudioDuration(src);
+        duration = await _probeMediaDuration(src);
         break;
     }
 
@@ -1026,10 +1118,7 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
       // surface. Without this the clip lands on V1 but the player has
       // nothing to render, so the timeline appears wired up to nothing.
       await database.updateVideoDubProject(
-        project.copyWith(
-          videoPath: Value(src),
-          updatedAt: DateTime.now(),
-        ),
+        project.copyWith(videoPath: Value(src), updatedAt: DateTime.now()),
       );
     } else {
       await database.insertTimelineClip(
@@ -1047,430 +1136,73 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Imported "$base"')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Imported "$base"')));
     }
   }
 
-  /// Mux the project into a single MP4: V1 video + (optional) original
-  /// audio + every generated TTS cue + every imported A3 audio clip,
-  /// each delayed to its start time. Image clips on V2 and A1 gating
-  /// are deliberately skipped — see plan.md candidate (7).
   Future<void> _exportVideo(db.VideoDubProject project) async {
-    final src = project.videoPath;
-    if (src == null) return;
-    if (!File(src).existsSync()) {
-      _snack('Source video missing on disk');
-      return;
-    }
-    final ffmpeg = ref.read(ffmpegServiceProvider);
-    if (!await ffmpeg.isAvailable()) {
-      _snack('FFmpeg is required for export — configure it in Settings');
-      return;
-    }
-
-    final cues = ref
-            .read(subtitleCuesStreamProvider(widget.projectId))
-            .valueOrNull ??
+    final cues =
+        ref.read(subtitleCuesStreamProvider(widget.projectId)).valueOrNull ??
         const <db.SubtitleCue>[];
-    final clips = ref
+    final clips =
+        ref
             .read(timelineClipsStreamProvider('videodub:${widget.projectId}'))
             .valueOrNull ??
         const <db.TimelineClip>[];
-
-    final overlays = <_AudioOverlay>[
-      for (final c in cues)
-        if (c.audioPath != null && File(c.audioPath!).existsSync())
-          _AudioOverlay(path: c.audioPath!, startMs: c.startMs),
-      for (final c in clips)
-        if (c.laneIndex == DubLanes.a3 &&
-            File(c.audioPath).existsSync())
-          _AudioOverlay(path: c.audioPath, startMs: c.startTimeMs),
-    ];
-
-    final defaultName = '${_safeFileStem(project.name)}_dubbed.mp4';
-    String? outPath;
-    try {
-      outPath = await FilePicker.platform.saveFile(
-        dialogTitle: 'Export dubbed video',
-        fileName: defaultName,
-        type: FileType.video,
-      );
-    } catch (_) {
-      // Some platforms don't implement saveFile — fall back to picking a
-      // directory and synthesising the filename ourselves.
-      final dir = await FilePicker.platform.getDirectoryPath(
-        dialogTitle: 'Choose export folder',
-      );
-      if (dir != null && dir.isNotEmpty) {
-        outPath = p.join(dir, defaultName);
-      }
-    }
-    if (outPath == null || outPath.isEmpty) return;
-    if (!outPath.toLowerCase().endsWith('.mp4')) outPath = '$outPath.mp4';
-
     setState(() => _exporting = true);
-    final ffmpegPath = await ffmpeg.resolvePath();
-    final prefs = await ref.read(exportPrefsServiceProvider).load();
-    final args = _buildExportArgs(
-      videoPath: src,
-      includeOriginalAudio: !_muteVideoAudio,
-      overlays: overlays,
-      outPath: outPath,
-      videoCodec: prefs.videoFfmpegCodec,
-      audioCodec: prefs.videoAudioFfmpegCodec,
-    );
     try {
-      // Total duration for the progress bar — prefer the live media_kit
-      // duration; fall back to the longest overlay end if the player
-      // hasn't probed yet.
-      var totalMs = _duration.inMilliseconds;
-      if (totalMs <= 0) {
-        for (final o in overlays) {
-          if (o.startMs > totalMs) totalMs = o.startMs;
-        }
-      }
-      final result = await runFfmpegWithProgress(
-        // ignore: use_build_context_synchronously
+      await exportVideoDubVideo(
         context: context,
-        ffmpegPath: ffmpegPath,
-        args: args,
-        totalDurationMs: totalMs,
-        taskLabel: 'Exporting video…',
+        ref: ref,
+        project: project,
+        cues: cues,
+        clips: clips,
+        muteVideoAudio: _muteVideoAudio,
+        playerDuration: _duration,
       );
-      if (!mounted) return;
-      if (result.success) {
-        // Default behaviour: write a sidecar .srt next to the .mp4 so
-        // downstream players (and Premiere/DaVinci/VLC) pick it up
-        // automatically. Soft-muxing with `-c:s mov_text` would only
-        // benefit MP4-aware players and would force re-encoding any
-        // non-MP4 container the user types into the save dialog.
-        final srtPath = _replaceExtension(outPath, '.srt');
-        String? sidecarErr;
-        try {
-          await File(srtPath).writeAsString(_cuesToSrt(cues));
-        } catch (e) {
-          sidecarErr = '$e';
-        }
-        await showExportSuccessDialog(
-          // ignore: use_build_context_synchronously
-          context: context,
-          filePath: outPath,
-          extraNote: sidecarErr == null
-              ? 'SRT sidecar written to ${p.basename(srtPath)}.'
-              : 'Sidecar SRT failed: $sidecarErr',
-        );
-      } else if (result.cancelled) {
-        _snack('Export cancelled');
-      } else {
-        _snack('Export failed: ${result.stderrTail}');
-      }
-    } catch (e) {
-      if (mounted) _snack('Export failed: $e');
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
   }
 
-  /// SRT text for [cues] using the canonical `HH:MM:SS,mmm` timestamp
-  /// format. Cues are emitted in their list order — the caller is
-  /// responsible for sorting if needed (the stream provider already
-  /// orders by `orderIndex`).
-  static String _cuesToSrt(List<db.SubtitleCue> cues) {
-    final buf = StringBuffer();
-    for (var i = 0; i < cues.length; i++) {
-      final c = cues[i];
-      buf.writeln('${i + 1}');
-      buf.writeln('${_msToSrt(c.startMs)} --> ${_msToSrt(c.endMs)}');
-      buf.writeln(c.cueText);
-      buf.writeln();
-    }
-    return buf.toString();
-  }
-
-  /// Swap a path's extension. `foo.mp4` → `_replaceExtension(_, '.srt')`
-  /// → `foo.srt`. If the path has no extension, appends.
-  static String _replaceExtension(String path, String newExt) {
-    final dot = path.lastIndexOf('.');
-    final slash = path.lastIndexOf(RegExp(r'[/\\]'));
-    if (dot <= slash) return '$path$newExt';
-    return '${path.substring(0, dot)}$newExt';
-  }
-
-  /// Build the ffmpeg argv for the muxed export. Pulled out so the
-  /// muxing logic is greppable on its own.
-  ///
-  /// Truncation history: an earlier draft used `duration=first` +
-  /// `-shortest`, which truncated the output to the first overlay (a
-  /// 2-second TTS cue could shrink a 10-minute video to 2 seconds).
-  /// Both knobs are now reversed: `duration=longest` so amix doesn't
-  /// stop early, and no `-shortest` so the video copy drives length.
-  static List<String> _buildExportArgs({
-    required String videoPath,
-    required bool includeOriginalAudio,
-    required List<_AudioOverlay> overlays,
-    required String outPath,
-    String videoCodec = 'copy',
-    String audioCodec = 'aac',
-  }) {
-    final args = <String>['-y', '-i', videoPath];
-    for (final o in overlays) {
-      args.addAll(['-i', o.path]);
-    }
-    final mixInputs = <String>[];
-    final filterParts = <String>[];
-    if (includeOriginalAudio) mixInputs.add('[0:a]');
-    for (var i = 0; i < overlays.length; i++) {
-      final inputIdx = i + 1; // 0 is the video
-      final delay = overlays[i].startMs;
-      final tag = 'd$i';
-      // adelay applied per-channel; |-separated for stereo. The third
-      // value covers the rare 3-channel case ffmpeg can produce.
-      filterParts.add('[$inputIdx:a]adelay=$delay|$delay|$delay[$tag]');
-      mixInputs.add('[$tag]');
-    }
-    if (mixInputs.isEmpty) {
-      // Nothing to mix — encode video per the user's choice, drop audio.
-      args.addAll([
-        '-map', '0:v',
-        '-c:v', videoCodec,
-        '-an',
-        outPath,
-      ]);
-      return args;
-    }
-    filterParts.add(
-      '${mixInputs.join('')}amix=inputs=${mixInputs.length}:duration=longest:dropout_transition=0[aout]',
-    );
-    args.addAll([
-      '-filter_complex', filterParts.join(';'),
-      '-map', '0:v',
-      '-map', '[aout]',
-      '-c:v', videoCodec,
-      '-c:a', audioCodec,
-      '-b:a', '192k',
-      outPath,
-    ]);
-    return args;
-  }
-
-  /// Audio-only export: subtitles' generated TTS + A3 imports + (if not
-  /// muted) the original video's audio, mixed onto a single WAV. Lets
-  /// the user mux the dubbed audio back over the video in another tool
-  /// (Premiere, DaVinci, Audacity, …).
   Future<void> _exportAudio(db.VideoDubProject project) async {
-    final ffmpeg = ref.read(ffmpegServiceProvider);
-    if (!await ffmpeg.isAvailable()) {
-      _snack('FFmpeg is required for export — configure it in Settings');
-      return;
-    }
-
-    final cues = ref
-            .read(subtitleCuesStreamProvider(widget.projectId))
-            .valueOrNull ??
+    final cues =
+        ref.read(subtitleCuesStreamProvider(widget.projectId)).valueOrNull ??
         const <db.SubtitleCue>[];
-    final clips = ref
+    final clips =
+        ref
             .read(timelineClipsStreamProvider('videodub:${widget.projectId}'))
             .valueOrNull ??
         const <db.TimelineClip>[];
-
-    final overlays = <_AudioOverlay>[
-      for (final c in cues)
-        if (c.audioPath != null && File(c.audioPath!).existsSync())
-          _AudioOverlay(path: c.audioPath!, startMs: c.startMs),
-      for (final c in clips)
-        if (c.laneIndex == DubLanes.a3 && File(c.audioPath).existsSync())
-          _AudioOverlay(path: c.audioPath, startMs: c.startTimeMs),
-    ];
-
-    // Original video audio is opt-in: include it only when the user
-    // hasn't muted it AND we actually have a source video.
-    final src = project.videoPath;
-    final includeOriginal =
-        !_muteVideoAudio && src != null && File(src).existsSync();
-
-    if (overlays.isEmpty && !includeOriginal) {
-      _snack('Nothing to export — no generated TTS, A3 audio, or unmuted V1');
-      return;
-    }
-
-    final prefs = await ref.read(exportPrefsServiceProvider).load();
-    final ext = prefs.audioExtension;
-    final defaultName = '${_safeFileStem(project.name)}_dub$ext';
-    String? outPath;
-    try {
-      outPath = await FilePicker.platform.saveFile(
-        dialogTitle: 'Export dubbed audio',
-        fileName: defaultName,
-        type: FileType.audio,
-      );
-    } catch (_) {
-      final dir = await FilePicker.platform.getDirectoryPath(
-        dialogTitle: 'Choose export folder',
-      );
-      if (dir != null && dir.isNotEmpty) outPath = p.join(dir, defaultName);
-    }
-    if (outPath == null || outPath.isEmpty) return;
-    if (!outPath.toLowerCase().endsWith(ext)) outPath = '$outPath$ext';
-
     setState(() => _exporting = true);
-    final ffmpegPath = await ffmpeg.resolvePath();
-    final args = _buildAudioExportArgs(
-      sourceVideoPath: includeOriginal ? src : null,
-      overlays: overlays,
-      outPath: outPath,
-      audioCodec: prefs.audioFfmpegCodec,
-    );
     try {
-      // Approximate total duration for the progress bar — longest
-      // overlay end, plus the source video's length if it's mixed in.
-      var totalMs = 0;
-      for (final o in overlays) {
-        if (o.startMs > totalMs) totalMs = o.startMs;
-      }
-      if (includeOriginal && _duration.inMilliseconds > totalMs) {
-        totalMs = _duration.inMilliseconds;
-      }
-      final result = await runFfmpegWithProgress(
-        // ignore: use_build_context_synchronously
+      await exportVideoDubAudio(
         context: context,
-        ffmpegPath: ffmpegPath,
-        args: args,
-        totalDurationMs: totalMs,
-        taskLabel: 'Exporting audio…',
+        ref: ref,
+        project: project,
+        cues: cues,
+        clips: clips,
+        muteVideoAudio: _muteVideoAudio,
+        playerDuration: _duration,
       );
-      if (!mounted) return;
-      if (result.success) {
-        await showExportSuccessDialog(
-          // ignore: use_build_context_synchronously
-          context: context,
-          filePath: outPath,
-        );
-      } else if (result.cancelled) {
-        _snack('Export cancelled');
-      } else {
-        _snack('Audio export failed: ${result.stderrTail}');
-      }
-    } catch (e) {
-      if (mounted) _snack('Audio export failed: $e');
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
   }
 
-  /// Build the ffmpeg argv for an audio-only export. Mirrors
-  /// [_buildExportArgs] but never touches a video stream. The output
-  /// codec is chosen by the caller (driven by `ExportPrefs`); the file
-  /// extension on [outPath] should match.
-  static List<String> _buildAudioExportArgs({
-    required String? sourceVideoPath,
-    required List<_AudioOverlay> overlays,
-    required String outPath,
-    String audioCodec = 'pcm_s16le',
-  }) {
-    final args = <String>['-y'];
-    final mixInputs = <String>[];
-    final filterParts = <String>[];
-    var inputIdx = 0;
-    if (sourceVideoPath != null) {
-      args.addAll(['-i', sourceVideoPath]);
-      mixInputs.add('[$inputIdx:a]');
-      inputIdx++;
-    }
-    for (var i = 0; i < overlays.length; i++) {
-      args.addAll(['-i', overlays[i].path]);
-      final delay = overlays[i].startMs;
-      final tag = 'd$i';
-      filterParts.add('[$inputIdx:a]adelay=$delay|$delay|$delay[$tag]');
-      mixInputs.add('[$tag]');
-      inputIdx++;
-    }
-    filterParts.add(
-      '${mixInputs.join('')}amix=inputs=${mixInputs.length}:duration=longest:dropout_transition=0[aout]',
-    );
-    args.addAll([
-      '-filter_complex', filterParts.join(';'),
-      '-map', '[aout]',
-      '-c:a', audioCodec,
-      outPath,
-    ]);
-    return args;
-  }
-
-  /// Batch-export the project's cues as an SRT plus a folder of the
-  /// generated TTS audio files. Lets the user feed the dubbing material
-  /// into another tool (Premiere, DaVinci, Audacity, …) without needing
-  /// this app to mux the final cut.
   Future<void> _exportSubtitlesAndTts(
     db.VideoDubProject project,
     List<db.SubtitleCue> cues,
   ) async {
-    if (cues.isEmpty) return;
-    final dir = await FilePicker.platform.getDirectoryPath(
-      dialogTitle: 'Choose export folder for subtitles + TTS files',
-    );
-    if (dir == null || dir.isEmpty) return;
-
-    final stem = _safeFileStem(project.name);
-    final outDir = Directory(p.join(dir, '${stem}_export'));
-    final ttsDir = Directory(p.join(outDir.path, 'tts'));
     setState(() => _exportingSubtitles = true);
     try {
-      await outDir.create(recursive: true);
-      await ttsDir.create(recursive: true);
-
-      // Write SRT.
-      final srtBuf = StringBuffer();
-      // SRT generation lives in _cuesToSrt — same format as the
-      // sidecar produced alongside Export Video.
-      srtBuf.write(_cuesToSrt(cues));
-      await File(p.join(outDir.path, '$stem.srt'))
-          .writeAsString(srtBuf.toString());
-
-      // Copy TTS audio files alongside, named so they sort by cue order.
-      var copied = 0;
-      var missing = 0;
-      for (var i = 0; i < cues.length; i++) {
-        final c = cues[i];
-        if (c.audioPath == null) {
-          missing++;
-          continue;
-        }
-        final src = File(c.audioPath!);
-        if (!src.existsSync()) {
-          missing++;
-          continue;
-        }
-        final ext = p.extension(c.audioPath!);
-        final ord = (i + 1).toString().padLeft(3, '0');
-        final destName = 'cue_${ord}_${_msToFilename(c.startMs)}$ext';
-        await src.copy(p.join(ttsDir.path, destName));
-        copied++;
-      }
-
-      // Manifest: cue → file mapping in case the consumer wants to
-      // script timing without re-parsing the SRT.
-      final manifest = StringBuffer()
-        ..writeln('# Cue manifest — start_ms\tend_ms\tfile\ttext');
-      for (var i = 0; i < cues.length; i++) {
-        final c = cues[i];
-        final file = c.audioPath == null
-            ? '-'
-            : 'tts/cue_${(i + 1).toString().padLeft(3, '0')}_${_msToFilename(c.startMs)}${p.extension(c.audioPath!)}';
-        final text = c.cueText.replaceAll('\t', ' ').replaceAll('\n', ' ');
-        manifest.writeln('${c.startMs}\t${c.endMs}\t$file\t$text');
-      }
-      await File(p.join(outDir.path, 'manifest.tsv'))
-          .writeAsString(manifest.toString());
-
-      if (mounted) {
-        _snack(
-            'Exported ${cues.length} cues + $copied audio files to ${outDir.path}'
-            '${missing > 0 ? ' ($missing missing)' : ''}');
-      }
-    } catch (e) {
-      if (mounted) _snack('Export failed: $e');
+      await exportVideoDubSubtitlesAndTts(
+        context: context,
+        project: project,
+        cues: cues,
+      );
     } finally {
       if (mounted) setState(() => _exportingSubtitles = false);
     }
@@ -1500,8 +1232,10 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
       }
       if (adjusted > 0) _markDirty();
       if (mounted) {
-        _snack('Synced $adjusted cue(s) to audio length'
-            '${skipped > 0 ? ' ($skipped without audio skipped)' : ''}');
+        _snack(
+          'Synced $adjusted cue(s) to audio length'
+          '${skipped > 0 ? ' ($skipped without audio skipped)' : ''}',
+        );
       }
     } finally {
       if (mounted) setState(() => _syncingCueLengths = false);
@@ -1513,45 +1247,16 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
   Future<void> _moveCueTo(db.SubtitleCue cue, int newStartMs) async {
     final clamped = newStartMs < 0 ? 0 : newStartMs;
     final dur = cue.endMs - cue.startMs;
-    await ref.read(databaseProvider).updateSubtitleCue(
-          cue.copyWith(
-            startMs: clamped,
-            endMs: clamped + dur,
-          ),
+    await ref
+        .read(databaseProvider)
+        .updateSubtitleCue(
+          cue.copyWith(startMs: clamped, endMs: clamped + dur),
         );
     _markDirty();
   }
 
   void _snack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-  }
-
-  static String _safeFileStem(String s) {
-    final cleaned = s
-        .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
-        .replaceAll(RegExp(r'\s+'), '_')
-        .trim();
-    return cleaned.isEmpty ? 'project' : cleaned;
-  }
-
-  static String _msToSrt(int ms) {
-    final d = Duration(milliseconds: ms);
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
-    final s = d.inSeconds.remainder(60);
-    final msR = d.inMilliseconds.remainder(1000);
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(h)}:${two(m)}:${two(s)},${msR.toString().padLeft(3, '0')}';
-  }
-
-  static String _msToFilename(int ms) {
-    // mm-ss-mmm — sortable, filesystem-safe.
-    final d = Duration(milliseconds: ms);
-    final m = d.inMinutes;
-    final s = d.inSeconds.remainder(60);
-    final msR = d.inMilliseconds.remainder(1000);
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(m)}-${two(s)}-${msR.toString().padLeft(3, '0')}';
   }
 
   Future<void> _importSubtitles(
@@ -1573,25 +1278,28 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
       parsed = await SubtitleParser.parseFile(file);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Parse failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Parse failed: $e')));
       }
       return;
     }
     if (parsed.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No cues found in file')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No cues found in file')));
       }
       return;
     }
 
     if (!mounted) return;
-    final choice = await _showImportDialog(
+    final choice = await showImportSubtitlesDialog(
+      context: context,
       cueCount: parsed.length,
       existingCount: existing.length,
+      initialAutoTts: _autoTtsAfterImport,
+      initialAutoSync: _autoSyncAfterImport,
     );
     if (choice == null) return;
 
@@ -1608,12 +1316,12 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
       nextOrder = existing.isEmpty
           ? 0
           : (existing.map((c) => c.orderIndex).reduce((a, b) => a > b ? a : b) +
-              1);
+                1);
     }
     final banks = ref.read(voiceBanksStreamProvider).valueOrNull ?? const [];
     final members =
         ref.read(bankMembersStreamProvider(project.bankId)).valueOrNull ??
-            const <db.VoiceBankMember>[];
+        const <db.VoiceBankMember>[];
     // Default voice = first voice in this project's bank.
     String? defaultVoiceId;
     if (members.isNotEmpty && banks.isNotEmpty) {
@@ -1638,9 +1346,9 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
       project.copyWith(updatedAt: DateTime.now()),
     );
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Imported ${parsed.length} cues')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Imported ${parsed.length} cues')));
     }
 
     // Auto-flow: re-read cues from the database (the freshly-inserted
@@ -1678,74 +1386,6 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
         .toList();
   }
 
-  /// Show the SRT-import options dialog. Returns null if cancelled,
-  /// otherwise the three flags the import flow needs.
-  Future<({bool replace, bool autoTts, bool autoSync})?> _showImportDialog({
-    required int cueCount,
-    required int existingCount,
-  }) {
-    var autoTts = _autoTtsAfterImport;
-    var autoSync = _autoSyncAfterImport;
-    return showDialog<({bool replace, bool autoTts, bool autoSync})>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('Import $cueCount cues?'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                existingCount == 0
-                    ? 'Cues will be added to this project.'
-                    : 'This project already has $existingCount cues. '
-                        'Replace them, or append the new cues after?',
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-                title: const Text('Auto-generate TTS after import'),
-                subtitle: const Text(
-                    'Run Generate All immediately. Cues without a voice are skipped.',
-                    style: TextStyle(fontSize: 11)),
-                value: autoTts,
-                onChanged: (v) => setDialogState(() => autoTts = v),
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-                title: const Text('Auto-sync cue lengths to audio'),
-                subtitle: const Text(
-                    'After generating, snap each cue end to its TTS length.',
-                    style: TextStyle(fontSize: 11)),
-                value: autoSync,
-                onChanged: (v) => setDialogState(() => autoSync = v),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            if (existingCount > 0)
-              TextButton(
-                onPressed: () => Navigator.pop(ctx,
-                    (replace: false, autoTts: autoTts, autoSync: autoSync)),
-                child: const Text('Append'),
-              ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx,
-                  (replace: true, autoTts: autoTts, autoSync: autoSync)),
-              child: Text(existingCount == 0 ? 'Import' : 'Replace'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Future<void> _addCueDialog(
     db.VideoDubProject project,
     List<db.SubtitleCue> existing,
@@ -1755,15 +1395,18 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     final bankAssets = await _resolveBankAssets(project.bankId);
     // Default to the first voice if there is one, mirroring what the
     // SRT-import path does.
-    final initialVoiceId =
-        bankAssets.isEmpty ? null : bankAssets.first.id;
+    final initialVoiceId = bankAssets.isEmpty ? null : bankAssets.first.id;
 
-    final result = await _showCueEditDialog(
+    if (!mounted) return;
+    final result = await showCueEditDialog(
+      context: context,
       initialStartMs: _position.inMilliseconds,
       initialEndMs: _position.inMilliseconds + 3000,
       initialText: '',
       title: 'Add cue',
       showAutoSwitches: true,
+      initialAutoTts: _autoTtsAfterImport,
+      initialAutoSync: _autoSyncAfterImport,
       voiceAssets: bankAssets,
       initialVoiceId: initialVoiceId,
     );
@@ -1776,7 +1419,7 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     final nextOrder = existing.isEmpty
         ? 0
         : (existing.map((c) => c.orderIndex).reduce((a, b) => a > b ? a : b) +
-            1);
+              1);
     // Prefer the dropdown choice; fall back to the first bank voice if
     // somehow nothing came back.
     final voiceForCue = result.voiceAssetId ?? initialVoiceId;
@@ -1830,7 +1473,8 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
   }
 
   Future<void> _editCueDialog(db.SubtitleCue cue) async {
-    final result = await _showCueEditDialog(
+    final result = await showCueEditDialog(
+      context: context,
       initialStartMs: cue.startMs,
       initialEndMs: cue.endMs,
       initialText: cue.cueText,
@@ -1838,7 +1482,9 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     );
     if (result == null) return;
     _markDirty();
-    await ref.read(databaseProvider).updateSubtitleCue(
+    await ref
+        .read(databaseProvider)
+        .updateSubtitleCue(
           cue.copyWith(
             startMs: result.startMs,
             endMs: result.endMs,
@@ -1851,194 +1497,9 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
         );
   }
 
-  Future<_CueEdit?> _showCueEditDialog({
-    required int initialStartMs,
-    required int initialEndMs,
-    required String initialText,
-    required String title,
-    bool showAutoSwitches = false,
-    List<db.VoiceAsset>? voiceAssets,
-    String? initialVoiceId,
-  }) async {
-    final startCtrl =
-        TextEditingController(text: _msToStamp(initialStartMs));
-    final endCtrl = TextEditingController(text: _msToStamp(initialEndMs));
-    final textCtrl = TextEditingController(text: initialText);
-    String? errorMsg;
-    // Defaults track the session-sticky import preferences so the user
-    // doesn't have to re-toggle when switching between bulk import and
-    // single-cue add.
-    var autoTts = _autoTtsAfterImport;
-    var autoSync = _autoSyncAfterImport;
-    // Voice dropdown — only rendered when the caller passes a list.
-    // Default to the supplied initialVoiceId if it's still in the bank,
-    // otherwise the bank's first voice.
-    String? selectedVoiceId;
-    if (voiceAssets != null && voiceAssets.isNotEmpty) {
-      final has = initialVoiceId != null &&
-          voiceAssets.any((v) => v.id == initialVoiceId);
-      selectedVoiceId = has ? initialVoiceId : voiceAssets.first.id;
-    }
-
-    return showDialog<_CueEdit>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(title),
-          content: SizedBox(
-            width: 420,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: startCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Start (mm:ss.ms)',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: endCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'End (mm:ss.ms)',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: textCtrl,
-                  autofocus: true,
-                  maxLines: 4,
-                  minLines: 2,
-                  decoration: const InputDecoration(
-                    labelText: 'Subtitle text',
-                  ),
-                ),
-                if (voiceAssets != null && voiceAssets.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: 'Voice',
-                      isDense: true,
-                    ),
-                    isExpanded: true,
-                    initialValue: selectedVoiceId,
-                    items: [
-                      for (final a in voiceAssets)
-                        DropdownMenuItem(
-                          value: a.id,
-                          child: Text(a.name,
-                              overflow: TextOverflow.ellipsis),
-                        ),
-                    ],
-                    onChanged: (v) =>
-                        setDialogState(() => selectedVoiceId = v),
-                  ),
-                ],
-                if (showAutoSwitches) ...[
-                  const SizedBox(height: 8),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: const Text('Auto-generate TTS'),
-                    subtitle: const Text(
-                        'Run TTS for this cue immediately after saving. Needs a voice in the bank.',
-                        style: TextStyle(fontSize: 11)),
-                    value: autoTts,
-                    onChanged: (v) => setDialogState(() => autoTts = v),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: const Text('Auto-sync length to audio'),
-                    subtitle: const Text(
-                        'After generating, snap the End time to the actual TTS length.',
-                        style: TextStyle(fontSize: 11)),
-                    value: autoSync,
-                    onChanged: (v) => setDialogState(() => autoSync = v),
-                  ),
-                ],
-                if (errorMsg != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Text(errorMsg!,
-                        style: const TextStyle(
-                            color: Colors.redAccent, fontSize: 12)),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel')),
-            FilledButton(
-              onPressed: () {
-                final startMs = _parseStamp(startCtrl.text);
-                final endMs = _parseStamp(endCtrl.text);
-                if (startMs == null || endMs == null) {
-                  setDialogState(() =>
-                      errorMsg = 'Use format mm:ss.ms or HH:mm:ss.ms');
-                  return;
-                }
-                if (endMs <= startMs) {
-                  setDialogState(() =>
-                      errorMsg = 'End must be greater than start');
-                  return;
-                }
-                if (textCtrl.text.trim().isEmpty) {
-                  setDialogState(() => errorMsg = 'Text is required');
-                  return;
-                }
-                Navigator.pop(
-                  ctx,
-                  _CueEdit(
-                    startMs: startMs,
-                    endMs: endMs,
-                    text: textCtrl.text.trim(),
-                    autoTts: showAutoSwitches && autoTts,
-                    autoSync: showAutoSwitches && autoSync,
-                    voiceAssetId: selectedVoiceId,
-                  ),
-                );
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Future<void> _confirmClearCues(db.VideoDubProject project) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Clear all cues?'),
-        content: const Text(
-            'Cues will be removed. Generated audio files on disk are kept '
-            'but the references will be gone.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
-          FilledButton(
-            style:
-                FilledButton.styleFrom(backgroundColor: Colors.redAccent),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Clear'),
-          ),
-        ],
-      ),
-    );
-    if (confirm == true) {
+    final confirmed = await showClearCuesConfirmDialog(context);
+    if (confirmed) {
       await ref.read(databaseProvider).clearSubtitleCues(project.id);
       _markDirty();
     }
@@ -2053,27 +1514,21 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
   }
 
   void _updateCueVoice(db.SubtitleCue cue, String? voiceId) {
-    ref.read(databaseProvider).updateSubtitleCue(
-          cue.copyWith(voiceAssetId: Value(voiceId)),
-        );
+    ref
+        .read(databaseProvider)
+        .updateSubtitleCue(cue.copyWith(voiceAssetId: Value(voiceId)));
     _markDirty();
   }
 
   Future<void> _previewCue(db.SubtitleCue cue) async {
     if (cue.audioPath == null) return;
-    final playback = ref.read(playbackNotifierProvider);
-    final notifier = ref.read(playbackNotifierProvider.notifier);
-    if (_previewCueId == cue.id && playback.isPlaying) {
-      await notifier.stop();
+    if (_previewCueId == cue.id) {
+      await _previewPlayer.stop();
       setState(() => _previewCueId = null);
       return;
     }
     setState(() => _previewCueId = cue.id);
-    await notifier.load(
-      cue.audioPath!,
-      cue.cueText,
-      subtitle: 'Cue preview',
-    );
+    await _previewPlayer.open(Media(cue.audioPath!), play: true);
   }
 
   /// Generate TTS for every cue. By default skips cues that already
@@ -2091,8 +1546,7 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     final alreadyDone = cues
         .where((c) => c.voiceAssetId != null && c.audioPath != null)
         .length;
-    final missingVoice =
-        cues.where((c) => c.voiceAssetId == null).length;
+    final missingVoice = cues.where((c) => c.voiceAssetId == null).length;
 
     bool forceRegen = false;
     if (alreadyDone > 0) {
@@ -2101,20 +1555,24 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
         builder: (ctx) => AlertDialog(
           title: const Text('Generate all cues'),
           content: Text(
-              '$alreadyDone cue(s) already have audio. '
-              '$pending pending. '
-              '${missingVoice > 0 ? '$missingVoice without a voice will be skipped. ' : ''}'
-              'Regenerate the existing ones too, or only fill in the gaps?'),
+            '$alreadyDone cue(s) already have audio. '
+            '$pending pending. '
+            '${missingVoice > 0 ? '$missingVoice without a voice will be skipped. ' : ''}'
+            'Regenerate the existing ones too, or only fill in the gaps?',
+          ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx, 'cancel'),
-                child: const Text('Cancel')),
+              onPressed: () => Navigator.pop(ctx, 'cancel'),
+              child: const Text('Cancel'),
+            ),
             TextButton(
-                onPressed: () => Navigator.pop(ctx, 'skip'),
-                child: const Text('Only pending')),
+              onPressed: () => Navigator.pop(ctx, 'skip'),
+              child: const Text('Only pending'),
+            ),
             FilledButton(
-                onPressed: () => Navigator.pop(ctx, 'regen'),
-                child: const Text('Regenerate all')),
+              onPressed: () => Navigator.pop(ctx, 'regen'),
+              child: const Text('Regenerate all'),
+            ),
           ],
         ),
       );
@@ -2156,8 +1614,10 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     }
     if (done > 0) _markDirty();
     if (mounted) {
-      _snack('Generated $done cue(s)'
-          '${failed > 0 ? ', $failed failed' : ''}');
+      _snack(
+        'Generated $done cue(s)'
+        '${failed > 0 ? ', $failed failed' : ''}',
+      );
     }
   }
 
@@ -2195,17 +1655,21 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     setState(() => _generatingCueIds.add(cue.id));
     try {
       final adapter = createAdapter(provider, modelName: asset.modelName);
-      final result = await adapter.synthesize(TtsRequest(
-        text: cue.cueText,
-        voice: asset.presetVoiceName ?? asset.name,
-        speed: asset.speed,
-        textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
-        presetVoiceName: asset.presetVoiceName,
-        voiceInstruction: asset.voiceInstruction,
-        refAudioPath: asset.refAudioPath,
-        promptText: asset.promptText,
-        promptLang: asset.promptLang,
-      ));
+      final result = await adapter.synthesize(
+        TtsRequest(
+          text: cue.cueText,
+          voice: asset.presetVoiceName ?? asset.name,
+          speed: asset.speed,
+          textLang: provider.adapterType == 'gptSovits'
+              ? asset.modelName
+              : null,
+          presetVoiceName: asset.presetVoiceName,
+          voiceInstruction: asset.voiceInstruction,
+          refAudioPath: asset.refAudioPath,
+          promptText: asset.promptText,
+          promptLang: asset.promptLang,
+        ),
+      );
       final ext = result.contentType.contains('wav') ? '.wav' : '.mp3';
       final filePath = PathService.dedupeFilename(
         outDir,
@@ -2213,7 +1677,7 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
         ext,
       );
       await File(filePath).writeAsBytes(result.audioBytes);
-      final durationSec = await measureAudioDuration(filePath);
+      final durationSec = await _probeMediaDuration(filePath);
       await database.updateSubtitleCue(
         cue.copyWith(
           audioPath: Value(filePath),
@@ -2236,9 +1700,9 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
   /// Stays in the editor — leaving is a separate action via the back
   /// arrow.
   Future<void> _save(db.VideoDubProject project) async {
-    await ref.read(databaseProvider).updateVideoDubProject(
-          project.copyWith(updatedAt: DateTime.now()),
-        );
+    await ref
+        .read(databaseProvider)
+        .updateVideoDubProject(project.copyWith(updatedAt: DateTime.now()));
     if (!mounted) return;
     setState(() => _dirty = false);
     _snack('Saved');
@@ -2258,7 +1722,8 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
       builder: (ctx) => AlertDialog(
         title: const Text('Unsaved changes'),
         content: const Text(
-            'You have unsaved changes in this project. Save before leaving?'),
+          'You have unsaved changes in this project. Save before leaving?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'cancel'),
@@ -2290,251 +1755,5 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     final s = d.inSeconds.remainder(60);
     String two(int n) => n.toString().padLeft(2, '0');
     return h > 0 ? '${two(h)}:${two(m)}:${two(s)}' : '${two(m)}:${two(s)}';
-  }
-
-  static String _msToStamp(int ms) {
-    final d = Duration(milliseconds: ms);
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
-    final s = d.inSeconds.remainder(60);
-    final msR = d.inMilliseconds.remainder(1000);
-    String two(int n) => n.toString().padLeft(2, '0');
-    final tail = '${two(m)}:${two(s)}.${msR.toString().padLeft(3, '0')}';
-    return h > 0 ? '${two(h)}:$tail' : tail;
-  }
-
-  /// Accepts `mm:ss`, `mm:ss.ms`, `HH:mm:ss`, `HH:mm:ss.ms`.
-  static int? _parseStamp(String input) {
-    final s = input.trim();
-    if (s.isEmpty) return null;
-    final m = RegExp(
-      r'^(?:(\d{1,2}):)?(\d{1,2}):(\d{1,2})(?:[.,](\d{1,3}))?$',
-    ).firstMatch(s);
-    if (m == null) return null;
-    final hours = m.group(1) == null ? 0 : int.parse(m.group(1)!);
-    final minutes = int.parse(m.group(2)!);
-    final seconds = int.parse(m.group(3)!);
-    final msGroup = m.group(4);
-    final ms = msGroup == null ? 0 : int.parse(msGroup.padRight(3, '0'));
-    return ((hours * 3600) + (minutes * 60) + seconds) * 1000 + ms;
-  }
-}
-
-class _CueEdit {
-  final int startMs;
-  final int endMs;
-  final String text;
-  /// Set only by the Add-cue path when [_showCueEditDialog] was asked
-  /// to render the auto switches. Edit-cue ignores both.
-  final bool autoTts;
-  final bool autoSync;
-  /// Voice the user picked in the dialog. `null` when the dialog wasn't
-  /// asked to render the voice dropdown (Edit-cue) or when the bank has
-  /// no voices to choose from. The Add-cue caller uses this verbatim.
-  final String? voiceAssetId;
-  const _CueEdit({
-    required this.startMs,
-    required this.endMs,
-    required this.text,
-    this.autoTts = false,
-    this.autoSync = false,
-    this.voiceAssetId,
-  });
-}
-
-/// One audio source going into the muxed export, delayed to its cue /
-/// clip start.
-class _AudioOverlay {
-  final String path;
-  final int startMs;
-  const _AudioOverlay({required this.path, required this.startMs});
-}
-
-// ───────────────── Cue Card ─────────────────
-
-class _CueCard extends StatelessWidget {
-  final db.SubtitleCue cue;
-  final int index;
-  final List<db.VoiceAsset> bankAssets;
-  final bool isSelected;
-  final bool isGenerating;
-  final bool isPreviewing;
-  final VoidCallback onTap;
-  final ValueChanged<String?> onVoiceChanged;
-  final VoidCallback? onGenerate;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  final VoidCallback onPreview;
-
-  const _CueCard({
-    required this.cue,
-    required this.index,
-    required this.bankAssets,
-    required this.isSelected,
-    required this.isGenerating,
-    required this.isPreviewing,
-    required this.onTap,
-    required this.onVoiceChanged,
-    required this.onGenerate,
-    required this.onEdit,
-    required this.onDelete,
-    required this.onPreview,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bankHasVoice = bankAssets.any((a) => a.id == cue.voiceAssetId);
-    final canGenerate =
-        cue.voiceAssetId != null && bankHasVoice && !isGenerating;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 6),
-      color: isSelected
-          ? AppTheme.accentColor.withValues(alpha: 0.16)
-          : null,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(
-          color: isSelected
-              ? Colors.amber.withValues(alpha: 0.6)
-              : Colors.transparent,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text('#${index + 1}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white.withValues(alpha: 0.55),
-                      )),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '${_ms(cue.startMs)} → ${_ms(cue.endMs)}',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontFamily: 'monospace',
-                        color: Colors.white.withValues(alpha: 0.45),
-                      ),
-                    ),
-                  ),
-                  if (isGenerating)
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  else if (cue.error != null)
-                    Tooltip(
-                      message: cue.error!,
-                      child: const Icon(Icons.error_rounded,
-                          size: 16, color: Colors.redAccent),
-                    )
-                  else if (cue.audioPath != null)
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints:
-                          const BoxConstraints.tightFor(width: 24, height: 24),
-                      icon: Icon(
-                        isPreviewing
-                            ? Icons.stop_rounded
-                            : Icons.play_arrow_rounded,
-                        size: 16,
-                      ),
-                      tooltip: 'Preview',
-                      onPressed: onPreview,
-                    )
-                  else
-                    Icon(Icons.pending_rounded,
-                        size: 14,
-                        color: Colors.white.withValues(alpha: 0.22)),
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 24, height: 24),
-                    icon: Icon(
-                      cue.audioPath != null
-                          ? Icons.refresh_rounded
-                          : Icons.auto_awesome_rounded,
-                      size: 14,
-                      color: canGenerate
-                          ? AppTheme.accentColor
-                          : Colors.white.withValues(alpha: 0.18),
-                    ),
-                    tooltip:
-                        cue.audioPath != null ? 'Regenerate' : 'Generate',
-                    onPressed: canGenerate ? onGenerate : null,
-                  ),
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 24, height: 24),
-                    icon: Icon(Icons.edit_outlined,
-                        size: 14,
-                        color: Colors.white.withValues(alpha: 0.4)),
-                    tooltip: 'Edit',
-                    onPressed: onEdit,
-                  ),
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 24, height: 24),
-                    icon: Icon(Icons.close_rounded,
-                        size: 14,
-                        color: Colors.white.withValues(alpha: 0.35)),
-                    onPressed: onDelete,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(cue.cueText,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13)),
-              const SizedBox(height: 6),
-              SizedBox(
-                height: 30,
-                child: DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                    hintText: 'Voice',
-                    isDense: true,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  ),
-                  isExpanded: true,
-                  initialValue: bankHasVoice ? cue.voiceAssetId : null,
-                  items: bankAssets
-                      .map((a) => DropdownMenuItem(
-                          value: a.id,
-                          child: Text(a.name,
-                              style: const TextStyle(fontSize: 12),
-                              overflow: TextOverflow.ellipsis)))
-                      .toList(),
-                  onChanged: onVoiceChanged,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _ms(int ms) {
-    final d = Duration(milliseconds: ms);
-    final m = d.inMinutes;
-    final s = d.inSeconds.remainder(60);
-    final msR = d.inMilliseconds.remainder(1000);
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(m)}:${two(s)}.${msR.toString().padLeft(3, '0')}';
   }
 }

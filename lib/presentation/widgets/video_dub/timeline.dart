@@ -1,35 +1,13 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
-
-/// Track addressing inside `TimelineClips` for video-dub projects.
-/// Simplified 1V3A layout (no image/V2 lane, no PR-class compositing):
-///
-///   V1 → laneIndex -1 — the single dubbed video. Only one clip allowed.
-///   A1 → laneIndex  1 — the V1 video's own audio (auto-linked on
-///                       import; can be deleted or muted at the track).
-///   A2 → (virtual)    — TTS cues, sourced directly from `SubtitleCues`.
-///                       No `TimelineClip` rows live here.
-///   A3 → laneIndex  3 — free-form imported audio (SFX, music).
-///
-/// Lane index 2 is reserved for A2's future if cues ever migrate into
-/// `TimelineClips`. Until then, A2 is rendered from `SubtitleCues`.
-class DubLanes {
-  static const int v1 = -1;
-  static const int a1 = 1;
-  static const int a3 = 3;
-}
-
-/// Which import bucket a file should be placed in. The caller resolves the
-/// lane from this choice via [DubLanes]. Image imports were removed —
-/// this is a single-video dubber, not a compositor.
-enum DubImportKind { video, audio }
+import 'package:neiroha/presentation/widgets/video_dub/tracks.dart';
 
 /// Multi-track timeline for Video Dub. Shows:
-///   • V1 / V2 — imported videos + images (from TimelineClips, negative lanes)
-///   • A1     — TTS cues (from SubtitleCues)
-///   • A2 / A3 — imported audio (from TimelineClips, positive lanes)
+///   • V1 — imported video (from TimelineClips)
+///   • A1 — the video's linked original audio (from TimelineClips)
+///   • A2 — TTS cues (from SubtitleCues)
+///   • A3 — imported audio (from TimelineClips)
 ///
 /// Navigation is range-based (Premiere-style): two handles at the bottom
 /// define the visible window [leftMs, rightMs]. Bringing them together
@@ -48,6 +26,7 @@ class VideoDubTimeline extends StatefulWidget {
   final ValueChanged<db.TimelineClip> onTapClip;
   final ValueChanged<db.TimelineClip> onDeleteClip;
   final void Function(DubImportKind) onImport;
+
   /// Drag commit for an A2 cue block — `newStartMs` is the proposed
   /// new start; the caller is responsible for clamping and persisting.
   final void Function(db.SubtitleCue cue, int newStartMs)? onMoveCue;
@@ -133,46 +112,52 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
 
     // If content grew past the scrubber's right edge, nudge it out.
     if (_viewRightMs! < total &&
-        _viewRightMs! == total /* no-op — keep for clarity */) {
+        _viewRightMs! == total /* no-op — keep for clarity */ ) {
       // keep
     }
     _viewRightMs = _viewRightMs!.clamp(0, total);
     _viewLeftMs = _viewLeftMs.clamp(0, _viewRightMs! - 500).clamp(0, total);
 
-    return LayoutBuilder(builder: (context, constraints) {
-      final bodyWidth = (constraints.maxWidth - _headerWidth).clamp(120.0,
-          constraints.maxWidth);
-      final pxPerMs = bodyWidth / _viewSpanMs;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bodyWidth = (constraints.maxWidth - _headerWidth).clamp(
+          120.0,
+          constraints.maxWidth,
+        );
+        final pxPerMs = bodyWidth / _viewSpanMs;
 
-      final tracks = _buildTrackList();
+        final tracks = _buildTrackList();
 
-      return Container(
-        color: AppTheme.surfaceDim,
-        child: Column(
-          children: [
-            _buildToolbar(),
-            const Divider(height: 1),
-            if (!widget.ffmpegAvailable) _buildFfmpegBanner(),
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(
-                    width: _headerWidth,
-                    child: _buildTrackHeaders(tracks),
-                  ),
-                  const VerticalDivider(width: 1, thickness: 1),
-                  Expanded(
-                    child: _buildTrackBody(tracks, pxPerMs),
-                  ),
-                ],
+        return Container(
+          color: AppTheme.surfaceDim,
+          child: Column(
+            children: [
+              _buildToolbar(),
+              const Divider(height: 1),
+              if (!widget.ffmpegAvailable) _buildFfmpegBanner(),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(
+                      width: _headerWidth,
+                      child: _buildTrackHeaders(tracks),
+                    ),
+                    const VerticalDivider(width: 1, thickness: 1),
+                    Expanded(
+                      child: ExcludeSemantics(
+                        child: _buildTrackBody(tracks, pxPerMs),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            _buildRangeScrubber(total),
-          ],
-        ),
-      );
-    });
+              _buildRangeScrubber(total),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   // ─────────────── toolbar ───────────────
@@ -187,8 +172,10 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Row(
           children: [
-            const Text('Dub Timeline',
-                style: TextStyle(fontSize: 12, color: Colors.white54)),
+            const Text(
+              'Dub Timeline',
+              style: TextStyle(fontSize: 12, color: Colors.white54),
+            ),
             const SizedBox(width: 12),
             Text(
               '${widget.cues.length} cues · ${widget.clips.length} clips · ${_fmtMs(_contentTotalMs)}',
@@ -225,8 +212,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Row(
         children: [
-          const Icon(Icons.info_outline_rounded,
-              size: 14, color: Colors.amber),
+          const Icon(Icons.info_outline_rounded, size: 14, color: Colors.amber),
           const SizedBox(width: 6),
           const Expanded(
             child: Text(
@@ -241,8 +227,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
               minimumSize: const Size(0, 24),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: const Text('Settings',
-                style: TextStyle(fontSize: 11)),
+            child: const Text('Settings', style: TextStyle(fontSize: 11)),
           ),
         ],
       ),
@@ -286,8 +271,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (t.kind == _TrackKind.a1 &&
-                      widget.onToggleA1Mute != null)
+                  if (t.kind == _TrackKind.a1 && widget.onToggleA1Mute != null)
                     Tooltip(
                       message: widget.a1Muted
                           ? 'A1 muted (original video audio off)'
@@ -362,9 +346,10 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
   /// Body tap on the ruler seeks, elsewhere it clears selection.
   void _handleBodyTap(Offset local, double pxPerMs) {
     if (local.dy <= _rulerHeight) {
-      final ms = (_viewLeftMs + local.dx / pxPerMs)
-          .round()
-          .clamp(0, _contentTotalMs);
+      final ms = (_viewLeftMs + local.dx / pxPerMs).round().clamp(
+        0,
+        _contentTotalMs,
+      );
       widget.onSeek(Duration(milliseconds: ms));
     }
   }
@@ -395,9 +380,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
 
   Widget _buildCueLane(double pxPerMs) {
     return Stack(
-      children: [
-        for (final cue in widget.cues) _buildCueBlock(cue, pxPerMs),
-      ],
+      children: [for (final cue in widget.cues) _buildCueBlock(cue, pxPerMs)],
     );
   }
 
@@ -470,44 +453,44 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
             });
           },
           child: Container(
-          decoration: BoxDecoration(
-            color: isSelected ? bg : bg.withValues(alpha: 0.7),
-            border: Border.all(
-              color: isSelected
-                  ? Colors.amber
-                  : Colors.white.withValues(alpha: 0.2),
-              width: isSelected ? 2 : 1,
-            ),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                cue.cueText,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
+            decoration: BoxDecoration(
+              color: isSelected ? bg : bg.withValues(alpha: 0.7),
+              border: Border.all(
+                color: isSelected
+                    ? Colors.amber
+                    : Colors.white.withValues(alpha: 0.2),
+                width: isSelected ? 2 : 1,
               ),
-              if (voiceName != null)
+              borderRadius: BorderRadius.circular(4),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  voiceName,
+                  cue.cueText,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: Colors.white.withValues(alpha: 0.7),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-            ],
+                if (voiceName != null)
+                  Text(
+                    voiceName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 9,
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );
@@ -548,7 +531,10 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
   }
 
   Widget _buildClipBlock(
-      db.TimelineClip clip, _TrackKind kind, double pxPerMs) {
+    db.TimelineClip clip,
+    _TrackKind kind,
+    double pxPerMs,
+  ) {
     final durMs = ((clip.durationSec ?? 1) * 1000).round();
     final left = (clip.startTimeMs - _viewLeftMs) * pxPerMs;
     final width = (durMs * pxPerMs).clamp(8.0, 20000.0);
@@ -621,9 +607,11 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
                   onTap: () => widget.onDeleteClip(clip),
                   child: Padding(
                     padding: const EdgeInsets.only(left: 2),
-                    child: Icon(Icons.close_rounded,
-                        size: 12,
-                        color: Colors.white.withValues(alpha: 0.8)),
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 12,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
                   ),
                 ),
             ],
@@ -652,25 +640,31 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
   // ─────────────── range scrubber ───────────────
 
   Widget _buildRangeScrubber(int totalMs) {
-    return Container(
-      height: _scrubberHeight,
-      color: AppTheme.surfaceBright,
-      padding:
-          const EdgeInsets.only(left: _headerWidth, right: 8, top: 4, bottom: 4),
-      child: _RangeScrubber(
-        totalMs: totalMs,
-        leftMs: _viewLeftMs,
-        rightMs: _viewRightMs ?? totalMs,
-        playheadMs: widget.position.inMilliseconds,
-        clips: widget.clips,
-        cues: widget.cues,
-        onRangeChanged: (l, r) {
-          setState(() {
-            _viewLeftMs = l;
-            _viewRightMs = r;
-          });
-        },
-        onScrub: (ms) => widget.onSeek(Duration(milliseconds: ms)),
+    return ExcludeSemantics(
+      child: Container(
+        height: _scrubberHeight,
+        color: AppTheme.surfaceBright,
+        padding: const EdgeInsets.only(
+          left: _headerWidth,
+          right: 8,
+          top: 4,
+          bottom: 4,
+        ),
+        child: _RangeScrubber(
+          totalMs: totalMs,
+          leftMs: _viewLeftMs,
+          rightMs: _viewRightMs ?? totalMs,
+          playheadMs: widget.position.inMilliseconds,
+          clips: widget.clips,
+          cues: widget.cues,
+          onRangeChanged: (l, r) {
+            setState(() {
+              _viewLeftMs = l;
+              _viewRightMs = r;
+            });
+          },
+          onScrub: (ms) => widget.onSeek(Duration(milliseconds: ms)),
+        ),
       ),
     );
   }
@@ -710,18 +704,18 @@ class _TrackRow {
       _TrackRow._videoAudioRow;
 
   const _TrackRow._video({required this.kind, required this.label})
-      : accent = const Color(0xFF8AA4E0);
+    : accent = const Color(0xFF8AA4E0);
 
   const _TrackRow._audio({required this.kind, required this.label})
-      : accent = const Color(0xFFE0B97A);
+    : accent = const Color(0xFFE0B97A);
 
   const _TrackRow._ttsRow({required this.label})
-      : kind = _TrackKind.tts,
-        accent = const Color(0xFF7EC8A8);
+    : kind = _TrackKind.tts,
+      accent = const Color(0xFF7EC8A8);
 
   const _TrackRow._videoAudioRow({required this.label})
-      : kind = _TrackKind.a1,
-        accent = const Color(0xFFE0B97A);
+    : kind = _TrackKind.a1,
+      accent = const Color(0xFFE0B97A);
 }
 
 // ─────────────── range scrubber widget ───────────────
@@ -760,111 +754,117 @@ class _RangeScrubberState extends State<_RangeScrubber> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final width = constraints.maxWidth;
-      if (width <= 0 || widget.totalMs <= 0) {
-        return const SizedBox.shrink();
-      }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        if (width <= 0 || widget.totalMs <= 0) {
+          return const SizedBox.shrink();
+        }
 
-      double msToPx(int ms) =>
-          (ms.clamp(0, widget.totalMs) / widget.totalMs) * width;
-      int pxToMs(double px) =>
-          (px.clamp(0, width) / width * widget.totalMs).round();
+        double msToPx(int ms) =>
+            (ms.clamp(0, widget.totalMs) / widget.totalMs) * width;
+        int pxToMs(double px) =>
+            (px.clamp(0, width) / width * widget.totalMs).round();
 
-      final leftMs = _dragLeftMs ?? widget.leftMs;
-      final rightMs = _dragRightMs ?? widget.rightMs;
-      final leftX = msToPx(leftMs);
-      final rightX = msToPx(rightMs);
-      final playX = msToPx(widget.playheadMs);
+        final leftMs = _dragLeftMs ?? widget.leftMs;
+        final rightMs = _dragRightMs ?? widget.rightMs;
+        final leftX = msToPx(leftMs);
+        final rightX = msToPx(rightMs);
+        final playX = msToPx(widget.playheadMs);
 
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (d) {
-          // Tap outside the handles seeks the playhead.
-          final x = d.localPosition.dx;
-          if (x >= leftX - _handleWidth && x <= rightX + _handleWidth) {
-            widget.onScrub(pxToMs(x));
-          }
-        },
-        child: Stack(
-          children: [
-            // Background strip.
-            Positioned.fill(
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-            ),
-            // Miniaturised clip blocks (top half) + cue blocks (bottom half).
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _MiniOverviewPainter(
-                  totalMs: widget.totalMs,
-                  clips: widget.clips,
-                  cues: widget.cues,
-                ),
-              ),
-            ),
-            // Highlighted visible range.
-            Positioned(
-              left: leftX,
-              top: 4,
-              width: (rightX - leftX).clamp(0.0, width),
-              bottom: 4,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.accentColor.withValues(alpha: 0.15),
-                  border: Border.all(
-                    color: AppTheme.accentColor.withValues(alpha: 0.6),
-                    width: 1,
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (d) {
+            // Tap outside the handles seeks the playhead.
+            final x = d.localPosition.dx;
+            if (x >= leftX - _handleWidth && x <= rightX + _handleWidth) {
+              widget.onScrub(pxToMs(x));
+            }
+          },
+          child: Stack(
+            children: [
+              // Background strip.
+              Positioned.fill(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(3),
                   ),
-                  borderRadius: BorderRadius.circular(3),
                 ),
               ),
-            ),
-            // Playhead dot.
-            Positioned(
-              left: playX - 1,
-              top: 2,
-              width: 2,
-              bottom: 2,
-              child: Container(
-                color: Colors.amber.withValues(alpha: 0.8),
+              // Miniaturised clip blocks (top half) + cue blocks (bottom half).
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _MiniOverviewPainter(
+                    totalMs: widget.totalMs,
+                    clips: widget.clips,
+                    cues: widget.cues,
+                  ),
+                ),
               ),
-            ),
-            // Left handle.
-            _buildHandle(
-              x: leftX,
-              onUpdate: (delta) {
-                setState(() {
-                  _dragLeftMs = (((_dragLeftMs ?? widget.leftMs) +
-                          (delta.dx / width * widget.totalMs).round())
-                      .clamp(
-                          0, (_dragRightMs ?? widget.rightMs) - _minSpanMs));
-                });
-              },
-              onEnd: _commit,
-            ),
-            // Right handle.
-            _buildHandle(
-              x: rightX,
-              onUpdate: (delta) {
-                setState(() {
-                  _dragRightMs = (((_dragRightMs ?? widget.rightMs) +
-                          (delta.dx / width * widget.totalMs).round())
-                      .clamp((_dragLeftMs ?? widget.leftMs) + _minSpanMs,
-                          widget.totalMs));
-                });
-              },
-              onEnd: _commit,
-            ),
-          ],
-        ),
-      );
-    });
+              // Highlighted visible range.
+              Positioned(
+                left: leftX,
+                top: 4,
+                width: (rightX - leftX).clamp(0.0, width),
+                bottom: 4,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentColor.withValues(alpha: 0.15),
+                    border: Border.all(
+                      color: AppTheme.accentColor.withValues(alpha: 0.6),
+                      width: 1,
+                    ),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+              // Playhead dot.
+              Positioned(
+                left: playX - 1,
+                top: 2,
+                width: 2,
+                bottom: 2,
+                child: Container(color: Colors.amber.withValues(alpha: 0.8)),
+              ),
+              // Left handle.
+              _buildHandle(
+                x: leftX,
+                onUpdate: (delta) {
+                  setState(() {
+                    _dragLeftMs =
+                        (((_dragLeftMs ?? widget.leftMs) +
+                                (delta.dx / width * widget.totalMs).round())
+                            .clamp(
+                              0,
+                              (_dragRightMs ?? widget.rightMs) - _minSpanMs,
+                            ));
+                  });
+                },
+                onEnd: _commit,
+              ),
+              // Right handle.
+              _buildHandle(
+                x: rightX,
+                onUpdate: (delta) {
+                  setState(() {
+                    _dragRightMs =
+                        (((_dragRightMs ?? widget.rightMs) +
+                                (delta.dx / width * widget.totalMs).round())
+                            .clamp(
+                              (_dragLeftMs ?? widget.leftMs) + _minSpanMs,
+                              widget.totalMs,
+                            ));
+                  });
+                },
+                onEnd: _commit,
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _commit() {
@@ -929,8 +929,12 @@ class _RulerPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final tickPaint = Paint()..color = Colors.white24..strokeWidth = 1;
-    final majorPaint = Paint()..color = Colors.white38..strokeWidth = 1;
+    final tickPaint = Paint()
+      ..color = Colors.white24
+      ..strokeWidth = 1;
+    final majorPaint = Paint()
+      ..color = Colors.white38
+      ..strokeWidth = 1;
     const textStyle = TextStyle(color: Colors.white38, fontSize: 9);
 
     // Choose a tick interval in seconds that gives ~50..120 px spacing.
@@ -940,7 +944,11 @@ class _RulerPainter extends CustomPainter {
     final interval = _niceInterval(rawInterval.toDouble());
 
     final startSec = (viewLeftMs / 1000.0).ceilToDouble() - 1;
-    for (var sec = startSec; sec < startSec + secondsVisible + interval; sec += interval) {
+    for (
+      var sec = startSec;
+      sec < startSec + secondsVisible + interval;
+      sec += interval
+    ) {
       final ms = (sec * 1000).round();
       final x = (ms - viewLeftMs) * pxPerMs;
       if (x < -40 || x > size.width + 40) continue;
@@ -963,7 +971,19 @@ class _RulerPainter extends CustomPainter {
   static double _niceInterval(double secs) {
     // Pick from 0.1, 0.25, 0.5, 1, 2, 5, 10, 15, 30, 60...
     const steps = <double>[
-      0.1, 0.25, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600,
+      0.1,
+      0.25,
+      0.5,
+      1,
+      2,
+      5,
+      10,
+      15,
+      30,
+      60,
+      120,
+      300,
+      600,
     ];
     for (final s in steps) {
       if (s >= secs) return s;
@@ -1006,7 +1026,9 @@ class _WaveformPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (peaks.isEmpty || totalMs <= 0) return;
-    final paint = Paint()..color = color..strokeWidth = 1;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1;
     final midY = size.height / 2;
     final pxCount = size.width.ceil();
     for (var px = 0; px < pxCount; px++) {
@@ -1014,7 +1036,10 @@ class _WaveformPainter extends CustomPainter {
       final ms = viewLeftMs + (px / pxCount * viewSpanMs);
       if (ms < 0 || ms > totalMs) continue;
       final frac = ms / totalMs;
-      final idx = (frac * (peaks.length - 1)).round().clamp(0, peaks.length - 1);
+      final idx = (frac * (peaks.length - 1)).round().clamp(
+        0,
+        peaks.length - 1,
+      );
       final amp = peaks[idx] * (size.height * 0.45);
       canvas.drawLine(
         Offset(px.toDouble(), midY - amp),
@@ -1048,8 +1073,10 @@ class _MiniOverviewPainter extends CustomPainter {
     if (totalMs <= 0) return;
     final halfH = size.height / 2;
 
-    final clipPaint = Paint()..color = const Color(0xFF3A5AA3).withValues(alpha: 0.5);
-    final cuePaint = Paint()..color = AppTheme.accentColor.withValues(alpha: 0.5);
+    final clipPaint = Paint()
+      ..color = const Color(0xFF3A5AA3).withValues(alpha: 0.5);
+    final cuePaint = Paint()
+      ..color = AppTheme.accentColor.withValues(alpha: 0.5);
 
     // Upper lane: video/image clips + audio clips bundled.
     for (final c in clips) {
@@ -1074,47 +1101,5 @@ class _MiniOverviewPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_MiniOverviewPainter old) =>
-      old.totalMs != totalMs ||
-      old.clips != clips ||
-      old.cues != cues;
-}
-
-/// Helper for the caller: resolve an import kind → (primary lane, sourceType).
-/// `DubImportKind.video` yields the V1 entry; the caller is responsible
-/// for also inserting the linked A1 sibling.
-({int lane, String sourceType}) laneAndSourceForImport(DubImportKind kind) {
-  switch (kind) {
-    case DubImportKind.video:
-      return (lane: DubLanes.v1, sourceType: 'video');
-    case DubImportKind.audio:
-      return (lane: DubLanes.a3, sourceType: 'imported');
-  }
-}
-
-/// Companion factory so the caller doesn't have to import drift's `Value`.
-/// Caller fills id/uuid + label + path + optional duration.
-/// [linkGroupId] pairs this clip with a sibling (e.g. V1 + its A1 audio).
-db.TimelineClipsCompanion makeDubClipCompanion({
-  required String id,
-  required String projectId,
-  required int lane,
-  required int startTimeMs,
-  required String sourceType,
-  required String audioPath,
-  required String label,
-  double? durationSec,
-  String? linkGroupId,
-}) {
-  return db.TimelineClipsCompanion(
-    id: Value(id),
-    projectId: Value(projectId),
-    projectType: const Value('videodub'),
-    laneIndex: Value(lane),
-    startTimeMs: Value(startTimeMs),
-    durationSec: Value(durationSec),
-    audioPath: Value(audioPath),
-    sourceType: Value(sourceType),
-    label: Value(label),
-    linkGroupId: Value(linkGroupId),
-  );
+      old.totalMs != totalMs || old.clips != clips || old.cues != cues;
 }

@@ -4,12 +4,11 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 
 /// Track addressing inside `TimelineClips` for video-dub projects.
-/// Premiere-style layout, all 5 tracks always visible:
+/// Simplified 1V3A layout (no image/V2 lane, no PR-class compositing):
 ///
-///   V2 → laneIndex -2 — images (renders above V1)
-///   V1 → laneIndex -1 — video clips
-///   A1 → laneIndex  1 — the V1 video's audio (auto-linked to V1 on
-///                       import, can be split/deleted to mute those regions)
+///   V1 → laneIndex -1 — the single dubbed video. Only one clip allowed.
+///   A1 → laneIndex  1 — the V1 video's own audio (auto-linked on
+///                       import; can be deleted or muted at the track).
 ///   A2 → (virtual)    — TTS cues, sourced directly from `SubtitleCues`.
 ///                       No `TimelineClip` rows live here.
 ///   A3 → laneIndex  3 — free-form imported audio (SFX, music).
@@ -17,15 +16,15 @@ import 'package:neiroha/presentation/theme/app_theme.dart';
 /// Lane index 2 is reserved for A2's future if cues ever migrate into
 /// `TimelineClips`. Until then, A2 is rendered from `SubtitleCues`.
 class DubLanes {
-  static const int v2 = -2;
   static const int v1 = -1;
   static const int a1 = 1;
   static const int a3 = 3;
 }
 
 /// Which import bucket a file should be placed in. The caller resolves the
-/// lane from this choice via [DubLanes].
-enum DubImportKind { video, image, audio }
+/// lane from this choice via [DubLanes]. Image imports were removed —
+/// this is a single-video dubber, not a compositor.
+enum DubImportKind { video, audio }
 
 /// Multi-track timeline for Video Dub. Shows:
 ///   • V1 / V2 — imported videos + images (from TimelineClips, negative lanes)
@@ -49,6 +48,18 @@ class VideoDubTimeline extends StatefulWidget {
   final ValueChanged<db.TimelineClip> onTapClip;
   final ValueChanged<db.TimelineClip> onDeleteClip;
   final void Function(DubImportKind) onImport;
+  /// Drag commit for an A2 cue block — `newStartMs` is the proposed
+  /// new start; the caller is responsible for clamping and persisting.
+  final void Function(db.SubtitleCue cue, int newStartMs)? onMoveCue;
+
+  /// Whether V1 already has a clip — disables the "Import video" button
+  /// so the user can't accidentally stack a second source on the dubber.
+  final bool v1Occupied;
+
+  /// A1 mute state and toggle. The mute is owned by the parent (it also
+  /// drives playback), this is just the UI affordance in the track header.
+  final bool a1Muted;
+  final VoidCallback? onToggleA1Mute;
   final List<double>? waveformPeaks;
   final bool ffmpegAvailable;
   final VoidCallback onConfigureFfmpeg;
@@ -70,6 +81,10 @@ class VideoDubTimeline extends StatefulWidget {
     required this.waveformPeaks,
     required this.ffmpegAvailable,
     required this.onConfigureFfmpeg,
+    this.onMoveCue,
+    this.v1Occupied = false,
+    this.a1Muted = false,
+    this.onToggleA1Mute,
   });
 
   @override
@@ -85,6 +100,12 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
   // Visible window in ms — the range scrubber drives these.
   int _viewLeftMs = 0;
   int? _viewRightMs; // null = fit to content on first build
+
+  // Cue drag state — id of the cue currently being dragged on A2, plus
+  // the running pixel delta so we can render the block at its in-flight
+  // position before committing on drag-end.
+  String? _dragCueId;
+  double _dragCueDxPx = 0.0;
 
   int get _contentTotalMs {
     final durMs = widget.duration.inMilliseconds;
@@ -157,59 +178,38 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
   // ─────────────── toolbar ───────────────
 
   Widget _buildToolbar() {
+    final v1Tooltip = widget.v1Occupied
+        ? 'Only one video allowed — delete the V1 clip to import another'
+        : 'Import a video onto V1 (its audio appears on A1)';
     return SizedBox(
-      height: 30,
+      height: 44,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Row(
           children: [
             const Text('Dub Timeline',
-                style: TextStyle(fontSize: 11, color: Colors.white54)),
-            const SizedBox(width: 10),
+                style: TextStyle(fontSize: 12, color: Colors.white54)),
+            const SizedBox(width: 12),
             Text(
               '${widget.cues.length} cues · ${widget.clips.length} clips · ${_fmtMs(_contentTotalMs)}',
-              style: const TextStyle(fontSize: 10, color: Colors.white38),
+              style: const TextStyle(fontSize: 11, color: Colors.white38),
             ),
             const Spacer(),
-            PopupMenuButton<DubImportKind>(
-              tooltip: 'Import media',
-              onSelected: widget.onImport,
-              itemBuilder: (_) => const [
-                PopupMenuItem(
-                  value: DubImportKind.video,
-                  child: Row(children: [
-                    Icon(Icons.movie_outlined, size: 16),
-                    SizedBox(width: 8),
-                    Text('Video → V1 (+ A1 audio)'),
-                  ]),
-                ),
-                PopupMenuItem(
-                  value: DubImportKind.image,
-                  child: Row(children: [
-                    Icon(Icons.image_outlined, size: 16),
-                    SizedBox(width: 8),
-                    Text('Image → V2'),
-                  ]),
-                ),
-                PopupMenuItem(
-                  value: DubImportKind.audio,
-                  child: Row(children: [
-                    Icon(Icons.audiotrack_rounded, size: 16),
-                    SizedBox(width: 8),
-                    Text('Audio → A3'),
-                  ]),
-                ),
-              ],
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                child: Row(
-                  children: [
-                    Icon(Icons.file_upload_outlined, size: 14),
-                    SizedBox(width: 4),
-                    Text('Import', style: TextStyle(fontSize: 11)),
-                  ],
-                ),
+            Tooltip(
+              message: v1Tooltip,
+              child: OutlinedButton.icon(
+                onPressed: widget.v1Occupied
+                    ? null
+                    : () => widget.onImport(DubImportKind.video),
+                icon: const Icon(Icons.movie_outlined, size: 16),
+                label: const Text('Import Video'),
               ),
+            ),
+            const SizedBox(width: 8),
+            OutlinedButton.icon(
+              onPressed: () => widget.onImport(DubImportKind.audio),
+              icon: const Icon(Icons.audiotrack_rounded, size: 16),
+              label: const Text('Import Audio'),
             ),
           ],
         ),
@@ -252,9 +252,8 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
   // ─────────────── track layout ───────────────
 
   List<_TrackRow> _buildTrackList() {
-    // Premiere ordering top→bottom: V2 above V1, then A1/A2/A3.
+    // Simplified 1V3A: V1 video + three audio rails.
     return const [
-      _TrackRow.video(kind: _TrackKind.v2, label: 'V2 · Image'),
       _TrackRow.video(kind: _TrackKind.v1, label: 'V1 · Video'),
       _TrackRow.videoAudio(label: 'A1 · Video'),
       _TrackRow.tts(label: 'A2 · TTS'),
@@ -272,17 +271,45 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
             height: _trackHeight,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  t.label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: t.accent,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      t.label,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: t.kind == _TrackKind.a1 && widget.a1Muted
+                            ? Colors.white.withValues(alpha: 0.35)
+                            : t.accent,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+                  if (t.kind == _TrackKind.a1 &&
+                      widget.onToggleA1Mute != null)
+                    Tooltip(
+                      message: widget.a1Muted
+                          ? 'A1 muted (original video audio off)'
+                          : 'Mute A1 (silence original video audio)',
+                      child: InkWell(
+                        onTap: widget.onToggleA1Mute,
+                        borderRadius: BorderRadius.circular(4),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            widget.a1Muted
+                                ? Icons.volume_off_rounded
+                                : Icons.volume_up_rounded,
+                            size: 14,
+                            color: widget.a1Muted
+                                ? Colors.white.withValues(alpha: 0.35)
+                                : t.accent,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
@@ -354,7 +381,6 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
           child: _buildCueLane(pxPerMs),
         );
       case _TrackKind.v1:
-      case _TrackKind.v2:
       case _TrackKind.a1:
       case _TrackKind.a3:
         return Positioned(
@@ -376,7 +402,9 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
   }
 
   Widget _buildCueBlock(db.SubtitleCue cue, double pxPerMs) {
-    final left = (cue.startMs - _viewLeftMs) * pxPerMs;
+    final isDragging = _dragCueId == cue.id;
+    final dx = isDragging ? _dragCueDxPx : 0.0;
+    final left = (cue.startMs - _viewLeftMs) * pxPerMs + dx;
     final width = ((cue.endMs - cue.startMs) * pxPerMs).clamp(8.0, 4000.0);
     // Off-screen clips clipped by Positioned's parent bounds; no pre-filter.
     final isSelected = widget.selectedCueId == cue.id;
@@ -400,10 +428,48 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
       left: left,
       width: width,
       height: _trackHeight - 8,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => widget.onTapCue(cue),
-        child: Container(
+      child: MouseRegion(
+        cursor: widget.onMoveCue == null
+            ? MouseCursor.defer
+            : SystemMouseCursors.grab,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => widget.onTapCue(cue),
+          onHorizontalDragStart: widget.onMoveCue == null
+              ? null
+              : (_) {
+                  setState(() {
+                    _dragCueId = cue.id;
+                    _dragCueDxPx = 0.0;
+                  });
+                },
+          onHorizontalDragUpdate: widget.onMoveCue == null
+              ? null
+              : (d) {
+                  if (_dragCueId != cue.id) return;
+                  setState(() => _dragCueDxPx += d.delta.dx);
+                },
+          onHorizontalDragEnd: widget.onMoveCue == null
+              ? null
+              : (_) {
+                  if (_dragCueId != cue.id) return;
+                  final dxMs = (_dragCueDxPx / pxPerMs).round();
+                  setState(() {
+                    _dragCueId = null;
+                    _dragCueDxPx = 0.0;
+                  });
+                  if (dxMs != 0) {
+                    widget.onMoveCue!(cue, cue.startMs + dxMs);
+                  }
+                },
+          onHorizontalDragCancel: () {
+            if (_dragCueId != cue.id) return;
+            setState(() {
+              _dragCueId = null;
+              _dragCueDxPx = 0.0;
+            });
+          },
+          child: Container(
           decoration: BoxDecoration(
             color: isSelected ? bg : bg.withValues(alpha: 0.7),
             border: Border.all(
@@ -442,6 +508,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
             ],
           ),
         ),
+        ),
       ),
     );
   }
@@ -449,7 +516,6 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
   Widget _buildClipLane(_TrackKind kind, double pxPerMs) {
     final lane = switch (kind) {
       _TrackKind.v1 => DubLanes.v1,
-      _TrackKind.v2 => DubLanes.v2,
       _TrackKind.a1 => DubLanes.a1,
       _TrackKind.a3 => DubLanes.a3,
       _TrackKind.tts => null, // rendered via _buildCueLane
@@ -621,7 +687,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
 
 // ─────────────── internal track row ───────────────
 
-enum _TrackKind { v1, v2, a1, tts, a3 }
+enum _TrackKind { v1, a1, tts, a3 }
 
 class _TrackRow {
   final _TrackKind kind;
@@ -1020,8 +1086,6 @@ class _MiniOverviewPainter extends CustomPainter {
   switch (kind) {
     case DubImportKind.video:
       return (lane: DubLanes.v1, sourceType: 'video');
-    case DubImportKind.image:
-      return (lane: DubLanes.v2, sourceType: 'image');
     case DubImportKind.audio:
       return (lane: DubLanes.a3, sourceType: 'imported');
   }

@@ -389,6 +389,77 @@ class _VerticalResizableSplitPaneState
   }
 }
 
+/// Two panes side by side with a draggable vertical divider. Mirror of
+/// [VerticalResizableSplitPane] for horizontal layouts. No collapse
+/// semantics — just a width-resize handle.
+class HorizontalResizableSplitPane extends StatefulWidget {
+  final Widget left;
+  final Widget right;
+
+  /// Initial fraction [0..1] for the left pane. Default 0.7.
+  final double initialLeftFraction;
+
+  /// Minimum width in logical pixels each pane must keep when dragging.
+  final double minPaneWidth;
+
+  const HorizontalResizableSplitPane({
+    super.key,
+    required this.left,
+    required this.right,
+    this.initialLeftFraction = 0.7,
+    this.minPaneWidth = 220,
+  });
+
+  @override
+  State<HorizontalResizableSplitPane> createState() =>
+      _HorizontalResizableSplitPaneState();
+}
+
+class _HorizontalResizableSplitPaneState
+    extends State<HorizontalResizableSplitPane> {
+  late double _leftFraction;
+
+  @override
+  void initState() {
+    super.initState();
+    _leftFraction = widget.initialLeftFraction;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final totalWidth = constraints.maxWidth;
+        const dividerWidth = 6.0;
+        final minFraction = widget.minPaneWidth / totalWidth;
+        final maxFraction =
+            1.0 - (widget.minPaneWidth + dividerWidth) / totalWidth;
+        final clamped = _leftFraction.clamp(minFraction, maxFraction);
+        final leftWidth = (totalWidth * clamped).clamp(0.0, totalWidth);
+        final rightWidth =
+            (totalWidth - leftWidth - dividerWidth).clamp(0.0, totalWidth);
+
+        return Row(
+          children: [
+            SizedBox(width: leftWidth, child: widget.left),
+            _DragDivider(
+              onDrag: (dx) {
+                setState(() {
+                  _leftFraction =
+                      ((_leftFraction * totalWidth + dx) / totalWidth)
+                          .clamp(minFraction, maxFraction);
+                });
+              },
+              onDragEnd: () {},
+            ),
+            SizedBox(width: rightWidth, child: widget.right),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _HorizontalDragDivider extends StatefulWidget {
   final ValueChanged<double> onDrag;
   const _HorizontalDragDivider({required this.onDrag});

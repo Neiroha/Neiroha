@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
+import 'package:neiroha/data/storage/export_prefs.dart';
 import 'package:neiroha/data/storage/ffmpeg_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
 import 'package:neiroha/server/api_server.dart';
@@ -20,6 +21,13 @@ final storageServiceProvider = Provider<StorageService>((ref) {
 /// System `ffmpeg` resolver. Used by waveform extraction + media import.
 final ffmpegServiceProvider = Provider<FFmpegService>((ref) {
   return FFmpegService(ref.watch(databaseProvider));
+});
+
+/// User-configurable export defaults (audio format / video + audio codecs)
+/// persisted in `AppSettings`. Reads/writes go through this service; the
+/// settings screen edits the underlying keys.
+final exportPrefsServiceProvider = Provider<ExportPrefsService>((ref) {
+  return ExportPrefsService(ref.watch(databaseProvider));
 });
 
 /// Probes `ffmpeg -version` once per session. Watch this in the Settings

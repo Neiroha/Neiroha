@@ -1,0 +1,267 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+
+import 'package:neiroha/presentation/theme/app_theme.dart';
+
+/// One-shot result from [runFfmpegWithProgress]. `outputPath` is set on
+/// success; `stderrTail` carries the last few stderr lines on failure
+/// so the caller can surface them in a snackbar.
+class FfmpegRunResult {
+  final bool success;
+  final bool cancelled;
+  final String? outputPath;
+  final String stderrTail;
+
+  const FfmpegRunResult.ok(this.outputPath)
+      : success = true,
+        cancelled = false,
+        stderrTail = '';
+
+  const FfmpegRunResult.cancelled()
+      : success = false,
+        cancelled = true,
+        outputPath = null,
+        stderrTail = '';
+
+  const FfmpegRunResult.failed(this.stderrTail)
+      : success = false,
+        cancelled = false,
+        outputPath = null;
+}
+
+/// Run [ffmpegPath] [args] while displaying a modal progress dialog.
+///
+/// `args` should NOT include `-progress`/`-nostats` — this helper appends
+/// them. The output path is taken to be the last positional arg
+/// (consistent with how [_buildExportArgs] / [_buildAudioExportArgs]
+/// emit their argv).
+///
+/// Progress is computed from ffmpeg's `out_time_us=` lines compared
+/// against [totalDurationMs]; pass 0 to render an indeterminate spinner.
+Future<FfmpegRunResult> runFfmpegWithProgress({
+  required BuildContext context,
+  required String ffmpegPath,
+  required List<String> args,
+  required int totalDurationMs,
+  required String taskLabel,
+}) async {
+  final progressNotifier = ValueNotifier<double>(0.0);
+  final cancelCompleter = Completer<void>();
+  final outputPath = args.isNotEmpty ? args.last : '';
+
+  // Inject -progress pipe:1 -nostats just before the output path.
+  final ffmpegArgs = [
+    ...args.sublist(0, args.length - 1),
+    '-progress',
+    'pipe:1',
+    '-nostats',
+    args.last,
+  ];
+
+  late Process process;
+  var cancelled = false;
+  final stderrBuf = StringBuffer();
+
+  // Start the dialog before the process — gives the user immediate
+  // feedback even if `Process.start` is slow on cold cache.
+  unawaited(showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => _ProgressDialog(
+      label: taskLabel,
+      indeterminate: totalDurationMs <= 0,
+      progress: progressNotifier,
+      onCancel: () {
+        cancelled = true;
+        if (!cancelCompleter.isCompleted) cancelCompleter.complete();
+      },
+    ),
+  ));
+
+  try {
+    process = await Process.start(ffmpegPath, ffmpegArgs);
+  } catch (e) {
+    progressNotifier.dispose();
+    if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+    return FfmpegRunResult.failed('Could not start ffmpeg: $e');
+  }
+
+  // Cancel = kill the child.
+  unawaited(cancelCompleter.future.then((_) => process.kill()));
+
+  // Tee stderr into a tail buffer so we can surface the last few
+  // lines on failure.
+  unawaited(process.stderr
+      .transform(utf8.decoder)
+      .transform(const LineSplitter())
+      .forEach((line) {
+    if (stderrBuf.length > 8000) {
+      // Cap at ~8 KB to avoid pathological accumulation.
+      return;
+    }
+    stderrBuf.writeln(line);
+  }));
+
+  // Parse stdout for progress.
+  await process.stdout
+      .transform(utf8.decoder)
+      .transform(const LineSplitter())
+      .forEach((line) {
+    if (line.startsWith('out_time_us=')) {
+      final us = int.tryParse(line.substring(12));
+      if (us != null && totalDurationMs > 0) {
+        final pct = (us / 1000 / totalDurationMs).clamp(0.0, 1.0);
+        progressNotifier.value = pct;
+      }
+    } else if (line == 'progress=end') {
+      progressNotifier.value = 1.0;
+    }
+  });
+
+  final exit = await process.exitCode;
+  progressNotifier.dispose();
+
+  if (context.mounted) {
+    Navigator.of(context, rootNavigator: true).pop();
+  }
+
+  if (cancelled) return const FfmpegRunResult.cancelled();
+  if (exit != 0) {
+    final lines = stderrBuf
+        .toString()
+        .trim()
+        .split('\n')
+        .where((l) => l.trim().isNotEmpty)
+        .toList();
+    final tail = lines.length <= 4 ? lines : lines.sublist(lines.length - 4);
+    return FfmpegRunResult.failed(tail.join(' / '));
+  }
+  return FfmpegRunResult.ok(outputPath);
+}
+
+class _ProgressDialog extends StatelessWidget {
+  final String label;
+  final bool indeterminate;
+  final ValueNotifier<double> progress;
+  final VoidCallback onCancel;
+
+  const _ProgressDialog({
+    required this.label,
+    required this.indeterminate,
+    required this.progress,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(label),
+      content: SizedBox(
+        width: 360,
+        child: ValueListenableBuilder<double>(
+          valueListenable: progress,
+          builder: (_, value, _) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                LinearProgressIndicator(
+                  value: indeterminate ? null : value,
+                  minHeight: 6,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  indeterminate
+                      ? 'Encoding…'
+                      : '${(value * 100).clamp(0, 100).toStringAsFixed(1)}%',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: onCancel, child: const Text('Cancel')),
+      ],
+    );
+  }
+}
+
+/// Modal "Export successful" dialog. [filePath] is shown selectable so
+/// the user can copy it; "Open folder" reveals the file in the OS file
+/// manager.
+Future<void> showExportSuccessDialog({
+  required BuildContext context,
+  required String filePath,
+  String? extraNote,
+}) async {
+  await showDialog<void>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Export successful'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SelectableText(
+            filePath,
+            style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+          ),
+          if (extraNote != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              extraNote,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.white.withValues(alpha: 0.55),
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton.icon(
+          onPressed: () {
+            Navigator.pop(ctx);
+            unawaited(revealInFileManager(filePath));
+          },
+          icon: const Icon(Icons.folder_open_rounded, size: 16),
+          label: const Text('Open folder'),
+          style: TextButton.styleFrom(foregroundColor: AppTheme.accentColor),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Done'),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Best-effort "open the OS file manager and select [filePath]". Falls
+/// back to opening the parent directory when reveal-in-folder isn't
+/// supported.
+Future<void> revealInFileManager(String filePath) async {
+  try {
+    if (Platform.isWindows) {
+      // explorer's /select, requires the file path quoted; the comma
+      // must NOT have a space after it.
+      await Process.run('explorer.exe', ['/select,', filePath]);
+    } else if (Platform.isMacOS) {
+      await Process.run('open', ['-R', filePath]);
+    } else {
+      await Process.run('xdg-open', [p.dirname(filePath)]);
+    }
+  } catch (_) {
+    // Best-effort — the user already has the path in the success dialog.
+  }
+}

@@ -15,7 +15,7 @@ import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/screens/app_shell.dart'
     show selectedTabProvider;
 import 'package:neiroha/presentation/theme/app_theme.dart';
-import 'package:neiroha/presentation/screens/video_dub/exporter.dart';
+import 'package:neiroha/presentation/actions/video_dub/exporter.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/presentation/widgets/video_dub/cue_card.dart';

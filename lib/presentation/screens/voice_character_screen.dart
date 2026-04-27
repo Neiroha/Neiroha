@@ -157,14 +157,17 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
     return t == 'azureTts' ||
         t == 'systemTts' ||
         t == 'openaiCompatible' ||
-        t == 'chatCompletionsTts';
+        t == 'chatCompletionsTts' ||
+        t == 'geminiTts';
   }
 
   bool get _isGptSovits => _selectedProvider?.adapterType == 'gptSovits';
 
   bool get _hasModelField {
     final t = _selectedProvider?.adapterType ?? '';
-    return t == 'openaiCompatible' || t == 'chatCompletionsTts';
+    return t == 'openaiCompatible' ||
+        t == 'chatCompletionsTts' ||
+        t == 'geminiTts';
   }
 
   Future<void> _fetchSpeakers() async {
@@ -362,8 +365,24 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
             const SizedBox(height: 12),
             TextField(
               controller: _modelNameCtrl,
+              decoration: InputDecoration(
+                labelText: 'Model Name',
+                hintText: _selectedProvider?.adapterType == 'geminiTts'
+                    ? 'e.g. gemini-2.5-flash-preview-tts'
+                    : 'e.g. tts-1',
+              ),
+            ),
+          ],
+          if (_selectedProvider?.adapterType == 'geminiTts') ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: _instructionCtrl,
+              maxLines: 3,
               decoration: const InputDecoration(
-                  labelText: 'Model Name', hintText: 'e.g. tts-1'),
+                labelText: 'Style Instruction (optional)',
+                hintText:
+                    'e.g. "Speak softly and slowly" — prepended to the text',
+              ),
             ),
           ],
         ],
@@ -534,10 +553,19 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
                   await ref
                       .read(playbackNotifierProvider.notifier)
                       .stopIfSourceTag(voiceBankQuickTestPlaybackSource);
-                  await ref.read(databaseProvider).deleteVoiceAsset(a.id);
-                  ref
-                      .read(selectedCharacterIdProvider.notifier)
-                      .state = null;
+                  try {
+                    await ref
+                        .read(databaseProvider)
+                        .deleteVoiceAsset(a.id);
+                    ref
+                        .read(selectedCharacterIdProvider.notifier)
+                        .state = null;
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('Failed to delete character: $e')));
+                    }
+                  }
                 },
                 icon: const Icon(Icons.delete_outline_rounded, size: 18),
                 label: const Text('Delete'),
@@ -771,7 +799,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       _adapterType == 'chatCompletionsTts' ||
       _adapterType == 'openaiCompatible' ||
       _adapterType == 'azureTts' ||
-      _adapterType == 'systemTts';
+      _adapterType == 'systemTts' ||
+      _adapterType == 'geminiTts';
+  bool get _isGeminiTts => _adapterType == 'geminiTts';
 
   Future<void> _fetchModelsAndSpeakers() async {
     setState(() {
@@ -1188,8 +1218,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                   // ── ADAPTER-SPECIFIC OPTIONS ──
                   if (_isPresetVoiceProvider) ...[
                     if (_adapterType == 'openaiCompatible' ||
-                        _adapterType == 'chatCompletionsTts') ...[
-                      // ── OpenAI-compatible: separate Model + Voice ──
+                        _adapterType == 'chatCompletionsTts' ||
+                        _isGeminiTts) ...[
+                      // ── Separate Model + Voice (OpenAI-compatible, Gemini) ──
                       _SectionLabel('MODEL'),
                       const SizedBox(height: 8),
                       if (_loadingModels)
@@ -1221,7 +1252,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         controller: _modelNameCtrl,
                         decoration: InputDecoration(
                           labelText: 'Model Name',
-                          hintText: 'e.g. tts-1',
+                          hintText: _isGeminiTts
+                              ? 'e.g. gemini-2.5-flash-preview-tts'
+                              : 'e.g. tts-1',
                           helperText: _models.isEmpty
                               ? 'Go to Providers → Fetch to cache available models'
                               : null,
@@ -1235,12 +1268,26 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         controller: _voiceNameCtrl,
                         decoration: InputDecoration(
                           labelText: 'Voice Name',
-                          hintText: 'e.g. alloy',
+                          hintText: _isGeminiTts ? 'e.g. Kore' : 'e.g. alloy',
                           helperText: _speakers.isEmpty
                               ? 'Go to Providers → Fetch to cache available voices'
                               : null,
                         ),
                       ),
+                      if (_isGeminiTts) ...[
+                        const SizedBox(height: 16),
+                        _SectionLabel('STYLE INSTRUCTION (optional)'),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _instructionCtrl,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            labelText: 'Style Instruction',
+                            hintText:
+                                'e.g. "Speak softly and slowly" — prepended to the text',
+                          ),
+                        ),
+                      ],
                     ] else ...[
                       // ── Azure / System TTS: voices only ──
                       _SectionLabel(
@@ -1732,7 +1779,8 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
               ? null
               : _textLangCtrl.text.trim())
           : (_adapterType == 'openaiCompatible' ||
-                  _adapterType == 'chatCompletionsTts')
+                  _adapterType == 'chatCompletionsTts' ||
+                  _isGeminiTts)
               ? (_modelNameCtrl.text.trim().isEmpty
                   ? null
                   : _modelNameCtrl.text.trim())

@@ -34,7 +34,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -145,6 +145,17 @@ class AppDatabase extends _$AppDatabase {
       defaultModelName: const Value(''),
       enabled: const Value(false),
       position: const Value(6),
+    ));
+
+    const providerGemini = 'default-gemini-tts';
+    await into(ttsProviders).insert(TtsProvidersCompanion(
+      id: const Value(providerGemini),
+      name: const Value('Google Gemini TTS'),
+      adapterType: const Value('geminiTts'),
+      baseUrl: const Value('https://generativelanguage.googleapis.com'),
+      defaultModelName: const Value('gemini-2.5-flash-preview-tts'),
+      enabled: const Value(false),
+      position: const Value(7),
     ));
 
     // ── Default voice character ──
@@ -300,8 +311,19 @@ class AppDatabase extends _$AppDatabase {
   Future<bool> updateVoiceAsset(VoiceAsset asset) =>
       update(voiceAssets).replace(asset);
 
-  Future<int> deleteVoiceAsset(String id) =>
-      (delete(voiceAssets)..where((t) => t.id.equals(id))).go();
+  Future<int> deleteVoiceAsset(String id) => transaction(() async {
+        // Drop FK references before deleting the asset itself, otherwise
+        // SQLite raises a foreign-key constraint and the asset stays in the
+        // table — leading to "name already exists" on the next create attempt.
+        await (delete(voiceBankMembers)
+              ..where((t) => t.voiceAssetId.equals(id)))
+            .go();
+        await (delete(ttsJobs)..where((t) => t.voiceAssetId.equals(id))).go();
+        await (delete(quickTtsHistories)
+              ..where((t) => t.voiceAssetId.equals(id)))
+            .go();
+        return (delete(voiceAssets)..where((t) => t.id.equals(id))).go();
+      });
 
   // --- VoiceBank CRUD ---
 

@@ -8,6 +8,7 @@ import 'package:neiroha/data/adapters/voxcpm2_native_adapter.dart';
 import 'package:neiroha/data/adapters/gpt_sovits_adapter.dart';
 import 'package:neiroha/data/adapters/azure_tts_adapter.dart';
 import 'package:neiroha/data/adapters/system_tts_adapter.dart';
+import 'package:neiroha/data/adapters/gemini_tts_adapter.dart';
 
 /// Request payload for TTS synthesis, unified across all adapters.
 class TtsRequest {
@@ -118,6 +119,12 @@ TtsAdapter createAdapter(db.TtsProvider provider, {String? modelName}) {
       );
     case 'systemTts':
       return SystemTtsAdapter(
+        baseUrl: provider.baseUrl,
+        apiKey: provider.apiKey,
+        modelName: model,
+      );
+    case 'geminiTts':
+      return GeminiTtsAdapter(
         baseUrl: provider.baseUrl,
         apiKey: provider.apiKey,
         modelName: model,

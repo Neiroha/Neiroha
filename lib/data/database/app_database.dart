@@ -85,7 +85,7 @@ class AppDatabase extends _$AppDatabase {
     await into(ttsProviders).insert(
       TtsProvidersCompanion(
         id: const Value(providerOpenai),
-        name: const Value('OpenAI TTS'),
+        name: const Value('OpenAI Compatible'),
         adapterType: const Value('openaiCompatible'),
         baseUrl: const Value('http://localhost:8880/v1'),
         defaultModelName: const Value('tts-1'),
@@ -96,7 +96,7 @@ class AppDatabase extends _$AppDatabase {
     await into(ttsProviders).insert(
       TtsProvidersCompanion(
         id: const Value(providerChat),
-        name: const Value('MiMo V2 TTS'),
+        name: const Value('Xiaomi MiMo'),
         adapterType: const Value('chatCompletionsTts'),
         baseUrl: const Value('https://api.xiaomimimo.com/v1'),
         defaultModelName: const Value('mimo-v2-tts'),
@@ -107,7 +107,7 @@ class AppDatabase extends _$AppDatabase {
     await into(ttsProviders).insert(
       TtsProvidersCompanion(
         id: const Value(providerCosyVoice),
-        name: const Value('CosyVoice'),
+        name: const Value('CosyVoice3 (Local)'),
         adapterType: const Value('cosyvoice'),
         baseUrl: const Value('http://127.0.0.1:9880'),
         defaultModelName: const Value(''),
@@ -120,7 +120,7 @@ class AppDatabase extends _$AppDatabase {
     await into(ttsProviders).insert(
       TtsProvidersCompanion(
         id: const Value(providerVoxCpm2),
-        name: const Value('VoxCPM2 Native'),
+        name: const Value('VoxCPM2 (Local)'),
         adapterType: const Value('voxcpm2Native'),
         baseUrl: const Value('http://127.0.0.1:8000'),
         defaultModelName: const Value('voxcpm2'),
@@ -133,7 +133,7 @@ class AppDatabase extends _$AppDatabase {
     await into(ttsProviders).insert(
       TtsProvidersCompanion(
         id: const Value(providerGptSovits),
-        name: const Value('GPT-SoVITS'),
+        name: const Value('GPT-SoVITS V2 Pro (Local)'),
         adapterType: const Value('gptSovits'),
         baseUrl: const Value('http://127.0.0.1:9880'),
         defaultModelName: const Value('gpt-sovits'),
@@ -146,7 +146,7 @@ class AppDatabase extends _$AppDatabase {
     await into(ttsProviders).insert(
       TtsProvidersCompanion(
         id: const Value(providerAzure),
-        name: const Value('Azure TTS'),
+        name: const Value('Azure Speech'),
         adapterType: const Value('azureTts'),
         baseUrl: const Value('https://eastus.tts.speech.microsoft.com'),
         defaultModelName: const Value(''),
@@ -159,7 +159,7 @@ class AppDatabase extends _$AppDatabase {
     await into(ttsProviders).insert(
       TtsProvidersCompanion(
         id: const Value(providerSystem),
-        name: const Value('Windows System TTS'),
+        name: const Value('Windows SAPI'),
         adapterType: const Value('systemTts'),
         baseUrl: const Value(''),
         defaultModelName: const Value(''),
@@ -172,7 +172,7 @@ class AppDatabase extends _$AppDatabase {
     await into(ttsProviders).insert(
       TtsProvidersCompanion(
         id: const Value(providerGemini),
-        name: const Value('Google Gemini TTS'),
+        name: const Value('Google AI Studio'),
         adapterType: const Value('geminiTts'),
         baseUrl: const Value('https://generativelanguage.googleapis.com'),
         defaultModelName: const Value('gemini-2.5-flash-preview-tts'),

@@ -412,6 +412,7 @@ class VoiceCharacterVoiceSearchPicker extends StatefulWidget {
 class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
   final _searchCtrl = TextEditingController();
   late List<String> _filtered;
+  bool _isOpen = false;
 
   @override
   void initState() {
@@ -437,6 +438,19 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
   void _onSearch() =>
       setState(() => _filtered = _applyFilter(_searchCtrl.text));
 
+  void _toggleOpen() => setState(() {
+    _isOpen = !_isOpen;
+    if (!_isOpen) _searchCtrl.clear();
+  });
+
+  void _selectItem(String voice) {
+    widget.onSelected(voice);
+    setState(() {
+      _isOpen = false;
+      _searchCtrl.clear();
+    });
+  }
+
   List<String> _applyFilter(String query) {
     if (query.isEmpty) return widget.voices;
     final q = query.toLowerCase();
@@ -448,88 +462,119 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Search field
-        TextField(
-          controller: _searchCtrl,
-          decoration: InputDecoration(
-            labelText: widget.label,
-            hintText: 'Search voices… (${widget.voices.length} total)',
-            prefixIcon: const Icon(Icons.search_rounded, size: 18),
-            suffixIcon: _searchCtrl.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear_rounded, size: 16),
-                    onPressed: () => _searchCtrl.clear(),
-                  )
-                : null,
+        // Display field — tap to toggle dropdown
+        GestureDetector(
+          onTap: _toggleOpen,
+          child: InputDecorator(
+            decoration: InputDecoration(
+              labelText: widget.label,
+              prefixIcon: const Icon(Icons.search_rounded, size: 18),
+              suffixIcon: Icon(
+                _isOpen
+                    ? Icons.arrow_drop_up_rounded
+                    : Icons.arrow_drop_down_rounded,
+                size: 20,
+                color: Colors.white.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Text(
+              widget.selected ?? '${widget.voices.length} available',
+              style: TextStyle(
+                fontSize: 14,
+                color: widget.selected != null
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.4),
+              ),
+            ),
           ),
         ),
-        const SizedBox(height: 4),
-        // Filtered list in a bounded container
-        Container(
-          height: 200,
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceDim,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        // Search field + filtered list — only shown when open
+        if (_isOpen) ...[
+          const SizedBox(height: 4),
+          TextField(
+            controller: _searchCtrl,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: 'Search…',
+              prefixIcon: const Icon(Icons.filter_list_rounded, size: 18),
+              suffixIcon: _searchCtrl.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded, size: 16),
+                      onPressed: () => _searchCtrl.clear(),
+                    )
+                  : null,
+              isDense: true,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
           ),
-          child: _filtered.isEmpty
-              ? Center(
-                  child: Text(
-                    'No voices match "${_searchCtrl.text}"',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withValues(alpha: 0.4),
-                    ),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  itemCount: _filtered.length,
-                  itemBuilder: (ctx, i) {
-                    final voice = _filtered[i];
-                    final isSelected = voice == widget.selected;
-                    return InkWell(
-                      onTap: () => widget.onSelected(voice),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        color: isSelected
-                            ? AppTheme.accentColor.withValues(alpha: 0.18)
-                            : Colors.transparent,
-                        child: Row(
-                          children: [
-                            if (isSelected)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: Icon(
-                                  Icons.check_rounded,
-                                  size: 14,
-                                  color: AppTheme.accentColor,
-                                ),
-                              ),
-                            Expanded(
-                              child: Text(
-                                voice,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isSelected
-                                      ? AppTheme.accentColor
-                                      : Colors.white.withValues(alpha: 0.85),
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+          const SizedBox(height: 4),
+          Container(
+            height: 200,
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceDim,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            child: _filtered.isEmpty
+                ? Center(
+                    child: Text(
+                      'No match "${_searchCtrl.text}"',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.4),
                       ),
-                    );
-                  },
-                ),
-        ),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    itemCount: _filtered.length,
+                    itemBuilder: (ctx, i) {
+                      final voice = _filtered[i];
+                      final isSelected = voice == widget.selected;
+                      return InkWell(
+                        onTap: () => _selectItem(voice),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          color: isSelected
+                              ? AppTheme.accentColor.withValues(alpha: 0.18)
+                              : Colors.transparent,
+                          child: Row(
+                            children: [
+                              if (isSelected)
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: Icon(
+                                    Icons.check_rounded,
+                                    size: 14,
+                                    color: AppTheme.accentColor,
+                                  ),
+                                ),
+                              Expanded(
+                                child: Text(
+                                  voice,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isSelected
+                                        ? AppTheme.accentColor
+                                        : Colors.white.withValues(alpha: 0.85),
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ],
     );
   }

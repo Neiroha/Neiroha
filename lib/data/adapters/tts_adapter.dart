@@ -23,11 +23,17 @@ class TtsRequest {
   final String? promptLang;
   final String? textLang;
 
-  // Qwen3 specific
+  // Qwen3 / ChatCompletions specific
   final String? voiceInstruction;
 
   // OpenAI-compatible preset
   final String? presetVoiceName;
+
+  // MiMo V2.5 VoiceClone: data:audio/mpeg;base64,... or data:audio/wav;base64,...
+  final String? voiceClonePromptBase64;
+
+  // Audio tag prefix prepended to text, e.g. "(磁性)" or "(兴奋|颤抖)"
+  final String? audioTagPrefix;
 
   const TtsRequest({
     required this.text,
@@ -40,6 +46,8 @@ class TtsRequest {
     this.textLang,
     this.voiceInstruction,
     this.presetVoiceName,
+    this.voiceClonePromptBase64,
+    this.audioTagPrefix,
   });
 }
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:neiroha/data/adapters/chat_completions_tts_adapter.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/enums/adapter_type.dart';
@@ -295,6 +296,16 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
   List<db.ModelBinding> _models = [];
   List<db.ModelBinding> _voices = [];
   bool _fetchingModels = false;
+
+  /// Whether a model key is a TTS model (vs LLM/ASR/multimodal).
+  static bool _isTtsModelKey(String modelKey) {
+    final k = modelKey.toLowerCase();
+    return k.contains('tts') ||
+        k.contains('speech-synthesis') ||
+        k.contains('voiceclone') ||
+        k.contains('voicedesign') ||
+        k.endsWith('-voice');
+  }
 
   @override
   void initState() {
@@ -660,15 +671,20 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                   _adapterType.supportsVoiceQuery) ...[
                 const SizedBox(height: 20),
 
-                // ── Models section ──
-                if (_adapterType.supportsModelQuery) ...[
+                // ── Models + Voices section ──
+                if (_adapterType.supportsModelQuery ||
+                    _adapterType.supportsVoiceQuery) ...[
                   Row(
                     children: [
-                      Text('Models',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w600)),
+                      Text(
+                        _adapterType.hasSeparateModelAndVoice
+                            ? 'Models & Voices'
+                            : 'Voices',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
                       const Spacer(),
                       TextButton.icon(
                         onPressed: _fetchingModels ? null : _fetchModelsFromApi,
@@ -680,101 +696,103 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                                     CircularProgressIndicator(strokeWidth: 2))
                             : const Icon(Icons.cloud_download_rounded,
                                 size: 16),
-                        label: Text(_adapterType.hasSeparateModelAndVoice
-                            ? 'Fetch All'
-                            : 'Fetch'),
+                        label: Text(
+                            _adapterType.hasSeparateModelAndVoice
+                                ? 'Fetch All'
+                                : 'Fetch'),
                       ),
-                      TextButton.icon(
-                        onPressed: () =>
-                            _addEntryManually(isVoice: false),
-                        icon: const Icon(Icons.add_rounded, size: 16),
-                        label: const Text('Add'),
-                      ),
-                    ],
-                  ),
-                  if (_models.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Text(
-                        'No models yet. Use "Fetch All" or add manually.',
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.4)),
-                      ),
-                    )
-                  else
-                    ..._models.map((m) => _BindingRow(
-                          key: ValueKey(m.id),
-                          label: m.modelKey,
-                          icon: Icons.model_training_rounded,
-                          onDelete: () => _removeEntry(m.id),
-                        )),
-                ],
-
-                // ── Voices section (voice-only adapters OR separate-voice adapters) ──
-                if (_adapterType.supportsVoiceQuery) ...[
-                  if (_adapterType.supportsModelQuery)
-                    const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Voices',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w600)),
-                      const Spacer(),
-                      // Voice-only adapters (Azure/System) need their own Fetch button.
-                      if (!_adapterType.hasSeparateModelAndVoice)
+                      if (_adapterType.supportsModelQuery)
                         TextButton.icon(
-                          onPressed:
-                              _fetchingModels ? null : _fetchModelsFromApi,
-                          icon: _fetchingModels
-                              ? const SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2))
-                              : const Icon(Icons.cloud_download_rounded,
-                                  size: 16),
-                          label: const Text('Fetch'),
+                          onPressed: () =>
+                              _addEntryManually(isVoice: false),
+                          icon: const Icon(Icons.add_rounded, size: 16),
+                          label: const Text('Add Model'),
                         ),
-                      TextButton.icon(
-                        onPressed: () => _addEntryManually(isVoice: true),
-                        icon: const Icon(Icons.add_rounded, size: 16),
-                        label: const Text('Add'),
-                      ),
+                      if (_adapterType.supportsVoiceQuery &&
+                          !_adapterType.hasSeparateModelAndVoice)
+                        TextButton.icon(
+                          onPressed: () => _addEntryManually(isVoice: true),
+                          icon: const Icon(Icons.add_rounded, size: 16),
+                          label: const Text('Add Voice'),
+                        ),
                     ],
                   ),
-                  // For voice-only adapters (Azure, System), _models IS the voice list.
-                  // For hasSeparateModelAndVoice adapters, _voices is the voice list.
-                  Builder(builder: (context) {
-                    final list = _adapterType.hasSeparateModelAndVoice
-                        ? _voices
-                        : _models;
-                    if (list.isEmpty) {
-                      return Padding(
+                  const SizedBox(height: 4),
+                  if (_adapterType.hasSeparateModelAndVoice) ...[
+                    // ── Models (TTS with type badge, non-TTS with capability badges) ──
+                    if (_models.isEmpty && _voices.isEmpty)
+                      Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         child: Text(
-                          _adapterType.hasSeparateModelAndVoice
-                              ? 'No voices yet. Use "Fetch All" or add manually.'
-                              : 'No voices yet. Use "Fetch" to get available voices.',
+                          'No models or voices yet. Use "Fetch All" or add manually.',
                           style: TextStyle(
                               fontSize: 12,
                               color: Colors.white.withValues(alpha: 0.4)),
                         ),
-                      );
-                    }
-                    return Column(
-                      children: list
-                          .map((v) => _BindingRow(
-                                key: ValueKey(v.id),
-                                label: v.modelKey,
-                                icon: Icons.record_voice_over_rounded,
-                                onDelete: () => _removeEntry(v.id),
-                              ))
-                          .toList(),
-                    );
-                  }),
+                      )
+                    else ...[
+                      // TTS models — voices are NOT nested here because the
+                      // schema has no model→voice link; rendering them per
+                      // model would duplicate every voice under every TTS row.
+                      ..._models
+                          .where((m) => _isTtsModelKey(m.modelKey))
+                          .map((m) => _TtsModelRow(
+                                model: m,
+                                onDelete: () => _removeEntry(m.id),
+                              )),
+                      // Non-TTS models with capability badges
+                      ..._models
+                          .where((m) => !_isTtsModelKey(m.modelKey))
+                          .map((m) => _NonTtsModelRow(
+                                model: m,
+                                onDelete: () => _removeEntry(m.id),
+                              )),
+                      // Custom Voices — flat section. Built-in voices for known
+                      // TTS models (e.g. MiMo V2/V2.5) are rendered inline
+                      // under each model row, so this section holds only
+                      // user-added or API-fetched voices. Schema has no
+                      // model→voice link, so we can't attribute them.
+                      if (_voices.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          'Custom Voices',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelMedium
+                              ?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        ..._voices.map((v) => _BindingRow(
+                              key: ValueKey(v.id),
+                              label: v.modelKey,
+                              icon: Icons.record_voice_over_rounded,
+                              onDelete: () => _removeEntry(v.id),
+                            )),
+                      ],
+                    ],
+                  ] else ...[
+                    // ── Voice-only adapters (Azure, System) ──
+                    if (_models.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Text(
+                          'No voices yet. Use "Fetch" to get available voices.',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.4)),
+                        ),
+                      )
+                    else
+                      ..._models.map((v) => _BindingRow(
+                            key: ValueKey(v.id),
+                            label: v.modelKey,
+                            icon: Icons.record_voice_over_rounded,
+                            onDelete: () => _removeEntry(v.id),
+                          )),
+                  ],
                 ],
               ],
               const SizedBox(height: 24),
@@ -850,6 +868,243 @@ class _BindingRow extends StatelessWidget {
                 padding: EdgeInsets.all(4),
                 child:
                     Icon(Icons.close_rounded, size: 14, color: Colors.grey),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────── TTS model group (model + its voices) ─────────────────
+
+class _TtsModelRow extends StatefulWidget {
+  final db.ModelBinding model;
+  final VoidCallback onDelete;
+
+  const _TtsModelRow({
+    required this.model,
+    required this.onDelete,
+  });
+
+  @override
+  State<_TtsModelRow> createState() => _TtsModelRowState();
+}
+
+class _TtsModelRowState extends State<_TtsModelRow> {
+  bool _expanded = false;
+
+  /// Detect TTS model type label from model name.
+  String get _typeLabel {
+    final k = widget.model.modelKey.toLowerCase();
+    if (k.contains('voiceclone') || k.contains('clone')) return 'Clone';
+    if (k.contains('voicedesign') || k.contains('design')) return 'Design';
+    return 'Preset';
+  }
+
+  /// Built-in voices for this model (e.g., MiMo V2/V2.5). Empty if unknown.
+  List<String> get _builtInVoices =>
+      ChatCompletionsTtsAdapter.builtInVoicesForMimoModel(
+        widget.model.modelKey,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final voices = _builtInVoices;
+    final hasBuiltIns = voices.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceBright,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row — tap to expand if built-ins exist.
+            InkWell(
+              onTap: hasBuiltIns
+                  ? () => setState(() => _expanded = !_expanded)
+                  : null,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(Icons.mic_rounded,
+                        size: 16,
+                        color: Colors.purpleAccent.withValues(alpha: 0.7)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(widget.model.modelKey,
+                          style: const TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w500)),
+                    ),
+                    if (hasBuiltIns) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text('${voices.length} voices',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color:
+                                    Colors.white.withValues(alpha: 0.55))),
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.purpleAccent.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(_typeLabel,
+                          style: TextStyle(
+                              fontSize: 10,
+                              color:
+                                  Colors.purpleAccent.withValues(alpha: 0.8))),
+                    ),
+                    if (hasBuiltIns)
+                      Icon(
+                        _expanded
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                        size: 16,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
+                    const SizedBox(width: 4),
+                    InkWell(
+                      onTap: widget.onDelete,
+                      borderRadius: BorderRadius.circular(4),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(Icons.close_rounded,
+                            size: 14, color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Built-in voices, shown when expanded.
+            if (hasBuiltIns && _expanded)
+              Padding(
+                padding: const EdgeInsets.only(
+                    left: 28, right: 12, bottom: 8, top: 2),
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: voices
+                      .map((v) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.08),
+                              ),
+                            ),
+                            child: Text(v,
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.white
+                                        .withValues(alpha: 0.7))),
+                          ))
+                      .toList(),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────── Non-TTS model row with capability badges ─────────────
+
+class _NonTtsModelRow extends StatelessWidget {
+  final db.ModelBinding model;
+  final VoidCallback onDelete;
+
+  const _NonTtsModelRow({
+    required this.model,
+    required this.onDelete,
+  });
+
+  /// Infer capability badges from model name.
+  List<String> get _capabilities {
+    final k = model.modelKey.toLowerCase();
+    final caps = <String>[];
+    if (k.contains('omni') ||
+        RegExp(r'mimo-v2(\.5)?$').hasMatch(k) ||
+        k.contains('-vision') ||
+        (k.contains('gpt-4o') && !k.contains('transcribe'))) {
+      caps.addAll(['LLM', 'ASR']);
+    } else {
+      caps.add('LLM');
+    }
+    return caps;
+  }
+
+  Color _badgeColor(String cap) => switch (cap) {
+        'LLM' => Colors.blueAccent,
+        'ASR' => Colors.greenAccent,
+        _ => Colors.grey,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceBright,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.smart_toy_rounded,
+                size: 16,
+                color: Colors.blueAccent.withValues(alpha: 0.7)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(model.modelKey,
+                  style: const TextStyle(fontSize: 13)),
+            ),
+            ..._capabilities.map((cap) => Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: _badgeColor(cap).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(cap,
+                        style: TextStyle(
+                            fontSize: 10,
+                            color:
+                                _badgeColor(cap).withValues(alpha: 0.8))),
+                  ),
+                )),
+            const SizedBox(width: 4),
+            InkWell(
+              onTap: onDelete,
+              borderRadius: BorderRadius.circular(4),
+              child: const Padding(
+                padding: EdgeInsets.all(4),
+                child: Icon(Icons.close_rounded,
+                    size: 14, color: Colors.grey),
               ),
             ),
           ],

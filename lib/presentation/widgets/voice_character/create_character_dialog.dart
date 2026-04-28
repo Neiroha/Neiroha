@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/cosyvoice_adapter.dart';
+import 'package:neiroha/data/adapters/chat_completions_tts_adapter.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/adapters/voxcpm2_native_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
@@ -62,6 +63,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   List<String> _models = [];
   bool _loadingModels = false;
   String? _selectedModel;
+
+  // TTS model type: 'preset' | 'clone' | 'design' — determined by model name
+  String? _ttsModelType;
 
   // CosyVoice mode
   String? _cosyVoiceMode;
@@ -132,6 +136,60 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       _adapterType == 'geminiTts';
   bool get _isGeminiTts => _adapterType == 'geminiTts';
 
+  /// Whether a model key is a TTS model (not LLM/multimodal).
+  /// Used to filter the model picker in the voice character dialog.
+  static bool _isTtsModel(String modelKey) {
+    final k = modelKey.toLowerCase();
+    return k.contains('tts') ||
+        k.contains('speech-synthesis') ||
+        k.contains('voiceclone') ||
+        k.contains('voicedesign') ||
+        k.endsWith('-voice');
+  }
+
+  /// Detect TTS model type from model name.
+  /// Returns 'clone', 'design', or 'preset'.
+  static String _detectTtsModelType(String modelKey) {
+    final k = modelKey.toLowerCase();
+    if (k.contains('voiceclone') || k.contains('clone')) return 'clone';
+    if (k.contains('voicedesign') || k.contains('design')) return 'design';
+    return 'preset';
+  }
+
+  /// Load available voices for the selected model.
+  /// For MiMo preset models: returns built-in voice list.
+  /// For other providers: loads from cached voice entries.
+  Future<void> _loadVoicesForModel(String modelKey) async {
+    setState(() {
+      _loadingSpeakers = true;
+      _speakers = [];
+      _selectedSpeaker = null;
+      _voiceNameCtrl.clear();
+    });
+
+    List<String> voiceList = [];
+
+    // MiMo TTS preset models have built-in voices
+    final mimoVoices =
+        ChatCompletionsTtsAdapter.builtInVoicesForMimoModel(modelKey);
+    if (mimoVoices.isNotEmpty && _ttsModelType == 'preset') {
+      voiceList = mimoVoices;
+    } else {
+      // For other providers, load from cached voice entries
+      final cachedVoices = await widget.database.getVoiceEntriesForProvider(
+        _selectedProviderId,
+      );
+      voiceList = cachedVoices.map((b) => b.modelKey).toList()..sort();
+    }
+
+    if (mounted) {
+      setState(() {
+        _speakers = voiceList;
+        _loadingSpeakers = false;
+      });
+    }
+  }
+
   Future<void> _fetchModelsAndSpeakers() async {
     setState(() {
       _loadingSpeakers = true;
@@ -153,28 +211,27 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
         .hasSeparateModelAndVoice;
 
     if (hasSeparate) {
-      // Models from cache
+      // Models from cache — filter to TTS-only models
       final cachedModels = await widget.database.getModelEntriesForProvider(
         _selectedProviderId,
       );
-      final modelList = cachedModels.map((b) => b.modelKey).toList()..sort();
-
-      // Voices from cache
-      final cachedVoices = await widget.database.getVoiceEntriesForProvider(
-        _selectedProviderId,
-      );
-      final voiceList = cachedVoices.map((b) => b.modelKey).toList()..sort();
+      final modelList = cachedModels
+          .map((b) => b.modelKey)
+          .where((k) => _isTtsModel(k))
+          .toList()
+        ..sort();
 
       if (mounted) {
         setState(() {
           _models = modelList;
-          _speakers = voiceList;
           _loadingModels = false;
           _loadingSpeakers = false;
           // Auto-select model if only one
           if (modelList.length == 1) {
             _selectedModel = modelList.first;
             _modelNameCtrl.text = modelList.first;
+            _ttsModelType = _detectTtsModelType(modelList.first);
+            _loadVoicesForModel(modelList.first);
           }
         });
       }
@@ -414,10 +471,17 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
   void _autoFillName() {
     final providerName = _selectedProvider.name;
+    final model = _modelNameCtrl.text.trim().isNotEmpty
+        ? _modelNameCtrl.text.trim()
+        : (_selectedModel ?? '');
     final speaker = _voiceNameCtrl.text.trim().isNotEmpty
         ? _voiceNameCtrl.text.trim()
-        : (_selectedSpeaker ?? 'voice');
-    _nameCtrl.text = '${providerName}_$speaker';
+        : (_selectedSpeaker ?? '');
+    // Build: provider_model_voice (skip empty parts)
+    final parts = <String>[providerName];
+    if (model.isNotEmpty) parts.add(model);
+    if (speaker.isNotEmpty) parts.add(speaker);
+    _nameCtrl.text = parts.join('_');
   }
 
   @override
@@ -588,7 +652,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                     if (_adapterType == 'openaiCompatible' ||
                         _adapterType == 'chatCompletionsTts' ||
                         _isGeminiTts) ...[
-                      // ── Separate Model + Voice (OpenAI-compatible, Gemini) ──
+                      // ── Step 1: Select Model ──
                       VoiceCharacterSectionLabel('MODEL'),
                       const SizedBox(height: 8),
                       if (_loadingModels)
@@ -613,54 +677,134 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                           label: 'Select Model',
                           voices: _models,
                           selected: _selectedModel,
-                          onSelected: (v) => setState(() {
-                            _selectedModel = v;
-                            _modelNameCtrl.text = v;
-                          }),
+                          onSelected: (v) {
+                            final modelType = _detectTtsModelType(v);
+                            setState(() {
+                              _selectedModel = v;
+                              _modelNameCtrl.text = v;
+                              _ttsModelType = modelType;
+                              // Reset voice state when model changes
+                              _selectedSpeaker = null;
+                              _voiceNameCtrl.clear();
+                              _uploadedRefAudioPath = null;
+                              _selectedAudioTrackId = null;
+                              _instructionCtrl.clear();
+                            });
+                            _loadVoicesForModel(v);
+                            _autoFillName();
+                          },
                         ),
-                        const SizedBox(height: 8),
-                      ],
-                      TextField(
-                        controller: _modelNameCtrl,
-                        decoration: InputDecoration(
-                          labelText: 'Model Name',
-                          hintText: _isGeminiTts
-                              ? 'e.g. gemini-2.5-flash-preview-tts'
-                              : 'e.g. tts-1',
-                          helperText: _models.isEmpty
-                              ? 'Go to Providers → Fetch to cache available models'
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      VoiceCharacterSectionLabel('VOICE'),
-                      const SizedBox(height: 8),
-                      ..._buildSpeakerPicker(label: 'Select Voice'),
-                      TextField(
-                        controller: _voiceNameCtrl,
-                        decoration: InputDecoration(
-                          labelText: 'Voice Name',
-                          hintText: _isGeminiTts ? 'e.g. Kore' : 'e.g. alloy',
-                          helperText: _speakers.isEmpty
-                              ? 'Go to Providers → Fetch to cache available voices'
-                              : null,
-                        ),
-                      ),
-                      if (_isGeminiTts) ...[
-                        const SizedBox(height: 16),
-                        VoiceCharacterSectionLabel(
-                          'STYLE INSTRUCTION (optional)',
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _instructionCtrl,
-                          maxLines: 3,
-                          decoration: const InputDecoration(
-                            labelText: 'Style Instruction',
-                            hintText:
-                                'e.g. "Speak softly and slowly" — prepended to the text',
+                      ] else ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Text(
+                            'No TTS models found. Go to Providers → Fetch All to cache available models.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.4),
+                            ),
                           ),
                         ),
+                      ],
+
+                      // ── Step 2: Contextual UI based on selected model type ──
+                      if (_selectedModel != null && _ttsModelType != null) ...[
+                        const SizedBox(height: 16),
+
+                        // ── Preset Voice: voice picker ──
+                        if (_ttsModelType == 'preset') ...[
+                          VoiceCharacterSectionLabel('VOICE'),
+                          const SizedBox(height: 8),
+                          if (_loadingSpeakers)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text('Loading voices...'),
+                                ],
+                              ),
+                            )
+                          else if (_speakers.isNotEmpty)
+                            VoiceCharacterVoiceSearchPicker(
+                              label: 'Select Voice',
+                              voices: _speakers,
+                              selected: _selectedSpeaker,
+                              onSelected: (v) => setState(() {
+                                _selectedSpeaker = v;
+                                _voiceNameCtrl.text = v;
+                                _autoFillName();
+                              }),
+                            ),
+                          if (_isGeminiTts) ...[
+                            const SizedBox(height: 16),
+                            VoiceCharacterSectionLabel(
+                              'STYLE INSTRUCTION (optional)',
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _instructionCtrl,
+                              maxLines: 3,
+                              decoration: const InputDecoration(
+                                labelText: 'Style Instruction',
+                                hintText:
+                                    'e.g. "Speak softly and slowly" — prepended to the text',
+                              ),
+                            ),
+                          ],
+                        ],
+
+                        // ── Voice Clone: ref audio upload ──
+                        if (_ttsModelType == 'clone') ...[
+                          ..._buildRefAudioPicker(),
+                          VoiceCharacterSectionLabel('VOICE NAME (optional)'),
+                          const SizedBox(height: 4),
+                          Text(
+                            'A label for this cloned voice. The actual voice is derived from the reference audio.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.4),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _voiceNameCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Voice Name',
+                              hintText: 'e.g. My Cloned Voice',
+                            ),
+                          ),
+                        ],
+
+                        // ── Voice Design: text description ──
+                        if (_ttsModelType == 'design') ...[
+                          VoiceCharacterSectionLabel('VOICE DESCRIPTION'),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Describe the voice you want to create. This will be used to generate a new voice.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.4),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _instructionCtrl,
+                            maxLines: 3,
+                            decoration: const InputDecoration(
+                              labelText: 'Voice Description *',
+                              hintText:
+                                  'e.g. "Heavy Russian accent, gruff middle-aged male"',
+                            ),
+                          ),
+                        ],
                       ],
                     ] else ...[
                       // ── Azure / System TTS: voices only ──
@@ -1078,17 +1222,21 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     // cross_lingual can skip it only if a profile name is given instead.
     // VoxCPM2 clone / ultimate_clone need ref audio unless a registered
     // voice_id is chosen.
+    // ChatCompletionsTts clone models need ref audio.
     final voxcpmNeedsAudio =
         _isVoxCpm2 &&
         (_voxcpmMode == 'clone' || _voxcpmMode == 'ultimate_clone') &&
         _voiceNameCtrl.text.trim().isEmpty;
+    final chatCloneNeedsAudio =
+        _isPresetVoiceProvider && _ttsModelType == 'clone';
     final needsRefAudio =
         _isGptSovits ||
         (_isCosyVoice && _cosyVoiceMode == 'zero_shot') ||
         (_isCosyVoice &&
             _cosyVoiceMode == 'cross_lingual' &&
             _voiceNameCtrl.text.trim().isEmpty) ||
-        voxcpmNeedsAudio;
+        voxcpmNeedsAudio ||
+        chatCloneNeedsAudio;
     if (needsRefAudio && refAudio == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1119,6 +1267,16 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       );
       return;
     }
+    if (_isPresetVoiceProvider &&
+        _ttsModelType == 'design' &&
+        _instructionCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Voice Design requires a Voice Description'),
+        ),
+      );
+      return;
+    }
     if (_isVoxCpm2 &&
         _voxcpmMode == 'ultimate_clone' &&
         _promptTextCtrl.text.trim().isEmpty) {
@@ -1135,7 +1293,13 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     // Determine task mode
     TaskMode effectiveMode;
     if (_isPresetVoiceProvider) {
-      effectiveMode = TaskMode.presetVoice;
+      if (_ttsModelType == 'clone') {
+        effectiveMode = TaskMode.cloneWithPrompt;
+      } else if (_ttsModelType == 'design') {
+        effectiveMode = TaskMode.voiceDesign;
+      } else {
+        effectiveMode = TaskMode.presetVoice;
+      }
     } else if (_isGptSovits) {
       effectiveMode = TaskMode.cloneWithPrompt;
     } else {

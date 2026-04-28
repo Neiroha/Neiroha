@@ -1,4 +1,20 @@
-part of '../../screens/voice_character_screen.dart';
+import 'dart:io';
+
+import 'package:drift/drift.dart' show Value;
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+import 'package:uuid/uuid.dart';
+
+import 'package:neiroha/data/adapters/cosyvoice_adapter.dart';
+import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/adapters/voxcpm2_native_adapter.dart';
+import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/storage/path_service.dart';
+import 'package:neiroha/domain/enums/adapter_type.dart';
+import 'package:neiroha/domain/enums/task_mode.dart';
+import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/voice_character/components.dart';
 
 class CreateCharacterDialog extends StatefulWidget {
   final List<db.TtsProvider> providers;
@@ -295,7 +311,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     }
     if (_speakers.isNotEmpty) {
       return [
-        _VoiceSearchPicker(
+        VoiceCharacterVoiceSearchPicker(
           label: label,
           voices: _speakers,
           selected: _selectedSpeaker,
@@ -313,7 +329,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   /// Build the reference audio picker with voice asset library support.
   List<Widget> _buildRefAudioPicker() {
     return [
-      _SectionLabel('REFERENCE AUDIO'),
+      VoiceCharacterSectionLabel('REFERENCE AUDIO'),
       const SizedBox(height: 8),
       // Pick from voice assets library
       if (widget.audioTracks.isNotEmpty) ...[
@@ -379,7 +395,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       ],
       // Manual upload (shown when no track selected or no tracks exist)
       if (_selectedAudioTrackId == null)
-        _RefAudioPicker(
+        VoiceCharacterRefAudioPicker(
           path: _uploadedRefAudioPath,
           onPick: (path) => setState(() => _uploadedRefAudioPath = path),
         ),
@@ -438,7 +454,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 children: [
                   // ── CHARACTER INFO (at top) ──
-                  _SectionLabel('CHARACTER INFO'),
+                  VoiceCharacterSectionLabel('CHARACTER INFO'),
                   const SizedBox(height: 8),
                   Center(
                     child: GestureDetector(
@@ -525,7 +541,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                   const SizedBox(height: 20),
 
                   // ── PROVIDER ──
-                  _SectionLabel('PROVIDER'),
+                  VoiceCharacterSectionLabel('PROVIDER'),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     decoration: const InputDecoration(labelText: 'Provider'),
@@ -573,7 +589,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         _adapterType == 'chatCompletionsTts' ||
                         _isGeminiTts) ...[
                       // ── Separate Model + Voice (OpenAI-compatible, Gemini) ──
-                      _SectionLabel('MODEL'),
+                      VoiceCharacterSectionLabel('MODEL'),
                       const SizedBox(height: 8),
                       if (_loadingModels)
                         const Padding(
@@ -593,7 +609,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                           ),
                         )
                       else if (_models.isNotEmpty) ...[
-                        _VoiceSearchPicker(
+                        VoiceCharacterVoiceSearchPicker(
                           label: 'Select Model',
                           voices: _models,
                           selected: _selectedModel,
@@ -617,7 +633,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _SectionLabel('VOICE'),
+                      VoiceCharacterSectionLabel('VOICE'),
                       const SizedBox(height: 8),
                       ..._buildSpeakerPicker(label: 'Select Voice'),
                       TextField(
@@ -632,7 +648,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                       ),
                       if (_isGeminiTts) ...[
                         const SizedBox(height: 16),
-                        _SectionLabel('STYLE INSTRUCTION (optional)'),
+                        VoiceCharacterSectionLabel(
+                          'STYLE INSTRUCTION (optional)',
+                        ),
                         const SizedBox(height: 8),
                         TextField(
                           controller: _instructionCtrl,
@@ -646,7 +664,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                       ],
                     ] else ...[
                       // ── Azure / System TTS: voices only ──
-                      _SectionLabel(
+                      VoiceCharacterSectionLabel(
                         _adapterType == 'azureTts' ? 'VOICE' : 'PRESET VOICE',
                       ),
                       const SizedBox(height: 8),
@@ -669,9 +687,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                     ],
                   ] else if (_isCosyVoice) ...[
                     // ── CosyVoice: 3 modes ──
-                    _SectionLabel('COSYVOICE MODE'),
+                    VoiceCharacterSectionLabel('COSYVOICE MODE'),
                     const SizedBox(height: 8),
-                    _CosyVoiceModeSelector(
+                    VoiceCharacterCosyVoiceModeSelector(
                       selected: _cosyVoiceMode,
                       onChanged: (mode) {
                         setState(() {
@@ -689,7 +707,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                     ),
                     const SizedBox(height: 20),
                     if (_cosyVoiceMode != null) ...[
-                      _SectionLabel('SERVER PROFILE (optional)'),
+                      VoiceCharacterSectionLabel('SERVER PROFILE (optional)'),
                       const SizedBox(height: 4),
                       Text(
                         'A profile registered on the CosyVoice server. '
@@ -780,7 +798,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
                       // ── Cross Lingual ──────────────────────────────────────
                       if (_cosyVoiceMode == 'cross_lingual') ...[
-                        _SectionLabel('REFERENCE AUDIO'),
+                        VoiceCharacterSectionLabel('REFERENCE AUDIO'),
                         const SizedBox(height: 4),
                         Text(
                           'Upload a voice sample — the model will clone its tone and speak the synthesis text in any language.',
@@ -795,7 +813,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
                       // ── Instruct ───────────────────────────────────────────
                       if (_cosyVoiceMode == 'instruct') ...[
-                        _SectionLabel('INSTRUCT'),
+                        VoiceCharacterSectionLabel('INSTRUCT'),
                         const SizedBox(height: 8),
                         TextField(
                           controller: _instructionCtrl,
@@ -807,7 +825,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _SectionLabel('REFERENCE AUDIO (optional)'),
+                        VoiceCharacterSectionLabel(
+                          'REFERENCE AUDIO (optional)',
+                        ),
                         const SizedBox(height: 4),
                         Text(
                           'Upload a voice sample to use as the base voice instead of a preset profile.',
@@ -822,9 +842,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                     ],
                   ] else if (_isVoxCpm2) ...[
                     // ── VoxCPM2 Native: 3 modes ──
-                    _SectionLabel('VOXCPM2 MODE'),
+                    VoiceCharacterSectionLabel('VOXCPM2 MODE'),
                     const SizedBox(height: 8),
-                    _VoxCpm2ModeSelector(
+                    VoiceCharacterVoxCpm2ModeSelector(
                       selected: _voxcpmMode,
                       onChanged: (mode) {
                         setState(() {
@@ -845,7 +865,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                       // clone / ultimate_clone; for design we still show it
                       // disabled-via-empty-list so the UI is consistent).
                       if (_voxcpmMode != 'design') ...[
-                        _SectionLabel('REGISTERED VOICE (optional)'),
+                        VoiceCharacterSectionLabel(
+                          'REGISTERED VOICE (optional)',
+                        ),
                         const SizedBox(height: 4),
                         Text(
                           'A voice profile registered on the server. Leave '
@@ -916,7 +938,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
                       // ── Design ─────────────────────────────────────────────
                       if (_voxcpmMode == 'design') ...[
-                        _SectionLabel('VOICE DESCRIPTION'),
+                        VoiceCharacterSectionLabel('VOICE DESCRIPTION'),
                         const SizedBox(height: 4),
                         Text(
                           'Natural-language voice description. At synthesis '
@@ -985,7 +1007,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                     ),
                   ] else ...[
                     // ── Fallback for other adapters (qwen3, etc.) ──
-                    _SectionLabel('VOICE'),
+                    VoiceCharacterSectionLabel('VOICE'),
                     const SizedBox(height: 8),
                     ..._buildSpeakerPicker(),
                     TextField(

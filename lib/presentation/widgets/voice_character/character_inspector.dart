@@ -1,4 +1,21 @@
-part of '../../screens/voice_character_screen.dart';
+import 'dart:io';
+
+import 'package:drift/drift.dart' show Value;
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
+import 'package:uuid/uuid.dart';
+
+import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/storage/path_service.dart';
+import 'package:neiroha/domain/enums/adapter_type.dart';
+import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/voice_character/components.dart';
+import 'package:neiroha/presentation/widgets/voice_character/selection.dart';
+import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/providers/playback_provider.dart';
 
 // ─────────────────────────── Inspector Panel (inline editor) ────────────────
 
@@ -168,7 +185,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
             onTap: () => _pickAvatar(a),
             child: Stack(
               children: [
-                _Avatar(
+                VoiceCharacterAvatar(
                   name: a.name,
                   selected: true,
                   radius: 36,
@@ -204,7 +221,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
           decoration: const InputDecoration(labelText: 'Character Name *'),
         ),
         const SizedBox(height: 8),
-        Center(child: _ModeBadge(mode: a.taskMode)),
+        Center(child: VoiceCharacterModeBadge(mode: a.taskMode)),
         const SizedBox(height: 12),
 
         // ── Description ──────────────────────────────────────────────────────
@@ -220,7 +237,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         const SizedBox(height: 12),
 
         // ── Provider ─────────────────────────────────────────────────────────
-        _SectionLabel('PROVIDER'),
+        VoiceCharacterSectionLabel('PROVIDER'),
         const SizedBox(height: 8),
         if (enabledProviders.isEmpty)
           Text(
@@ -277,7 +294,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
 
         // ── Mode-specific fields ─────────────────────────────────────────────
         if (a.taskMode == 'presetVoice') ...[
-          _SectionLabel('VOICE'),
+          VoiceCharacterSectionLabel('VOICE'),
           const SizedBox(height: 8),
           if (_loadingSpeakers)
             const Padding(
@@ -295,7 +312,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
               ),
             )
           else if (_speakers.isNotEmpty) ...[
-            _VoiceSearchPicker(
+            VoiceCharacterVoiceSearchPicker(
               label: 'Select Voice',
               voices: _speakers,
               selected: _selectedSpeaker,
@@ -341,7 +358,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         ],
 
         if (a.taskMode == 'cloneWithPrompt') ...[
-          _SectionLabel('VOICE CLONE'),
+          VoiceCharacterSectionLabel('VOICE CLONE'),
           const SizedBox(height: 8),
           if (a.refAudioPath != null) ...[
             Text(
@@ -457,7 +474,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         ],
 
         if (a.taskMode == 'voiceDesign') ...[
-          _SectionLabel('VOICE DESIGN'),
+          VoiceCharacterSectionLabel('VOICE DESIGN'),
           const SizedBox(height: 8),
           TextField(
             controller: _instructionCtrl,

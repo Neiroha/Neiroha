@@ -1,10 +1,21 @@
-part of '../../screens/voice_character_screen.dart';
+import 'dart:io';
 
-class _VoxCpm2ModeSelector extends StatelessWidget {
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/providers/playback_provider.dart';
+
+class VoiceCharacterVoxCpm2ModeSelector extends StatelessWidget {
   final String? selected;
   final ValueChanged<String> onChanged;
 
-  const _VoxCpm2ModeSelector({required this.selected, required this.onChanged});
+  const VoiceCharacterVoxCpm2ModeSelector({
+    super.key,
+    required this.selected,
+    required this.onChanged,
+  });
 
   static const _modes = [
     (
@@ -89,11 +100,12 @@ class _VoxCpm2ModeSelector extends StatelessWidget {
   }
 }
 
-class _CosyVoiceModeSelector extends StatelessWidget {
+class VoiceCharacterCosyVoiceModeSelector extends StatelessWidget {
   final String? selected;
   final ValueChanged<String> onChanged;
 
-  const _CosyVoiceModeSelector({
+  const VoiceCharacterCosyVoiceModeSelector({
+    super.key,
     required this.selected,
     required this.onChanged,
   });
@@ -186,11 +198,15 @@ class _CosyVoiceModeSelector extends StatelessWidget {
   }
 }
 
-class _RefAudioPicker extends ConsumerWidget {
+class VoiceCharacterRefAudioPicker extends ConsumerWidget {
   final String? path;
   final ValueChanged<String> onPick;
 
-  const _RefAudioPicker({required this.path, required this.onPick});
+  const VoiceCharacterRefAudioPicker({
+    super.key,
+    required this.path,
+    required this.onPick,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -290,12 +306,13 @@ class _RefAudioPicker extends ConsumerWidget {
 
 // ─────────────────────────── Shared helpers ─────────────────────────────────
 
-class _Avatar extends StatelessWidget {
+class VoiceCharacterAvatar extends StatelessWidget {
   final String name;
   final bool selected;
   final double radius;
   final String? avatarPath;
-  const _Avatar({
+  const VoiceCharacterAvatar({
+    super.key,
     required this.name,
     required this.selected,
     this.radius = 20,
@@ -323,9 +340,9 @@ class _Avatar extends StatelessWidget {
   }
 }
 
-class _ModeBadge extends StatelessWidget {
+class VoiceCharacterModeBadge extends StatelessWidget {
   final String mode;
-  const _ModeBadge({required this.mode});
+  const VoiceCharacterModeBadge({super.key, required this.mode});
 
   @override
   Widget build(BuildContext context) {
@@ -343,9 +360,9 @@ class _ModeBadge extends StatelessWidget {
   }
 }
 
-class _SectionLabel extends StatelessWidget {
+class VoiceCharacterSectionLabel extends StatelessWidget {
   final String text;
-  const _SectionLabel(this.text);
+  const VoiceCharacterSectionLabel(this.text, {super.key});
 
   @override
   Widget build(BuildContext context) => Text(
@@ -373,13 +390,14 @@ String _modeLabel(String mode) => switch (mode) {
 ///
 /// Shows a search TextField and a scrollable filtered list below it.
 /// Selecting an item calls [onSelected] and highlights the row.
-class _VoiceSearchPicker extends StatefulWidget {
+class VoiceCharacterVoiceSearchPicker extends StatefulWidget {
   final String label;
   final List<String> voices;
   final String? selected;
   final ValueChanged<String> onSelected;
 
-  const _VoiceSearchPicker({
+  const VoiceCharacterVoiceSearchPicker({
+    super.key,
     required this.label,
     required this.voices,
     required this.onSelected,
@@ -387,10 +405,11 @@ class _VoiceSearchPicker extends StatefulWidget {
   });
 
   @override
-  State<_VoiceSearchPicker> createState() => _VoiceSearchPickerState();
+  State<VoiceCharacterVoiceSearchPicker> createState() =>
+      _VoiceSearchPickerState();
 }
 
-class _VoiceSearchPickerState extends State<_VoiceSearchPicker> {
+class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
   final _searchCtrl = TextEditingController();
   late List<String> _filtered;
 
@@ -402,7 +421,7 @@ class _VoiceSearchPickerState extends State<_VoiceSearchPicker> {
   }
 
   @override
-  void didUpdateWidget(covariant _VoiceSearchPicker old) {
+  void didUpdateWidget(covariant VoiceCharacterVoiceSearchPicker old) {
     super.didUpdateWidget(old);
     if (old.voices != widget.voices) {
       _filtered = _applyFilter(_searchCtrl.text);

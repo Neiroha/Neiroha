@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
-import 'package:neiroha/presentation/widgets/story_track_editor.dart'
-    show TimelineDragButton, TimelineDropPayload;
 
 /// One row in the Phase TTS segments list: index badge, voice dropdown,
 /// status icon (generating / play / error / pending), generate button,
-/// timeline-drag handle, and delete.
+/// and delete.
 ///
 /// `onGenerate` is null while the row is busy or has no voice picked.
-/// `onAddToTimeline` is null until audio exists.
 class SegmentCard extends StatelessWidget {
   final db.PhaseTtsSegment segment;
   final int index;
@@ -17,7 +14,6 @@ class SegmentCard extends StatelessWidget {
   final bool isGenerating;
   final VoidCallback onPlay;
   final VoidCallback? onGenerate;
-  final VoidCallback? onAddToTimeline;
   final ValueChanged<String?> onVoiceChanged;
   final VoidCallback onDelete;
 
@@ -29,7 +25,6 @@ class SegmentCard extends StatelessWidget {
     required this.isGenerating,
     required this.onPlay,
     required this.onGenerate,
-    required this.onAddToTimeline,
     required this.onVoiceChanged,
     required this.onDelete,
   });
@@ -104,23 +99,6 @@ class SegmentCard extends StatelessWidget {
                       ? 'Regenerate'
                       : 'Generate',
                   onPressed: onGenerate,
-                ),
-                const SizedBox(width: 4),
-                TimelineDragButton(
-                  enabled: onAddToTimeline != null,
-                  payload: segment.audioPath == null
-                      ? null
-                      : TimelineDropPayload(
-                          audioPath: segment.audioPath!,
-                          label: bankAssets
-                                  .where((a) => a.id == segment.voiceAssetId)
-                                  .firstOrNull
-                                  ?.name ??
-                              'Segment ${index + 1}',
-                          durationSec: segment.audioDuration,
-                          sourceLineId: segment.id,
-                        ),
-                  onTap: onAddToTimeline,
                 ),
                 const SizedBox(width: 4),
                 IconButton(

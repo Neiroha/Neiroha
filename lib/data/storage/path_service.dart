@@ -141,6 +141,14 @@ class PathService {
       p.join(voiceAssetRoot.path, 'phase_tts',
           sanitizeSegment(projectName, fallback: 'unnamed_project'))));
 
+  /// Resolve `{phaseTtsDir(slug)}/role_mapping.json`. Caller is responsible
+  /// for reading/writing — this only locates the path (and ensures the
+  /// project dir exists).
+  Future<File> phaseTtsRoleMappingFile(String projectSlug) async {
+    final dir = await phaseTtsDir(projectSlug);
+    return File(p.join(dir.path, 'role_mapping.json'));
+  }
+
   Future<Directory> dialogTtsDir(String projectName) => _ensure(Directory(
       p.join(voiceAssetRoot.path, 'dialog_tts',
           sanitizeSegment(projectName, fallback: 'unnamed_project'))));

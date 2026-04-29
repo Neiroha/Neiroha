@@ -7,14 +7,13 @@ import 'package:neiroha/presentation/widgets/phase_tts/segment_card.dart';
 /// section header, the empty-state hint, or a [SegmentCard] per segment.
 ///
 /// All side effects bubble up through callbacks — the parent owns the
-/// playback notifier, database writes, and timeline syncing.
+/// playback notifier and database writes.
 class SegmentPanel extends StatelessWidget {
   final AsyncValue<List<db.PhaseTtsSegment>> segmentsAsync;
   final List<db.VoiceAsset> bankAssets;
   final Set<String> generatingSegmentIds;
   final void Function(db.PhaseTtsSegment segment, int index) onPlay;
   final void Function(db.PhaseTtsSegment segment)? onGenerate;
-  final void Function(db.PhaseTtsSegment segment, int index)? onAddToTimeline;
   final void Function(db.PhaseTtsSegment segment, String? voiceId)
       onVoiceChanged;
   final ValueChanged<String> onDelete;
@@ -26,7 +25,6 @@ class SegmentPanel extends StatelessWidget {
     required this.generatingSegmentIds,
     required this.onPlay,
     required this.onGenerate,
-    required this.onAddToTimeline,
     required this.onVoiceChanged,
     required this.onDelete,
   });
@@ -68,10 +66,6 @@ class SegmentPanel extends StatelessWidget {
                             onGenerate == null
                         ? null
                         : () => onGenerate!(seg),
-                    onAddToTimeline: seg.audioPath == null ||
-                            onAddToTimeline == null
-                        ? null
-                        : () => onAddToTimeline!(seg, i),
                     onVoiceChanged: (voiceId) => onVoiceChanged(seg, voiceId),
                     onDelete: () => onDelete(seg.id),
                   );

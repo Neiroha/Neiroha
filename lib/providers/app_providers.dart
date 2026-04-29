@@ -1,8 +1,10 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
+import 'package:neiroha/data/services/role_mapping_file.dart';
 import 'package:neiroha/data/storage/export_prefs.dart';
 import 'package:neiroha/data/storage/ffmpeg_service.dart';
+import 'package:neiroha/data/storage/llm_config.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
 import 'package:neiroha/server/api_server.dart';
 
@@ -28,6 +30,26 @@ final ffmpegServiceProvider = Provider<FFmpegService>((ref) {
 /// settings screen edits the underlying keys.
 final exportPrefsServiceProvider = Provider<ExportPrefsService>((ref) {
   return ExportPrefsService(ref.watch(databaseProvider));
+});
+
+/// LLM client config (chat-completions provider + model + timeout). Backed
+/// by `AppSettings`. The role-assignment service reads from this; the
+/// settings UI writes through it.
+final llmConfigServiceProvider = Provider<LlmConfigService>((ref) {
+  return LlmConfigService(ref.watch(databaseProvider));
+});
+
+/// Current resolved [LlmConfig]. Invalidate after writes through
+/// [llmConfigServiceProvider] to refresh consumers.
+final llmConfigProvider = FutureProvider<LlmConfig>((ref) {
+  return ref.watch(llmConfigServiceProvider).load();
+});
+
+/// On-disk character → voice mapping per Phase TTS project. The role
+/// assignment dialog reads + writes through this; the file lives next to
+/// the project's audio so projects remain portable.
+final roleMappingFileServiceProvider = Provider<RoleMappingFileService>((ref) {
+  return RoleMappingFileService();
 });
 
 /// Probes `ffmpeg -version` once per session. Watch this in the Settings

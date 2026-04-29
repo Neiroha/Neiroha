@@ -17,8 +17,6 @@ import 'package:neiroha/presentation/widgets/phase_tts/script_editor.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/segment_panel.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
-import 'package:neiroha/presentation/widgets/story_track_editor.dart'
-    show StoryTrackEditor;
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 
@@ -36,7 +34,6 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
   final _scriptController = TextEditingController();
   bool _generatingAll = false;
   final Set<String> _generatingSegmentIds = <String>{};
-  final Set<String> _seededProjects = <String>{};
 
   @override
   void dispose() {
@@ -120,21 +117,6 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         .whereType<db.VoiceAsset>()
         .toList();
 
-    final clipsAsync =
-        ref.watch(timelineClipsStreamProvider('phase:$projectId'));
-    final segments = segmentsAsync.valueOrNull;
-    final clips = clipsAsync.valueOrNull;
-    if (segments != null &&
-        clips != null &&
-        clips.isEmpty &&
-        !_seededProjects.contains(projectId) &&
-        segments.any((s) => s.audioPath != null)) {
-      _seededProjects.add(projectId);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _seedTimeline(projectId, segments, assetMap);
-      });
-    }
-
     return Column(
       children: [
         EditorProjectBar(
@@ -160,8 +142,6 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
               onGenerate: bankAssets.isEmpty
                   ? null
                   : (seg) => _generateOne(project, seg, bankAssets),
-              onAddToTimeline: (seg, i) =>
-                  _addSegmentToTimeline(project, seg, bankAssets, i),
               onVoiceChanged: (seg, voiceId) =>
                   _updateSegmentVoice(seg, voiceId),
               onDelete: (id) =>
@@ -169,13 +149,6 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
             ),
           ),
         ),
-        StoryTrackEditor(
-          projectId: project.id,
-          projectType: 'phase',
-          projectName: project.name,
-        ),
-        // Inline audio player — replaces the global bottom bar so the
-        // current clip surfaces above the action/input row.
         const PersistentAudioBar(),
         PhaseTtsActionBar(
           segmentCount: segmentsAsync.valueOrNull?.length ?? 0,
@@ -375,124 +348,12 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
           error: const Value(null),
         ),
       );
-      await _syncTimelineClip(
-        projectId: project.id,
-        sourceLineId: seg.id,
-        audioPath: filePath,
-        durationSec: durationSec,
-        label: asset.name,
-      );
     } catch (e) {
       await database.updatePhaseTtsSegment(
         seg.copyWith(error: Value(e.toString())),
       );
     } finally {
       if (mounted) setState(() => _generatingSegmentIds.remove(seg.id));
-    }
-  }
-
-  Future<void> _addSegmentToTimeline(
-    db.PhaseTtsProject project,
-    db.PhaseTtsSegment seg,
-    List<db.VoiceAsset> bankAssets,
-    int index,
-  ) async {
-    if (seg.audioPath == null) return;
-    final voiceName = bankAssets
-            .where((a) => a.id == seg.voiceAssetId)
-            .firstOrNull
-            ?.name ??
-        'Segment ${index + 1}';
-    double? duration = seg.audioDuration;
-    if (duration == null || duration <= 0) {
-      duration = await measureAudioDuration(seg.audioPath!);
-      if (duration != null) {
-        await ref.read(databaseProvider).updatePhaseTtsSegment(
-              seg.copyWith(audioDuration: Value(duration)),
-            );
-      }
-    }
-    await _syncTimelineClip(
-      projectId: project.id,
-      sourceLineId: seg.id,
-      audioPath: seg.audioPath!,
-      durationSec: duration,
-      label: voiceName,
-    );
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Added "${seg.segmentText.characters.take(30)}…" to timeline'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-  }
-
-  /// Upsert a lane-0 timeline clip for a segment after generation.
-  /// Replaces any existing clip tied to the same [sourceLineId] so regenerations
-  /// don't pile up. New clips are appended after the last lane-0 generated clip.
-  Future<void> _syncTimelineClip({
-    required String projectId,
-    required String sourceLineId,
-    required String audioPath,
-    required double? durationSec,
-    required String label,
-  }) async {
-    final database = ref.read(databaseProvider);
-    await database.deleteTimelineClipsByLine(sourceLineId);
-    final existing = await database.getTimelineClips(projectId, 'phase');
-    int cursorMs = 0;
-    for (final c in existing) {
-      if (c.laneIndex != 0) continue;
-      if (c.sourceType != 'generated') continue;
-      final end = c.startTimeMs + ((c.durationSec ?? 0) * 1000).round();
-      if (end > cursorMs) cursorMs = end;
-    }
-    await database.insertTimelineClip(
-      db.TimelineClipsCompanion(
-        id: Value(const Uuid().v4()),
-        projectId: Value(projectId),
-        projectType: const Value('phase'),
-        laneIndex: const Value(0),
-        startTimeMs: Value(cursorMs),
-        durationSec: Value(durationSec),
-        audioPath: Value(audioPath),
-        sourceType: const Value('generated'),
-        sourceLineId: Value(sourceLineId),
-        label: Value(label),
-      ),
-    );
-  }
-
-  Future<void> _seedTimeline(
-    String projectId,
-    List<db.PhaseTtsSegment> segments,
-    Map<String, db.VoiceAsset> assetMap,
-  ) async {
-    final database = ref.read(databaseProvider);
-    int cursorMs = 0;
-    for (final seg in segments) {
-      if (seg.audioPath == null) continue;
-      final dur = seg.audioDuration ?? 0;
-      final voiceName = seg.voiceAssetId != null
-          ? (assetMap[seg.voiceAssetId]?.name ?? 'Voice')
-          : 'Voice';
-      await database.insertTimelineClip(
-        db.TimelineClipsCompanion(
-          id: Value(const Uuid().v4()),
-          projectId: Value(projectId),
-          projectType: const Value('phase'),
-          laneIndex: const Value(0),
-          startTimeMs: Value(cursorMs),
-          durationSec: Value(dur > 0 ? dur : null),
-          audioPath: Value(seg.audioPath!),
-          sourceType: const Value('generated'),
-          sourceLineId: Value(seg.id),
-          label: Value(voiceName),
-        ),
-      );
-      cursorMs += (dur * 1000).round();
     }
   }
 }

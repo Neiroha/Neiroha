@@ -2,7 +2,7 @@
 
 **日期**：2026-04-28
 **分支**：`dev`
-**触发**：`docs/code-review-dev-branch-2026-04-28.md` 中 P0 问题 + UI 反馈"多 TTS 模型/不同音色集"
+**触发**：`code-review-dev-branch-2026-04-28.md` 中 P0 问题 + UI 反馈"多 TTS 模型/不同音色集"
 
 ## 改了哪些
 

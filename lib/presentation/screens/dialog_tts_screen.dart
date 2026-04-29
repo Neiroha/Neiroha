@@ -260,20 +260,33 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
       project.copyWith(updatedAt: DateTime.now()),
     );
 
-    if (!_autoGenerateOnSend || bankAssets.isEmpty) return;
+    if (_autoGenerateOnSend && bankAssets.isNotEmpty) {
+      unawaited(_generateInsertedLine(project, bankAssets, newId));
+    }
+  }
 
-    final inserted =
-        (await database.getDialogTtsLines(project.id)).firstWhere(
-      (l) => l.id == newId,
-      orElse: () => throw StateError('inserted line not found'),
-    );
-    await _generateOne(project, inserted, bankAssets);
+  Future<void> _generateInsertedLine(
+    db.DialogTtsProject project,
+    List<db.VoiceAsset> bankAssets,
+    String lineId,
+  ) async {
+    try {
+      final database = ref.read(databaseProvider);
+      final inserted = (await database.getDialogTtsLines(project.id))
+          .firstWhere((l) => l.id == lineId);
+      await _generateOne(project, inserted, bankAssets);
 
-    if (!mounted || !_autoPlayAfterGenerate) return;
-    final updated = (await database.getDialogTtsLines(project.id))
-        .firstWhere((l) => l.id == newId);
-    if (updated.audioPath != null) {
-      await _playLine(updated);
+      if (!mounted || !_autoPlayAfterGenerate) return;
+      final updated = (await database.getDialogTtsLines(project.id))
+          .firstWhere((l) => l.id == lineId);
+      if (updated.audioPath != null) {
+        await _playLine(updated);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Auto-generate failed: $e')),
+      );
     }
   }
 
@@ -336,12 +349,15 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
   ) async {
     if (lines.isEmpty || bankAssets.isEmpty || _generatingAll) return;
     setState(() => _generatingAll = true);
-    for (final line in lines) {
-      if (line.audioPath != null) continue;
-      if (line.voiceAssetId == null) continue;
-      await _generateOne(project, line, bankAssets);
+    try {
+      for (final line in lines) {
+        if (line.audioPath != null) continue;
+        if (line.voiceAssetId == null) continue;
+        await _generateOne(project, line, bankAssets);
+      }
+    } finally {
+      if (mounted) setState(() => _generatingAll = false);
     }
-    if (mounted) setState(() => _generatingAll = false);
   }
 
   Future<void> _generateOne(
@@ -350,22 +366,23 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
     List<db.VoiceAsset> bankAssets,
   ) async {
     if (line.voiceAssetId == null) return;
-    final providers = await ref.read(databaseProvider).getAllProviders();
-    final assetMap = {for (final a in bankAssets) a.id: a};
-    final providerMap = {for (final p in providers) p.id: p};
-    final asset = assetMap[line.voiceAssetId];
-    if (asset == null) return;
-    final provider = providerMap[asset.providerId];
-    if (provider == null) return;
-
-    final slug = await ref
-        .read(storageServiceProvider)
-        .ensureDialogProjectSlug(project.id);
-    final outDir = await PathService.instance.dialogTtsDir(slug);
     final database = ref.read(databaseProvider);
 
     setState(() => _generatingLineIds.add(line.id));
     try {
+      final providers = await database.getAllProviders();
+      final assetMap = {for (final a in bankAssets) a.id: a};
+      final providerMap = {for (final p in providers) p.id: p};
+      final asset = assetMap[line.voiceAssetId];
+      if (asset == null) return;
+      final provider = providerMap[asset.providerId];
+      if (provider == null) return;
+
+      final slug = await ref
+          .read(storageServiceProvider)
+          .ensureDialogProjectSlug(project.id);
+      final outDir = await PathService.instance.dialogTtsDir(slug);
+
       final adapter = createAdapter(provider, modelName: asset.modelName);
       final result = await adapter.synthesize(TtsRequest(
         text: line.lineText,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
@@ -6,14 +8,14 @@ import 'package:neiroha/presentation/theme/app_theme.dart';
 /// Bottom-anchored input bar for the Dialog TTS editor.
 ///
 /// Owns its own [TextEditingController]. Plain Enter calls [onSend] with
-/// the trimmed text and clears the field; Ctrl+Enter inserts a literal
-/// newline. The field auto-grows up to [maxHeight] and then becomes
-/// scrollable.
+/// the trimmed text and clears the field after the send completes;
+/// Ctrl+Enter inserts a literal newline. The field auto-grows up to
+/// [maxHeight] and then becomes scrollable.
 class InputBar extends StatefulWidget {
   final List<db.VoiceAsset> bankAssets;
   final String? voiceId;
   final ValueChanged<String?> onVoiceChanged;
-  final ValueChanged<String> onSend;
+  final Future<void> Function(String text) onSend;
   final double maxHeight;
 
   const InputBar({
@@ -38,11 +40,18 @@ class _InputBarState extends State<InputBar> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final text = _controller.text.trim();
     if (text.isEmpty || widget.voiceId == null) return;
-    _controller.clear();
-    widget.onSend(text);
+    try {
+      await widget.onSend(text);
+      if (mounted) _controller.clear();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Send failed: $e')),
+      );
+    }
   }
 
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
@@ -66,12 +75,17 @@ class _InputBarState extends State<InputBar> {
       return KeyEventResult.handled;
     }
     if (widget.voiceId == null) return KeyEventResult.handled;
-    _submit();
+    unawaited(_submit());
     return KeyEventResult.handled;
   }
 
   @override
   Widget build(BuildContext context) {
+    final selectedVoiceId =
+        widget.bankAssets.any((a) => a.id == widget.voiceId)
+            ? widget.voiceId
+            : null;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       decoration: BoxDecoration(
@@ -86,6 +100,7 @@ class _InputBarState extends State<InputBar> {
           SizedBox(
             width: 140,
             child: DropdownButtonFormField<String>(
+              key: ValueKey(selectedVoiceId),
               decoration: const InputDecoration(
                 hintText: 'Voice',
                 isDense: true,
@@ -93,10 +108,7 @@ class _InputBarState extends State<InputBar> {
                     EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               ),
               isExpanded: true,
-              initialValue:
-                  widget.bankAssets.any((a) => a.id == widget.voiceId)
-                      ? widget.voiceId
-                      : null,
+              initialValue: selectedVoiceId,
               items: widget.bankAssets
                   .map((a) => DropdownMenuItem(
                       value: a.id,
@@ -136,7 +148,8 @@ class _InputBarState extends State<InputBar> {
           ),
           const SizedBox(width: 8),
           IconButton.filled(
-            onPressed: widget.voiceId == null ? null : _submit,
+            onPressed:
+                widget.voiceId == null ? null : () => unawaited(_submit()),
             style: IconButton.styleFrom(
               backgroundColor: AppTheme.accentColor,
               disabledBackgroundColor:

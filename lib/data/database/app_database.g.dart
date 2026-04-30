@@ -4380,6 +4380,17 @@ class $PhaseTtsSegmentsTable extends PhaseTtsSegments
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _speakerLabelMeta = const VerificationMeta(
+    'speakerLabel',
+  );
+  @override
+  late final GeneratedColumn<String> speakerLabel = GeneratedColumn<String>(
+    'speaker_label',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _voiceAssetIdMeta = const VerificationMeta(
     'voiceAssetId',
   );
@@ -4443,6 +4454,7 @@ class $PhaseTtsSegmentsTable extends PhaseTtsSegments
     projectId,
     orderIndex,
     segmentText,
+    speakerLabel,
     voiceAssetId,
     audioPath,
     audioDuration,
@@ -4492,6 +4504,15 @@ class $PhaseTtsSegmentsTable extends PhaseTtsSegments
       );
     } else if (isInserting) {
       context.missing(_segmentTextMeta);
+    }
+    if (data.containsKey('speaker_label')) {
+      context.handle(
+        _speakerLabelMeta,
+        speakerLabel.isAcceptableOrUnknown(
+          data['speaker_label']!,
+          _speakerLabelMeta,
+        ),
+      );
     }
     if (data.containsKey('voice_asset_id')) {
       context.handle(
@@ -4554,6 +4575,10 @@ class $PhaseTtsSegmentsTable extends PhaseTtsSegments
         DriftSqlType.string,
         data['${effectivePrefix}segment_text'],
       )!,
+      speakerLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}speaker_label'],
+      ),
       voiceAssetId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}voice_asset_id'],
@@ -4588,6 +4613,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
   final String projectId;
   final int orderIndex;
   final String segmentText;
+  final String? speakerLabel;
   final String? voiceAssetId;
   final String? audioPath;
   final double? audioDuration;
@@ -4598,6 +4624,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
     required this.projectId,
     required this.orderIndex,
     required this.segmentText,
+    this.speakerLabel,
     this.voiceAssetId,
     this.audioPath,
     this.audioDuration,
@@ -4611,6 +4638,9 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
     map['project_id'] = Variable<String>(projectId);
     map['order_index'] = Variable<int>(orderIndex);
     map['segment_text'] = Variable<String>(segmentText);
+    if (!nullToAbsent || speakerLabel != null) {
+      map['speaker_label'] = Variable<String>(speakerLabel);
+    }
     if (!nullToAbsent || voiceAssetId != null) {
       map['voice_asset_id'] = Variable<String>(voiceAssetId);
     }
@@ -4633,6 +4663,9 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
       projectId: Value(projectId),
       orderIndex: Value(orderIndex),
       segmentText: Value(segmentText),
+      speakerLabel: speakerLabel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(speakerLabel),
       voiceAssetId: voiceAssetId == null && nullToAbsent
           ? const Value.absent()
           : Value(voiceAssetId),
@@ -4659,6 +4692,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
       projectId: serializer.fromJson<String>(json['projectId']),
       orderIndex: serializer.fromJson<int>(json['orderIndex']),
       segmentText: serializer.fromJson<String>(json['segmentText']),
+      speakerLabel: serializer.fromJson<String?>(json['speakerLabel']),
       voiceAssetId: serializer.fromJson<String?>(json['voiceAssetId']),
       audioPath: serializer.fromJson<String?>(json['audioPath']),
       audioDuration: serializer.fromJson<double?>(json['audioDuration']),
@@ -4674,6 +4708,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
       'projectId': serializer.toJson<String>(projectId),
       'orderIndex': serializer.toJson<int>(orderIndex),
       'segmentText': serializer.toJson<String>(segmentText),
+      'speakerLabel': serializer.toJson<String?>(speakerLabel),
       'voiceAssetId': serializer.toJson<String?>(voiceAssetId),
       'audioPath': serializer.toJson<String?>(audioPath),
       'audioDuration': serializer.toJson<double?>(audioDuration),
@@ -4687,6 +4722,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
     String? projectId,
     int? orderIndex,
     String? segmentText,
+    Value<String?> speakerLabel = const Value.absent(),
     Value<String?> voiceAssetId = const Value.absent(),
     Value<String?> audioPath = const Value.absent(),
     Value<double?> audioDuration = const Value.absent(),
@@ -4697,6 +4733,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
     projectId: projectId ?? this.projectId,
     orderIndex: orderIndex ?? this.orderIndex,
     segmentText: segmentText ?? this.segmentText,
+    speakerLabel: speakerLabel.present ? speakerLabel.value : this.speakerLabel,
     voiceAssetId: voiceAssetId.present ? voiceAssetId.value : this.voiceAssetId,
     audioPath: audioPath.present ? audioPath.value : this.audioPath,
     audioDuration: audioDuration.present
@@ -4715,6 +4752,9 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
       segmentText: data.segmentText.present
           ? data.segmentText.value
           : this.segmentText,
+      speakerLabel: data.speakerLabel.present
+          ? data.speakerLabel.value
+          : this.speakerLabel,
       voiceAssetId: data.voiceAssetId.present
           ? data.voiceAssetId.value
           : this.voiceAssetId,
@@ -4734,6 +4774,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
           ..write('projectId: $projectId, ')
           ..write('orderIndex: $orderIndex, ')
           ..write('segmentText: $segmentText, ')
+          ..write('speakerLabel: $speakerLabel, ')
           ..write('voiceAssetId: $voiceAssetId, ')
           ..write('audioPath: $audioPath, ')
           ..write('audioDuration: $audioDuration, ')
@@ -4749,6 +4790,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
     projectId,
     orderIndex,
     segmentText,
+    speakerLabel,
     voiceAssetId,
     audioPath,
     audioDuration,
@@ -4763,6 +4805,7 @@ class PhaseTtsSegment extends DataClass implements Insertable<PhaseTtsSegment> {
           other.projectId == this.projectId &&
           other.orderIndex == this.orderIndex &&
           other.segmentText == this.segmentText &&
+          other.speakerLabel == this.speakerLabel &&
           other.voiceAssetId == this.voiceAssetId &&
           other.audioPath == this.audioPath &&
           other.audioDuration == this.audioDuration &&
@@ -4775,6 +4818,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
   final Value<String> projectId;
   final Value<int> orderIndex;
   final Value<String> segmentText;
+  final Value<String?> speakerLabel;
   final Value<String?> voiceAssetId;
   final Value<String?> audioPath;
   final Value<double?> audioDuration;
@@ -4786,6 +4830,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
     this.projectId = const Value.absent(),
     this.orderIndex = const Value.absent(),
     this.segmentText = const Value.absent(),
+    this.speakerLabel = const Value.absent(),
     this.voiceAssetId = const Value.absent(),
     this.audioPath = const Value.absent(),
     this.audioDuration = const Value.absent(),
@@ -4798,6 +4843,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
     required String projectId,
     required int orderIndex,
     required String segmentText,
+    this.speakerLabel = const Value.absent(),
     this.voiceAssetId = const Value.absent(),
     this.audioPath = const Value.absent(),
     this.audioDuration = const Value.absent(),
@@ -4813,6 +4859,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
     Expression<String>? projectId,
     Expression<int>? orderIndex,
     Expression<String>? segmentText,
+    Expression<String>? speakerLabel,
     Expression<String>? voiceAssetId,
     Expression<String>? audioPath,
     Expression<double>? audioDuration,
@@ -4825,6 +4872,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
       if (projectId != null) 'project_id': projectId,
       if (orderIndex != null) 'order_index': orderIndex,
       if (segmentText != null) 'segment_text': segmentText,
+      if (speakerLabel != null) 'speaker_label': speakerLabel,
       if (voiceAssetId != null) 'voice_asset_id': voiceAssetId,
       if (audioPath != null) 'audio_path': audioPath,
       if (audioDuration != null) 'audio_duration': audioDuration,
@@ -4839,6 +4887,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
     Value<String>? projectId,
     Value<int>? orderIndex,
     Value<String>? segmentText,
+    Value<String?>? speakerLabel,
     Value<String?>? voiceAssetId,
     Value<String?>? audioPath,
     Value<double?>? audioDuration,
@@ -4851,6 +4900,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
       projectId: projectId ?? this.projectId,
       orderIndex: orderIndex ?? this.orderIndex,
       segmentText: segmentText ?? this.segmentText,
+      speakerLabel: speakerLabel ?? this.speakerLabel,
       voiceAssetId: voiceAssetId ?? this.voiceAssetId,
       audioPath: audioPath ?? this.audioPath,
       audioDuration: audioDuration ?? this.audioDuration,
@@ -4874,6 +4924,9 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
     }
     if (segmentText.present) {
       map['segment_text'] = Variable<String>(segmentText.value);
+    }
+    if (speakerLabel.present) {
+      map['speaker_label'] = Variable<String>(speakerLabel.value);
     }
     if (voiceAssetId.present) {
       map['voice_asset_id'] = Variable<String>(voiceAssetId.value);
@@ -4903,6 +4956,7 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
           ..write('projectId: $projectId, ')
           ..write('orderIndex: $orderIndex, ')
           ..write('segmentText: $segmentText, ')
+          ..write('speakerLabel: $speakerLabel, ')
           ..write('voiceAssetId: $voiceAssetId, ')
           ..write('audioPath: $audioPath, ')
           ..write('audioDuration: $audioDuration, ')
@@ -12626,6 +12680,7 @@ typedef $$PhaseTtsSegmentsTableCreateCompanionBuilder =
       required String projectId,
       required int orderIndex,
       required String segmentText,
+      Value<String?> speakerLabel,
       Value<String?> voiceAssetId,
       Value<String?> audioPath,
       Value<double?> audioDuration,
@@ -12639,6 +12694,7 @@ typedef $$PhaseTtsSegmentsTableUpdateCompanionBuilder =
       Value<String> projectId,
       Value<int> orderIndex,
       Value<String> segmentText,
+      Value<String?> speakerLabel,
       Value<String?> voiceAssetId,
       Value<String?> audioPath,
       Value<double?> audioDuration,
@@ -12700,6 +12756,11 @@ class $$PhaseTtsSegmentsTableFilterComposer
 
   ColumnFilters<String> get segmentText => $composableBuilder(
     column: $table.segmentText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get speakerLabel => $composableBuilder(
+    column: $table.speakerLabel,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12776,6 +12837,11 @@ class $$PhaseTtsSegmentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get speakerLabel => $composableBuilder(
+    column: $table.speakerLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get voiceAssetId => $composableBuilder(
     column: $table.voiceAssetId,
     builder: (column) => ColumnOrderings(column),
@@ -12844,6 +12910,11 @@ class $$PhaseTtsSegmentsTableAnnotationComposer
 
   GeneratedColumn<String> get segmentText => $composableBuilder(
     column: $table.segmentText,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get speakerLabel => $composableBuilder(
+    column: $table.speakerLabel,
     builder: (column) => column,
   );
 
@@ -12924,6 +12995,7 @@ class $$PhaseTtsSegmentsTableTableManager
                 Value<String> projectId = const Value.absent(),
                 Value<int> orderIndex = const Value.absent(),
                 Value<String> segmentText = const Value.absent(),
+                Value<String?> speakerLabel = const Value.absent(),
                 Value<String?> voiceAssetId = const Value.absent(),
                 Value<String?> audioPath = const Value.absent(),
                 Value<double?> audioDuration = const Value.absent(),
@@ -12935,6 +13007,7 @@ class $$PhaseTtsSegmentsTableTableManager
                 projectId: projectId,
                 orderIndex: orderIndex,
                 segmentText: segmentText,
+                speakerLabel: speakerLabel,
                 voiceAssetId: voiceAssetId,
                 audioPath: audioPath,
                 audioDuration: audioDuration,
@@ -12948,6 +13021,7 @@ class $$PhaseTtsSegmentsTableTableManager
                 required String projectId,
                 required int orderIndex,
                 required String segmentText,
+                Value<String?> speakerLabel = const Value.absent(),
                 Value<String?> voiceAssetId = const Value.absent(),
                 Value<String?> audioPath = const Value.absent(),
                 Value<double?> audioDuration = const Value.absent(),
@@ -12959,6 +13033,7 @@ class $$PhaseTtsSegmentsTableTableManager
                 projectId: projectId,
                 orderIndex: orderIndex,
                 segmentText: segmentText,
+                speakerLabel: speakerLabel,
                 voiceAssetId: voiceAssetId,
                 audioPath: audioPath,
                 audioDuration: audioDuration,

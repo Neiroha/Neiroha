@@ -11,21 +11,20 @@ import 'package:neiroha/presentation/widgets/phase_tts/segment_card.dart';
 class SegmentPanel extends StatelessWidget {
   final AsyncValue<List<db.PhaseTtsSegment>> segmentsAsync;
   final List<db.VoiceAsset> bankAssets;
+  final String? Function(db.PhaseTtsSegment segment) resolveVoice;
   final Set<String> generatingSegmentIds;
   final void Function(db.PhaseTtsSegment segment, int index) onPlay;
   final void Function(db.PhaseTtsSegment segment)? onGenerate;
-  final void Function(db.PhaseTtsSegment segment, String? voiceId)
-      onVoiceChanged;
   final ValueChanged<String> onDelete;
 
   const SegmentPanel({
     super.key,
     required this.segmentsAsync,
     required this.bankAssets,
+    required this.resolveVoice,
     required this.generatingSegmentIds,
     required this.onPlay,
     required this.onGenerate,
-    required this.onVoiceChanged,
     required this.onDelete,
   });
 
@@ -36,12 +35,15 @@ class SegmentPanel extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Text('SEGMENTS',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.4))),
+          child: Text(
+            'SEGMENTS',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.2,
+              color: Colors.white.withValues(alpha: 0.4),
+            ),
+          ),
         ),
         Expanded(
           child: segmentsAsync.when(
@@ -55,18 +57,17 @@ class SegmentPanel extends StatelessWidget {
                 itemBuilder: (ctx, i) {
                   final seg = segments[i];
                   final isBusy = generatingSegmentIds.contains(seg.id);
+                  final voiceId = resolveVoice(seg);
                   return SegmentCard(
                     segment: seg,
                     index: i,
                     bankAssets: bankAssets,
+                    resolvedVoiceId: voiceId,
                     isGenerating: isBusy,
                     onPlay: () => onPlay(seg, i),
-                    onGenerate: seg.voiceAssetId == null ||
-                            isBusy ||
-                            onGenerate == null
+                    onGenerate: voiceId == null || isBusy || onGenerate == null
                         ? null
                         : () => onGenerate!(seg),
-                    onVoiceChanged: (voiceId) => onVoiceChanged(seg, voiceId),
                     onDelete: () => onDelete(seg.id),
                   );
                 },
@@ -88,14 +89,19 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.segment_rounded,
-              size: 48, color: Colors.white.withValues(alpha: 0.15)),
+          Icon(
+            Icons.segment_rounded,
+            size: 48,
+            color: Colors.white.withValues(alpha: 0.15),
+          ),
           const SizedBox(height: 12),
           Text(
             'Click "Auto Split" to create\nsegments from script',
             textAlign: TextAlign.center,
             style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.3), fontSize: 13),
+              color: Colors.white.withValues(alpha: 0.3),
+              fontSize: 13,
+            ),
           ),
         ],
       ),

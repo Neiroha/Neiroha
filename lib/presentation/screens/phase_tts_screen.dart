@@ -1,29 +1,38 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/storage/path_service.dart';
+import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
-import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
-import 'package:neiroha/presentation/widgets/phase_tts/action_bar.dart';
+import 'package:neiroha/data/services/phase_segment_settings_file.dart';
+import 'package:neiroha/presentation/actions/phase_tts/exporter.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/create_project_dialog.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/editor_project_bar.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/project_list_header.dart';
-import 'package:neiroha/presentation/widgets/phase_tts/script_editor.dart';
-import 'package:neiroha/presentation/widgets/phase_tts/segment_panel.dart';
+import 'package:neiroha/presentation/widgets/phase_tts/segment_voice_panel.dart';
+import 'package:neiroha/presentation/widgets/phase_tts/script_workspace.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 
+typedef PhaseTtsExitGuard = Future<bool> Function();
+
 /// Phase TTS — long-form / novel TTS with project management.
-/// Left panel: project list. Right panel: script editor + segments.
+///
+/// Editor layout: left column hosts the script editor and split controls;
+/// right column hosts sentence-level voice selection and optional per-call
+/// generation overrides.
 class PhaseTtsScreen extends ConsumerStatefulWidget {
-  const PhaseTtsScreen({super.key});
+  final ValueChanged<PhaseTtsExitGuard?>? onExitGuardChanged;
+
+  const PhaseTtsScreen({super.key, this.onExitGuardChanged});
 
   @override
   ConsumerState<PhaseTtsScreen> createState() => _PhaseTtsScreenState();
@@ -33,10 +42,20 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
   String? _selectedProjectId;
   final _scriptController = TextEditingController();
   bool _generatingAll = false;
+  bool _exportingMerged = false;
+  bool _dirty = false;
+  Future<dynamic> _pendingScriptWrite = Future<dynamic>.value();
   final Set<String> _generatingSegmentIds = <String>{};
 
   @override
+  void initState() {
+    super.initState();
+    widget.onExitGuardChanged?.call(_confirmLeaveActiveProject);
+  }
+
+  @override
   void dispose() {
+    widget.onExitGuardChanged?.call(null);
     _scriptController.dispose();
     super.dispose();
   }
@@ -74,7 +93,10 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
               ],
               onOpen: (id) {
                 final proj = projects.firstWhere((p) => p.id == id);
-                setState(() => _selectedProjectId = id);
+                setState(() {
+                  _selectedProjectId = id;
+                  _dirty = false;
+                });
                 _scriptController.text = proj.scriptText;
               },
               onDelete: (id) {
@@ -117,85 +139,194 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         .whereType<db.VoiceAsset>()
         .toList();
 
+    final segments = segmentsAsync.valueOrNull ?? const <db.PhaseTtsSegment>[];
+    final hasGeneratedAudio = segments.any(
+      (s) => s.audioPath != null && !s.missing,
+    );
+
     return Column(
       children: [
         EditorProjectBar(
           project: project,
           voiceCount: bankAssets.length,
-          onClose: () => _closeEditor(project),
-          onAutoSplit: _autoSplit,
-          onSave: () => _closeEditor(project),
+          exporting: _exportingMerged,
+          dirty: _dirty,
+          onExportMerged: hasGeneratedAudio
+              ? () => unawaited(_exportMerged(project, segments))
+              : null,
+          onClose: () => unawaited(_back(project)),
+          onSave: () => unawaited(_saveProject(project)),
         ),
         const Divider(height: 1),
         Expanded(
           child: ResizableSplitPane(
-            initialLeftFraction: 0.6,
-            left: ScriptEditor(
+            initialLeftFraction: 0.55,
+            left: PhaseScriptWorkspace(
               controller: _scriptController,
-              onChanged: () => _saveScript(project),
+              onScriptChanged: () => _saveScript(project),
+              onAutoSplit: (rule) => _autoSplit(project, rule),
             ),
-            rightBuilder: (_) => SegmentPanel(
-              segmentsAsync: segmentsAsync,
+            rightBuilder: (_) => _buildRightPane(
+              project: project,
+              segments: segments,
               bankAssets: bankAssets,
-              generatingSegmentIds: _generatingSegmentIds,
-              onPlay: (seg, i) => _playSegment(seg, i, bankAssets),
-              onGenerate: bankAssets.isEmpty
-                  ? null
-                  : (seg) => _generateOne(project, seg, bankAssets),
-              onVoiceChanged: (seg, voiceId) =>
-                  _updateSegmentVoice(seg, voiceId),
-              onDelete: (id) =>
-                  ref.read(databaseProvider).deletePhaseTtsSegment(id),
             ),
           ),
-        ),
-        const PersistentAudioBar(),
-        PhaseTtsActionBar(
-          segmentCount: segmentsAsync.valueOrNull?.length ?? 0,
-          hasBankAssets: bankAssets.isNotEmpty,
-          generatingAll: _generatingAll,
-          onGenerateAll: () => _generateAll(
-              project, segmentsAsync.valueOrNull ?? const [], bankAssets),
         ),
       ],
     );
   }
 
-  /// Persist the current script (edits autosave on change, but flushing here
-  /// covers the case where the user clicks Save before the debounce lands)
-  /// and return to the project grid.
-  void _closeEditor(db.PhaseTtsProject project) {
-    ref.read(databaseProvider).updatePhaseTtsProject(
+  Widget _buildRightPane({
+    required db.PhaseTtsProject project,
+    required List<db.PhaseTtsSegment> segments,
+    required List<db.VoiceAsset> bankAssets,
+  }) {
+    return SegmentVoicePanel(
+      project: project,
+      segments: segments,
+      bankAssets: bankAssets,
+      generatingSegmentIds: _generatingSegmentIds,
+      onApplyVoiceToAll: (voiceId) =>
+          _applyVoiceToAll(project, segments, voiceId),
+      onVoiceChanged: (segment, voiceId) =>
+          _updateSegmentVoice(segment, voiceId),
+      onPlay: (segment, index) => _playSegment(segment, index, bankAssets),
+      onGenerate: bankAssets.isEmpty
+          ? null
+          : (segment) => _generateOne(project, segment, bankAssets),
+      onDelete: (id) {
+        _markDirty();
+        unawaited(ref.read(databaseProvider).deletePhaseTtsSegment(id));
+      },
+      onChanged: _markDirty,
+      onPlayAll: () => unawaited(_playAll(segments, bankAssets)),
+      onGenerateAll: () =>
+          unawaited(_generateAll(project, segments, bankAssets)),
+      generatingAll: _generatingAll,
+    );
+  }
+
+  void _markDirty() {
+    if (_dirty || !mounted) return;
+    setState(() => _dirty = true);
+  }
+
+  Future<void> _saveProject(db.PhaseTtsProject project) async {
+    await _pendingScriptWrite;
+    await ref
+        .read(databaseProvider)
+        .updatePhaseTtsProject(
           project.copyWith(
             scriptText: _scriptController.text,
             updatedAt: DateTime.now(),
           ),
         );
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Saved'),
-          duration: Duration(seconds: 1),
-        ),
-      );
-      setState(() => _selectedProjectId = null);
+    if (!mounted) return;
+    setState(() => _dirty = false);
+    _showSnack('Saved');
+  }
+
+  Future<bool> _back(db.PhaseTtsProject project) async {
+    final canLeave = await _confirmLeave(project);
+    if (canLeave && mounted) {
+      setState(() {
+        _selectedProjectId = null;
+        _dirty = false;
+      });
     }
+    return canLeave;
+  }
+
+  Future<bool> _confirmLeaveActiveProject() async {
+    final projectId = _selectedProjectId;
+    if (projectId == null) return true;
+    final project = await ref
+        .read(databaseProvider)
+        .getPhaseTtsProjectById(projectId);
+    if (project == null) return true;
+    return _confirmLeave(project);
+  }
+
+  Future<bool> _confirmLeave(db.PhaseTtsProject project) async {
+    if (!_dirty) return true;
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Unsaved changes'),
+        content: const Text(
+          'You have unsaved changes in this project. Save before leaving?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'cancel'),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'discard'),
+            child: const Text("Don't save"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, 'save'),
+            child: const Text('Save & Leave'),
+          ),
+        ],
+      ),
+    );
+    if (choice == 'save') {
+      await _saveProject(project);
+      return true;
+    }
+    return choice == 'discard';
   }
 
   // ───────────────── Actions ─────────────────
 
   void _playSegment(
-      db.PhaseTtsSegment seg, int index, List<db.VoiceAsset> bankAssets) {
-    if (seg.audioPath == null) return;
-    final voiceName = bankAssets
-            .where((a) => a.id == seg.voiceAssetId)
-            .firstOrNull
-            ?.name ??
+    db.PhaseTtsSegment seg,
+    int index,
+    List<db.VoiceAsset> bankAssets,
+  ) {
+    if (seg.audioPath == null || !File(seg.audioPath!).existsSync()) return;
+    final voiceName =
+        bankAssets.where((a) => a.id == seg.voiceAssetId).firstOrNull?.name ??
         'Segment ${index + 1}';
-    ref.read(playbackNotifierProvider.notifier).load(
+    ref
+        .read(playbackNotifierProvider.notifier)
+        .load(
           seg.audioPath!,
           seg.segmentText,
           subtitle: voiceName,
+          sourceTag: phaseTtsPlaybackSource,
+        );
+  }
+
+  Future<void> _playAll(
+    List<db.PhaseTtsSegment> segments,
+    List<db.VoiceAsset> bankAssets,
+  ) async {
+    final ordered = [...segments]
+      ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+    final assetMap = {for (final asset in bankAssets) asset.id: asset};
+    final items = [
+      for (var i = 0; i < ordered.length; i++)
+        if (ordered[i].audioPath != null &&
+            !ordered[i].missing &&
+            File(ordered[i].audioPath!).existsSync())
+          (
+            audioPath: ordered[i].audioPath!,
+            title: ordered[i].segmentText,
+            subtitle:
+                assetMap[ordered[i].voiceAssetId]?.name ?? 'Segment ${i + 1}',
+          ),
+    ];
+    if (items.isEmpty) {
+      _showSnack('No generated audio to play.');
+      return;
+    }
+    await ref.read(playbackNotifierProvider.notifier).playSequenceFrom(
+          items,
+          sourceTag: phaseTtsPlaybackSource,
         );
   }
 
@@ -204,7 +335,8 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     if (banks.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Create a Voice Bank first')));
+          const SnackBar(content: Text('Create a Voice Bank first')),
+        );
       }
       return;
     }
@@ -217,7 +349,9 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
 
     final id = const Uuid().v4();
     final now = DateTime.now();
-    await ref.read(databaseProvider).insertPhaseTtsProject(
+    await ref
+        .read(databaseProvider)
+        .insertPhaseTtsProject(
           db.PhaseTtsProjectsCompanion(
             id: Value(id),
             name: Value(result.name),
@@ -229,55 +363,82 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     if (mounted) {
       setState(() {
         _selectedProjectId = id;
+        _dirty = false;
         _scriptController.clear();
       });
     }
   }
 
   void _saveScript(db.PhaseTtsProject project) {
-    // Debounced save — update DB with current script text
-    ref.read(databaseProvider).updatePhaseTtsProject(
-          project.copyWith(
-            scriptText: _scriptController.text,
-            updatedAt: DateTime.now(),
-          ),
-        );
+    _markDirty();
+    // Autosave the text itself; the Save button confirms the edit and bumps
+    // updatedAt so the project moves in the list.
+    final database = ref.read(databaseProvider);
+    final nextProject = project.copyWith(scriptText: _scriptController.text);
+    _pendingScriptWrite = _pendingScriptWrite.catchError((_) {}).then((_) {
+      return database.updatePhaseTtsProject(nextProject);
+    });
   }
 
-  void _autoSplit() async {
-    if (_selectedProjectId == null) return;
-    final text = _scriptController.text.trim();
-    if (text.isEmpty) return;
+  Future<void> _autoSplit(db.PhaseTtsProject project, SplitRule rule) async {
+    final text = _scriptController.text;
+    if (text.trim().isEmpty) return;
+    _markDirty();
 
-    final projectId = _selectedProjectId!;
     final database = ref.read(databaseProvider);
+    await database.clearPhaseTtsSegments(project.id);
+    final slug = await ref
+        .read(storageServiceProvider)
+        .ensurePhaseProjectSlug(project.id);
+    await ref.read(phaseSegmentSettingsFileServiceProvider).delete(slug);
+    final segments = applySplitRule(rule, text);
 
-    // Clear existing segments
-    await database.clearPhaseTtsSegments(projectId);
-
-    // Split by double newlines
-    final paragraphs = text
-        .split(RegExp(r'\n\s*\n'))
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-
-    for (int i = 0; i < paragraphs.length; i++) {
+    for (var i = 0; i < segments.length; i++) {
       await database.insertPhaseTtsSegment(
         db.PhaseTtsSegmentsCompanion(
           id: Value(const Uuid().v4()),
-          projectId: Value(projectId),
+          projectId: Value(project.id),
           orderIndex: Value(i),
-          segmentText: Value(paragraphs[i]),
+          segmentText: Value(segments[i]),
         ),
       );
     }
   }
 
-  void _updateSegmentVoice(db.PhaseTtsSegment segment, String? voiceId) {
-    ref.read(databaseProvider).updatePhaseTtsSegment(
-          segment.copyWith(voiceAssetId: Value(voiceId)),
-        );
+  Future<void> _applyVoiceToAll(
+    db.PhaseTtsProject project,
+    List<db.PhaseTtsSegment> currentSegments,
+    String? voiceId,
+  ) async {
+    final database = ref.read(databaseProvider);
+    final segments = currentSegments.isEmpty
+        ? await database.getPhaseTtsSegments(project.id)
+        : currentSegments;
+    for (final segment in segments) {
+      await database.updatePhaseTtsSegment(
+        segment.copyWith(voiceAssetId: Value(voiceId)),
+      );
+    }
+    _markDirty();
+  }
+
+  Future<void> _updateSegmentVoice(
+    db.PhaseTtsSegment segment,
+    String? voiceId,
+  ) async {
+    await ref
+        .read(databaseProvider)
+        .updatePhaseTtsSegment(segment.copyWith(voiceAssetId: Value(voiceId)));
+    _markDirty();
+  }
+
+  Future<PhaseSegmentSettings> _loadSegmentSettings(
+    db.PhaseTtsProject project,
+  ) async {
+    final slug = await ref
+        .read(storageServiceProvider)
+        .ensurePhaseProjectSlug(project.id);
+    return ref.read(phaseSegmentSettingsFileServiceProvider).load(slug);
   }
 
   Future<void> _generateAll(
@@ -316,23 +477,40 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
       final provider = providerMap[asset.providerId];
       if (provider == null) return;
 
+      final segmentSettings = await _loadSegmentSettings(project);
+      final overrides = segmentSettings.bySegmentId[seg.id];
+      final instructionOverride = overrides?.voiceInstruction?.trim();
+      final audioTagPrefix = overrides?.audioTagPrefix?.trim();
       final slug = await ref
           .read(storageServiceProvider)
           .ensurePhaseProjectSlug(project.id);
       final outDir = await PathService.instance.phaseTtsDir(slug);
 
       final adapter = createAdapter(provider, modelName: asset.modelName);
-      final result = await adapter.synthesize(TtsRequest(
-        text: seg.segmentText,
-        voice: asset.presetVoiceName ?? asset.name,
-        speed: asset.speed,
-        textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
-        presetVoiceName: asset.presetVoiceName,
-        voiceInstruction: asset.voiceInstruction,
-        refAudioPath: asset.refAudioPath,
-        promptText: asset.promptText,
-        promptLang: asset.promptLang,
-      ));
+      final result = await adapter.synthesize(
+        TtsRequest(
+          text: seg.segmentText,
+          voice: asset.presetVoiceName ?? asset.name,
+          speed: asset.speed,
+          textLang: provider.adapterType == 'gptSovits'
+              ? asset.modelName
+              : null,
+          presetVoiceName: asset.presetVoiceName,
+          voiceInstruction: _supportsVoiceInstruction(asset, provider)
+              ? (instructionOverride == null || instructionOverride.isEmpty
+                    ? asset.voiceInstruction
+                    : instructionOverride)
+              : null,
+          audioTagPrefix: _supportsAudioTags(asset, provider)
+              ? (audioTagPrefix == null || audioTagPrefix.isEmpty
+                    ? null
+                    : audioTagPrefix)
+              : null,
+          refAudioPath: asset.refAudioPath,
+          promptText: asset.promptText,
+          promptLang: asset.promptLang,
+        ),
+      );
       final ext = result.contentType.contains('wav') ? '.wav' : '.mp3';
       final filePath = PathService.dedupeFilename(
         outDir,
@@ -348,12 +526,64 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
           error: const Value(null),
         ),
       );
+      _markDirty();
     } catch (e) {
       await database.updatePhaseTtsSegment(
         seg.copyWith(error: Value(e.toString())),
       );
+      _markDirty();
     } finally {
       if (mounted) setState(() => _generatingSegmentIds.remove(seg.id));
     }
+  }
+
+  bool _supportsVoiceInstruction(
+    db.VoiceAsset asset,
+    db.TtsProvider provider,
+  ) {
+    return switch (provider.adapterType) {
+      'chatCompletionsTts' => _isMimoTtsModel(asset, provider),
+      'cosyvoice' => true,
+      'voxcpm2Native' => true,
+      'geminiTts' => true,
+      _ => false,
+    };
+  }
+
+  bool _supportsAudioTags(db.VoiceAsset asset, db.TtsProvider provider) {
+    return _isMimoTtsModel(asset, provider);
+  }
+
+  bool _isMimoTtsModel(db.VoiceAsset asset, db.TtsProvider provider) {
+    final model = (asset.modelName ?? provider.defaultModelName).toLowerCase();
+    return provider.adapterType == 'chatCompletionsTts' &&
+        model.contains('mimo') &&
+        (model.contains('tts') ||
+            model.contains('voiceclone') ||
+            model.contains('voicedesign'));
+  }
+
+  Future<void> _exportMerged(
+    db.PhaseTtsProject project,
+    List<db.PhaseTtsSegment> segments,
+  ) async {
+    setState(() => _exportingMerged = true);
+    try {
+      await exportPhaseTtsMergedAudio(
+        context: context,
+        ref: ref,
+        project: project,
+        segments: segments,
+      );
+    } finally {
+      if (mounted) setState(() => _exportingMerged = false);
+    }
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

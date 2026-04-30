@@ -34,4 +34,5 @@ const _$AdapterTypeEnumMap = {
   AdapterType.chatCompletionsTts: 'chatCompletionsTts',
   AdapterType.azureTts: 'azureTts',
   AdapterType.systemTts: 'systemTts',
+  AdapterType.geminiTts: 'geminiTts',
 };

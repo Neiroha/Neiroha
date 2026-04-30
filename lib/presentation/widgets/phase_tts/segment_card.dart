@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 
-/// One row in the Phase TTS segments list: index badge, voice dropdown,
+/// One row in the Phase TTS segments list: index badge, voice summary,
 /// status icon (generating / play / error / pending), generate button,
 /// and delete.
-///
-/// `onGenerate` is null while the row is busy or has no voice picked.
 class SegmentCard extends StatelessWidget {
   final db.PhaseTtsSegment segment;
   final int index;
   final List<db.VoiceAsset> bankAssets;
+
+  /// Resolved voice asset id. Used to gate the Generate button + render the
+  /// voice badge.
+  final String? resolvedVoiceId;
   final bool isGenerating;
   final VoidCallback onPlay;
   final VoidCallback? onGenerate;
-  final ValueChanged<String?> onVoiceChanged;
   final VoidCallback onDelete;
 
   const SegmentCard({
@@ -22,15 +23,17 @@ class SegmentCard extends StatelessWidget {
     required this.segment,
     required this.index,
     required this.bankAssets,
+    required this.resolvedVoiceId,
     required this.isGenerating,
     required this.onPlay,
     required this.onGenerate,
-    required this.onVoiceChanged,
     required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
+    final assetsById = {for (final a in bankAssets) a.id: a};
+    final voiceName = assetsById[resolvedVoiceId]?.name;
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
       child: Padding(
@@ -48,36 +51,19 @@ class SegmentCard extends StatelessWidget {
                     color: AppTheme.surfaceDim,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text('${index + 1}',
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.5))),
+                  child: Text(
+                    '${index + 1}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: SizedBox(
                     height: 36,
-                    child: DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        hintText: 'Voice',
-                        isDense: true,
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      ),
-                      isExpanded: true,
-                      initialValue:
-                          bankAssets.any((a) => a.id == segment.voiceAssetId)
-                              ? segment.voiceAssetId
-                              : null,
-                      items: bankAssets
-                          .map((a) => DropdownMenuItem(
-                              value: a.id,
-                              child: Text(a.name,
-                                  style: const TextStyle(fontSize: 12),
-                                  overflow: TextOverflow.ellipsis)))
-                          .toList(),
-                      onChanged: onVoiceChanged,
-                    ),
+                    child: _VoiceSummary(voiceName: voiceName),
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -102,9 +88,11 @@ class SegmentCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 IconButton(
-                  icon: Icon(Icons.close_rounded,
-                      size: 16,
-                      color: Colors.white.withValues(alpha: 0.3)),
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 16,
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   onPressed: onDelete,
@@ -112,10 +100,12 @@ class SegmentCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 6),
-            Text(segment.segmentText,
-                style: const TextStyle(fontSize: 13),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis),
+            Text(
+              segment.segmentText,
+              style: const TextStyle(fontSize: 13),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),
@@ -141,11 +131,63 @@ class SegmentCard extends StatelessWidget {
     if (segment.error != null) {
       return Tooltip(
         message: segment.error!,
-        child: const Icon(Icons.error_rounded,
-            size: 18, color: Colors.redAccent),
+        child: const Icon(
+          Icons.error_rounded,
+          size: 18,
+          color: Colors.redAccent,
+        ),
       );
     }
-    return Icon(Icons.pending_rounded,
-        size: 18, color: Colors.white.withValues(alpha: 0.2));
+    return Icon(
+      Icons.pending_rounded,
+      size: 18,
+      color: Colors.white.withValues(alpha: 0.2),
+    );
+  }
+}
+
+class _VoiceSummary extends StatelessWidget {
+  final String? voiceName;
+
+  const _VoiceSummary({required this.voiceName});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasVoice = voiceName != null && voiceName!.isNotEmpty;
+    return Container(
+      alignment: Alignment.centerLeft,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceDim,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            hasVoice
+                ? Icons.record_voice_over_rounded
+                : Icons.voice_over_off_rounded,
+            size: 15,
+            color: hasVoice
+                ? AppTheme.accentColor.withValues(alpha: 0.85)
+                : Colors.white.withValues(alpha: 0.25),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              voiceName ?? 'Unassigned voice',
+              style: TextStyle(
+                fontSize: 12,
+                color: hasVoice
+                    ? Colors.white.withValues(alpha: 0.72)
+                    : Colors.white.withValues(alpha: 0.32),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

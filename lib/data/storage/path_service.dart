@@ -54,8 +54,7 @@ class PathService {
       await _dataRoot.create(recursive: true);
     }
 
-    _defaultVoiceAssetRoot =
-        Directory(p.join(_appRoot.path, 'voice_asset'));
+    _defaultVoiceAssetRoot = Directory(p.join(_appRoot.path, 'voice_asset'));
     if (!await _defaultVoiceAssetRoot.exists()) {
       await _defaultVoiceAssetRoot.create(recursive: true);
     }
@@ -74,11 +73,28 @@ class PathService {
   /// Windows reserved device names — creating a folder with any of these
   /// names (with or without extension) silently fails on Windows.
   static const _reservedWindowsNames = {
-    'CON', 'PRN', 'AUX', 'NUL',
-    'COM1', 'COM2', 'COM3', 'COM4', 'COM5',
-    'COM6', 'COM7', 'COM8', 'COM9',
-    'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5',
-    'LPT6', 'LPT7', 'LPT8', 'LPT9',
+    'CON',
+    'PRN',
+    'AUX',
+    'NUL',
+    'COM1',
+    'COM2',
+    'COM3',
+    'COM4',
+    'COM5',
+    'COM6',
+    'COM7',
+    'COM8',
+    'COM9',
+    'LPT1',
+    'LPT2',
+    'LPT3',
+    'LPT4',
+    'LPT5',
+    'LPT6',
+    'LPT7',
+    'LPT8',
+    'LPT9',
   };
 
   /// Make `input` a safe filesystem segment across Windows/macOS/Linux.
@@ -87,8 +103,7 @@ class PathService {
   /// whitespace, strip trailing dots/spaces (both break on Windows), cap
   /// at 48 chars (leaves headroom under MAX_PATH=260), append `_` to
   /// Windows reserved device names.
-  static String sanitizeSegment(String input,
-      {String fallback = 'untitled'}) {
+  static String sanitizeSegment(String input, {String fallback = 'untitled'}) {
     var s = input.replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1F]'), '_');
     s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
     // Windows ignores trailing dots and spaces → DB-vs-disk name drift.
@@ -134,31 +149,55 @@ class PathService {
       _ensure(Directory(p.join(_dataRoot.path, 'avatars')));
 
   Future<Directory> quickTtsDir(String voiceCharName) => _ensure(
-      Directory(p.join(voiceAssetRoot.path, 'quick_tts',
-          sanitizeSegment(voiceCharName, fallback: 'unnamed_voice'))));
+    Directory(
+      p.join(
+        voiceAssetRoot.path,
+        'quick_tts',
+        sanitizeSegment(voiceCharName, fallback: 'unnamed_voice'),
+      ),
+    ),
+  );
 
-  Future<Directory> phaseTtsDir(String projectName) => _ensure(Directory(
-      p.join(voiceAssetRoot.path, 'phase_tts',
-          sanitizeSegment(projectName, fallback: 'unnamed_project'))));
+  Future<Directory> phaseTtsDir(String projectName) => _ensure(
+    Directory(
+      p.join(
+        voiceAssetRoot.path,
+        'phase_tts',
+        sanitizeSegment(projectName, fallback: 'unnamed_project'),
+      ),
+    ),
+  );
 
-  /// Resolve `{phaseTtsDir(slug)}/role_mapping.json`. Caller is responsible
-  /// for reading/writing — this only locates the path (and ensures the
-  /// project dir exists).
-  Future<File> phaseTtsRoleMappingFile(String projectSlug) async {
+  /// Resolve `{phaseTtsDir(slug)}/phase_segment_settings.json`. This stores
+  /// per-sentence generation overrides such as a temporary emotion /
+  /// instruction prompt for one segment.
+  Future<File> phaseTtsSegmentSettingsFile(String projectSlug) async {
     final dir = await phaseTtsDir(projectSlug);
-    return File(p.join(dir.path, 'role_mapping.json'));
+    return File(p.join(dir.path, 'phase_segment_settings.json'));
   }
 
-  Future<Directory> dialogTtsDir(String projectName) => _ensure(Directory(
-      p.join(voiceAssetRoot.path, 'dialog_tts',
-          sanitizeSegment(projectName, fallback: 'unnamed_project'))));
+  Future<Directory> dialogTtsDir(String projectName) => _ensure(
+    Directory(
+      p.join(
+        voiceAssetRoot.path,
+        'dialog_tts',
+        sanitizeSegment(projectName, fallback: 'unnamed_project'),
+      ),
+    ),
+  );
 
-  Future<Directory> videoDubDir(String projectName) => _ensure(Directory(
-      p.join(voiceAssetRoot.path, 'video_dub',
-          sanitizeSegment(projectName, fallback: 'unnamed_project'))));
+  Future<Directory> videoDubDir(String projectName) => _ensure(
+    Directory(
+      p.join(
+        voiceAssetRoot.path,
+        'video_dub',
+        sanitizeSegment(projectName, fallback: 'unnamed_project'),
+      ),
+    ),
+  );
 
-  Future<Directory> voiceCharacterRefDir() => _ensure(
-      Directory(p.join(voiceAssetRoot.path, 'voice_character_ref')));
+  Future<Directory> voiceCharacterRefDir() =>
+      _ensure(Directory(p.join(voiceAssetRoot.path, 'voice_character_ref')));
 
   /// SFX imports live under the owning project dir so they stay grouped
   /// with the generated takes they accompany.
@@ -174,8 +213,12 @@ class PathService {
 
   Future<bool> _isWritable(Directory dir) async {
     try {
-      final probe = File(p.join(dir.path,
-          '.neiroha_write_probe_${DateTime.now().microsecondsSinceEpoch}'));
+      final probe = File(
+        p.join(
+          dir.path,
+          '.neiroha_write_probe_${DateTime.now().microsecondsSinceEpoch}',
+        ),
+      );
       await probe.writeAsString('ok', flush: true);
       await probe.delete();
       return true;

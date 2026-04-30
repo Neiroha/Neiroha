@@ -23,7 +23,8 @@ class TtsRequest {
   final String? promptLang;
   final String? textLang;
 
-  // Qwen3 / ChatCompletions specific
+  // Per-call style / direction text for adapters that expose instruction
+  // control (MiMo chat-completions TTS, CosyVoice instruct, VoxCPM2, Gemini).
   final String? voiceInstruction;
 
   // OpenAI-compatible preset

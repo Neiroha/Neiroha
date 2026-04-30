@@ -1,10 +1,10 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
-import 'package:neiroha/data/services/role_mapping_file.dart';
+import 'package:neiroha/data/services/phase_segment_settings_file.dart';
 import 'package:neiroha/data/storage/export_prefs.dart';
 import 'package:neiroha/data/storage/ffmpeg_service.dart';
-import 'package:neiroha/data/storage/llm_config.dart';
+import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
 import 'package:neiroha/server/api_server.dart';
 
@@ -32,25 +32,23 @@ final exportPrefsServiceProvider = Provider<ExportPrefsService>((ref) {
   return ExportPrefsService(ref.watch(databaseProvider));
 });
 
-/// LLM client config (chat-completions provider + model + timeout). Backed
-/// by `AppSettings`. The role-assignment service reads from this; the
-/// settings UI writes through it.
-final llmConfigServiceProvider = Provider<LlmConfigService>((ref) {
-  return LlmConfigService(ref.watch(databaseProvider));
+/// Global text-splitting rules (newline / regex). Shared across every Phase
+/// TTS project so the user's regex collection is a single source of truth.
+final splitRulesServiceProvider = Provider<SplitRulesService>((ref) {
+  return SplitRulesService(ref.watch(databaseProvider));
 });
 
-/// Current resolved [LlmConfig]. Invalidate after writes through
-/// [llmConfigServiceProvider] to refresh consumers.
-final llmConfigProvider = FutureProvider<LlmConfig>((ref) {
-  return ref.watch(llmConfigServiceProvider).load();
+/// Loaded list of [SplitRule]. Invalidate after a save to refresh consumers.
+final splitRulesProvider = FutureProvider((ref) {
+  return ref.watch(splitRulesServiceProvider).load();
 });
 
-/// On-disk character → voice mapping per Phase TTS project. The role
-/// assignment dialog reads + writes through this; the file lives next to
-/// the project's audio so projects remain portable.
-final roleMappingFileServiceProvider = Provider<RoleMappingFileService>((ref) {
-  return RoleMappingFileService();
-});
+/// Per-segment Phase TTS generation overrides, such as one sentence's
+/// temporary instruction/emotion prompt.
+final phaseSegmentSettingsFileServiceProvider =
+    Provider<PhaseSegmentSettingsFileService>((ref) {
+      return PhaseSegmentSettingsFileService();
+    });
 
 /// Probes `ffmpeg -version` once per session. Watch this in the Settings
 /// screen (so the badge updates after the user changes the path) and in
@@ -107,9 +105,9 @@ final activeBankStreamProvider = StreamProvider((ref) {
 /// Members of a specific bank — keyed by bankId.
 final bankMembersStreamProvider =
     StreamProvider.family<List<VoiceBankMember>, String>((ref, bankId) {
-  final db = ref.watch(databaseProvider);
-  return db.watchBankMembers(bankId);
-});
+      final db = ref.watch(databaseProvider);
+      return db.watchBankMembers(bankId);
+    });
 
 /// Quick TTS history stream.
 final quickTtsHistoryStreamProvider = StreamProvider((ref) {
@@ -126,9 +124,9 @@ final phaseTtsProjectsStreamProvider = StreamProvider((ref) {
 /// Phase TTS segments for a project.
 final phaseTtsSegmentsStreamProvider =
     StreamProvider.family<List<PhaseTtsSegment>, String>((ref, projectId) {
-  final db = ref.watch(databaseProvider);
-  return db.watchPhaseTtsSegments(projectId);
-});
+      final db = ref.watch(databaseProvider);
+      return db.watchPhaseTtsSegments(projectId);
+    });
 
 /// Dialog TTS projects stream.
 final dialogTtsProjectsStreamProvider = StreamProvider((ref) {
@@ -139,9 +137,9 @@ final dialogTtsProjectsStreamProvider = StreamProvider((ref) {
 /// Dialog TTS lines for a project.
 final dialogTtsLinesStreamProvider =
     StreamProvider.family<List<DialogTtsLine>, String>((ref, projectId) {
-  final db = ref.watch(databaseProvider);
-  return db.watchDialogTtsLines(projectId);
-});
+      final db = ref.watch(databaseProvider);
+      return db.watchDialogTtsLines(projectId);
+    });
 
 /// Video Dub projects stream (dubbing workstation projects).
 final videoDubProjectsStreamProvider = StreamProvider((ref) {
@@ -152,19 +150,19 @@ final videoDubProjectsStreamProvider = StreamProvider((ref) {
 /// Subtitle cues for a Video Dub project.
 final subtitleCuesStreamProvider =
     StreamProvider.family<List<SubtitleCue>, String>((ref, projectId) {
-  final db = ref.watch(databaseProvider);
-  return db.watchSubtitleCues(projectId);
-});
+      final db = ref.watch(databaseProvider);
+      return db.watchSubtitleCues(projectId);
+    });
 
 /// Timeline clips for a project. Key is "$projectType:$projectId" so the
 /// family works across both Dialog and Phase TTS projects.
 final timelineClipsStreamProvider =
     StreamProvider.family<List<TimelineClip>, String>((ref, key) {
-  final parts = key.split(':');
-  if (parts.length != 2) return const Stream.empty();
-  final db = ref.watch(databaseProvider);
-  return db.watchTimelineClips(parts[1], parts[0]);
-});
+      final parts = key.split(':');
+      if (parts.length != 2) return const Stream.empty();
+      final db = ref.watch(databaseProvider);
+      return db.watchTimelineClips(parts[1], parts[0]);
+    });
 
 /// Stream of all audio tracks (raw audio sample library).
 final audioTracksStreamProvider = StreamProvider((ref) {

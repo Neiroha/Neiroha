@@ -169,6 +169,95 @@ class FFmpegService {
     }
   }
 
+  /// Concatenate [inputPaths] into a single audio file at [outputPath].
+  ///
+  /// Uses ffmpeg's concat demuxer with a temporary listing file (the only
+  /// way to safely concat files containing single quotes or non-ASCII
+  /// characters on Windows). When all inputs share the same codec the
+  /// stream-copy path is taken (`-c copy`), which is essentially instant;
+  /// otherwise we re-encode to a sensible default for the target extension
+  /// so mismatched bitrates / codecs still produce a playable file.
+  ///
+  /// Returns `true` on success. The temporary listing file is always
+  /// removed, even on failure.
+  Future<bool> concatAudio({
+    required List<String> inputPaths,
+    required String outputPath,
+    bool reEncode = false,
+  }) async {
+    if (inputPaths.isEmpty) return false;
+    if (!await isAvailable()) return false;
+    final ffmpegPath = await resolvePath();
+
+    final outFile = File(outputPath);
+    final outDir = outFile.parent;
+    if (!await outDir.exists()) await outDir.create(recursive: true);
+
+    final listFile = File(p.join(
+      outDir.path,
+      '.concat_${DateTime.now().microsecondsSinceEpoch}.txt',
+    ));
+
+    try {
+      final buffer = StringBuffer();
+      for (final raw in inputPaths) {
+        // ffmpeg concat demuxer: backslashes must be forward slashes,
+        // and single quotes inside the filename need escaping as `'\''`.
+        final normalized = raw.replaceAll('\\', '/').replaceAll("'", r"'\''");
+        buffer.writeln("file '$normalized'");
+      }
+      await listFile.writeAsString(buffer.toString(), flush: true);
+
+      final ext = p.extension(outputPath).toLowerCase();
+      final args = <String>[
+        '-y',
+        '-f', 'concat',
+        '-safe', '0',
+        '-i', listFile.path,
+        if (reEncode) ...['-c:a', _audioCodecForExt(ext)] else ...['-c', 'copy'],
+        outputPath,
+      ];
+
+      final result = await Process.run(ffmpegPath, args);
+      if (result.exitCode == 0) return true;
+
+      // Common failure: stream-copy across mismatched codecs/sample-rates.
+      // Retry once with re-encoding before giving up.
+      if (!reEncode) {
+        return concatAudio(
+          inputPaths: inputPaths,
+          outputPath: outputPath,
+          reEncode: true,
+        );
+      }
+      return false;
+    } catch (_) {
+      return false;
+    } finally {
+      try {
+        if (await listFile.exists()) await listFile.delete();
+      } catch (_) {}
+    }
+  }
+
+  static String _audioCodecForExt(String ext) {
+    switch (ext) {
+      case '.mp3':
+        return 'libmp3lame';
+      case '.m4a':
+      case '.aac':
+        return 'aac';
+      case '.ogg':
+      case '.opus':
+        return 'libopus';
+      case '.flac':
+        return 'flac';
+      case '.wav':
+      default:
+        return 'pcm_s16le';
+    }
+  }
+
   static String _deriveFfprobePath(String ffmpegPath) {
     if (ffmpegPath == 'ffmpeg') return 'ffprobe';
     final dir = p.dirname(ffmpegPath);

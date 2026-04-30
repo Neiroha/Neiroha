@@ -160,6 +160,9 @@ class PhaseTtsSegments extends Table {
   TextColumn get projectId => text().references(PhaseTtsProjects, #id)();
   IntColumn get orderIndex => integer()();
   TextColumn get segmentText => text()();
+  // Reserved for future multi-role workflows. The current Phase TTS editor
+  // uses [voiceAssetId] directly for simple per-sentence voice assignment.
+  TextColumn get speakerLabel => text().nullable()();
   TextColumn get voiceAssetId => text().nullable()();
   TextColumn get audioPath => text().nullable()();
   RealColumn get audioDuration => real().nullable()();

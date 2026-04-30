@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -19,15 +20,22 @@ import 'settings_screen.dart';
 
 final selectedTabProvider = StateProvider<NavTab>((ref) => NavTab.voiceBank);
 
-class AppShell extends ConsumerWidget {
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<AppShell> {
+  PhaseTtsExitGuard? _phaseTtsExitGuard;
+
+  @override
+  Widget build(BuildContext context) {
     final selectedTab = ref.watch(selectedTabProvider);
     final playback = ref.watch(playbackNotifierProvider);
-    // Dialog/Phase render their own inline player above the text input,
-    // so the global bottom bar is suppressed there to avoid a double UI.
+    // Dialog/Phase render their own inline players, so the global bottom bar
+    // is suppressed there to avoid a double UI.
     // Voice Bank quick tests also render inline above the test input.
     final showGlobalPlayer = selectedTab != NavTab.dialogTts &&
         selectedTab != NavTab.phaseTts &&
@@ -43,8 +51,7 @@ class AppShell extends ConsumerWidget {
               children: [
                 Sidebar(
                   selected: selectedTab,
-                  onTabChanged: (tab) =>
-                      ref.read(selectedTabProvider.notifier).state = tab,
+                  onTabChanged: (tab) => unawaited(_switchTab(tab)),
                 ),
                 const VerticalDivider(width: 1, thickness: 1),
                 Expanded(
@@ -62,9 +69,22 @@ class AppShell extends ConsumerWidget {
     );
   }
 
+  Future<void> _switchTab(NavTab tab) async {
+    final current = ref.read(selectedTabProvider);
+    if (current == tab) return;
+    if (current == NavTab.phaseTts) {
+      final guard = _phaseTtsExitGuard;
+      if (guard != null && !await guard()) return;
+    }
+    ref.read(selectedTabProvider.notifier).state = tab;
+  }
+
   Widget _buildPage(NavTab tab) {
     return switch (tab) {
-      NavTab.phaseTts => const PhaseTtsScreen(key: ValueKey('phaseTts')),
+      NavTab.phaseTts => PhaseTtsScreen(
+        key: const ValueKey('phaseTts'),
+        onExitGuardChanged: (guard) => _phaseTtsExitGuard = guard,
+      ),
       NavTab.dialogTts => const DialogTtsScreen(key: ValueKey('dialogTts')),
       NavTab.videoDub => const VideoDubScreen(key: ValueKey('videoDub')),
       NavTab.voiceAssets =>

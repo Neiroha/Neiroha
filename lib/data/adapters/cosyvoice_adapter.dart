@@ -44,8 +44,13 @@ class CosyVoiceAdapter extends TtsAdapter {
   @override
   Future<TtsResult> synthesize(TtsRequest request) async {
     // modelName holds the CosyVoice mode set by the character creator.
-    // Fall back to inference if unset or not a known mode.
-    final mode = _knownModes.contains(modelName) ? modelName : _inferMode(request);
+    // A per-call instruction must route through instruct mode, even if the
+    // saved character was originally zero_shot / cross_lingual.
+    final mode = request.voiceInstruction?.trim().isNotEmpty == true
+        ? 'instruct'
+        : _knownModes.contains(modelName)
+        ? modelName
+        : _inferMode(request);
 
     if (request.refAudioPath != null && request.refAudioPath!.isNotEmpty) {
       return _synthesizeWithUpload(request, mode: mode);

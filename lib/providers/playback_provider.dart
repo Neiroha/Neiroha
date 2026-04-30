@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app_providers.dart';
 
 const voiceBankQuickTestPlaybackSource = 'voice_bank.quick_tts';
+const phaseTtsPlaybackSource = 'phase_tts.preview';
 
 class PlaybackState {
   final String? audioPath;
@@ -56,6 +57,8 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
   StreamSubscription<void>? _completeSub;
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<Duration>? _durationSub;
+  Completer<void>? _sequenceCancelCompleter;
+  int _sequenceRunId = 0;
 
   @override
   PlaybackState build() {
@@ -78,6 +81,21 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
   }
 
   Future<void> load(
+    String audioPath,
+    String title, {
+    String? subtitle,
+    String? sourceTag,
+  }) async {
+    _cancelActiveSequence();
+    await _loadInternal(
+      audioPath,
+      title,
+      subtitle: subtitle,
+      sourceTag: sourceTag,
+    );
+  }
+
+  Future<void> _loadInternal(
     String audioPath,
     String title, {
     String? subtitle,
@@ -108,6 +126,7 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
   }
 
   Future<void> stop() async {
+    _cancelActiveSequence();
     await _player.stop();
     state = const PlaybackState();
   }
@@ -127,12 +146,39 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
   Future<void> playSequenceFrom(
     List<({String audioPath, String title, String? subtitle})> items, {
     int startIndex = 0,
+    String? sourceTag,
   }) async {
+    _cancelActiveSequence();
+    final runId = _sequenceRunId;
+    final cancelCompleter = Completer<void>();
+    _sequenceCancelCompleter = cancelCompleter;
     for (int i = startIndex; i < items.length; i++) {
+      if (_sequenceRunId != runId || cancelCompleter.isCompleted) break;
       final item = items[i];
-      await load(item.audioPath, item.title, subtitle: item.subtitle);
-      await _player.onPlayerComplete.first;
+      await _loadInternal(
+        item.audioPath,
+        item.title,
+        subtitle: item.subtitle,
+        sourceTag: sourceTag,
+      );
+      await Future.any([
+        _player.onPlayerComplete.first,
+        cancelCompleter.future,
+      ]);
     }
+    if (_sequenceRunId == runId &&
+        identical(_sequenceCancelCompleter, cancelCompleter)) {
+      _sequenceCancelCompleter = null;
+    }
+  }
+
+  void _cancelActiveSequence() {
+    _sequenceRunId++;
+    final completer = _sequenceCancelCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete();
+    }
+    _sequenceCancelCompleter = null;
   }
 }
 

@@ -449,10 +449,16 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     if (segments.isEmpty || bankAssets.isEmpty || _generatingAll) return;
     setState(() => _generatingAll = true);
     try {
+      final segmentSettings = await _loadSegmentSettings(project);
       for (final seg in segments) {
         if (seg.audioPath != null) continue;
         if (seg.voiceAssetId == null) continue;
-        await _generateOne(project, seg, bankAssets);
+        await _generateOne(
+          project,
+          seg,
+          bankAssets,
+          segmentSettings: segmentSettings,
+        );
       }
     } finally {
       if (mounted) setState(() => _generatingAll = false);
@@ -462,8 +468,9 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
   Future<void> _generateOne(
     db.PhaseTtsProject project,
     db.PhaseTtsSegment seg,
-    List<db.VoiceAsset> bankAssets,
-  ) async {
+    List<db.VoiceAsset> bankAssets, {
+    PhaseSegmentSettings? segmentSettings,
+  }) async {
     if (seg.voiceAssetId == null) return;
     final database = ref.read(databaseProvider);
 
@@ -477,8 +484,8 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
       final provider = providerMap[asset.providerId];
       if (provider == null) return;
 
-      final segmentSettings = await _loadSegmentSettings(project);
-      final overrides = segmentSettings.bySegmentId[seg.id];
+      final settings = segmentSettings ?? await _loadSegmentSettings(project);
+      final overrides = settings.bySegmentId[seg.id];
       final instructionOverride = overrides?.voiceInstruction?.trim();
       final audioTagPrefix = overrides?.audioTagPrefix?.trim();
       final slug = await ref

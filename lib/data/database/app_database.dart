@@ -50,25 +50,9 @@ class AppDatabase extends _$AppDatabase {
       await _seedDefaults();
     },
     onUpgrade: (m, from, to) async {
-      // Development: drop and recreate in reverse FK order
-      await m.drop(timelineClips);
-      await m.drop(audioTracks);
-      await m.drop(subtitleCues);
-      await m.drop(videoDubProjects);
-      await m.drop(dialogTtsLines);
-      await m.drop(dialogTtsProjects);
-      await m.drop(phaseTtsSegments);
-      await m.drop(phaseTtsProjects);
-      await m.drop(quickTtsHistories);
-      await m.drop(ttsJobs);
-      await m.drop(voiceBankMembers);
-      await m.drop(voiceBanks);
-      await m.drop(voiceAssets);
-      await m.drop(modelBindings);
-      await m.drop(ttsProviders);
-      await m.drop(appSettings);
-      await m.createAll();
-      await _seedDefaults();
+      if (from < 16) {
+        await m.addColumn(phaseTtsSegments, phaseTtsSegments.speakerLabel);
+      }
     },
   );
 

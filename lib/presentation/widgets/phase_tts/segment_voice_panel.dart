@@ -56,6 +56,7 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
   PhaseSegmentSettings _settings = const PhaseSegmentSettings();
   String? _projectSlug;
   Timer? _saveTimer;
+  Future<dynamic> _pendingSave = Future<dynamic>.value();
 
   @override
   void initState() {
@@ -80,7 +81,12 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     final slug = _projectSlug;
     if (slug != null) {
       final service = ref.read(phaseSegmentSettingsFileServiceProvider);
-      unawaited(service.save(slug, _settings));
+      final settings = _settings;
+      unawaited(
+        _pendingSave.catchError((_) {}).then(
+              (_) => service.save(slug, settings),
+            ),
+      );
     }
     super.dispose();
   }
@@ -134,11 +140,14 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     });
   }
 
-  Future<void> _saveSettings() async {
-    final slug = await _ensureProjectSlug();
-    await ref
-        .read(phaseSegmentSettingsFileServiceProvider)
-        .save(slug, _settings);
+  Future<void> _saveSettings() {
+    final service = ref.read(phaseSegmentSettingsFileServiceProvider);
+    final settings = _settings;
+    _pendingSave = _pendingSave.catchError((_) {}).then((_) async {
+      final slug = await _ensureProjectSlug();
+      await service.save(slug, settings);
+    });
+    return _pendingSave.then((_) {});
   }
 
   Future<void> _generateSegment(db.PhaseTtsSegment segment) async {

@@ -12,6 +12,8 @@ import 'package:uuid/uuid.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
+import 'package:neiroha/presentation/widgets/voice_asset/record_dialog.dart';
+import 'package:neiroha/presentation/widgets/voice_asset/trim_dialog.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 
@@ -84,7 +86,7 @@ class VoiceAssetScreen extends ConsumerWidget {
           ),
           const SizedBox(width: 8),
           OutlinedButton.icon(
-            onPressed: () => _recordTrack(context),
+            onPressed: () => _recordTrack(context, ref),
             icon: const Icon(Icons.mic_rounded, size: 18),
             label: const Text('Record'),
           ),
@@ -171,11 +173,38 @@ class VoiceAssetScreen extends ConsumerWidget {
     ref.read(_selectedTrackIdProvider.notifier).state = id;
   }
 
-  void _recordTrack(BuildContext context) {
-    // Microphone recording opens an editor dialog. Not yet implemented —
-    // surfaced as a placeholder so the entry point is discoverable.
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Microphone recording is not implemented yet.')));
+  Future<void> _recordTrack(BuildContext context, WidgetRef ref) async {
+    final recordedPath = await showDialog<String?>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const RecordDialog(),
+    );
+    if (recordedPath == null) return;
+    final src = File(recordedPath);
+    if (!await src.exists()) return;
+
+    // Recordings already land inside voice_character_ref/ via the dialog —
+    // we just need to detect duration and insert the row.
+    double? duration;
+    try {
+      final probe = AudioPlayer();
+      await probe.setSourceDeviceFile(recordedPath);
+      final d = await probe.getDuration();
+      if (d != null) duration = d.inMilliseconds / 1000.0;
+      await probe.dispose();
+    } catch (_) {}
+
+    final id = const Uuid().v4();
+    final name = 'Recording ${PathService.formatTimestamp()}';
+    await ref.read(databaseProvider).insertAudioTrack(db.AudioTracksCompanion(
+          id: Value(id),
+          name: Value(name),
+          audioPath: Value(recordedPath),
+          durationSec: Value(duration),
+          sourceType: const Value('record'),
+          createdAt: Value(DateTime.now()),
+        ));
+    ref.read(_selectedTrackIdProvider.notifier).state = id;
   }
 }
 
@@ -386,6 +415,65 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
     }
   }
 
+  Future<void> _trim() async {
+    final track = widget.track;
+    final duration = track.durationSec;
+    if (duration == null || duration <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Audio duration unknown — cannot trim.')));
+      return;
+    }
+    if (!await File(track.audioPath).exists()) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Audio file missing on disk')));
+      return;
+    }
+    // Stop any inline preview so the trim dialog's player has exclusive
+    // access to the file.
+    await ref.read(playbackNotifierProvider.notifier).stop();
+    if (!mounted) return;
+
+    await applyTrim(
+      context: context,
+      ref: ref,
+      audioPath: track.audioPath,
+      currentDurationSec: duration,
+      onSaved: ({
+        required String trimmedPath,
+        required double newDurationSec,
+        required bool replaceOriginal,
+      }) async {
+        final database = ref.read(databaseProvider);
+        if (replaceOriginal) {
+          await database.updateAudioTrack(track.copyWith(
+            audioPath: trimmedPath,
+            durationSec: Value(newDurationSec),
+          ));
+        } else {
+          final id = const Uuid().v4();
+          await database.insertAudioTrack(db.AudioTracksCompanion(
+            id: Value(id),
+            name: Value('${track.name} (trim)'),
+            audioPath: Value(trimmedPath),
+            durationSec: Value(newDurationSec),
+            sourceType: Value(track.sourceType),
+            description: Value(track.description),
+            refText: Value(track.refText),
+            refLang: Value(track.refLang),
+            createdAt: Value(DateTime.now()),
+          ));
+          ref.read(_selectedTrackIdProvider.notifier).state = id;
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Trim applied'),
+              duration: Duration(seconds: 1)));
+        }
+      },
+    );
+  }
+
   Future<void> _delete() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -537,6 +625,12 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
                   icon: const Icon(Icons.save_rounded, size: 18),
                   label: const Text('Save'),
                 ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: _trim,
+                icon: const Icon(Icons.content_cut_rounded, size: 18),
+                label: const Text('Trim'),
               ),
               const SizedBox(width: 8),
               IconButton(

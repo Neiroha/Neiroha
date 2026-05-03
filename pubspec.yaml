@@ -34,6 +34,10 @@ dependencies:
   # Audio playback
   audioplayers: ^6.0.0
 
+  # Windows microphone recording (MediaFoundation, without federated record pkg)
+  record_platform_interface: ^1.5.0
+  record_windows: ^1.0.7
+
   # Video playback (libmpv-based — desktop-capable across Win/macOS/Linux)
   media_kit: ^1.1.11
   media_kit_video: ^1.2.5

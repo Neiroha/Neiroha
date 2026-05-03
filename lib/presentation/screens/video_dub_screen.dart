@@ -102,14 +102,17 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(width: 8),
-          Text(
-            'Dub video with TTS from subtitle cues',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 14,
+          Expanded(
+            child: Text(
+              'Dub video with TTS from subtitle cues',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 14,
+              ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
           FilledButton.icon(
             onPressed: _createProject,
             icon: const Icon(Icons.add_rounded, size: 18),

@@ -58,9 +58,16 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
   Timer? _saveTimer;
   Future<dynamic> _pendingSave = Future<dynamic>.value();
 
+  // Cached during initState — `ref.read` is unsafe in dispose() because
+  // ConsumerStatefulElement is already torn down by then. The service object
+  // itself lives in the enclosing ProviderScope, so calling it post-dispose
+  // is fine.
+  late final PhaseSegmentSettingsFileService _settingsService;
+
   @override
   void initState() {
     super.initState();
+    _settingsService = ref.read(phaseSegmentSettingsFileServiceProvider);
     unawaited(_loadSettings());
   }
 
@@ -80,7 +87,7 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     _saveTimer?.cancel();
     final slug = _projectSlug;
     if (slug != null) {
-      final service = ref.read(phaseSegmentSettingsFileServiceProvider);
+      final service = _settingsService;
       final settings = _settings;
       unawaited(
         _pendingSave.catchError((_) {}).then(
@@ -93,9 +100,7 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
 
   Future<void> _loadSettings() async {
     final slug = await _ensureProjectSlug();
-    final settings = await ref
-        .read(phaseSegmentSettingsFileServiceProvider)
-        .load(slug);
+    final settings = await _settingsService.load(slug);
     if (!mounted) return;
     setState(() => _settings = settings);
   }
@@ -141,7 +146,7 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
   }
 
   Future<void> _saveSettings() {
-    final service = ref.read(phaseSegmentSettingsFileServiceProvider);
+    final service = _settingsService;
     final settings = _settings;
     _pendingSave = _pendingSave.catchError((_) {}).then((_) async {
       final slug = await _ensureProjectSlug();

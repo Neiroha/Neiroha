@@ -74,10 +74,15 @@ class VoiceAssetScreen extends ConsumerWidget {
                   .headlineSmall
                   ?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(width: 8),
-          Text('Single audio tracks for voice cloning',
+          Expanded(
+            child: Text(
+              'Single audio tracks for voice cloning',
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5), fontSize: 14)),
-          const Spacer(),
+                  color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
+            ),
+          ),
+          const SizedBox(width: 8),
           OutlinedButton.icon(
             onPressed: () => _recordTrack(context),
             icon: const Icon(Icons.mic_rounded, size: 18),

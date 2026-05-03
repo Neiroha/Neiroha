@@ -115,10 +115,15 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                   .headlineSmall
                   ?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(width: 8),
-          Text('Banks, characters and inspector',
+          Expanded(
+            child: Text(
+              'Banks, characters and inspector',
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5), fontSize: 14)),
-          const Spacer(),
+                  color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
+            ),
+          ),
+          const SizedBox(width: 8),
           FilledButton.icon(
             onPressed: _createBank,
             icon: const Icon(Icons.add_rounded, size: 18),

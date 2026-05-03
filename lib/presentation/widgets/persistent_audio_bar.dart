@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,87 +33,108 @@ class PersistentAudioBar extends ConsumerWidget {
         border: Border(top: BorderSide(color: Color(0xFF2A2A36))),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: AppTheme.accentColor.withValues(alpha: 0.25),
-            child: Text(
-              _initial(state.subtitle ?? state.title),
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-            ),
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 220,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  state.title ?? '',
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Embedded contexts (SegmentVoicePanel, QuickTtsPanel) are ~370px;
+          // hide the time readout there so the slider keeps room. The bottom-
+          // of-screen player at full width still shows it.
+          final showTime = constraints.maxWidth >= 480;
+          final metadataWidth = math.min(
+            220.0,
+            math.max(72.0, constraints.maxWidth * (showTime ? 0.34 : 0.30)),
+          );
+          return Row(
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: AppTheme.accentColor.withValues(alpha: 0.25),
+                child: Text(
+                  _initial(state.subtitle ?? state.title),
                   style: const TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-                if (state.subtitle != null && state.subtitle!.isNotEmpty)
-                  Text(
-                    state.subtitle!,
-                    style: const TextStyle(fontSize: 11, color: Colors.white54),
-                    overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: metadataWidth,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      state.title ?? '',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (state.subtitle != null && state.subtitle!.isNotEmpty)
+                      Text(
+                        state.subtitle!,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.white54,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 3,
+                    thumbShape:
+                        const RoundSliderThumbShape(enabledThumbRadius: 6),
+                    overlayShape:
+                        const RoundSliderOverlayShape(overlayRadius: 12),
                   ),
+                  child: Slider(
+                    min: 0,
+                    max: durMs == 0 ? 1 : durMs.toDouble(),
+                    value: posMs.toDouble(),
+                    onChanged: durMs == 0
+                        ? null
+                        : (v) =>
+                            notifier.seek(Duration(milliseconds: v.toInt())),
+                  ),
+                ),
+              ),
+              if (showTime) ...[
+                const SizedBox(width: 8),
+                Text(
+                  '${_fmt(state.position)} / ${_fmt(state.duration)}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.white54,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
               ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 3,
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                overlayShape:
-                    const RoundSliderOverlayShape(overlayRadius: 12),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: Icon(
+                  state.isPlaying
+                      ? Icons.pause_circle_filled
+                      : Icons.play_circle_fill,
+                ),
+                iconSize: 34,
+                color: AppTheme.accentColor,
+                onPressed: notifier.togglePlay,
               ),
-              child: Slider(
-                min: 0,
-                max: durMs == 0 ? 1 : durMs.toDouble(),
-                value: posMs.toDouble(),
-                onChanged: durMs == 0
-                    ? null
-                    : (v) =>
-                        notifier.seek(Duration(milliseconds: v.toInt())),
+              IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                color: Colors.white38,
+                tooltip: 'Close player',
+                onPressed: notifier.stop,
               ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '${_fmt(state.position)} / ${_fmt(state.duration)}',
-            style: const TextStyle(
-              fontSize: 11,
-              color: Colors.white54,
-              fontFeatures: [FontFeature.tabularFigures()],
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: Icon(
-              state.isPlaying
-                  ? Icons.pause_circle_filled
-                  : Icons.play_circle_fill,
-            ),
-            iconSize: 34,
-            color: AppTheme.accentColor,
-            onPressed: notifier.togglePlay,
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 18),
-            color: Colors.white38,
-            tooltip: 'Close player',
-            onPressed: notifier.stop,
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

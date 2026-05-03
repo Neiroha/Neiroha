@@ -1,30 +1,46 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/presentation/widgets/sidebar.dart';
+import 'package:neiroha/providers/playback_provider.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'quick_tts_screen.dart';
-import 'phase_tts_screen.dart';
 import 'dialog_tts_screen.dart';
+import 'phase_tts_screen.dart';
+import 'video_dub_screen.dart';
 import 'voice_asset_screen.dart';
-import 'voice_character_screen.dart';
 import 'voice_bank_screen.dart';
-import 'voice_design_screen.dart';
 import 'provider_screen.dart';
 import 'settings_screen.dart';
 
-final selectedTabProvider = StateProvider<NavTab>((ref) => NavTab.quickTts);
+final selectedTabProvider = StateProvider<NavTab>((ref) => NavTab.voiceBank);
 
-class AppShell extends ConsumerWidget {
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<AppShell> {
+  PhaseTtsExitGuard? _phaseTtsExitGuard;
+
+  @override
+  Widget build(BuildContext context) {
     final selectedTab = ref.watch(selectedTabProvider);
+    final playback = ref.watch(playbackNotifierProvider);
+    // Dialog/Phase render their own inline players, so the global bottom bar
+    // is suppressed there to avoid a double UI.
+    // Voice Bank quick tests also render inline above the test input.
+    final showGlobalPlayer = selectedTab != NavTab.dialogTts &&
+        selectedTab != NavTab.phaseTts &&
+        !(selectedTab == NavTab.voiceBank &&
+            playback.sourceTag == voiceBankQuickTestPlaybackSource);
 
     return Scaffold(
       body: Column(
@@ -35,8 +51,7 @@ class AppShell extends ConsumerWidget {
               children: [
                 Sidebar(
                   selected: selectedTab,
-                  onTabChanged: (tab) =>
-                      ref.read(selectedTabProvider.notifier).state = tab,
+                  onTabChanged: (tab) => unawaited(_switchTab(tab)),
                 ),
                 const VerticalDivider(width: 1, thickness: 1),
                 Expanded(
@@ -48,22 +63,32 @@ class AppShell extends ConsumerWidget {
               ],
             ),
           ),
+          if (showGlobalPlayer) const PersistentAudioBar(),
         ],
       ),
     );
   }
 
+  Future<void> _switchTab(NavTab tab) async {
+    final current = ref.read(selectedTabProvider);
+    if (current == tab) return;
+    if (current == NavTab.phaseTts) {
+      final guard = _phaseTtsExitGuard;
+      if (guard != null && !await guard()) return;
+    }
+    ref.read(selectedTabProvider.notifier).state = tab;
+  }
+
   Widget _buildPage(NavTab tab) {
     return switch (tab) {
-      NavTab.quickTts => const QuickTtsScreen(key: ValueKey('quickTts')),
-      NavTab.phaseTts => const PhaseTtsScreen(key: ValueKey('phaseTts')),
+      NavTab.phaseTts => PhaseTtsScreen(
+        key: const ValueKey('phaseTts'),
+        onExitGuardChanged: (guard) => _phaseTtsExitGuard = guard,
+      ),
       NavTab.dialogTts => const DialogTtsScreen(key: ValueKey('dialogTts')),
-      NavTab.voiceDesign =>
-        const VoiceDesignScreen(key: ValueKey('voiceDesign')),
+      NavTab.videoDub => const VideoDubScreen(key: ValueKey('videoDub')),
       NavTab.voiceAssets =>
         const VoiceAssetScreen(key: ValueKey('voiceAssets')),
-      NavTab.voiceCharacters =>
-        const VoiceCharacterScreen(key: ValueKey('voiceCharacters')),
       NavTab.voiceBank => const VoiceBankScreen(key: ValueKey('voiceBank')),
       NavTab.providers => const ProviderScreen(key: ValueKey('providers')),
       NavTab.settings => const SettingsScreen(key: ValueKey('settings')),

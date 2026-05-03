@@ -1,5 +1,18 @@
 import 'package:drift/drift.dart';
 
+// ─────────────── App Settings (key/value store) ───────────────
+//
+// Holds app-wide preferences that are not tied to a particular domain entity.
+// Known keys:
+//   'voiceAssetRoot' → absolute path chosen by the user for the audio library.
+class AppSettings extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}
+
 class TtsProviders extends Table {
   TextColumn get id => text()();
   TextColumn get name => text().withLength(min: 1)();
@@ -32,6 +45,7 @@ class AudioTracks extends Table {
   TextColumn get sourceType => text().withDefault(const Constant('upload'))();
   // upload | record | quickTts | phaseTts | dialogTts
   DateTimeColumn get createdAt => dateTime()();
+  BoolColumn get missing => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -67,6 +81,9 @@ class VoiceAssets extends Table {
   TextColumn get avatarPath => text().nullable()();
   RealColumn get speed => real().withDefault(const Constant(1.0))();
   BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+  // Pinned folder name used under voice_asset/quick_tts/. Set once at first
+  // generation so renaming the display name doesn't rehome the folder.
+  TextColumn get folderSlug => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -117,6 +134,7 @@ class QuickTtsHistories extends Table {
   RealColumn get audioDuration => real().nullable()();
   TextColumn get error => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
+  BoolColumn get missing => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -131,6 +149,7 @@ class PhaseTtsProjects extends Table {
   TextColumn get scriptText => text().withDefault(const Constant(''))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get folderSlug => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -141,10 +160,14 @@ class PhaseTtsSegments extends Table {
   TextColumn get projectId => text().references(PhaseTtsProjects, #id)();
   IntColumn get orderIndex => integer()();
   TextColumn get segmentText => text()();
+  // Reserved for future multi-role workflows. The current Phase TTS editor
+  // uses [voiceAssetId] directly for simple per-sentence voice assignment.
+  TextColumn get speakerLabel => text().nullable()();
   TextColumn get voiceAssetId => text().nullable()();
   TextColumn get audioPath => text().nullable()();
   RealColumn get audioDuration => real().nullable()();
   TextColumn get error => text().nullable()();
+  BoolColumn get missing => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -158,6 +181,7 @@ class DialogTtsProjects extends Table {
   TextColumn get bankId => text().references(VoiceBanks, #id)();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get folderSlug => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -172,6 +196,79 @@ class DialogTtsLines extends Table {
   TextColumn get audioPath => text().nullable()();
   RealColumn get audioDuration => real().nullable()();
   TextColumn get error => text().nullable()();
+  BoolColumn get missing => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ─────────────── Video Dub Projects & Subtitle Cues ───────────────
+
+class VideoDubProjects extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text().withLength(min: 1)();
+  TextColumn get bankId => text().references(VoiceBanks, #id)();
+  TextColumn get videoPath => text().nullable()();
+  RealColumn get videoDurationSec => real().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get folderSlug => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class SubtitleCues extends Table {
+  TextColumn get id => text()();
+  TextColumn get projectId => text().references(VideoDubProjects, #id)();
+  IntColumn get orderIndex => integer()();
+  IntColumn get startMs => integer()();
+  IntColumn get endMs => integer()();
+  TextColumn get cueText => text()();
+  TextColumn get voiceAssetId => text().nullable()();
+  TextColumn get audioPath => text().nullable()();
+  RealColumn get audioDuration => real().nullable()();
+  TextColumn get error => text().nullable()();
+  BoolColumn get missing => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ─────────────── Timeline Clips ───────────────
+//
+// Editable timeline model for Dialog/Phase TTS projects. Each clip is a freely
+// positioned audio segment (generated from a line, imported from voice assets,
+// or uploaded as SFX). Clips support multi-lane layout and arbitrary start
+// times, so they exist independently of the source line's order.
+class TimelineClips extends Table {
+  TextColumn get id => text()();
+  // Parent project id (dialog or phase).
+  TextColumn get projectId => text()();
+  // 'dialog' | 'phase' — scopes queries by project type.
+  TextColumn get projectType => text()();
+  // Horizontal lane; 0 is the default lane. Negative lanes render above.
+  IntColumn get laneIndex => integer().withDefault(const Constant(0))();
+  // Clip start time on the timeline, in milliseconds.
+  IntColumn get startTimeMs => integer().withDefault(const Constant(0))();
+  // Audio duration in seconds (captured after first probe/playback).
+  RealColumn get durationSec => real().nullable()();
+  // On-disk audio path.
+  TextColumn get audioPath => text()();
+  // 'generated' | 'imported' | 'sfx' | 'video' | 'image' | 'video-audio' —
+  // drives visual + delete semantics. Video-dub clips may carry any of
+  // the latter three.
+  TextColumn get sourceType =>
+      text().withDefault(const Constant('generated'))();
+  // Optional id of the originating DialogTtsLine or PhaseTtsSegment.
+  TextColumn get sourceLineId => text().nullable()();
+  // Display label (voice name, filename, etc.).
+  TextColumn get label => text().withDefault(const Constant(''))();
+  BoolColumn get missing => boolean().withDefault(const Constant(false))();
+  // Premiere-style link group: V1 video + A1 video-audio clips share the
+  // same id so a drag/trim on V1 can move its A1 sibling in lock-step.
+  // Null = not linked.
+  TextColumn get linkGroupId => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

@@ -54,37 +54,67 @@ class OpenAiCompatibleAdapter extends TtsAdapter {
 
   @override
   Future<List<String>> getSpeakers() async {
-    // Try OpenAI-style /audio/voices first (e.g. CosyVoice under /v1/)
+    // Helper to parse a voice list from various server response shapes.
+    List<String>? parseVoiceList(dynamic data) {
+      List? list;
+      if (data is Map) {
+        // {"voices": [...]} or {"data": [...]}
+        list = (data['voices'] ?? data['data']) as List?;
+      } else if (data is List) {
+        list = data;
+      }
+      if (list == null || list.isEmpty) return null;
+      return list
+          .map((e) => e is Map
+              ? ((e['name'] ?? e['voice_id'] ?? e.toString()) as Object).toString()
+              : e.toString())
+          .toList();
+    }
+
+    // 1. Try OpenAI-style /audio/voices (relative to base URL, e.g. /v1/audio/voices)
     try {
       final response = await _dio.get(
         'audio/voices',
         options: Options(responseType: ResponseType.json),
       );
-      if (response.statusCode == 200 && response.data is Map) {
-        final data = response.data as Map<String, dynamic>;
-        if (data['voices'] is List) {
-          return (data['voices'] as List)
-              .map((e) =>
-                  e is Map ? (e['name'] ?? e.toString()) : e.toString())
-              .cast<String>()
-              .toList();
-        }
+      if (response.statusCode == 200) {
+        final voices = parseVoiceList(response.data);
+        if (voices != null && voices.isNotEmpty) return voices;
       }
     } catch (_) {}
 
-    // Fallback: try /speakers (SillyTavern-compatible)
+    // 2. Try /speakers relative to base URL (e.g. /v1/speakers)
     try {
       final response = await _dio.get(
         'speakers',
         options: Options(responseType: ResponseType.json),
       );
-      if (response.statusCode == 200 && response.data is List) {
-        return (response.data as List)
-            .map((e) => e is Map ? (e['name'] ?? e.toString()) : e.toString())
-            .cast<String>()
-            .toList();
+      if (response.statusCode == 200) {
+        final voices = parseVoiceList(response.data);
+        if (voices != null && voices.isNotEmpty) return voices;
       }
     } catch (_) {}
+
+    // 3. Root-level /speakers fallback — handles when base URL has a path
+    //    prefix like /v1 but speakers are served at the server root.
+    try {
+      final uri = Uri.parse(baseUrl);
+      if (uri.pathSegments.isNotEmpty) {
+        final port = uri.hasPort ? ':${uri.port}' : '';
+        final rootBase = '${uri.scheme}://${uri.host}$port/';
+        final rootDio = Dio(BaseOptions(
+          baseUrl: rootBase,
+          headers: _dio.options.headers,
+          responseType: ResponseType.json,
+        ));
+        final response = await rootDio.get('speakers');
+        if (response.statusCode == 200) {
+          final voices = parseVoiceList(response.data);
+          if (voices != null && voices.isNotEmpty) return voices;
+        }
+      }
+    } catch (_) {}
+
     return [];
   }
 

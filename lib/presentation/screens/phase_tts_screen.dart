@@ -1,23 +1,38 @@
+import 'dart:async';
 import 'dart:io';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
+import 'package:neiroha/data/storage/path_service.dart';
+import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
-import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/data/services/phase_segment_settings_file.dart';
+import 'package:neiroha/presentation/actions/phase_tts/exporter.dart';
+import 'package:neiroha/presentation/widgets/phase_tts/create_project_dialog.dart';
+import 'package:neiroha/presentation/widgets/phase_tts/editor_project_bar.dart';
+import 'package:neiroha/presentation/widgets/phase_tts/project_list_header.dart';
+import 'package:neiroha/presentation/widgets/phase_tts/segment_voice_panel.dart';
+import 'package:neiroha/presentation/widgets/phase_tts/script_workspace.dart';
+import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/providers/playback_provider.dart';
+
+typedef PhaseTtsExitGuard = Future<bool> Function();
 
 /// Phase TTS — long-form / novel TTS with project management.
-/// Left panel: project list. Right panel: script editor + segments.
+///
+/// Editor layout: left column hosts the script editor and split controls;
+/// right column hosts sentence-level voice selection and optional per-call
+/// generation overrides.
 class PhaseTtsScreen extends ConsumerStatefulWidget {
-  const PhaseTtsScreen({super.key});
+  final ValueChanged<PhaseTtsExitGuard?>? onExitGuardChanged;
+
+  const PhaseTtsScreen({super.key, this.onExitGuardChanged});
 
   @override
   ConsumerState<PhaseTtsScreen> createState() => _PhaseTtsScreenState();
@@ -27,199 +42,82 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
   String? _selectedProjectId;
   final _scriptController = TextEditingController();
   bool _generatingAll = false;
-  // Shared global player — owned by audioPlayerProvider; do not dispose here.
-  AudioPlayer get _player => ref.read(audioPlayerProvider);
+  bool _exportingMerged = false;
+  bool _dirty = false;
+  Future<dynamic> _pendingScriptWrite = Future<dynamic>.value();
+  final Set<String> _generatingSegmentIds = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    widget.onExitGuardChanged?.call(_confirmLeaveActiveProject);
+  }
 
   @override
   void dispose() {
+    widget.onExitGuardChanged?.call(null);
     _scriptController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_selectedProjectId == null) {
+      return _buildProjectListScreen();
+    }
+    return _buildProjectContent();
+  }
+
+  // ───────────────── List mode (card grid) ─────────────────
+
+  Widget _buildProjectListScreen() {
     final projectsAsync = ref.watch(phaseTtsProjectsStreamProvider);
-
     return Column(
       children: [
-        _buildHeader(context),
+        ProjectListHeader(onCreate: _createProject),
         const Divider(height: 1),
-        Expanded(
-          child: ResizableSplitPane(
-            initialLeftFraction: 0.3,
-            left: _buildProjectList(projectsAsync),
-            rightBuilder: (_) => _buildProjectContent(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ───────────────── Header ─────────────────
-
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-      child: Row(
-        children: [
-          Text('Phase TTS',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(width: 8),
-          Text('Novel & long-form narration',
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5), fontSize: 14)),
-          const Spacer(),
-          FilledButton.icon(
-            onPressed: _createProject,
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('New Project'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ───────────────── Project List (left) ─────────────────
-
-  Widget _buildProjectList(
-      AsyncValue<List<db.PhaseTtsProject>> projectsAsync) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Text('PROJECTS',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.4))),
-        ),
         Expanded(
           child: projectsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(child: Text('Error: $e')),
-            data: (projects) {
-              if (projects.isEmpty) {
-                return Center(
-                  child: Text('No projects yet',
-                      style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.3),
-                          fontSize: 13)),
-                );
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: projects.length,
-                itemBuilder: (ctx, i) {
-                  final proj = projects[i];
-                  final selected = _selectedProjectId == proj.id;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: Material(
-                      color: selected
-                          ? AppTheme.accentColor.withValues(alpha: 0.12)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(10),
-                        onTap: () {
-                          setState(() => _selectedProjectId = proj.id);
-                          _scriptController.text = proj.scriptText;
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
-                          child: Row(
-                            children: [
-                              Icon(Icons.auto_stories_rounded,
-                                  size: 18,
-                                  color: selected
-                                      ? AppTheme.accentColor
-                                      : Colors.white.withValues(alpha: 0.4)),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(proj.name,
-                                        style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500)),
-                                    Text(
-                                      _formatDate(proj.updatedAt),
-                                      style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.white
-                                              .withValues(alpha: 0.3)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuButton<String>(
-                                padding: EdgeInsets.zero,
-                                iconSize: 16,
-                                icon: Icon(Icons.more_vert_rounded,
-                                    size: 16,
-                                    color:
-                                        Colors.white.withValues(alpha: 0.3)),
-                                onSelected: (v) {
-                                  if (v == 'delete') {
-                                    ref
-                                        .read(databaseProvider)
-                                        .deletePhaseTtsProject(proj.id);
-                                    if (_selectedProjectId == proj.id) {
-                                      setState(
-                                          () => _selectedProjectId = null);
-                                    }
-                                  }
-                                },
-                                itemBuilder: (_) => [
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: Text('Delete',
-                                        style: TextStyle(
-                                            color: Colors.redAccent)),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
+            data: (projects) => ProjectCardGrid(
+              projects: [
+                for (final p in projects)
+                  ProjectCardData(
+                    id: p.id,
+                    name: p.name,
+                    updatedAt: p.updatedAt,
+                    icon: Icons.auto_stories_rounded,
+                    subtitle: _scriptPreview(p.scriptText),
+                  ),
+              ],
+              onOpen: (id) {
+                final proj = projects.firstWhere((p) => p.id == id);
+                setState(() {
+                  _selectedProjectId = id;
+                  _dirty = false;
+                });
+                _scriptController.text = proj.scriptText;
+              },
+              onDelete: (id) {
+                ref.read(databaseProvider).deletePhaseTtsProject(id);
+              },
+            ),
           ),
         ),
       ],
     );
   }
 
-  // ───────────────── Project Content (right) ─────────────────
+  String? _scriptPreview(String scriptText) {
+    final trimmed = scriptText.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (trimmed.isEmpty) return null;
+    return trimmed.length > 60 ? '${trimmed.substring(0, 60)}…' : trimmed;
+  }
+
+  // ───────────────── Editor mode ─────────────────
 
   Widget _buildProjectContent() {
-    if (_selectedProjectId == null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.auto_stories_rounded,
-                size: 64, color: Colors.white.withValues(alpha: 0.1)),
-            const SizedBox(height: 16),
-            Text('Select or create a project',
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4), fontSize: 15)),
-          ],
-        ),
-      );
-    }
-
     final projectId = _selectedProjectId!;
     final projectsAsync = ref.watch(phaseTtsProjectsStreamProvider);
     final segmentsAsync = ref.watch(phaseTtsSegmentsStreamProvider(projectId));
@@ -232,7 +130,6 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Get bank members for voice selection
     final membersAsync = ref.watch(bankMembersStreamProvider(project.bankId));
     final bankMembers = membersAsync.valueOrNull ?? [];
     final allAssets = assetsAsync.valueOrNull ?? [];
@@ -242,96 +139,37 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         .whereType<db.VoiceAsset>()
         .toList();
 
+    final segments = segmentsAsync.valueOrNull ?? const <db.PhaseTtsSegment>[];
+    final hasGeneratedAudio = segments.any(
+      (s) => s.audioPath != null && !s.missing,
+    );
+
     return Column(
       children: [
-        // Project info bar
-        _buildProjectBar(project, bankAssets),
+        EditorProjectBar(
+          project: project,
+          voiceCount: bankAssets.length,
+          exporting: _exportingMerged,
+          dirty: _dirty,
+          onExportMerged: hasGeneratedAudio
+              ? () => unawaited(_exportMerged(project, segments))
+              : null,
+          onClose: () => unawaited(_back(project)),
+          onSave: () => unawaited(_saveProject(project)),
+        ),
         const Divider(height: 1),
         Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Script editor
-              Expanded(flex: 3, child: _buildScriptEditor(project)),
-              const VerticalDivider(width: 1),
-              // Segments
-              Expanded(
-                  flex: 2,
-                  child: _buildSegmentPanel(
-                      project, segmentsAsync, bankAssets)),
-            ],
-          ),
-        ),
-        _buildActionBar(project, segmentsAsync, bankAssets),
-      ],
-    );
-  }
-
-  Widget _buildProjectBar(
-      db.PhaseTtsProject project, List<db.VoiceAsset> bankAssets) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-      child: Row(
-        children: [
-          Icon(Icons.auto_stories_rounded,
-              color: AppTheme.accentColor, size: 18),
-          const SizedBox(width: 10),
-          Text(project.name,
-              style:
-                  const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceDim,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text('${bankAssets.length} voices',
-                style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.5))),
-          ),
-          const Spacer(),
-          TextButton.icon(
-            onPressed: _autoSplit,
-            icon: const Icon(Icons.splitscreen_rounded, size: 16),
-            label: const Text('Auto Split'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildScriptEditor(db.PhaseTtsProject project) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Text('SCRIPT',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.4))),
-        ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: TextField(
+          child: ResizableSplitPane(
+            initialLeftFraction: 0.55,
+            left: PhaseScriptWorkspace(
               controller: _scriptController,
-              maxLines: null,
-              expands: true,
-              textAlignVertical: TextAlignVertical.top,
-              onChanged: (_) => _saveScript(project),
-              decoration: InputDecoration(
-                hintText:
-                    'Paste your novel text here...\n\nEach paragraph becomes a TTS segment.',
-                hintStyle:
-                    TextStyle(color: Colors.white.withValues(alpha: 0.25)),
-                filled: true,
-                fillColor: AppTheme.surfaceDim,
-              ),
+              onScriptChanged: () => _saveScript(project),
+              onAutoSplit: (rule) => _autoSplit(project, rule),
+            ),
+            rightBuilder: (_) => _buildRightPane(
+              project: project,
+              segments: segments,
+              bankAssets: bankAssets,
             ),
           ),
         ),
@@ -339,231 +177,268 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     );
   }
 
-  Widget _buildSegmentPanel(
-    db.PhaseTtsProject project,
-    AsyncValue<List<db.PhaseTtsSegment>> segmentsAsync,
-    List<db.VoiceAsset> bankAssets,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Text('SEGMENTS',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.4))),
-        ),
-        Expanded(
-          child: segmentsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
-            data: (segments) {
-              if (segments.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.segment_rounded,
-                          size: 48,
-                          color: Colors.white.withValues(alpha: 0.15)),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Click "Auto Split" to create\nsegments from script',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            fontSize: 13),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: segments.length,
-                itemBuilder: (ctx, i) => _SegmentCard(
-                  segment: segments[i],
-                  index: i,
-                  bankAssets: bankAssets,
-                  player: _player,
-                  onVoiceChanged: (voiceId) => _updateSegmentVoice(
-                      segments[i], voiceId),
-                  onDelete: () => ref
-                      .read(databaseProvider)
-                      .deletePhaseTtsSegment(segments[i].id),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+  Widget _buildRightPane({
+    required db.PhaseTtsProject project,
+    required List<db.PhaseTtsSegment> segments,
+    required List<db.VoiceAsset> bankAssets,
+  }) {
+    return SegmentVoicePanel(
+      project: project,
+      segments: segments,
+      bankAssets: bankAssets,
+      generatingSegmentIds: _generatingSegmentIds,
+      onApplyVoiceToAll: (voiceId) =>
+          _applyVoiceToAll(project, segments, voiceId),
+      onVoiceChanged: (segment, voiceId) =>
+          _updateSegmentVoice(segment, voiceId),
+      onPlay: (segment, index) => _playSegment(segment, index, bankAssets),
+      onGenerate: bankAssets.isEmpty
+          ? null
+          : (segment) => _generateOne(project, segment, bankAssets),
+      onDelete: (id) {
+        _markDirty();
+        unawaited(ref.read(databaseProvider).deletePhaseTtsSegment(id));
+      },
+      onChanged: _markDirty,
+      onPlayAll: () => unawaited(_playAll(segments, bankAssets)),
+      onGenerateAll: () =>
+          unawaited(_generateAll(project, segments, bankAssets)),
+      generatingAll: _generatingAll,
     );
   }
 
-  Widget _buildActionBar(
-    db.PhaseTtsProject project,
-    AsyncValue<List<db.PhaseTtsSegment>> segmentsAsync,
-    List<db.VoiceAsset> bankAssets,
-  ) {
-    final segments = segmentsAsync.valueOrNull ?? [];
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceBright,
-        border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+  void _markDirty() {
+    if (_dirty || !mounted) return;
+    setState(() => _dirty = true);
+  }
+
+  Future<void> _saveProject(db.PhaseTtsProject project) async {
+    await _pendingScriptWrite;
+    await ref
+        .read(databaseProvider)
+        .updatePhaseTtsProject(
+          project.copyWith(
+            scriptText: _scriptController.text,
+            updatedAt: DateTime.now(),
+          ),
+        );
+    if (!mounted) return;
+    setState(() => _dirty = false);
+    _showSnack('Saved');
+  }
+
+  Future<bool> _back(db.PhaseTtsProject project) async {
+    final canLeave = await _confirmLeave(project);
+    if (canLeave && mounted) {
+      setState(() {
+        _selectedProjectId = null;
+        _dirty = false;
+      });
+    }
+    return canLeave;
+  }
+
+  Future<bool> _confirmLeaveActiveProject() async {
+    final projectId = _selectedProjectId;
+    if (projectId == null) return true;
+    final project = await ref
+        .read(databaseProvider)
+        .getPhaseTtsProjectById(projectId);
+    if (project == null) return true;
+    return _confirmLeave(project);
+  }
+
+  Future<bool> _confirmLeave(db.PhaseTtsProject project) async {
+    if (!_dirty) return true;
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Unsaved changes'),
+        content: const Text(
+          'You have unsaved changes in this project. Save before leaving?',
         ),
-      ),
-      child: Row(
-        children: [
-          Text('${segments.length} segments',
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
-          const Spacer(),
-          FilledButton.icon(
-            onPressed:
-                segments.isEmpty || _generatingAll || bankAssets.isEmpty
-                    ? null
-                    : () => _generateAll(project, segments, bankAssets),
-            icon: _generatingAll
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.auto_awesome_rounded, size: 18),
-            label: const Text('Generate All'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'cancel'),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'discard'),
+            child: const Text("Don't save"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, 'save'),
+            child: const Text('Save & Leave'),
           ),
         ],
       ),
     );
+    if (choice == 'save') {
+      await _saveProject(project);
+      return true;
+    }
+    return choice == 'discard';
   }
 
   // ───────────────── Actions ─────────────────
 
+  void _playSegment(
+    db.PhaseTtsSegment seg,
+    int index,
+    List<db.VoiceAsset> bankAssets,
+  ) {
+    if (seg.audioPath == null || !File(seg.audioPath!).existsSync()) return;
+    final voiceName =
+        bankAssets.where((a) => a.id == seg.voiceAssetId).firstOrNull?.name ??
+        'Segment ${index + 1}';
+    ref
+        .read(playbackNotifierProvider.notifier)
+        .load(
+          seg.audioPath!,
+          seg.segmentText,
+          subtitle: voiceName,
+          sourceTag: phaseTtsPlaybackSource,
+        );
+  }
+
+  Future<void> _playAll(
+    List<db.PhaseTtsSegment> segments,
+    List<db.VoiceAsset> bankAssets,
+  ) async {
+    final ordered = [...segments]
+      ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+    final assetMap = {for (final asset in bankAssets) asset.id: asset};
+    final items = [
+      for (var i = 0; i < ordered.length; i++)
+        if (ordered[i].audioPath != null &&
+            !ordered[i].missing &&
+            File(ordered[i].audioPath!).existsSync())
+          (
+            audioPath: ordered[i].audioPath!,
+            title: ordered[i].segmentText,
+            subtitle:
+                assetMap[ordered[i].voiceAssetId]?.name ?? 'Segment ${i + 1}',
+          ),
+    ];
+    if (items.isEmpty) {
+      _showSnack('No generated audio to play.');
+      return;
+    }
+    await ref.read(playbackNotifierProvider.notifier).playSequenceFrom(
+          items,
+          sourceTag: phaseTtsPlaybackSource,
+        );
+  }
+
   void _createProject() async {
-    final banksAsync = ref.read(voiceBanksStreamProvider);
-    final banks = banksAsync.valueOrNull ?? [];
+    final banks = ref.read(voiceBanksStreamProvider).valueOrNull ?? const [];
     if (banks.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Create a Voice Bank first')));
+          const SnackBar(content: Text('Create a Voice Bank first')),
+        );
       }
       return;
     }
 
-    final nameCtrl = TextEditingController();
-    String selectedBankId = banks.first.id;
-
-    final result = await showDialog<(String, String)?>(
+    final result = await showCreatePhaseTtsProjectDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('New Phase TTS Project'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                autofocus: true,
-                decoration: const InputDecoration(labelText: 'Project name'),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Voice Bank'),
-                isExpanded: true,
-                initialValue: selectedBankId,
-                items: banks
-                    .map((b) => DropdownMenuItem(
-                        value: b.id, child: Text(b.name)))
-                    .toList(),
-                onChanged: (v) {
-                  if (v != null) {
-                    setDialogState(() => selectedBankId = v);
-                  }
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel')),
-            FilledButton(
-                onPressed: () =>
-                    Navigator.pop(ctx, (nameCtrl.text, selectedBankId)),
-                child: const Text('Create')),
-          ],
-        ),
-      ),
+      banks: banks,
     );
+    if (result == null) return;
 
-    if (result != null && result.$1.isNotEmpty) {
-      final id = const Uuid().v4();
-      final now = DateTime.now();
-      await ref.read(databaseProvider).insertPhaseTtsProject(
-            db.PhaseTtsProjectsCompanion(
-              id: Value(id),
-              name: Value(result.$1),
-              bankId: Value(result.$2),
-              createdAt: Value(now),
-              updatedAt: Value(now),
-            ),
-          );
+    final id = const Uuid().v4();
+    final now = DateTime.now();
+    await ref
+        .read(databaseProvider)
+        .insertPhaseTtsProject(
+          db.PhaseTtsProjectsCompanion(
+            id: Value(id),
+            name: Value(result.name),
+            bankId: Value(result.bankId),
+            createdAt: Value(now),
+            updatedAt: Value(now),
+          ),
+        );
+    if (mounted) {
       setState(() {
         _selectedProjectId = id;
+        _dirty = false;
         _scriptController.clear();
       });
     }
   }
 
   void _saveScript(db.PhaseTtsProject project) {
-    // Debounced save — update DB with current script text
-    ref.read(databaseProvider).updatePhaseTtsProject(
-          project.copyWith(
-            scriptText: _scriptController.text,
-            updatedAt: DateTime.now(),
-          ),
-        );
+    _markDirty();
+    // Autosave the text itself; the Save button confirms the edit and bumps
+    // updatedAt so the project moves in the list.
+    final database = ref.read(databaseProvider);
+    final nextProject = project.copyWith(scriptText: _scriptController.text);
+    _pendingScriptWrite = _pendingScriptWrite.catchError((_) {}).then((_) {
+      return database.updatePhaseTtsProject(nextProject);
+    });
   }
 
-  void _autoSplit() async {
-    if (_selectedProjectId == null) return;
-    final text = _scriptController.text.trim();
-    if (text.isEmpty) return;
+  Future<void> _autoSplit(db.PhaseTtsProject project, SplitRule rule) async {
+    final text = _scriptController.text;
+    if (text.trim().isEmpty) return;
+    _markDirty();
 
-    final projectId = _selectedProjectId!;
     final database = ref.read(databaseProvider);
+    await database.clearPhaseTtsSegments(project.id);
+    final slug = await ref
+        .read(storageServiceProvider)
+        .ensurePhaseProjectSlug(project.id);
+    await ref.read(phaseSegmentSettingsFileServiceProvider).delete(slug);
+    final segments = applySplitRule(rule, text);
 
-    // Clear existing segments
-    await database.clearPhaseTtsSegments(projectId);
-
-    // Split by double newlines
-    final paragraphs = text
-        .split(RegExp(r'\n\s*\n'))
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-
-    for (int i = 0; i < paragraphs.length; i++) {
+    for (var i = 0; i < segments.length; i++) {
       await database.insertPhaseTtsSegment(
         db.PhaseTtsSegmentsCompanion(
           id: Value(const Uuid().v4()),
-          projectId: Value(projectId),
+          projectId: Value(project.id),
           orderIndex: Value(i),
-          segmentText: Value(paragraphs[i]),
+          segmentText: Value(segments[i]),
         ),
       );
     }
   }
 
-  void _updateSegmentVoice(db.PhaseTtsSegment segment, String? voiceId) {
-    ref.read(databaseProvider).updatePhaseTtsSegment(
-          segment.copyWith(voiceAssetId: Value(voiceId)),
-        );
+  Future<void> _applyVoiceToAll(
+    db.PhaseTtsProject project,
+    List<db.PhaseTtsSegment> currentSegments,
+    String? voiceId,
+  ) async {
+    final database = ref.read(databaseProvider);
+    final segments = currentSegments.isEmpty
+        ? await database.getPhaseTtsSegments(project.id)
+        : currentSegments;
+    for (final segment in segments) {
+      await database.updatePhaseTtsSegment(
+        segment.copyWith(voiceAssetId: Value(voiceId)),
+      );
+    }
+    _markDirty();
+  }
+
+  Future<void> _updateSegmentVoice(
+    db.PhaseTtsSegment segment,
+    String? voiceId,
+  ) async {
+    await ref
+        .read(databaseProvider)
+        .updatePhaseTtsSegment(segment.copyWith(voiceAssetId: Value(voiceId)));
+    _markDirty();
+  }
+
+  Future<PhaseSegmentSettings> _loadSegmentSettings(
+    db.PhaseTtsProject project,
+  ) async {
+    final slug = await ref
+        .read(storageServiceProvider)
+        .ensurePhaseProjectSlug(project.id);
+    return ref.read(phaseSegmentSettingsFileServiceProvider).load(slug);
   }
 
   Future<void> _generateAll(
@@ -571,174 +446,151 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     List<db.PhaseTtsSegment> segments,
     List<db.VoiceAsset> bankAssets,
   ) async {
-    final providers = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
-    final assetMap = {for (final a in bankAssets) a.id: a};
-    final providerMap = {for (final p in providers) p.id: p};
-
+    if (segments.isEmpty || bankAssets.isEmpty || _generatingAll) return;
     setState(() => _generatingAll = true);
+    try {
+      final segmentSettings = await _loadSegmentSettings(project);
+      for (final seg in segments) {
+        if (seg.audioPath != null) continue;
+        if (seg.voiceAssetId == null) continue;
+        await _generateOne(
+          project,
+          seg,
+          bankAssets,
+          segmentSettings: segmentSettings,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _generatingAll = false);
+    }
+  }
 
-    final dir = await getApplicationSupportDirectory();
-    final outDir = Directory(p.join(dir.path, 'phase_tts', project.id));
-    if (!outDir.existsSync()) outDir.createSync(recursive: true);
-
+  Future<void> _generateOne(
+    db.PhaseTtsProject project,
+    db.PhaseTtsSegment seg,
+    List<db.VoiceAsset> bankAssets, {
+    PhaseSegmentSettings? segmentSettings,
+  }) async {
+    if (seg.voiceAssetId == null) return;
     final database = ref.read(databaseProvider);
 
-    for (final seg in segments) {
-      if (seg.audioPath != null) continue; // skip already generated
-      if (seg.voiceAssetId == null) continue; // skip unassigned
-
+    setState(() => _generatingSegmentIds.add(seg.id));
+    try {
+      final providers = await database.getAllProviders();
+      final assetMap = {for (final a in bankAssets) a.id: a};
+      final providerMap = {for (final p in providers) p.id: p};
       final asset = assetMap[seg.voiceAssetId];
-      if (asset == null) continue;
+      if (asset == null) return;
       final provider = providerMap[asset.providerId];
-      if (provider == null) continue;
+      if (provider == null) return;
 
-      try {
-        final adapter = createAdapter(provider, modelName: asset.modelName);
-        final result = await adapter.synthesize(TtsRequest(
+      final settings = segmentSettings ?? await _loadSegmentSettings(project);
+      final overrides = settings.bySegmentId[seg.id];
+      final instructionOverride = overrides?.voiceInstruction?.trim();
+      final audioTagPrefix = overrides?.audioTagPrefix?.trim();
+      final slug = await ref
+          .read(storageServiceProvider)
+          .ensurePhaseProjectSlug(project.id);
+      final outDir = await PathService.instance.phaseTtsDir(slug);
+
+      final adapter = createAdapter(provider, modelName: asset.modelName);
+      final result = await adapter.synthesize(
+        TtsRequest(
           text: seg.segmentText,
           voice: asset.presetVoiceName ?? asset.name,
           speed: asset.speed,
-          textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
+          textLang: provider.adapterType == 'gptSovits'
+              ? asset.modelName
+              : null,
           presetVoiceName: asset.presetVoiceName,
-          voiceInstruction: asset.voiceInstruction,
+          voiceInstruction: _supportsVoiceInstruction(asset, provider)
+              ? (instructionOverride == null || instructionOverride.isEmpty
+                    ? asset.voiceInstruction
+                    : instructionOverride)
+              : null,
+          audioTagPrefix: _supportsAudioTags(asset, provider)
+              ? (audioTagPrefix == null || audioTagPrefix.isEmpty
+                    ? null
+                    : audioTagPrefix)
+              : null,
           refAudioPath: asset.refAudioPath,
           promptText: asset.promptText,
           promptLang: asset.promptLang,
-        ));
-        final ext = result.contentType.contains('wav') ? 'wav' : 'mp3';
-        final filePath = p.join(outDir.path,
-            'seg_${seg.orderIndex}_${DateTime.now().millisecondsSinceEpoch}.$ext');
-        await File(filePath).writeAsBytes(result.audioBytes);
-
-        await database.updatePhaseTtsSegment(
-          seg.copyWith(audioPath: Value(filePath), error: const Value(null)),
-        );
-      } catch (e) {
-        await database.updatePhaseTtsSegment(
-          seg.copyWith(error: Value(e.toString())),
-        );
-      }
-    }
-
-    if (mounted) setState(() => _generatingAll = false);
-  }
-
-  String _formatDate(DateTime dt) {
-    return '${dt.month}/${dt.day} ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
-  }
-}
-
-// ─────────────── Segment Card ───────────────
-
-class _SegmentCard extends StatelessWidget {
-  final db.PhaseTtsSegment segment;
-  final int index;
-  final List<db.VoiceAsset> bankAssets;
-  final AudioPlayer player;
-  final ValueChanged<String?> onVoiceChanged;
-  final VoidCallback onDelete;
-
-  const _SegmentCard({
-    required this.segment,
-    required this.index,
-    required this.bankAssets,
-    required this.player,
-    required this.onVoiceChanged,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 6),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                // Segment number
-                Container(
-                  width: 28,
-                  height: 28,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceDim,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text('${index + 1}',
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.5))),
-                ),
-                const SizedBox(width: 8),
-                // Voice selector
-                Expanded(
-                  child: SizedBox(
-                    height: 36,
-                    child: DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        hintText: 'Voice',
-                        isDense: true,
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      ),
-                      isExpanded: true,
-                      initialValue:
-                          bankAssets.any((a) => a.id == segment.voiceAssetId)
-                              ? segment.voiceAssetId
-                              : null,
-                      items: bankAssets
-                          .map((a) => DropdownMenuItem(
-                              value: a.id,
-                              child: Text(a.name,
-                                  style: const TextStyle(fontSize: 12),
-                                  overflow: TextOverflow.ellipsis)))
-                          .toList(),
-                      onChanged: onVoiceChanged,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                // Status / play / error
-                if (segment.audioPath != null)
-                  IconButton(
-                    icon: const Icon(Icons.play_arrow_rounded, size: 18),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    onPressed: () =>
-                        player.play(DeviceFileSource(segment.audioPath!)),
-                  )
-                else if (segment.error != null)
-                  Tooltip(
-                    message: segment.error!,
-                    child: const Icon(Icons.error_rounded,
-                        size: 18, color: Colors.redAccent),
-                  )
-                else
-                  Icon(Icons.pending_rounded,
-                      size: 18,
-                      color: Colors.white.withValues(alpha: 0.2)),
-                const SizedBox(width: 4),
-                IconButton(
-                  icon: Icon(Icons.close_rounded,
-                      size: 16,
-                      color: Colors.white.withValues(alpha: 0.3)),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: onDelete,
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(segment.segmentText,
-                style: const TextStyle(fontSize: 13),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis),
-          ],
         ),
-      ),
-    );
+      );
+      final ext = result.contentType.contains('wav') ? '.wav' : '.mp3';
+      final filePath = PathService.dedupeFilename(
+        outDir,
+        'seg_${seg.orderIndex}_${PathService.formatTimestamp()}',
+        ext,
+      );
+      await File(filePath).writeAsBytes(result.audioBytes);
+      final durationSec = await measureAudioDuration(filePath);
+      await database.updatePhaseTtsSegment(
+        seg.copyWith(
+          audioPath: Value(filePath),
+          audioDuration: Value(durationSec),
+          error: const Value(null),
+        ),
+      );
+      _markDirty();
+    } catch (e) {
+      await database.updatePhaseTtsSegment(
+        seg.copyWith(error: Value(e.toString())),
+      );
+      _markDirty();
+    } finally {
+      if (mounted) setState(() => _generatingSegmentIds.remove(seg.id));
+    }
+  }
+
+  bool _supportsVoiceInstruction(
+    db.VoiceAsset asset,
+    db.TtsProvider provider,
+  ) {
+    return switch (provider.adapterType) {
+      'chatCompletionsTts' => _isMimoTtsModel(asset, provider),
+      'cosyvoice' => true,
+      'voxcpm2Native' => true,
+      'geminiTts' => true,
+      _ => false,
+    };
+  }
+
+  bool _supportsAudioTags(db.VoiceAsset asset, db.TtsProvider provider) {
+    return _isMimoTtsModel(asset, provider);
+  }
+
+  bool _isMimoTtsModel(db.VoiceAsset asset, db.TtsProvider provider) {
+    final model = (asset.modelName ?? provider.defaultModelName).toLowerCase();
+    return provider.adapterType == 'chatCompletionsTts' &&
+        model.contains('mimo') &&
+        (model.contains('tts') ||
+            model.contains('voiceclone') ||
+            model.contains('voicedesign'));
+  }
+
+  Future<void> _exportMerged(
+    db.PhaseTtsProject project,
+    List<db.PhaseTtsSegment> segments,
+  ) async {
+    setState(() => _exportingMerged = true);
+    try {
+      await exportPhaseTtsMergedAudio(
+        context: context,
+        ref: ref,
+        project: project,
+        segments: segments,
+      );
+    } finally {
+      if (mounted) setState(() => _exportingMerged = false);
+    }
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

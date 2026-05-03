@@ -2,32 +2,41 @@ enum AdapterType {
   openaiCompatible,
   gptSovits,
   cosyvoice,
+  voxcpm2Native,
   chatCompletionsTts,
   azureTts,
-  systemTts;
+  systemTts,
+  geminiTts;
 
   String get displayName => switch (this) {
         openaiCompatible => 'OpenAI TTS API Compatible',
         gptSovits => 'GPT-SoVITS',
         cosyvoice => 'CosyVoice Native',
+        voxcpm2Native => 'VoxCPM2 Native',
         chatCompletionsTts => 'OpenAI Chat Completions TTS',
         azureTts => 'Azure Speech Service',
         systemTts => 'Windows System TTS',
+        geminiTts => 'Google Gemini TTS',
       };
 
   String get defaultModel => switch (this) {
         openaiCompatible => 'tts-1',
         gptSovits => 'gpt-sovits',
         cosyvoice => '',
+        voxcpm2Native => 'voxcpm2',
         chatCompletionsTts => 'mimo-v2-tts',
         azureTts => '',
         systemTts => '',
+        geminiTts => 'gemini-2.5-flash-preview-tts',
       };
 
   /// Whether this adapter type fetches models (synthesis engines) from the API.
   bool get supportsModelQuery => switch (this) {
         openaiCompatible => true,
         chatCompletionsTts => true,
+        // Gemini has only 2 free TTS models — the adapter returns them from
+        // a hard-coded list, so we still want the picker UI to show them.
+        geminiTts => true,
         _ => false,
       };
 
@@ -37,6 +46,7 @@ enum AdapterType {
         systemTts => true,
         openaiCompatible => true,
         chatCompletionsTts => true,
+        geminiTts => true,
         _ => false,
       };
 
@@ -46,6 +56,7 @@ enum AdapterType {
   bool get hasSeparateModelAndVoice => switch (this) {
         openaiCompatible => true,
         chatCompletionsTts => true,
+        geminiTts => true,
         _ => false,
       };
 
@@ -55,6 +66,7 @@ enum AdapterType {
         chatCompletionsTts => false,
         azureTts => false,
         systemTts => false,
+        geminiTts => false,
         _ => true,
       };
 }

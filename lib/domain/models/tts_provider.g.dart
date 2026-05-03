@@ -29,9 +29,10 @@ Map<String, dynamic> _$$TtsProviderImplToJson(_$TtsProviderImpl instance) =>
 const _$AdapterTypeEnumMap = {
   AdapterType.openaiCompatible: 'openaiCompatible',
   AdapterType.gptSovits: 'gptSovits',
-  AdapterType.qwen3Native: 'qwen3Native',
   AdapterType.cosyvoice: 'cosyvoice',
+  AdapterType.voxcpm2Native: 'voxcpm2Native',
   AdapterType.chatCompletionsTts: 'chatCompletionsTts',
   AdapterType.azureTts: 'azureTts',
   AdapterType.systemTts: 'systemTts',
+  AdapterType.geminiTts: 'geminiTts',
 };

@@ -6,13 +6,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import 'package:neiroha/data/storage/path_service.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/providers/playback_provider.dart';
 
 /// Voice Asset library — a collection of single audio tracks that the user
 /// has uploaded, recorded, or imported from generated TTS output. These can
@@ -73,10 +74,15 @@ class VoiceAssetScreen extends ConsumerWidget {
                   .headlineSmall
                   ?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(width: 8),
-          Text('Single audio tracks for voice cloning',
+          Expanded(
+            child: Text(
+              'Single audio tracks for voice cloning',
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5), fontSize: 14)),
-          const Spacer(),
+                  color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
+            ),
+          ),
+          const SizedBox(width: 8),
           OutlinedButton.icon(
             onPressed: () => _recordTrack(context),
             icon: const Icon(Icons.mic_rounded, size: 18),
@@ -130,13 +136,17 @@ class VoiceAssetScreen extends ConsumerWidget {
     final src = File(result.files.single.path!);
     if (!await src.exists()) return;
 
-    // Copy into AppSupportDir/voice_assets/
-    final dir = await getApplicationSupportDirectory();
-    final assetDir = Directory(p.join(dir.path, 'voice_assets'));
-    if (!await assetDir.exists()) await assetDir.create(recursive: true);
+    // Copy into the managed voice_character_ref/ folder so the library is
+    // always discoverable under the user's configured voice-asset root.
+    final assetDir = await PathService.instance.voiceCharacterRefDir();
     final id = const Uuid().v4();
     final ext = p.extension(src.path).isEmpty ? '.wav' : p.extension(src.path);
-    final dstPath = p.join(assetDir.path, '$id$ext');
+    final base = p.basenameWithoutExtension(src.path);
+    final dstPath = PathService.dedupeFilename(
+      assetDir,
+      '${PathService.sanitizeSegment(base, fallback: 'track')}_${PathService.formatTimestamp()}',
+      ext,
+    );
     await src.copy(dstPath);
 
     // Detect duration
@@ -290,8 +300,6 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
   late final TextEditingController _descCtrl;
   late final TextEditingController _refTextCtrl;
   late final TextEditingController _refLangCtrl;
-  final _player = AudioPlayer();
-  bool _playing = false;
   String? _loadedTrackId;
 
   @override
@@ -302,18 +310,12 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
     _refTextCtrl = TextEditingController(text: widget.track.refText ?? '');
     _refLangCtrl = TextEditingController(text: widget.track.refLang ?? '');
     _loadedTrackId = widget.track.id;
-
-    _player.onPlayerComplete.listen((_) {
-      if (mounted) setState(() => _playing = false);
-    });
   }
 
   @override
   void didUpdateWidget(covariant _TrackInspector old) {
     super.didUpdateWidget(old);
     if (old.track.id != widget.track.id) {
-      _player.stop();
-      _playing = false;
       _nameCtrl.text = widget.track.name;
       _descCtrl.text = widget.track.description ?? '';
       _refTextCtrl.text = widget.track.refText ?? '';
@@ -328,14 +330,14 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
     _descCtrl.dispose();
     _refTextCtrl.dispose();
     _refLangCtrl.dispose();
-    _player.dispose();
     super.dispose();
   }
 
   Future<void> _togglePlay() async {
-    if (_playing) {
-      await _player.stop();
-      setState(() => _playing = false);
+    final playback = ref.read(playbackNotifierProvider);
+    final notifier = ref.read(playbackNotifierProvider.notifier);
+    if (playback.audioPath == widget.track.audioPath && playback.isPlaying) {
+      await notifier.stop();
       return;
     }
     if (!await File(widget.track.audioPath).exists()) {
@@ -345,17 +347,18 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
       }
       return;
     }
-    await _player.play(DeviceFileSource(widget.track.audioPath));
-    setState(() => _playing = true);
+    await notifier.load(
+      widget.track.audioPath,
+      widget.track.name,
+      subtitle: widget.track.description,
+    );
   }
 
   Future<void> _pickAvatar() async {
     final result = await FilePicker.platform.pickFiles(type: FileType.image);
     if (result == null || result.files.single.path == null) return;
     final src = File(result.files.single.path!);
-    final dir = await getApplicationSupportDirectory();
-    final avatarDir = Directory(p.join(dir.path, 'avatars'));
-    if (!await avatarDir.exists()) await avatarDir.create(recursive: true);
+    final avatarDir = await PathService.instance.avatarsDir();
     final ext = p.extension(src.path).isEmpty ? '.png' : p.extension(src.path);
     final dst = p.join(avatarDir.path, '${widget.track.id}$ext');
     await src.copy(dst);
@@ -417,6 +420,9 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
   Widget build(BuildContext context) {
     // Suppress "unused" lint when track refreshes mid-edit.
     assert(_loadedTrackId == widget.track.id);
+    final playback = ref.watch(playbackNotifierProvider);
+    final isPlayingThis = playback.audioPath == widget.track.audioPath &&
+        playback.isPlaying;
     return Container(
       color: AppTheme.surfaceDim,
       child: ListView(
@@ -463,7 +469,7 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
               children: [
                 IconButton(
                   onPressed: _togglePlay,
-                  icon: Icon(_playing
+                  icon: Icon(isPlayingThis
                       ? Icons.stop_circle_rounded
                       : Icons.play_circle_rounded),
                   color: AppTheme.accentColor,

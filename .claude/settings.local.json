@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(export PATH=\"$PATH:/d/Programs/Flutter_SDK/flutter/bin\")",
-      "Bash(flutter pub:*)",
-      "Bash(flutter analyze:*)"
-    ]
-  }
-}

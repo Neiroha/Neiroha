@@ -9,13 +9,13 @@ import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/server/api_server.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final serverRunning = ref.watch(serverRunningProvider);
     final startup = ref.watch(storageStartupProvider);
 
     return ListView(
@@ -31,41 +31,7 @@ class SettingsScreen extends ConsumerWidget {
 
         _SectionHeader(title: 'API SERVER'),
         const SizedBox(height: 8),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _SettingsRow(
-                  icon: Icons.power_settings_new_rounded,
-                  title: 'API Server',
-                  subtitle: serverRunning
-                      ? 'Running on port ${ref.read(apiServerProvider).port}'
-                      : 'Stopped',
-                  trailing: Switch(
-                    value: serverRunning,
-                    onChanged: (value) async {
-                      final server = ref.read(apiServerProvider);
-                      if (value) {
-                        await server.start();
-                      } else {
-                        await server.stop();
-                      }
-                      ref.read(serverRunningProvider.notifier).state = value;
-                    },
-                  ),
-                ),
-                const Divider(),
-                _SettingsRow(
-                  icon: Icons.numbers_rounded,
-                  title: 'Port',
-                  subtitle: '${ref.read(apiServerProvider).port}',
-                  trailing: const SizedBox.shrink(),
-                ),
-              ],
-            ),
-          ),
-        ),
+        const _ApiServerCard(),
         const SizedBox(height: 24),
 
         _SectionHeader(title: 'STORAGE'),
@@ -94,6 +60,222 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ───────────────────────────── API server card ─────────────────────────────
+
+class _ApiServerCard extends ConsumerStatefulWidget {
+  const _ApiServerCard();
+
+  @override
+  ConsumerState<_ApiServerCard> createState() => _ApiServerCardState();
+}
+
+class _ApiServerCardState extends ConsumerState<_ApiServerCard> {
+  final _hostCtrl = TextEditingController();
+  final _portCtrl = TextEditingController();
+  final _keyCtrl = TextEditingController();
+  final _corsCtrl = TextEditingController();
+  final _rateCtrl = TextEditingController();
+  bool _hydrated = false;
+  bool _showKey = false;
+
+  @override
+  void dispose() {
+    _hostCtrl.dispose();
+    _portCtrl.dispose();
+    _keyCtrl.dispose();
+    _corsCtrl.dispose();
+    _rateCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _hydrate() async {
+    final cfg = await ApiServerConfig.load(ref.read(databaseProvider));
+    if (!mounted) return;
+    setState(() {
+      _hostCtrl.text = cfg.bindHost;
+      _portCtrl.text = '${cfg.port}';
+      _keyCtrl.text = cfg.apiKey ?? '';
+      _corsCtrl.text = cfg.corsOrigins.join(', ');
+      _rateCtrl.text = '${cfg.rateLimitPerMin}';
+      _hydrated = true;
+    });
+  }
+
+  ApiServerConfig _readConfig() {
+    return ApiServerConfig(
+      bindHost: _hostCtrl.text.trim().isEmpty ? '127.0.0.1' : _hostCtrl.text.trim(),
+      port: int.tryParse(_portCtrl.text.trim()) ?? 8976,
+      apiKey: _keyCtrl.text.trim().isEmpty ? null : _keyCtrl.text.trim(),
+      corsOrigins: _corsCtrl.text
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList(),
+      rateLimitPerMin: int.tryParse(_rateCtrl.text.trim()) ?? 60,
+    );
+  }
+
+  Future<void> _apply() async {
+    final cfg = _readConfig();
+    final db = ref.read(databaseProvider);
+    final server = ref.read(apiServerProvider);
+    await ApiServerConfig.save(db, cfg);
+    if (server.isRunning) {
+      await server.restart(config: cfg);
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('API config saved.')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final running = ref.watch(serverRunningProvider);
+    final server = ref.read(apiServerProvider);
+
+    if (!_hydrated) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _hydrate());
+    }
+
+    final isPublicBind = _hostCtrl.text.trim() == '0.0.0.0';
+    final hasNoKey = _keyCtrl.text.trim().isEmpty;
+    final exposedWithoutAuth = isPublicBind && hasNoKey;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SettingsRow(
+              icon: Icons.power_settings_new_rounded,
+              title: 'API Server',
+              subtitle: running
+                  ? 'Running on ${server.bindHost}:${server.port}'
+                  : 'Stopped',
+              trailing: Switch(
+                value: running,
+                onChanged: (value) async {
+                  if (value) {
+                    await server.start();
+                  } else {
+                    await server.stop();
+                  }
+                  ref.read(serverRunningProvider.notifier).state = value;
+                },
+              ),
+            ),
+            const Divider(),
+            if (exposedWithoutAuth)
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                  border:
+                      Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded,
+                        color: Colors.orange, size: 18),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Bound to 0.0.0.0 with no API key — anyone on the LAN '
+                        'can call your providers. Set an API key or rebind to '
+                        '127.0.0.1.',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _hostCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Bind host',
+                      hintText: '127.0.0.1',
+                      isDense: true,
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 110,
+                  child: TextField(
+                    controller: _portCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Port',
+                      isDense: true,
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _keyCtrl,
+              obscureText: !_showKey,
+              decoration: InputDecoration(
+                labelText: 'API key (optional)',
+                hintText: 'Bearer token / X-API-Key',
+                isDense: true,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _showKey ? Icons.visibility_off : Icons.visibility,
+                    size: 18,
+                  ),
+                  onPressed: () => setState(() => _showKey = !_showKey),
+                ),
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _corsCtrl,
+              decoration: const InputDecoration(
+                labelText: 'CORS origin allowlist (CSV, empty = deny all)',
+                hintText: 'https://example.com, http://localhost:3000',
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                SizedBox(
+                  width: 200,
+                  child: TextField(
+                    controller: _rateCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Rate limit (req/min/IP, 0 = off)',
+                      isDense: true,
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+                const Spacer(),
+                FilledButton.icon(
+                  onPressed: _hydrated ? _apply : null,
+                  icon: const Icon(Icons.save_rounded, size: 18),
+                  label: Text(running ? 'Save & restart' : 'Save'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

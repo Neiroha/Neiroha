@@ -726,7 +726,9 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     }
     return Container(
       color: Colors.black,
-      child: ExcludeSemantics(child: Video(controller: _controller)),
+      child: ExcludeSemantics(
+        child: Video(controller: _controller, controls: NoVideoControls),
+      ),
     );
   }
 

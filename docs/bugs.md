@@ -3,64 +3,53 @@
 Confirmed or likely defects are tracked here so review notes do not scatter
 across root-level docs.
 
-Last organized: 2026-04-29.
+Last organized: 2026-05-03.
 
 ## P0 / P1
 
-### LLM Config Cannot Clear Provider
+### API Server Has No Auth or Network Boundary
 
-File: `lib/data/storage/llm_config.dart`
+File: `lib/server/api_server.dart`
 
-`LlmConfig.copyWith(providerId: null)` keeps the old provider because it uses
-`providerId ?? this.providerId`. A settings UI will not be able to clear the
-LLM provider selection.
+The shelf server starts on `InternetAddress.anyIPv4` with no authentication,
+no CORS allowlist, no rate limiting, and no body-size limit. Any host on the
+LAN can hit `/v1/audio/speech` and run arbitrary TTS jobs against the local
+provider keys.
 
-Fix: use a sentinel value or add `clearProviderId`.
+Fix: bind `127.0.0.1` by default; add an optional API key middleware, an
+explicit CORS origin allowlist, and a per-IP request budget. Surface the
+config in the Settings screen.
 
-### Role Assignment Can Silently Drop Text
-
-File: `lib/data/services/role_assignment_service.dart`
-
-The alignment step checks that each LLM segment exists in the source, but does
-not check that the aligned segments cover the full source. If the model skips a
-sentence, auto-apply can lose text.
-
-Fix: after alignment, detect compact-text gaps and trailing leftovers. Return a
-warning or fail the assignment.
-
-### Suggested Voice Uses Name But Mapping Expects ID
+### Async Job Queue Is Unimplemented
 
 Files:
 
-- `lib/data/services/role_assignment_service.dart`
-- `lib/data/services/role_mapping_file.dart`
+- `lib/data/database/tables.dart` (`TtsJobs`)
+- `lib/server/api_server.dart`
 
-`RoleAssignment.suggestedVoice` is a voice config/name, while
-`RoleMapping.speakerToVoice` is documented as `VoiceAsset.id`. The UI can
-easily persist a display name into an id field.
+`TtsJobs` exists in the schema but the API only offers synchronous
+`POST /v1/audio/speech`. There is no queue worker, no progress reporting,
+no cancel/retry, and no version history for regenerated takes — so any
+client wanting Voicebox-style background jobs has to poll on its own.
 
-Fix: return `suggestedVoiceAssetId`, or explicitly make the mapping name-based
-and handle duplicate names.
+Fix: add a job runner that drains pending `TtsJobs`, expose
+`POST /v1/jobs`, `GET /v1/jobs/:id`, `DELETE /v1/jobs/:id`,
+`POST /v1/jobs/:id/retry`, and an SSE stream at `GET /v1/jobs/:id/events`.
+Schema needs `parentJobId` (for retry/regen lineage), `attempt`, `progress`,
+and `version` columns.
 
 ### LLM Chat Fallback Throws Raw DioException
 
 File: `lib/data/adapters/llm_chat_adapter.dart`
 
 If the first JSON-mode request fails due to `response_format`, the fallback
-request is retried without wrapping its failure into `LlmChatException`.
+`_dio.post(...)` at line 104 is not wrapped, so a `DioException` from the
+retry bubbles up untyped instead of as `LlmChatException`.
 
-Fix: wrap the fallback `_dio.post` in the same error conversion path.
+Fix: wrap the fallback in the same try/catch path that the primary request
+uses.
 
 ## P2
-
-### Claude Local Permission Is Too Broad
-
-File: `.claude/settings.local.json`
-
-`Read(//d//**)` grants Claude read access to the whole D drive. This looks like
-local debugging config and should not be committed.
-
-Fix: remove the broad rule and keep project-scoped permissions only.
 
 ### Windows Open Folder Uses Broken Explorer Arguments
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 enum NavTab {
+  novelReader(Icons.menu_book_rounded, 'Novel Reader'),
   dialogTts(Icons.forum_rounded, 'Dialog TTS'),
   phaseTts(Icons.auto_stories_rounded, 'Phase TTS'),
   videoDub(Icons.movie_filter_rounded, 'Video Dub'),

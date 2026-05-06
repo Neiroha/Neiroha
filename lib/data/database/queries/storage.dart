@@ -37,6 +37,11 @@ extension AppDatabaseStorageQueries on AppDatabase {
         DialogTtsLinesCompanion(missing: Value(missing)),
       );
 
+  Future<int> markNovelSegmentMissing(String id, bool missing) =>
+      (update(novelSegments)..where((t) => t.id.equals(id))).write(
+        NovelSegmentsCompanion(missing: Value(missing)),
+      );
+
   Future<int> markAudioTrackMissing(String id, bool missing) =>
       (update(audioTracks)..where((t) => t.id.equals(id))).write(
         AudioTracksCompanion(missing: Value(missing)),
@@ -55,6 +60,9 @@ extension AppDatabaseStorageQueries on AppDatabase {
 
   Future<List<DialogTtsLine>> getAllDialogLinesRaw() =>
       select(dialogTtsLines).get();
+
+  Future<List<NovelSegment>> getAllNovelSegmentsRaw() =>
+      select(novelSegments).get();
 
   Future<List<AudioTrack>> getAllAudioTracksRaw() => select(audioTracks).get();
 
@@ -81,6 +89,15 @@ extension AppDatabaseStorageQueries on AppDatabase {
       const DialogTtsLinesCompanion(
         audioPath: Value(null),
         audioDuration: Value(null),
+        error: Value(null),
+        missing: Value(false),
+      ),
+    );
+    await update(novelSegments).write(
+      const NovelSegmentsCompanion(
+        audioPath: Value(null),
+        audioDuration: Value(null),
+        audioCacheKey: Value(null),
         error: Value(null),
         missing: Value(false),
       ),

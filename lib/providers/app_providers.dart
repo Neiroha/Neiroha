@@ -4,6 +4,7 @@ import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
 import 'package:neiroha/data/storage/export_prefs.dart';
 import 'package:neiroha/data/storage/ffmpeg_service.dart';
+import 'package:neiroha/data/storage/novel_import_service.dart';
 import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
 import 'package:neiroha/server/api_server.dart';
@@ -18,6 +19,14 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 /// Disk-backed storage orchestration (voice-asset root, sync, clear-all).
 final storageServiceProvider = Provider<StorageService>((ref) {
   return StorageService(ref.watch(databaseProvider));
+});
+
+/// TXT/folder import pipeline for the lightweight Novel Reader.
+final novelImportServiceProvider = Provider<NovelImportService>((ref) {
+  return NovelImportService(
+    ref.watch(databaseProvider),
+    ref.watch(storageServiceProvider),
+  );
 });
 
 /// System `ffmpeg` resolver. Used by waveform extraction + media import.
@@ -126,6 +135,26 @@ final phaseTtsSegmentsStreamProvider =
     StreamProvider.family<List<PhaseTtsSegment>, String>((ref, projectId) {
       final db = ref.watch(databaseProvider);
       return db.watchPhaseTtsSegments(projectId);
+    });
+
+/// Novel Reader projects stream.
+final novelProjectsStreamProvider = StreamProvider((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.watchNovelProjects();
+});
+
+/// Novel Reader chapters for a project.
+final novelChaptersStreamProvider =
+    StreamProvider.family<List<NovelChapter>, String>((ref, projectId) {
+      final db = ref.watch(databaseProvider);
+      return db.watchNovelChapters(projectId);
+    });
+
+/// Novel Reader segments for a project.
+final novelSegmentsStreamProvider =
+    StreamProvider.family<List<NovelSegment>, String>((ref, projectId) {
+      final db = ref.watch(databaseProvider);
+      return db.watchNovelSegments(projectId);
     });
 
 /// Dialog TTS projects stream.

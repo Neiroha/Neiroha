@@ -16,6 +16,7 @@ class Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const mainTabs = [
+      NavTab.novelReader,
       NavTab.dialogTts,
       NavTab.phaseTts,
       NavTab.videoDub,
@@ -24,10 +25,7 @@ class Sidebar extends StatelessWidget {
     ];
 
     // Tabs pinned at the bottom (providers + settings)
-    const bottomTabs = [
-      NavTab.providers,
-      NavTab.settings,
-    ];
+    const bottomTabs = [NavTab.providers, NavTab.settings];
 
     return Container(
       width: AppTheme.sidebarWidth,

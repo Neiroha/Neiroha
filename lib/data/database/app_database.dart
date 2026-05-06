@@ -27,6 +27,9 @@ part 'queries/storage.dart';
     QuickTtsHistories,
     PhaseTtsProjects,
     PhaseTtsSegments,
+    NovelProjects,
+    NovelChapters,
+    NovelSegments,
     DialogTtsProjects,
     DialogTtsLines,
     VideoDubProjects,
@@ -41,7 +44,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -52,6 +55,38 @@ class AppDatabase extends _$AppDatabase {
     onUpgrade: (m, from, to) async {
       if (from < 16) {
         await m.addColumn(phaseTtsSegments, phaseTtsSegments.speakerLabel);
+      }
+      if (from < 17) {
+        await m.createTable(novelProjects);
+        await m.createTable(novelChapters);
+        await m.createTable(novelSegments);
+      } else {
+        if (from < 18) {
+          await m.addColumn(novelProjects, novelProjects.autoTurnPage);
+          await m.addColumn(novelProjects, novelProjects.autoSliceLongSegments);
+          await m.addColumn(novelProjects, novelProjects.maxSliceChars);
+          await customStatement(
+            "UPDATE novel_projects SET reader_theme = 'dark' "
+            "WHERE reader_theme = 'comfort'",
+          );
+        }
+        if (from < 19) {
+          await m.addColumn(novelProjects, novelProjects.autoAdvanceChapters);
+          await customStatement(
+            'UPDATE novel_projects SET max_slice_chars = 50 '
+            'WHERE max_slice_chars > 80',
+          );
+          await customStatement(
+            'UPDATE novel_projects SET max_slice_chars = 20 '
+            'WHERE max_slice_chars < 20',
+          );
+        }
+        if (from < 20) {
+          await m.addColumn(
+            novelProjects,
+            novelProjects.sliceOnlyAtPunctuation,
+          );
+        }
       }
     },
   );

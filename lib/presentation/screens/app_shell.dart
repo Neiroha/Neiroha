@@ -11,6 +11,7 @@ import 'package:neiroha/providers/playback_provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'dialog_tts_screen.dart';
+import 'novel_reader_screen.dart';
 import 'phase_tts_screen.dart';
 import 'video_dub_screen.dart';
 import 'voice_asset_screen.dart';
@@ -37,8 +38,10 @@ class _AppShellState extends ConsumerState<AppShell> {
     // Dialog/Phase render their own inline players, so the global bottom bar
     // is suppressed there to avoid a double UI.
     // Voice Bank quick tests also render inline above the test input.
-    final showGlobalPlayer = selectedTab != NavTab.dialogTts &&
+    final showGlobalPlayer =
+        selectedTab != NavTab.dialogTts &&
         selectedTab != NavTab.phaseTts &&
+        selectedTab != NavTab.novelReader &&
         !(selectedTab == NavTab.voiceBank &&
             playback.sourceTag == voiceBankQuickTestPlaybackSource);
 
@@ -85,10 +88,14 @@ class _AppShellState extends ConsumerState<AppShell> {
         key: const ValueKey('phaseTts'),
         onExitGuardChanged: (guard) => _phaseTtsExitGuard = guard,
       ),
+      NavTab.novelReader => const NovelReaderScreen(
+        key: ValueKey('novelReader'),
+      ),
       NavTab.dialogTts => const DialogTtsScreen(key: ValueKey('dialogTts')),
       NavTab.videoDub => const VideoDubScreen(key: ValueKey('videoDub')),
-      NavTab.voiceAssets =>
-        const VoiceAssetScreen(key: ValueKey('voiceAssets')),
+      NavTab.voiceAssets => const VoiceAssetScreen(
+        key: ValueKey('voiceAssets'),
+      ),
       NavTab.voiceBank => const VoiceBankScreen(key: ValueKey('voiceBank')),
       NavTab.providers => const ProviderScreen(key: ValueKey('providers')),
       NavTab.settings => const SettingsScreen(key: ValueKey('settings')),
@@ -133,10 +140,7 @@ class _WindowsTitleBar extends StatelessWidget {
               ),
             ),
           ),
-          _TitleBarButton(
-            icon: Icons.minimize,
-            onTap: windowManager.minimize,
-          ),
+          _TitleBarButton(icon: Icons.minimize, onTap: windowManager.minimize),
           _TitleBarButton(
             icon: Icons.crop_square,
             onTap: () async {
@@ -187,7 +191,9 @@ class _TitleBarButtonState extends State<_TitleBarButton> {
           width: 46,
           height: 32,
           color: _hovering
-              ? (widget.isClose ? Colors.red : Colors.white.withValues(alpha: 0.1))
+              ? (widget.isClose
+                    ? Colors.red
+                    : Colors.white.withValues(alpha: 0.1))
               : Colors.transparent,
           child: Icon(
             widget.icon,

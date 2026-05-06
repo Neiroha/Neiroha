@@ -7,6 +7,7 @@ import 'app_providers.dart';
 
 const voiceBankQuickTestPlaybackSource = 'voice_bank.quick_tts';
 const phaseTtsPlaybackSource = 'phase_tts.preview';
+const novelReaderPlaybackSource = 'novel_reader.playback';
 
 class PlaybackState {
   final String? audioPath;

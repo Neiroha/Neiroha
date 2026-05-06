@@ -52,6 +52,228 @@ extension AppDatabaseProjectQueries on AppDatabase {
     phaseTtsSegments,
   )..where((t) => t.projectId.equals(projectId))).go();
 
+  // --- Novel Reader Projects ---
+
+  Stream<List<NovelProject>> watchNovelProjects() => (select(
+    novelProjects,
+  )..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])).watch();
+
+  Future<int> insertNovelProject(NovelProjectsCompanion project) =>
+      into(novelProjects).insert(project);
+
+  Future<List<NovelProject>> getAllNovelProjects() =>
+      select(novelProjects).get();
+
+  Future<NovelProject?> getNovelProjectById(String id) =>
+      (select(novelProjects)..where((t) => t.id.equals(id))).getSingleOrNull();
+
+  Future<bool> updateNovelProject(NovelProject project) =>
+      update(novelProjects).replace(project);
+
+  Future<int> deleteNovelProject(String id) => transaction(() async {
+    await (delete(novelSegments)..where((t) => t.projectId.equals(id))).go();
+    await (delete(novelChapters)..where((t) => t.projectId.equals(id))).go();
+    return (delete(novelProjects)..where((t) => t.id.equals(id))).go();
+  });
+
+  // --- Novel Reader Chapters ---
+
+  Stream<List<NovelChapter>> watchNovelChapters(String projectId) =>
+      (select(novelChapters)
+            ..where((t) => t.projectId.equals(projectId))
+            ..orderBy([(t) => OrderingTerm.asc(t.orderIndex)]))
+          .watch();
+
+  Future<List<NovelChapter>> getNovelChapters(String projectId) =>
+      (select(novelChapters)
+            ..where((t) => t.projectId.equals(projectId))
+            ..orderBy([(t) => OrderingTerm.asc(t.orderIndex)]))
+          .get();
+
+  Future<int> insertNovelChapter(NovelChaptersCompanion chapter) =>
+      into(novelChapters).insert(chapter);
+
+  Future<void> insertNovelChapterWithSegments({
+    required String projectId,
+    required NovelChaptersCompanion chapter,
+    required List<NovelSegmentsCompanion> segments,
+  }) => transaction(() async {
+    await into(novelChapters).insert(chapter);
+    await batch((b) {
+      if (segments.isNotEmpty) {
+        b.insertAll(novelSegments, segments);
+      }
+    });
+    final total = await _reindexNovelProject(projectId);
+    await _touchNovelProjectAfterStructureEdit(projectId, total);
+  });
+
+  Future<bool> updateNovelChapter(NovelChapter chapter) =>
+      update(novelChapters).replace(chapter);
+
+  Future<int> deleteNovelChapter(String projectId, String chapterId) =>
+      transaction(() async {
+        await (delete(
+          novelSegments,
+        )..where((t) => t.chapterId.equals(chapterId))).go();
+        final removed = await (delete(
+          novelChapters,
+        )..where((t) => t.id.equals(chapterId))).go();
+        final total = await _reindexNovelProject(projectId);
+        await _touchNovelProjectAfterStructureEdit(projectId, total);
+        return removed;
+      });
+
+  Future<void> replaceNovelChapterText({
+    required NovelChapter chapter,
+    required List<NovelSegmentsCompanion> segments,
+  }) => transaction(() async {
+    await updateNovelChapter(chapter);
+    await (delete(
+      novelSegments,
+    )..where((t) => t.chapterId.equals(chapter.id))).go();
+    await batch((b) {
+      if (segments.isNotEmpty) {
+        b.insertAll(novelSegments, segments);
+      }
+    });
+    final total = await _reindexNovelProject(chapter.projectId);
+    await _touchNovelProjectAfterStructureEdit(chapter.projectId, total);
+  });
+
+  Future<int> clearNovelContent(String projectId) => transaction(() async {
+    await (delete(
+      novelSegments,
+    )..where((t) => t.projectId.equals(projectId))).go();
+    return (delete(
+      novelChapters,
+    )..where((t) => t.projectId.equals(projectId))).go();
+  });
+
+  Future<void> replaceNovelContent({
+    required String projectId,
+    required List<NovelChaptersCompanion> chapters,
+    required List<NovelSegmentsCompanion> segments,
+    required NovelProject project,
+  }) => transaction(() async {
+    await (delete(
+      novelSegments,
+    )..where((t) => t.projectId.equals(projectId))).go();
+    await (delete(
+      novelChapters,
+    )..where((t) => t.projectId.equals(projectId))).go();
+    await batch((b) {
+      if (chapters.isNotEmpty) {
+        b.insertAll(novelChapters, chapters);
+      }
+      if (segments.isNotEmpty) {
+        b.insertAll(novelSegments, segments);
+      }
+    });
+    await updateNovelProject(project);
+  });
+
+  // --- Novel Reader Segments ---
+
+  Stream<List<NovelSegment>> watchNovelSegments(String projectId) =>
+      (select(novelSegments)
+            ..where((t) => t.projectId.equals(projectId))
+            ..orderBy([(t) => OrderingTerm.asc(t.globalIndex)]))
+          .watch();
+
+  Stream<List<NovelSegment>> watchNovelSegmentsForChapter(String chapterId) =>
+      (select(novelSegments)
+            ..where((t) => t.chapterId.equals(chapterId))
+            ..orderBy([(t) => OrderingTerm.asc(t.orderIndex)]))
+          .watch();
+
+  Future<List<NovelSegment>> getNovelSegments(String projectId) =>
+      (select(novelSegments)
+            ..where((t) => t.projectId.equals(projectId))
+            ..orderBy([(t) => OrderingTerm.asc(t.globalIndex)]))
+          .get();
+
+  Future<List<NovelSegment>> getNovelSegmentsForChapter(String chapterId) =>
+      (select(novelSegments)
+            ..where((t) => t.chapterId.equals(chapterId))
+            ..orderBy([(t) => OrderingTerm.asc(t.orderIndex)]))
+          .get();
+
+  Future<int> insertNovelSegment(NovelSegmentsCompanion segment) =>
+      into(novelSegments).insert(segment);
+
+  Future<bool> updateNovelSegment(NovelSegment segment) =>
+      update(novelSegments).replace(segment);
+
+  Future<int> deleteNovelSegment(String projectId, String segmentId) =>
+      transaction(() async {
+        final removed = await (delete(
+          novelSegments,
+        )..where((t) => t.id.equals(segmentId))).go();
+        final total = await _reindexNovelProject(projectId);
+        await _touchNovelProjectAfterStructureEdit(projectId, total);
+        return removed;
+      });
+
+  Future<int> markNovelProgress(String projectId, int globalIndex) =>
+      (update(novelProjects)..where((t) => t.id.equals(projectId))).write(
+        NovelProjectsCompanion(
+          currentGlobalIndex: Value(globalIndex),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+
+  Future<int> _reindexNovelProject(String projectId) async {
+    final chapters = await getNovelChapters(projectId);
+    var globalIndex = 0;
+    for (var chapterIndex = 0; chapterIndex < chapters.length; chapterIndex++) {
+      final chapter = chapters[chapterIndex];
+      if (chapter.orderIndex != chapterIndex) {
+        await (update(novelChapters)..where((t) => t.id.equals(chapter.id)))
+            .write(NovelChaptersCompanion(orderIndex: Value(chapterIndex)));
+      }
+
+      final segments = await getNovelSegmentsForChapter(chapter.id);
+      for (
+        var segmentIndex = 0;
+        segmentIndex < segments.length;
+        segmentIndex++
+      ) {
+        final segment = segments[segmentIndex];
+        if (segment.orderIndex != segmentIndex ||
+            segment.globalIndex != globalIndex) {
+          await (update(
+            novelSegments,
+          )..where((t) => t.id.equals(segment.id))).write(
+            NovelSegmentsCompanion(
+              globalIndex: Value(globalIndex),
+              orderIndex: Value(segmentIndex),
+            ),
+          );
+        }
+        globalIndex++;
+      }
+    }
+    return globalIndex;
+  }
+
+  Future<void> _touchNovelProjectAfterStructureEdit(
+    String projectId,
+    int totalSegments,
+  ) async {
+    final project = await getNovelProjectById(projectId);
+    if (project == null) return;
+    final current = totalSegments <= 0
+        ? 0
+        : project.currentGlobalIndex.clamp(0, totalSegments - 1).toInt();
+    await (update(novelProjects)..where((t) => t.id.equals(projectId))).write(
+      NovelProjectsCompanion(
+        currentGlobalIndex: Value(current),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   // --- Dialog TTS Projects ---
 
   Stream<List<DialogTtsProject>> watchDialogTtsProjects() => (select(

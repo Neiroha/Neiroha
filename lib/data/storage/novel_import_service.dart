@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../database/app_database.dart';
 import 'path_service.dart';
+import 'novel_dialogue_rules_service.dart';
 import 'storage_service.dart';
 
 class NovelImportService {
@@ -56,6 +57,7 @@ class NovelImportService {
       }
     }
 
+    final dialogueRules = await loadDialogueRules();
     var globalIndex = 0;
     var chapterCount = 0;
     var segmentCount = 0;
@@ -69,8 +71,8 @@ class NovelImportService {
       chapterIndex++
     ) {
       final file = textFiles[chapterIndex];
-      final raw = (await _readTextFile(file)).trim();
-      if (raw.isEmpty) {
+      final raw = await _readTextFile(file);
+      if (raw.trim().isEmpty) {
         skippedCount++;
         continue;
       }
@@ -99,7 +101,7 @@ class NovelImportService {
         ),
       );
 
-      final segments = splitNovelText(raw);
+      final segments = splitNovelText(raw, dialogueRules: dialogueRules);
       for (
         var segmentIndex = 0;
         segmentIndex < segments.length;
@@ -153,6 +155,14 @@ class NovelImportService {
       segmentCount: segmentCount,
       skippedCount: skippedCount,
     );
+  }
+
+  Future<List<NovelDialogueRule>> loadDialogueRules() {
+    return NovelDialogueRulesService(_db).load();
+  }
+
+  Future<void> saveDialogueRules(List<NovelDialogueRule> rules) {
+    return NovelDialogueRulesService(_db).save(rules);
   }
 
   Future<NovelImportReport> importFolder({
@@ -242,7 +252,10 @@ class NovelTextSegment {
   const NovelTextSegment({required this.text, required this.type});
 }
 
-List<NovelTextSegment> splitNovelText(String text) {
+List<NovelTextSegment> splitNovelText(
+  String text, {
+  List<NovelDialogueRule>? dialogueRules,
+}) {
   final blocks = text
       .replaceAll('\r\n', '\n')
       .replaceAll('\r', '\n')
@@ -252,7 +265,7 @@ List<NovelTextSegment> splitNovelText(String text) {
 
   final out = <NovelTextSegment>[];
   for (final block in blocks) {
-    for (final segment in _parseByQuotes(block)) {
+    for (final segment in _parseByDialogueRules(block, dialogueRules)) {
       for (final chunk in _splitToReadableChunks(segment.text)) {
         out.add(NovelTextSegment(text: chunk, type: segment.type));
       }
@@ -261,43 +274,133 @@ List<NovelTextSegment> splitNovelText(String text) {
   return out;
 }
 
-List<NovelTextSegment> _parseByQuotes(String text) {
-  final parts = text.split(
-    RegExp(r'([“][\s\S]*?[”]|[「][\s\S]*?[」]|"[\s\S]*?")'),
-  );
-  final out = <NovelTextSegment>[];
-  for (final part in parts) {
-    final trimmed = part.trim();
-    if (trimmed.isEmpty) continue;
-    final isDialogue = RegExp(
-      r'^([“][\s\S]*[”]|[「][\s\S]*[」]|"[\s\S]*")$',
-    ).hasMatch(trimmed);
-    out.add(
-      NovelTextSegment(
-        text: trimmed,
-        type: isDialogue ? 'dialogue' : 'narrator',
-      ),
-    );
+String resolveNovelSegmentType(
+  String text, {
+  List<NovelDialogueRule>? dialogueRules,
+}) {
+  return _matchesDialogueRule(text, dialogueRules) ? 'dialogue' : 'narrator';
+}
+
+bool isNovelPunctuationOnly(String text) {
+  final compact = text
+      .replaceAll(RegExp(r'\s+'), '')
+      .replaceAll(RegExp(r'["“”「」『』〝〞＂《》〈〉（）()\[\]{}【】]'), '');
+  if (compact.isEmpty) return true;
+  return !RegExp(
+    r'[A-Za-z0-9\u3400-\u9FFF\uF900-\uFAFFぁ-んァ-ン가-힣]',
+  ).hasMatch(compact);
+}
+
+List<NovelTextSegment> _parseByDialogueRules(
+  String text,
+  List<NovelDialogueRule>? dialogueRules,
+) {
+  final ranges = _dialogueRanges(text, dialogueRules);
+  if (ranges.isEmpty) {
+    return [NovelTextSegment(text: text.trim(), type: 'narrator')];
   }
+
+  final out = <NovelTextSegment>[];
+  var cursor = 0;
+  for (final range in ranges) {
+    if (range.start < cursor) continue;
+    _addTextSegment(out, text.substring(cursor, range.start), 'narrator');
+    _addTextSegment(out, text.substring(range.start, range.end), 'dialogue');
+    cursor = range.end;
+  }
+  _addTextSegment(out, text.substring(cursor), 'narrator');
   return out;
 }
 
-List<String> _splitToReadableChunks(String text) {
-  const minLength = 60;
-  const maxLength = 180;
-  final parts = text.split(RegExp(r'([。！？；;.!?\n]+|[,，、])'));
-  final chunks = <String>[];
-  var current = '';
-  for (final part in parts) {
-    if (part.isEmpty) continue;
-    current += part;
-    final isBreak = RegExp(r'^[。！？；;.!?\n]+$').hasMatch(part);
-    if ((current.length >= minLength && isBreak) ||
-        current.length >= maxLength) {
-      chunks.add(current.trim());
-      current = '';
+bool _matchesDialogueRule(String text, List<NovelDialogueRule>? dialogueRules) {
+  final clean = text.trim();
+  if (clean.isEmpty) return false;
+  for (final range in _dialogueRanges(clean, dialogueRules)) {
+    if (range.start == 0 && range.end == clean.length) return true;
+  }
+  return false;
+}
+
+List<_TextRange> _dialogueRanges(
+  String text,
+  List<NovelDialogueRule>? dialogueRules,
+) {
+  final rules = (dialogueRules ?? NovelDialogueRulesService.builtInRules).where(
+    (rule) => rule.enabled && rule.pattern.trim().isNotEmpty,
+  );
+  final ranges = <_TextRange>[];
+  for (final rule in rules) {
+    try {
+      final regex = RegExp(rule.pattern, multiLine: true, dotAll: true);
+      for (final match in regex.allMatches(text)) {
+        if (match.start < match.end) {
+          ranges.add(_TextRange(match.start, match.end));
+        }
+      }
+    } on FormatException {
+      continue;
     }
   }
-  if (current.trim().isNotEmpty) chunks.add(current.trim());
+  ranges.sort((a, b) {
+    final byStart = a.start.compareTo(b.start);
+    return byStart == 0 ? b.end.compareTo(a.end) : byStart;
+  });
+
+  final merged = <_TextRange>[];
+  for (final range in ranges) {
+    if (merged.isEmpty || range.start >= merged.last.end) {
+      merged.add(range);
+      continue;
+    }
+    if (range.end > merged.last.end) {
+      final last = merged.removeLast();
+      merged.add(_TextRange(last.start, range.end));
+    }
+  }
+  return merged;
+}
+
+class _TextRange {
+  final int start;
+  final int end;
+
+  const _TextRange(this.start, this.end);
+}
+
+void _addTextSegment(List<NovelTextSegment> out, String text, String type) {
+  final trimmed = text.trim();
+  if (trimmed.isEmpty) return;
+  out.add(NovelTextSegment(text: trimmed, type: type));
+}
+
+List<String> _splitToReadableChunks(String text) {
+  const minLength = 20;
+  const maxLength = 160;
+  final clean = text.trim();
+  if (clean.isEmpty) return const [];
+
+  final breaks = RegExp(r'[。！？；;.!?\n]+|[,，、]+');
+  final chunks = <String>[];
+  var start = 0;
+  for (final match in breaks.allMatches(clean)) {
+    final length = match.end - start;
+    final punctuation = match.group(0) ?? '';
+    final isStrongBreak = RegExp(r'[。！？；;.!?\n]').hasMatch(punctuation);
+    if ((length >= minLength && isStrongBreak) || length >= maxLength) {
+      _appendBoundedChunks(chunks, clean.substring(start, match.end));
+      start = match.end;
+    }
+  }
+  _appendBoundedChunks(chunks, clean.substring(start));
   return chunks;
+}
+
+void _appendBoundedChunks(List<String> chunks, String text) {
+  const maxLength = 160;
+  var clean = text.trim();
+  while (clean.length > maxLength) {
+    chunks.add(clean.substring(0, maxLength).trim());
+    clean = clean.substring(maxLength).trim();
+  }
+  if (clean.isNotEmpty) chunks.add(clean);
 }

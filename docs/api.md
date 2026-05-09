@@ -262,27 +262,30 @@ class CosyVoiceProfile {
 
 ### 2.4 GPT-SoVITS (`gptSovits`)
 
-Adapter for the GPT-SoVITS TTS backend (api_v2.py style).
+Adapter for the Neiroha GPT-SoVITS launcher. It supports saved trained
+speaker profiles and reference-audio clone mode.
 
 | Operation | Method | Path | Status |
 |---|---|---|---|
-| Synthesize | `POST` | `/tts` | **Implemented** |
-| Health check | `GET` | `/control` | **Implemented** |
-| List speakers | — | — | Not supported (uses ref audio files) |
+| Synthesize trained speaker | `POST` | `/v1/audio/speech` | **Implemented** |
+| Synthesize clone | `POST` | `/gpt-sovits/clone` | **Implemented** |
+| Health check | `GET` | `/health` | **Implemented** |
+| List native models | `GET` | `/gpt-sovits/models` | **Implemented** |
+| List speakers | `GET` | `/gpt-sovits/voices`, `/v1/audio/voices`, `/speakers` | **Implemented** |
 
-**Synthesis payload:**
+**Clone payload:**
 ```json
 {
-  "text": "text to synthesize",
+  "input": "text to synthesize",
+  "speaker": "clone",
   "text_lang": "zh",
   "ref_audio_path": "/path/to/ref.wav",
   "prompt_text": "reference text",
   "prompt_lang": "zh",
-  "speed_factor": 1.0,
-  "media_type": "wav",
+  "speed": 1.0,
+  "response_format": "wav",
   "text_split_method": "cut5",
-  "batch_size": 1,
-  "streaming_mode": false
+  "batch_size": 1
 }
 ```
 

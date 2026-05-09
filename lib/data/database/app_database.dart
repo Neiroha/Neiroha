@@ -44,7 +44,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -85,6 +85,26 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(
             novelProjects,
             novelProjects.sliceOnlyAtPunctuation,
+          );
+        }
+        if (from < 21) {
+          await m.addColumn(novelProjects, novelProjects.prefetchSegments);
+        }
+        if (from < 22) {
+          await m.addColumn(novelProjects, novelProjects.cacheCurrentColor);
+          await m.addColumn(novelProjects, novelProjects.cacheStaleColor);
+          await m.addColumn(novelProjects, novelProjects.cacheHighlightOpacity);
+        }
+        if (from < 23) {
+          await m.addColumn(
+            novelProjects,
+            novelProjects.overwriteCacheWhilePlaying,
+          );
+        }
+        if (from < 24) {
+          await m.addColumn(
+            novelProjects,
+            novelProjects.skipPunctuationOnlySegments,
           );
         }
       }

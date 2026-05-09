@@ -42,6 +42,7 @@ class _AppShellState extends ConsumerState<AppShell> {
         selectedTab != NavTab.dialogTts &&
         selectedTab != NavTab.phaseTts &&
         selectedTab != NavTab.novelReader &&
+        !isNovelReaderPlaybackSource(playback.sourceTag) &&
         !(selectedTab == NavTab.voiceBank &&
             playback.sourceTag == voiceBankQuickTestPlaybackSource);
 
@@ -78,6 +79,11 @@ class _AppShellState extends ConsumerState<AppShell> {
     if (current == NavTab.phaseTts) {
       final guard = _phaseTtsExitGuard;
       if (guard != null && !await guard()) return;
+    }
+    if (current == NavTab.novelReader) {
+      await ref
+          .read(playbackNotifierProvider.notifier)
+          .stopIfSourceTagPrefix(novelReaderPlaybackSource);
     }
     ref.read(selectedTabProvider.notifier).state = tab;
   }

@@ -198,6 +198,93 @@ class VoiceCharacterCosyVoiceModeSelector extends StatelessWidget {
   }
 }
 
+class VoiceCharacterGptSovitsModeSelector extends StatelessWidget {
+  final String? selected;
+  final ValueChanged<String> onChanged;
+
+  const VoiceCharacterGptSovitsModeSelector({
+    super.key,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  static const _modes = [
+    (
+      'trained',
+      Icons.record_voice_over_rounded,
+      'Trained',
+      'Use a saved\nspeaker profile',
+    ),
+    ('clone', Icons.mic_rounded, 'Clone', 'Clone voice from\nreference audio'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: _modes.map((rec) {
+        final (mode, icon, label, hint) = rec;
+        final isSelected = selected == mode;
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(right: mode != 'clone' ? 8 : 0),
+            child: InkWell(
+              onTap: () => onChanged(mode),
+              borderRadius: BorderRadius.circular(10),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: isSelected
+                      ? AppTheme.accentColor.withValues(alpha: 0.15)
+                      : AppTheme.surfaceDim,
+                  border: Border.all(
+                    color: isSelected
+                        ? AppTheme.accentColor.withValues(alpha: 0.5)
+                        : Colors.transparent,
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 20,
+                      color: isSelected
+                          ? AppTheme.accentColor
+                          : Colors.white.withValues(alpha: 0.5),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      hint,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
 class VoiceCharacterRefAudioPicker extends ConsumerWidget {
   final String? path;
   final ValueChanged<String> onPick;
@@ -504,8 +591,10 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
                     )
                   : null,
               isDense: true,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
             ),
           ),
           const SizedBox(height: 4),

@@ -70,6 +70,10 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   // CosyVoice mode
   String? _cosyVoiceMode;
 
+  // GPT-SoVITS mode: 'trained' uses saved server speaker profiles; 'clone'
+  // uses reference audio and matching prompt text.
+  String _gptSovitsMode = 'trained';
+
   // CosyVoice server-side profiles (from `/cosyvoice/profiles`). These are the
   // ONLY values that can safely be sent as `profile` — typing a name that
   // doesn't exist on the server makes `build_runtime_char_config` reject the
@@ -141,6 +145,8 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   static bool _isTtsModel(String modelKey) {
     final k = modelKey.toLowerCase();
     return k.contains('tts') ||
+        k.contains('gpt-sovits') ||
+        k.contains('sovits') ||
         k.contains('speech-synthesis') ||
         k.contains('voiceclone') ||
         k.contains('voicedesign') ||
@@ -170,8 +176,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     List<String> voiceList = [];
 
     // MiMo TTS preset models have built-in voices
-    final mimoVoices =
-        ChatCompletionsTtsAdapter.builtInVoicesForMimoModel(modelKey);
+    final mimoVoices = ChatCompletionsTtsAdapter.builtInVoicesForMimoModel(
+      modelKey,
+    );
     if (mimoVoices.isNotEmpty && _ttsModelType == 'preset') {
       voiceList = mimoVoices;
     } else {
@@ -210,16 +217,54 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
         )
         .hasSeparateModelAndVoice;
 
+    if (_isGptSovits) {
+      final cachedVoices = await widget.database.getVoiceEntriesForProvider(
+        _selectedProviderId,
+      );
+      if (cachedVoices.isNotEmpty) {
+        final voices = cachedVoices.map((b) => b.modelKey).toList()..sort();
+        if (mounted) {
+          setState(() {
+            _speakers = voices;
+            _loadingSpeakers = false;
+            _loadingModels = false;
+          });
+        }
+        return;
+      }
+
+      try {
+        final adapter = createAdapter(_selectedProvider);
+        final speakers = await adapter.getSpeakers();
+        if (mounted) {
+          setState(() {
+            _speakers = speakers;
+            _loadingSpeakers = false;
+            _loadingModels = false;
+          });
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _loadingSpeakers = false;
+            _loadingModels = false;
+          });
+        }
+      }
+      return;
+    }
+
     if (hasSeparate) {
       // Models from cache — filter to TTS-only models
       final cachedModels = await widget.database.getModelEntriesForProvider(
         _selectedProviderId,
       );
-      final modelList = cachedModels
-          .map((b) => b.modelKey)
-          .where((k) => _isTtsModel(k))
-          .toList()
-        ..sort();
+      final modelList =
+          cachedModels
+              .map((b) => b.modelKey)
+              .where((k) => _isTtsModel(k))
+              .toList()
+            ..sort();
 
       if (mounted) {
         setState(() {
@@ -375,6 +420,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
           onSelected: (v) => setState(() {
             _selectedSpeaker = v;
             _voiceNameCtrl.text = v;
+            _autoFillName();
           }),
         ),
         const SizedBox(height: 8),
@@ -635,6 +681,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                       setState(() {
                         _selectedProviderId = v;
                         _cosyVoiceMode = null;
+                        _gptSovitsMode = 'trained';
                         _voxcpmMode = null;
                         _selectedVoxcpmVoiceId = null;
                         _selectedAudioTrackId = null;
@@ -743,6 +790,15 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                                 _autoFillName();
                               }),
                             ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _voiceNameCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Voice / Speaker ID',
+                              hintText: 'e.g. alloy or genshin-paimon',
+                            ),
+                            onChanged: (_) => _autoFillName(),
+                          ),
                           if (_isGeminiTts) ...[
                             const SizedBox(height: 16),
                             VoiceCharacterSectionLabel(
@@ -1123,32 +1179,79 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                       ],
                     ],
                   ] else if (_isGptSovits) ...[
-                    // ── GPT-SoVITS: always ref audio mode ──
-                    ..._buildRefAudioPicker(),
-                    TextField(
-                      controller: _promptTextCtrl,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: 'Prompt Text (spoken in ref audio)',
-                        hintText: 'Transcript of the reference audio',
-                      ),
+                    VoiceCharacterSectionLabel('GPT-SOVITS MODE'),
+                    const SizedBox(height: 8),
+                    VoiceCharacterGptSovitsModeSelector(
+                      selected: _gptSovitsMode,
+                      onChanged: (mode) {
+                        setState(() {
+                          _gptSovitsMode = mode;
+                          _taskMode = mode == 'clone'
+                              ? TaskMode.cloneWithPrompt
+                              : TaskMode.presetVoice;
+                          _selectedAudioTrackId = null;
+                          _uploadedRefAudioPath = null;
+                          if (mode == 'trained') {
+                            _promptTextCtrl.clear();
+                          }
+                        });
+                      },
                     ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: _promptLangCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Prompt Language',
-                        hintText: 'zh / en / ja / ko ...',
+                    const SizedBox(height: 20),
+                    if (_gptSovitsMode == 'trained') ...[
+                      VoiceCharacterSectionLabel('TRAINED SPEAKER'),
+                      const SizedBox(height: 8),
+                      ..._buildSpeakerPicker(label: 'Select Speaker'),
+                      TextField(
+                        controller: _voiceNameCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Speaker / Voice ID *',
+                          hintText: 'e.g. genshin-paimon',
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: _textLangCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Text Language (synthesis output)',
-                        hintText: 'zh / en / ja / ko ...',
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _textLangCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Text Language (optional)',
+                          hintText: 'zh / en / ja / ko ...',
+                        ),
                       ),
-                    ),
+                    ] else ...[
+                      ..._buildRefAudioPicker(),
+                      TextField(
+                        controller: _promptTextCtrl,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Prompt Text (spoken in ref audio) *',
+                          hintText: 'Transcript of the reference audio',
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _promptLangCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Prompt Language',
+                          hintText: 'zh / en / ja / ko ...',
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _textLangCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Text Language (synthesis output)',
+                          hintText: 'zh / en / ja / ko ...',
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _voiceNameCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Output Speaker Name (optional)',
+                          hintText: 'e.g. clone',
+                        ),
+                      ),
+                    ],
                   ] else ...[
                     // ── Fallback for other adapters (qwen3, etc.) ──
                     VoiceCharacterSectionLabel('VOICE'),
@@ -1230,7 +1333,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     final chatCloneNeedsAudio =
         _isPresetVoiceProvider && _ttsModelType == 'clone';
     final needsRefAudio =
-        _isGptSovits ||
+        (_isGptSovits && _gptSovitsMode == 'clone') ||
         (_isCosyVoice && _cosyVoiceMode == 'zero_shot') ||
         (_isCosyVoice &&
             _cosyVoiceMode == 'cross_lingual' &&
@@ -1247,6 +1350,24 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                 ? 'VoxCPM2 ${_voxcpmMode == 'ultimate_clone' ? 'Ultra Clone' : 'Clone'} needs a Reference Audio or a Registered Voice'
                 : 'Reference audio is required',
           ),
+        ),
+      );
+      return;
+    }
+    if (_isGptSovits &&
+        _gptSovitsMode == 'trained' &&
+        _voiceNameCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Select or enter a GPT-SoVITS speaker')),
+      );
+      return;
+    }
+    if (_isGptSovits &&
+        _gptSovitsMode == 'clone' &&
+        _promptTextCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('GPT-SoVITS clone mode needs Prompt Text'),
         ),
       );
       return;
@@ -1301,7 +1422,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
         effectiveMode = TaskMode.presetVoice;
       }
     } else if (_isGptSovits) {
-      effectiveMode = TaskMode.cloneWithPrompt;
+      effectiveMode = _gptSovitsMode == 'clone'
+          ? TaskMode.cloneWithPrompt
+          : TaskMode.presetVoice;
     } else {
       effectiveMode = _taskMode;
     }

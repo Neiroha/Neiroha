@@ -4,6 +4,7 @@ import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
 import 'package:neiroha/data/storage/export_prefs.dart';
 import 'package:neiroha/data/storage/ffmpeg_service.dart';
+import 'package:neiroha/data/storage/novel_dialogue_rules_service.dart';
 import 'package:neiroha/data/storage/novel_import_service.dart';
 import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
@@ -50,6 +51,17 @@ final splitRulesServiceProvider = Provider<SplitRulesService>((ref) {
 /// Loaded list of [SplitRule]. Invalidate after a save to refresh consumers.
 final splitRulesProvider = FutureProvider((ref) {
   return ref.watch(splitRulesServiceProvider).load();
+});
+
+/// Global rules for detecting dialogue spans in imported novel text.
+final novelDialogueRulesServiceProvider = Provider<NovelDialogueRulesService>((
+  ref,
+) {
+  return NovelDialogueRulesService(ref.watch(databaseProvider));
+});
+
+final novelDialogueRulesProvider = FutureProvider((ref) {
+  return ref.watch(novelDialogueRulesServiceProvider).load();
 });
 
 /// Per-segment Phase TTS generation overrides, such as one sentence's

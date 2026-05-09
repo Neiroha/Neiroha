@@ -191,6 +191,17 @@ class NovelProjects extends Table {
   BoolColumn get sliceOnlyAtPunctuation =>
       boolean().withDefault(const Constant(true))();
   IntColumn get maxSliceChars => integer().withDefault(const Constant(50))();
+  IntColumn get prefetchSegments => integer().withDefault(const Constant(5))();
+  BoolColumn get overwriteCacheWhilePlaying =>
+      boolean().withDefault(const Constant(false))();
+  BoolColumn get skipPunctuationOnlySegments =>
+      boolean().withDefault(const Constant(true))();
+  TextColumn get cacheCurrentColor =>
+      text().withDefault(const Constant('#2F6B54'))();
+  TextColumn get cacheStaleColor =>
+      text().withDefault(const Constant('#7A5A2A'))();
+  RealColumn get cacheHighlightOpacity =>
+      real().withDefault(const Constant(0.12))();
   IntColumn get currentGlobalIndex =>
       integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime()();

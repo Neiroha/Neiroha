@@ -32,10 +32,11 @@ class ProviderScreen extends ConsumerWidget {
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (providers) {
         // Auto-select the first provider if nothing selected and list is not empty.
-        final effectiveSelectedId = selectedId ??
-            (providers.isNotEmpty ? providers.first.id : null);
-        final selected =
-            providers.where((p) => p.id == effectiveSelectedId).firstOrNull;
+        final effectiveSelectedId =
+            selectedId ?? (providers.isNotEmpty ? providers.first.id : null);
+        final selected = providers
+            .where((p) => p.id == effectiveSelectedId)
+            .firstOrNull;
 
         return ResizableSplitPane(
           initialLeftFraction: 0.35,
@@ -47,10 +48,7 @@ class ProviderScreen extends ConsumerWidget {
           ),
           rightBuilder: (_) => selected == null
               ? _buildEmpty(context)
-              : _ProviderEditor(
-                  key: ValueKey(selected.id),
-                  provider: selected,
-                ),
+              : _ProviderEditor(key: ValueKey(selected.id), provider: selected),
         );
       },
     );
@@ -61,12 +59,19 @@ class ProviderScreen extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.dns_outlined,
-              size: 64, color: Colors.white.withValues(alpha: 0.1)),
+          Icon(
+            Icons.dns_outlined,
+            size: 64,
+            color: Colors.white.withValues(alpha: 0.1),
+          ),
           const SizedBox(height: 16),
-          Text('Select or add a provider',
-              style: TextStyle(
-                  fontSize: 16, color: Colors.white.withValues(alpha: 0.4))),
+          Text(
+            'Select or add a provider',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white.withValues(alpha: 0.4),
+            ),
+          ),
         ],
       ),
     );
@@ -96,9 +101,12 @@ class _ProviderListPane extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 18, 12, 12),
             child: Row(
               children: [
-                Text('Providers',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600)),
+                Text(
+                  'Providers',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const Spacer(),
                 IconButton(
                   onPressed: () => _showAddDialog(context, ref),
@@ -115,7 +123,8 @@ class _ProviderListPane extends ConsumerWidget {
                     child: Text(
                       'No providers yet',
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.4)),
+                        color: Colors.white.withValues(alpha: 0.4),
+                      ),
                     ),
                   )
                 : ReorderableListView.builder(
@@ -231,15 +240,18 @@ class _ProviderRow extends ConsumerWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w500),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       Text(
                         _adapterLabel(provider.adapterType),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.4)),
+                          fontSize: 11,
+                          color: Colors.white.withValues(alpha: 0.4),
+                        ),
                       ),
                     ],
                   ),
@@ -298,9 +310,12 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
   bool _fetchingModels = false;
 
   /// Whether a model key is a TTS model (vs LLM/ASR/multimodal).
-  static bool _isTtsModelKey(String modelKey) {
+  bool _isTtsModelKey(String modelKey) {
+    if (_adapterType == AdapterType.gptSovits) return true;
     final k = modelKey.toLowerCase();
     return k.contains('tts') ||
+        k.contains('gpt-sovits') ||
+        k.contains('sovits') ||
         k.contains('speech-synthesis') ||
         k.contains('voiceclone') ||
         k.contains('voicedesign') ||
@@ -326,10 +341,17 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     if (_adapterType.hasSeparateModelAndVoice) {
       final models = await db_.getModelEntriesForProvider(widget.provider.id);
       final voices = await db_.getVoiceEntriesForProvider(widget.provider.id);
-      if (mounted) setState(() { _models = models; _voices = voices; });
+      if (mounted) {
+        setState(() {
+          _models = models;
+          _voices = voices;
+        });
+      }
     } else {
       final bindings = await db_.getBindingsForProvider(widget.provider.id);
-      if (mounted) setState(() => _models = bindings);
+      if (mounted) {
+        setState(() => _models = bindings);
+      }
     }
   }
 
@@ -350,15 +372,30 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
       // Fetch models
       final fetchedModels = await adapter.getModels();
       if (!mounted) return;
-      final existingModels = _models.map((m) => m.modelKey).toSet();
+      if (fetchedModels.isNotEmpty) {
+        final fetchedModelKeys = fetchedModels.map((m) => m.id).toSet();
+        for (final existing in _models) {
+          if (!fetchedModelKeys.contains(existing.modelKey)) {
+            await db_.deleteBinding(existing.id);
+          }
+        }
+      }
+      final existingModels = fetchedModels.isNotEmpty
+          ? _models
+                .where((m) => fetchedModels.any((f) => f.id == m.modelKey))
+                .map((m) => m.modelKey)
+                .toSet()
+          : _models.map((m) => m.modelKey).toSet();
       for (final m in fetchedModels) {
         if (!existingModels.contains(m.id)) {
-          await db_.insertBinding(db.ModelBindingsCompanion(
-            id: Value(const Uuid().v4()),
-            providerId: Value(widget.provider.id),
-            modelKey: Value(m.id),
-            // model entries use default supportedTaskModes = ''
-          ));
+          await db_.insertBinding(
+            db.ModelBindingsCompanion(
+              id: Value(const Uuid().v4()),
+              providerId: Value(widget.provider.id),
+              modelKey: Value(m.id),
+              // model entries use default supportedTaskModes = ''
+            ),
+          );
         }
       }
 
@@ -366,15 +403,30 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
       if (_adapterType.hasSeparateModelAndVoice) {
         final fetchedVoices = await adapter.getSpeakers();
         if (!mounted) return;
-        final existingVoices = _voices.map((v) => v.modelKey).toSet();
+        if (fetchedVoices.isNotEmpty) {
+          final fetchedVoiceKeys = fetchedVoices.toSet();
+          for (final existing in _voices) {
+            if (!fetchedVoiceKeys.contains(existing.modelKey)) {
+              await db_.deleteBinding(existing.id);
+            }
+          }
+        }
+        final existingVoices = fetchedVoices.isNotEmpty
+            ? _voices
+                  .where((v) => fetchedVoices.contains(v.modelKey))
+                  .map((v) => v.modelKey)
+                  .toSet()
+            : _voices.map((v) => v.modelKey).toSet();
         for (final v in fetchedVoices) {
           if (!existingVoices.contains(v)) {
-            await db_.insertBinding(db.ModelBindingsCompanion(
-              id: Value(const Uuid().v4()),
-              providerId: Value(widget.provider.id),
-              modelKey: Value(v),
-              supportedTaskModes: const Value('voice'),
-            ));
+            await db_.insertBinding(
+              db.ModelBindingsCompanion(
+                id: Value(const Uuid().v4()),
+                providerId: Value(widget.provider.id),
+                modelKey: Value(v),
+                supportedTaskModes: const Value('voice'),
+              ),
+            );
           }
         }
       }
@@ -382,9 +434,9 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
       await _loadModels();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to fetch: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to fetch: $e')));
       }
     } finally {
       if (mounted) setState(() => _fetchingModels = false);
@@ -407,7 +459,9 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
             child: const Text('Add'),
@@ -418,12 +472,14 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     ctrl.dispose();
     if (name == null || name.isEmpty) return;
     final db_ = ref.read(databaseProvider);
-    await db_.insertBinding(db.ModelBindingsCompanion(
-      id: Value(const Uuid().v4()),
-      providerId: Value(widget.provider.id),
-      modelKey: Value(name),
-      supportedTaskModes: Value(isVoice ? 'voice' : ''),
-    ));
+    await db_.insertBinding(
+      db.ModelBindingsCompanion(
+        id: Value(const Uuid().v4()),
+        providerId: Value(widget.provider.id),
+        modelKey: Value(name),
+        supportedTaskModes: Value(isVoice ? 'voice' : ''),
+      ),
+    );
     await _loadModels();
   }
 
@@ -442,24 +498,30 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
   }
 
   Future<void> _save() async {
-    await ref.read(databaseProvider).updateProvider(widget.provider.copyWith(
-          name: _nameCtrl.text.trim(),
-          adapterType: _adapterType.name,
-          baseUrl: _urlCtrl.text.trim(),
-          apiKey: _keyCtrl.text,
-          defaultModelName: _modelCtrl.text.trim().isEmpty
-              ? _adapterType.defaultModel
-              : _modelCtrl.text.trim(),
-        ));
+    await ref
+        .read(databaseProvider)
+        .updateProvider(
+          widget.provider.copyWith(
+            name: _nameCtrl.text.trim(),
+            adapterType: _adapterType.name,
+            baseUrl: _urlCtrl.text.trim(),
+            apiKey: _keyCtrl.text,
+            defaultModelName: _modelCtrl.text.trim().isEmpty
+                ? _adapterType.defaultModel
+                : _modelCtrl.text.trim(),
+          ),
+        );
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Saved'), duration: Duration(seconds: 1)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Saved'), duration: Duration(seconds: 1)),
+      );
     }
   }
 
   Future<void> _duplicate() async {
-    final nameCtrl =
-        TextEditingController(text: '${widget.provider.name} (Copy)');
+    final nameCtrl = TextEditingController(
+      text: '${widget.provider.name} (Copy)',
+    );
     final newName = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -471,8 +533,9 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, nameCtrl.text.trim()),
             child: const Text('Duplicate'),
@@ -483,8 +546,10 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     nameCtrl.dispose();
     if (newName == null || newName.isEmpty) return;
     final db_ = ref.read(databaseProvider);
-    final newProvider =
-        await db_.duplicateProvider(widget.provider.id, newName);
+    final newProvider = await db_.duplicateProvider(
+      widget.provider.id,
+      newName,
+    );
     if (mounted) {
       ref.read(_selectedProviderIdProvider.notifier).state = newProvider.id;
     }
@@ -498,8 +563,9 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
         content: Text('"${widget.provider.name}" will be removed.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () => Navigator.pop(ctx, true),
@@ -516,14 +582,14 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
   }
 
   String _baseUrlHint(AdapterType type) => switch (type) {
-        AdapterType.azureTts =>
-          'https://eastasia.tts.speech.microsoft.com  (or region name)',
-        AdapterType.systemTts => '(not required)',
-        AdapterType.gptSovits => 'http://localhost:9880',
-        AdapterType.cosyvoice => 'http://localhost:9880',
-        AdapterType.voxcpm2Native => 'http://127.0.0.1:8000',
-        _ => 'https://api.openai.com/v1',
-      };
+    AdapterType.azureTts =>
+      'https://eastasia.tts.speech.microsoft.com  (or region name)',
+    AdapterType.systemTts => '(not required)',
+    AdapterType.gptSovits => 'http://localhost:9880',
+    AdapterType.cosyvoice => 'http://localhost:9880',
+    AdapterType.voxcpm2Native => 'http://127.0.0.1:8000',
+    _ => 'https://api.openai.com/v1',
+  };
 
   Future<void> _healthCheck() async {
     setState(() {
@@ -571,16 +637,15 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                   children: [
                     Text(
                       widget.provider.name,
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
+                      style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     Text(
                       _adapterType.displayName,
                       style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white.withValues(alpha: 0.5)),
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
                     ),
                   ],
                 ),
@@ -614,8 +679,12 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                 decoration: const InputDecoration(labelText: 'Adapter Type'),
                 initialValue: _adapterType,
                 items: AdapterType.values
-                    .map((t) => DropdownMenuItem(
-                        value: t, child: Text(t.displayName)))
+                    .map(
+                      (t) => DropdownMenuItem(
+                        value: t,
+                        child: Text(t.displayName),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) {
                   if (v == null) return;
@@ -680,10 +749,9 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                         _adapterType.hasSeparateModelAndVoice
                             ? 'Models & Voices'
                             : 'Voices',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const Spacer(),
                       TextButton.icon(
@@ -692,24 +760,27 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                             ? const SizedBox(
                                 width: 14,
                                 height: 14,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2))
-                            : const Icon(Icons.cloud_download_rounded,
-                                size: 16),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.cloud_download_rounded,
+                                size: 16,
+                              ),
                         label: Text(
-                            _adapterType.hasSeparateModelAndVoice
-                                ? 'Fetch All'
-                                : 'Fetch'),
+                          _adapterType.hasSeparateModelAndVoice
+                              ? 'Fetch All'
+                              : 'Fetch',
+                        ),
                       ),
                       if (_adapterType.supportsModelQuery)
                         TextButton.icon(
-                          onPressed: () =>
-                              _addEntryManually(isVoice: false),
+                          onPressed: () => _addEntryManually(isVoice: false),
                           icon: const Icon(Icons.add_rounded, size: 16),
                           label: const Text('Add Model'),
                         ),
-                      if (_adapterType.supportsVoiceQuery &&
-                          !_adapterType.hasSeparateModelAndVoice)
+                      if (_adapterType.supportsVoiceQuery)
                         TextButton.icon(
                           onPressed: () => _addEntryManually(isVoice: true),
                           icon: const Icon(Icons.add_rounded, size: 16),
@@ -726,8 +797,9 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                         child: Text(
                           'No models or voices yet. Use "Fetch All" or add manually.',
                           style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.4)),
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
                         ),
                       )
                     else ...[
@@ -736,17 +808,21 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                       // model would duplicate every voice under every TTS row.
                       ..._models
                           .where((m) => _isTtsModelKey(m.modelKey))
-                          .map((m) => _TtsModelRow(
-                                model: m,
-                                onDelete: () => _removeEntry(m.id),
-                              )),
+                          .map(
+                            (m) => _TtsModelRow(
+                              model: m,
+                              onDelete: () => _removeEntry(m.id),
+                            ),
+                          ),
                       // Non-TTS models with capability badges
                       ..._models
                           .where((m) => !_isTtsModelKey(m.modelKey))
-                          .map((m) => _NonTtsModelRow(
-                                model: m,
-                                onDelete: () => _removeEntry(m.id),
-                              )),
+                          .map(
+                            (m) => _NonTtsModelRow(
+                              model: m,
+                              onDelete: () => _removeEntry(m.id),
+                            ),
+                          ),
                       // Custom Voices — flat section. Built-in voices for known
                       // TTS models (e.g. MiMo V2/V2.5) are rendered inline
                       // under each model row, so this section holds only
@@ -756,21 +832,21 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                         const SizedBox(height: 12),
                         Text(
                           'Custom Voices',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelMedium
+                          style: Theme.of(context).textTheme.labelMedium
                               ?.copyWith(
                                 color: Colors.white.withValues(alpha: 0.5),
                                 fontWeight: FontWeight.w600,
                               ),
                         ),
                         const SizedBox(height: 4),
-                        ..._voices.map((v) => _BindingRow(
-                              key: ValueKey(v.id),
-                              label: v.modelKey,
-                              icon: Icons.record_voice_over_rounded,
-                              onDelete: () => _removeEntry(v.id),
-                            )),
+                        ..._voices.map(
+                          (v) => _BindingRow(
+                            key: ValueKey(v.id),
+                            label: v.modelKey,
+                            icon: Icons.record_voice_over_rounded,
+                            onDelete: () => _removeEntry(v.id),
+                          ),
+                        ),
                       ],
                     ],
                   ] else ...[
@@ -781,17 +857,20 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                         child: Text(
                           'No voices yet. Use "Fetch" to get available voices.',
                           style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.4)),
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
                         ),
                       )
                     else
-                      ..._models.map((v) => _BindingRow(
-                            key: ValueKey(v.id),
-                            label: v.modelKey,
-                            icon: Icons.record_voice_over_rounded,
-                            onDelete: () => _removeEntry(v.id),
-                          )),
+                      ..._models.map(
+                        (v) => _BindingRow(
+                          key: ValueKey(v.id),
+                          label: v.modelKey,
+                          icon: Icons.record_voice_over_rounded,
+                          onDelete: () => _removeEntry(v.id),
+                        ),
+                      ),
                   ],
                 ],
               ],
@@ -810,16 +889,14 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                         ? const SizedBox(
                             width: 14,
                             height: 14,
-                            child:
-                                CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.favorite_rounded, size: 18),
                     label: const Text('Health Check'),
                   ),
                   const SizedBox(width: 14),
                   if (_lastHealth != null)
-                    _HealthBadge(
-                        ok: _lastHealth!, errorMessage: _healthError),
+                    _HealthBadge(ok: _lastHealth!, errorMessage: _healthError),
                 ],
               ),
             ],
@@ -858,16 +935,13 @@ class _BindingRow extends StatelessWidget {
           children: [
             Icon(icon, size: 16, color: Colors.grey),
             const SizedBox(width: 8),
-            Expanded(
-              child: Text(label, style: const TextStyle(fontSize: 13)),
-            ),
+            Expanded(child: Text(label, style: const TextStyle(fontSize: 13))),
             InkWell(
               onTap: onDelete,
               borderRadius: BorderRadius.circular(4),
               child: const Padding(
                 padding: EdgeInsets.all(4),
-                child:
-                    Icon(Icons.close_rounded, size: 14, color: Colors.grey),
+                child: Icon(Icons.close_rounded, size: 14, color: Colors.grey),
               ),
             ),
           ],
@@ -883,10 +957,7 @@ class _TtsModelRow extends StatefulWidget {
   final db.ModelBinding model;
   final VoidCallback onDelete;
 
-  const _TtsModelRow({
-    required this.model,
-    required this.onDelete,
-  });
+  const _TtsModelRow({required this.model, required this.onDelete});
 
   @override
   State<_TtsModelRow> createState() => _TtsModelRowState();
@@ -930,47 +1001,63 @@ class _TtsModelRowState extends State<_TtsModelRow> {
                   : null,
               borderRadius: BorderRadius.circular(8),
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
-                    Icon(Icons.mic_rounded,
-                        size: 16,
-                        color: Colors.purpleAccent.withValues(alpha: 0.7)),
+                    Icon(
+                      Icons.mic_rounded,
+                      size: 16,
+                      color: Colors.purpleAccent.withValues(alpha: 0.7),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(widget.model.modelKey,
-                          style: const TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.w500)),
+                      child: Text(
+                        widget.model.modelKey,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                     if (hasBuiltIns) ...[
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.06),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: Text('${voices.length} voices',
-                            style: TextStyle(
-                                fontSize: 10,
-                                color:
-                                    Colors.white.withValues(alpha: 0.55))),
+                        child: Text(
+                          '${voices.length} voices',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.white.withValues(alpha: 0.55),
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 4),
                     ],
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.purpleAccent.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(_typeLabel,
-                          style: TextStyle(
-                              fontSize: 10,
-                              color:
-                                  Colors.purpleAccent.withValues(alpha: 0.8))),
+                      child: Text(
+                        _typeLabel,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.purpleAccent.withValues(alpha: 0.8),
+                        ),
+                      ),
                     ),
                     if (hasBuiltIns)
                       Icon(
@@ -986,8 +1073,11 @@ class _TtsModelRowState extends State<_TtsModelRow> {
                       borderRadius: BorderRadius.circular(4),
                       child: const Padding(
                         padding: EdgeInsets.all(4),
-                        child: Icon(Icons.close_rounded,
-                            size: 14, color: Colors.grey),
+                        child: Icon(
+                          Icons.close_rounded,
+                          size: 14,
+                          color: Colors.grey,
+                        ),
                       ),
                     ),
                   ],
@@ -998,27 +1088,37 @@ class _TtsModelRowState extends State<_TtsModelRow> {
             if (hasBuiltIns && _expanded)
               Padding(
                 padding: const EdgeInsets.only(
-                    left: 28, right: 12, bottom: 8, top: 2),
+                  left: 28,
+                  right: 12,
+                  bottom: 8,
+                  top: 2,
+                ),
                 child: Wrap(
                   spacing: 6,
                   runSpacing: 4,
                   children: voices
-                      .map((v) => Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.08),
-                              ),
+                      .map(
+                        (v) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.08),
                             ),
-                            child: Text(v,
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.white
-                                        .withValues(alpha: 0.7))),
-                          ))
+                          ),
+                          child: Text(
+                            v,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ),
+                      )
                       .toList(),
                 ),
               ),
@@ -1035,10 +1135,7 @@ class _NonTtsModelRow extends StatelessWidget {
   final db.ModelBinding model;
   final VoidCallback onDelete;
 
-  const _NonTtsModelRow({
-    required this.model,
-    required this.onDelete,
-  });
+  const _NonTtsModelRow({required this.model, required this.onDelete});
 
   /// Infer capability badges from model name.
   List<String> get _capabilities {
@@ -1056,10 +1153,10 @@ class _NonTtsModelRow extends StatelessWidget {
   }
 
   Color _badgeColor(String cap) => switch (cap) {
-        'LLM' => Colors.blueAccent,
-        'ASR' => Colors.greenAccent,
-        _ => Colors.grey,
-      };
+    'LLM' => Colors.blueAccent,
+    'ASR' => Colors.greenAccent,
+    _ => Colors.grey,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -1073,38 +1170,44 @@ class _NonTtsModelRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(Icons.smart_toy_rounded,
-                size: 16,
-                color: Colors.blueAccent.withValues(alpha: 0.7)),
+            Icon(
+              Icons.smart_toy_rounded,
+              size: 16,
+              color: Colors.blueAccent.withValues(alpha: 0.7),
+            ),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(model.modelKey,
-                  style: const TextStyle(fontSize: 13)),
+              child: Text(model.modelKey, style: const TextStyle(fontSize: 13)),
             ),
-            ..._capabilities.map((cap) => Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _badgeColor(cap).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(cap,
-                        style: TextStyle(
-                            fontSize: 10,
-                            color:
-                                _badgeColor(cap).withValues(alpha: 0.8))),
+            ..._capabilities.map(
+              (cap) => Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
                   ),
-                )),
+                  decoration: BoxDecoration(
+                    color: _badgeColor(cap).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    cap,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: _badgeColor(cap).withValues(alpha: 0.8),
+                    ),
+                  ),
+                ),
+              ),
+            ),
             const SizedBox(width: 4),
             InkWell(
               onTap: onDelete,
               borderRadius: BorderRadius.circular(4),
               child: const Padding(
                 padding: EdgeInsets.all(4),
-                child: Icon(Icons.close_rounded,
-                    size: 14, color: Colors.grey),
+                child: Icon(Icons.close_rounded, size: 14, color: Colors.grey),
               ),
             ),
           ],
@@ -1143,7 +1246,10 @@ class _HealthBadge extends StatelessWidget {
             Text(
               ok ? 'Healthy' : 'Failed',
               style: TextStyle(
-                  fontSize: 12, color: color, fontWeight: FontWeight.w600),
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -1192,8 +1298,10 @@ class _AddProviderDialogState extends State<_AddProviderDialog> {
               decoration: const InputDecoration(labelText: 'Adapter Type'),
               initialValue: _selectedType,
               items: AdapterType.values
-                  .map((t) => DropdownMenuItem(
-                      value: t, child: Text(t.displayName)))
+                  .map(
+                    (t) =>
+                        DropdownMenuItem(value: t, child: Text(t.displayName)),
+                  )
                   .toList(),
               onChanged: (v) {
                 if (v == null) return;
@@ -1204,28 +1312,33 @@ class _AddProviderDialogState extends State<_AddProviderDialog> {
             Text(
               'You can configure the URL, API key, and model after creation.',
               style: TextStyle(
-                  fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
+                fontSize: 12,
+                color: Colors.white.withValues(alpha: 0.4),
+              ),
             ),
           ],
         ),
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         FilledButton(
           onPressed: () async {
             if (_nameCtrl.text.trim().isEmpty) return;
             final id = const Uuid().v4();
-            await widget.onAdd(db.TtsProvidersCompanion(
-              id: Value(id),
-              name: Value(_nameCtrl.text.trim()),
-              adapterType: Value(_selectedType.name),
-              baseUrl: Value(''),
-              apiKey: const Value(''),
-              defaultModelName: Value(_selectedType.defaultModel),
-              enabled: const Value(false),
-            ));
+            await widget.onAdd(
+              db.TtsProvidersCompanion(
+                id: Value(id),
+                name: Value(_nameCtrl.text.trim()),
+                adapterType: Value(_selectedType.name),
+                baseUrl: Value(''),
+                apiKey: const Value(''),
+                defaultModelName: Value(_selectedType.defaultModel),
+                enabled: const Value(false),
+              ),
+            );
             if (context.mounted) Navigator.pop(context);
           },
           child: const Text('Create'),

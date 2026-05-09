@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/storage/novel_dialogue_rules_service.dart';
 import 'package:neiroha/data/storage/novel_import_service.dart';
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
@@ -148,11 +149,17 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
   bool _generatingAll = false;
   bool _exporting = false;
   bool _editing = false;
+  int? _activePlaybackGlobalIndex;
   final Set<String> _generatingSegmentIds = <String>{};
+  final Map<String, Future<String>> _audioTasks = <String, Future<String>>{};
+  Future<void> _ttsSerialTail = Future<void>.value();
+
+  String get _playbackSourceTag =>
+      novelReaderPlaybackSourceFor(widget.projectId);
 
   @override
   void dispose() {
-    _stopNovel();
+    _stopNovel(updateUi: false);
     super.dispose();
   }
 
@@ -178,12 +185,21 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     final members =
         ref.watch(bankMembersStreamProvider(project.bankId)).valueOrNull ??
         const <db.VoiceBankMember>[];
+    final providers =
+        ref.watch(ttsProvidersStreamProvider).valueOrNull ??
+        const <db.TtsProvider>[];
     final assetMap = {for (final a in allAssets) a.id: a};
     final bankAssets = members
         .map((m) => assetMap[m.voiceAssetId])
         .whereType<db.VoiceAsset>()
         .toList();
     final chapterMap = {for (final c in chapters) c.id: c};
+    final segmentCacheStates = _cacheStatesForSegments(
+      project,
+      segments,
+      bankAssets,
+      providers,
+    );
 
     final currentIndex = segments.isEmpty
         ? 0
@@ -207,18 +223,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
 
     return Column(
       children: [
-        _NovelEditorBar(
-          project: project,
-          importing: _importing,
-          exporting: _exporting,
-          hasAudio: segments.any((s) => s.audioPath != null && !s.missing),
-          onBack: widget.onClose,
-          onImportFiles: () => unawaited(_importFiles(project)),
-          onImportFolder: () => unawaited(_importFolder(project)),
-          onExport: segments.isEmpty || _exporting
-              ? null
-              : () => unawaited(_exportBook(project, segments)),
-        ),
+        _NovelEditorBar(project: project, onBack: widget.onClose),
         const Divider(height: 1),
         Expanded(
           child: ResizableSplitPane(
@@ -242,9 +247,14 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
                     chapters: chapters,
                     segments: chapterSegments,
                     allSegments: segments,
+                    cacheStates: segmentCacheStates,
                     requestedPageIndex: _manualPageIndex,
                     currentGlobalIndex: currentSegment?.globalIndex,
+                    activePlaybackGlobalIndex: _activePlaybackGlobalIndex,
+                    readingActive: _stopCompleter != null,
+                    playbackSourceTag: _playbackSourceTag,
                     generatingSegmentIds: _generatingSegmentIds,
+                    importing: _importing,
                     onPageSelected: (index) =>
                         setState(() => _manualPageIndex = index),
                     onPickSegment: (segment) =>
@@ -254,6 +264,8 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
                     ),
                     onChapterSelected: (chapterId) =>
                         unawaited(_selectChapter(project, chapterId, segments)),
+                    onImportFiles: () => unawaited(_importFiles(project)),
+                    onImportFolder: () => unawaited(_importFolder(project)),
                     onAddChapter: () =>
                         unawaited(_showChapterEditorDialog(project)),
                     onEditChapter: (chapter) => unawaited(
@@ -261,18 +273,22 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
                     ),
                     onDeleteChapter: (chapter) =>
                         unawaited(_deleteChapter(project, chapter)),
-                    onThemeChanged: (theme) =>
-                        _updateProject(project.copyWith(readerTheme: theme)),
-                    onFontSizeChanged: (v) => _updateProject(
-                      project.copyWith(fontSize: v, updatedAt: DateTime.now()),
-                    ),
-                    onLineHeightChanged: (v) => _updateProject(
+                    onAppearanceChanged: (theme, fontSize, lineHeight) =>
+                        _updateProject(
+                          project.copyWith(
+                            readerTheme: theme,
+                            fontSize: fontSize,
+                            lineHeight: lineHeight,
+                            updatedAt: DateTime.now(),
+                          ),
+                        ),
+                    onOverwriteWhilePlayingChanged: (v) => _updateProject(
                       project.copyWith(
-                        lineHeight: v,
+                        overwriteCacheWhilePlaying: v,
                         updatedAt: DateTime.now(),
                       ),
                     ),
-                    onStop: _stopNovel,
+                    onStop: () => _stopNovel(),
                   ),
             rightBuilder: (_) => _NovelSettingsPane(
               project: project,
@@ -280,6 +296,8 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
               segments: segments,
               generatingSegmentIds: _generatingSegmentIds,
               importing: _importing,
+              exporting: _exporting,
+              hasAudio: segments.any((s) => s.audioPath != null && !s.missing),
               generatingAll: _generatingAll,
               editing: _editing,
               onNarratorChanged: (id) => _updateProject(
@@ -319,11 +337,57 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
               onMaxSliceCharsChanged: (v) => _updateProject(
                 project.copyWith(maxSliceChars: v, updatedAt: DateTime.now()),
               ),
+              onPrefetchSegmentsChanged: (v) => _updateProject(
+                project.copyWith(
+                  prefetchSegments: v,
+                  updatedAt: DateTime.now(),
+                ),
+              ),
+              onOverwriteWhilePlayingChanged: (v) => _updateProject(
+                project.copyWith(
+                  overwriteCacheWhilePlaying: v,
+                  updatedAt: DateTime.now(),
+                ),
+              ),
+              onSkipPunctuationOnlyChanged: (v) => _updateProject(
+                project.copyWith(
+                  skipPunctuationOnlySegments: v,
+                  updatedAt: DateTime.now(),
+                ),
+              ),
+              onManageDialogueRules: () =>
+                  unawaited(_manageDialogueRules(project, segments)),
+              onCacheCurrentColorChanged: (color) => _updateProject(
+                project.copyWith(
+                  cacheCurrentColor: color,
+                  updatedAt: DateTime.now(),
+                ),
+              ),
+              onCacheStaleColorChanged: (color) => _updateProject(
+                project.copyWith(
+                  cacheStaleColor: color,
+                  updatedAt: DateTime.now(),
+                ),
+              ),
+              onCacheHighlightOpacityChanged: (opacity) => _updateProject(
+                project.copyWith(
+                  cacheHighlightOpacity: opacity,
+                  updatedAt: DateTime.now(),
+                ),
+              ),
               onGenerateAll: segments.isEmpty || bankAssets.isEmpty
                   ? null
                   : () => unawaited(
-                      _generateAllMissing(project, segments, bankAssets),
+                      _generateAllMissing(
+                        project,
+                        segments,
+                        bankAssets,
+                        force: false,
+                      ),
                     ),
+              onExport: segments.isEmpty || _exporting
+                  ? null
+                  : () => unawaited(_exportBook(project, segments)),
             ),
           ),
         ),
@@ -335,6 +399,51 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     await ref
         .read(databaseProvider)
         .updateNovelProject(project.copyWith(updatedAt: DateTime.now()));
+  }
+
+  Map<String, _NovelSegmentCacheState> _cacheStatesForSegments(
+    db.NovelProject project,
+    List<db.NovelSegment> segments,
+    List<db.VoiceAsset> bankAssets,
+    List<db.TtsProvider> providers,
+  ) {
+    final assets = {for (final asset in bankAssets) asset.id: asset};
+    final providerMap = {
+      for (final provider in providers) provider.id: provider,
+    };
+    return {
+      for (final segment in segments)
+        segment.id: _cacheStateForSegment(
+          project,
+          segment,
+          assets,
+          providerMap,
+        ),
+    };
+  }
+
+  _NovelSegmentCacheState _cacheStateForSegment(
+    db.NovelProject project,
+    db.NovelSegment segment,
+    Map<String, db.VoiceAsset> assets,
+    Map<String, db.TtsProvider> providers,
+  ) {
+    if (segment.audioPath == null || segment.missing) {
+      return _NovelSegmentCacheState.none;
+    }
+    if (_shouldSkipSegment(project, segment)) {
+      return _NovelSegmentCacheState.none;
+    }
+    final voiceId = _voiceForSegment(project, segment);
+    final asset = voiceId == null ? null : assets[voiceId];
+    final provider = asset == null ? null : providers[asset.providerId];
+    if (asset == null || provider == null) {
+      return _NovelSegmentCacheState.stale;
+    }
+    final currentKey = _cacheKey(project, segment, asset, provider);
+    return segment.audioCacheKey == currentKey
+        ? _NovelSegmentCacheState.current
+        : _NovelSegmentCacheState.stale;
   }
 
   Future<void> _jumpTo(
@@ -497,7 +606,13 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     if (result == null) return;
 
     _stopNovel();
-    final novelSegments = splitNovelText(result.rawText);
+    final dialogueRules = await ref
+        .read(novelImportServiceProvider)
+        .loadDialogueRules();
+    final novelSegments = splitNovelText(
+      result.rawText,
+      dialogueRules: dialogueRules,
+    );
     final chapterId = chapter?.id ?? const Uuid().v4();
     final rows = _segmentRowsForChapter(
       projectId: project.id,
@@ -594,6 +709,45 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     );
   }
 
+  Future<void> _manageDialogueRules(
+    db.NovelProject project,
+    List<db.NovelSegment> segments,
+  ) async {
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _NovelDialogueRulesDialog(),
+    );
+    if (changed != true) return;
+
+    final rules = await ref.read(novelDialogueRulesServiceProvider).load();
+    final dbx = ref.read(databaseProvider);
+    final chapters = await dbx.getNovelChapters(project.id);
+    var rebuilt = 0;
+    for (final chapter in chapters) {
+      final currentSegments = segments
+          .where((segment) => segment.chapterId == chapter.id)
+          .toList();
+      final rawText = chapter.rawText.trim().isNotEmpty
+          ? chapter.rawText
+          : currentSegments.map((segment) => segment.segmentText).join('\n\n');
+      final nextSegments = splitNovelText(rawText, dialogueRules: rules);
+      await _deleteSegmentAudioFiles(currentSegments);
+      await dbx.replaceNovelChapterText(
+        chapter: chapter.copyWith(rawText: rawText),
+        segments: _segmentRowsForChapter(
+          projectId: project.id,
+          chapterId: chapter.id,
+          segments: nextSegments,
+        ),
+      );
+      rebuilt += nextSegments.length;
+    }
+    await dbx.updateNovelProject(project.copyWith(updatedAt: DateTime.now()));
+    ref.invalidate(novelDialogueRulesProvider);
+    if (!mounted) return;
+    _snack('Dialogue rules saved; rebuilt $rebuilt segment(s).');
+  }
+
   Future<void> _deleteSegmentAudioFiles(
     Iterable<db.NovelSegment> segments,
   ) async {
@@ -651,57 +805,88 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     final startAt = ordered.indexWhere(
       (segment) => segment.globalIndex >= start.globalIndex,
     );
-    if (startAt == -1) return;
+    if (startAt == -1) {
+      _stopCompleter = null;
+      return;
+    }
 
     try {
       for (var i = startAt; i < ordered.length; i++) {
         if (runId != _playRunId || stopCompleter.isCompleted) break;
         final segment = ordered[i];
-        if (!project.autoAdvanceChapters &&
+        final activeProject =
+            await ref.read(databaseProvider).getNovelProjectById(project.id) ??
+            project;
+        if (!activeProject.autoAdvanceChapters &&
             segment.chapterId != start.chapterId) {
           break;
         }
-        await _jumpTo(project, segment, syncPage: project.autoTurnPage);
-        unawaited(_prefetchAfter(project, ordered, i, bankAssets));
+        if (_shouldSkipSegment(activeProject, segment)) {
+          continue;
+        }
+        await _jumpTo(
+          activeProject,
+          segment,
+          syncPage: activeProject.autoTurnPage,
+        );
+        if (mounted) {
+          setState(() => _activePlaybackGlobalIndex = segment.globalIndex);
+        }
+        final forceCache = activeProject.overwriteCacheWhilePlaying;
         final audioPath = await _ensureAudioForSegment(
-          project,
+          activeProject,
           segment,
           bankAssets,
+          force: forceCache,
         );
         if (runId != _playRunId || stopCompleter.isCompleted) break;
+        final completed = ref.read(audioPlayerProvider).onPlayerComplete.first;
         await ref
             .read(playbackNotifierProvider.notifier)
             .load(
               audioPath,
               segment.segmentText,
               subtitle: _segmentSubtitle(segment),
-              sourceTag: novelReaderPlaybackSource,
+              sourceTag: _playbackSourceTag,
             );
-        await Future.any([
-          ref.read(audioPlayerProvider).onPlayerComplete.first,
-          stopCompleter.future,
-        ]);
+        unawaited(
+          _prefetchAfter(
+            activeProject,
+            ordered,
+            i,
+            bankAssets,
+            runId,
+            forceCache: forceCache,
+          ),
+        );
+        await Future.any([completed, stopCompleter.future]);
       }
     } catch (e) {
       if (runId == _playRunId) _snack('Playback stopped: $e');
     } finally {
       if (runId == _playRunId && mounted) {
-        _stopCompleter = null;
+        setState(() {
+          _stopCompleter = null;
+          _activePlaybackGlobalIndex = null;
+        });
       }
     }
   }
 
-  void _stopNovel() {
+  void _stopNovel({bool updateUi = true}) {
     _playRunId++;
     final completer = _stopCompleter;
     if (completer != null && !completer.isCompleted) {
       completer.complete();
     }
     _stopCompleter = null;
+    if (updateUi && mounted) {
+      setState(() => _activePlaybackGlobalIndex = null);
+    }
     unawaited(
       ref
           .read(playbackNotifierProvider.notifier)
-          .stopIfSourceTag(novelReaderPlaybackSource),
+          .stopIfSourceTag(_playbackSourceTag),
     );
   }
 
@@ -710,35 +895,59 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     List<db.NovelSegment> ordered,
     int index,
     List<db.VoiceAsset> bankAssets,
-  ) async {
-    for (var i = index + 1; i < ordered.length && i <= index + 3; i++) {
+    int runId, {
+    required bool forceCache,
+  }) async {
+    final prefetchCount = project.prefetchSegments.clamp(0, 20).toInt();
+    if (prefetchCount <= 0) return;
+    for (
+      var i = index + 1;
+      i < ordered.length && i <= index + prefetchCount;
+      i++
+    ) {
+      if (runId != _playRunId) break;
       final segment = ordered[i];
       if (!project.autoAdvanceChapters &&
           segment.chapterId != ordered[index].chapterId) {
         break;
       }
-      if (segment.audioPath != null && !segment.missing) continue;
-      if (_generatingSegmentIds.contains(segment.id)) continue;
+      if (!forceCache && segment.audioPath != null && !segment.missing) {
+        continue;
+      }
+      if (_shouldSkipSegment(project, segment)) continue;
       try {
-        await _ensureAudioForSegment(project, segment, bankAssets);
+        await _ensureAudioForSegment(
+          project,
+          segment,
+          bankAssets,
+          force: forceCache,
+        );
       } catch (_) {}
+      if (runId != _playRunId) break;
     }
   }
 
   Future<void> _generateAllMissing(
     db.NovelProject project,
     List<db.NovelSegment> segments,
-    List<db.VoiceAsset> bankAssets,
-  ) async {
+    List<db.VoiceAsset> bankAssets, {
+    required bool force,
+  }) async {
     if (_generatingAll) return;
     setState(() => _generatingAll = true);
     final ordered = [...segments]
       ..sort((a, b) => a.globalIndex.compareTo(b.globalIndex));
     try {
       for (final segment in ordered) {
-        await _ensureAudioForSegment(project, segment, bankAssets);
+        if (_shouldSkipSegment(project, segment)) continue;
+        await _ensureAudioForSegment(
+          project,
+          segment,
+          bankAssets,
+          force: force,
+        );
       }
-      _snack('Novel cache completed.');
+      _snack(force ? 'Novel cache overwritten.' : 'Novel cache completed.');
     } catch (e) {
       _snack('Generate all stopped: $e');
     } finally {
@@ -749,22 +958,12 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
   Future<String> _ensureAudioForSegment(
     db.NovelProject project,
     db.NovelSegment segment,
-    List<db.VoiceAsset> bankAssets,
-  ) async {
-    if (_generatingSegmentIds.contains(segment.id)) {
-      while (_generatingSegmentIds.contains(segment.id)) {
-        await Future<void>.delayed(const Duration(milliseconds: 120));
-      }
-      final updated =
-          (await ref.read(databaseProvider).getNovelSegments(project.id))
-              .where((s) => s.id == segment.id)
-              .firstOrNull;
-      if (updated?.audioPath != null &&
-          File(updated!.audioPath!).existsSync()) {
-        return updated.audioPath!;
-      }
+    List<db.VoiceAsset> bankAssets, {
+    bool force = false,
+  }) async {
+    if (_shouldSkipSegment(project, segment)) {
+      throw StateError('Skipped punctuation-only segment.');
     }
-
     final dbx = ref.read(databaseProvider);
     final providers = await dbx.getAllProviders();
     final assetMap = {for (final a in bankAssets) a.id: a};
@@ -778,22 +977,66 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
         .firstOrNull;
     if (provider == null) throw StateError('Provider not found for voice.');
 
-    final cacheKey = _cacheKey(project, segment, asset, provider);
-    if (segment.audioPath != null &&
-        segment.audioCacheKey == cacheKey &&
+    if (!force &&
+        segment.audioPath != null &&
         !segment.missing &&
         File(segment.audioPath!).existsSync()) {
       return segment.audioPath!;
     }
 
-    setState(() => _generatingSegmentIds.add(segment.id));
+    final taskKey = force ? '${segment.id}:force' : segment.id;
+    final existingTask = _audioTasks[taskKey];
+    if (existingTask != null) return existingTask;
+
+    final task = _runSerializedNovelTts(
+      () => _generateAudioForSegment(
+        project: project,
+        segment: segment,
+        asset: asset,
+        provider: provider,
+        force: force,
+      ),
+    );
+    _audioTasks[taskKey] = task;
+    try {
+      return await task;
+    } finally {
+      if (identical(_audioTasks[taskKey], task)) {
+        _audioTasks.remove(taskKey);
+      }
+    }
+  }
+
+  Future<String> _generateAudioForSegment({
+    required db.NovelProject project,
+    required db.NovelSegment segment,
+    required db.VoiceAsset asset,
+    required db.TtsProvider provider,
+    required bool force,
+  }) async {
+    final dbx = ref.read(databaseProvider);
+    final fresh = (await dbx.getNovelSegments(
+      project.id,
+    )).where((s) => s.id == segment.id).firstOrNull;
+    final activeSegment = fresh ?? segment;
+    final activeCacheKey = _cacheKey(project, activeSegment, asset, provider);
+    if (!force &&
+        activeSegment.audioPath != null &&
+        !activeSegment.missing &&
+        File(activeSegment.audioPath!).existsSync()) {
+      return activeSegment.audioPath!;
+    }
+
+    if (mounted) setState(() => _generatingSegmentIds.add(segment.id));
     try {
       final slug = await ref
           .read(storageServiceProvider)
           .ensureNovelProjectSlug(project.id);
       final outDir = await PathService.instance.novelReaderAudioDir(slug);
-      final chunks = _ttsChunksForSegment(project, segment.segmentText);
+      final chunks = _ttsChunksForSegment(project, activeSegment.segmentText);
       final adapter = createAdapter(provider, modelName: asset.modelName);
+      final fileBase =
+          'seg_${activeSegment.globalIndex}_${_stableHash(activeCacheKey)}';
       final result = chunks.length == 1
           ? await _synthesizeNovelChunk(
               adapter: adapter,
@@ -807,37 +1050,115 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
               asset: asset,
               provider: provider,
               outDir: outDir,
-              fileBase: 'seg_${segment.globalIndex}_${_stableHash(cacheKey)}',
+              fileBase: fileBase,
             );
-      final ext = chunks.length == 1
-          ? _extensionForContentType(result.contentType)
-          : '.wav';
-      final filePath = p.join(
-        outDir.path,
-        'seg_${segment.globalIndex}_${_stableHash(cacheKey)}$ext',
+      final oldAudioPath = activeSegment.audioPath;
+      final filePath = await _writeNovelCacheAudio(
+        result: result,
+        outDir: outDir,
+        fileBase: fileBase,
+        force: force,
       );
-      if (!await File(filePath).exists()) {
-        await File(filePath).writeAsBytes(result.audioBytes, flush: true);
-      }
       final durationSec = await measureAudioDuration(filePath);
       await dbx.updateNovelSegment(
-        segment.copyWith(
+        activeSegment.copyWith(
           audioPath: Value(filePath),
           audioDuration: Value(durationSec),
-          audioCacheKey: Value(cacheKey),
+          audioCacheKey: Value(activeCacheKey),
           error: const Value(null),
           missing: false,
         ),
       );
+      if (force && oldAudioPath != null && oldAudioPath != filePath) {
+        await _deleteAudioPath(oldAudioPath);
+      }
       return filePath;
     } catch (e) {
       await dbx.updateNovelSegment(
-        segment.copyWith(error: Value(e.toString())),
+        activeSegment.copyWith(error: Value(e.toString())),
       );
       rethrow;
     } finally {
       if (mounted) setState(() => _generatingSegmentIds.remove(segment.id));
     }
+  }
+
+  Future<String> _writeNovelCacheAudio({
+    required TtsResult result,
+    required Directory outDir,
+    required String fileBase,
+    required bool force,
+  }) async {
+    final mp3Path = p.join(outDir.path, '$fileBase.mp3');
+    final mp3File = File(mp3Path);
+    if (_isMp3ContentType(result.contentType)) {
+      if (force || !await mp3File.exists()) {
+        await mp3File.writeAsBytes(result.audioBytes, flush: true);
+      }
+      return mp3Path;
+    }
+
+    final sourceExt = _extensionForContentType(result.contentType);
+    final tempPath = p.join(outDir.path, '.$fileBase.source$sourceExt');
+    final tempFile = File(tempPath);
+    try {
+      await tempFile.writeAsBytes(result.audioBytes, flush: true);
+      if (await _convertAudioToMp3(tempPath, mp3Path)) {
+        return mp3Path;
+      }
+    } finally {
+      try {
+        if (await tempFile.exists()) await tempFile.delete();
+      } catch (_) {}
+    }
+
+    final fallbackPath = p.join(outDir.path, '$fileBase$sourceExt');
+    final fallbackFile = File(fallbackPath);
+    if (force || !await fallbackFile.exists()) {
+      await fallbackFile.writeAsBytes(result.audioBytes, flush: true);
+    }
+    return fallbackPath;
+  }
+
+  Future<bool> _convertAudioToMp3(String inputPath, String outputPath) async {
+    final ffmpeg = ref.read(ffmpegServiceProvider);
+    if (!await ffmpeg.isAvailable()) return false;
+    final ffmpegPath = await ffmpeg.resolvePath();
+    try {
+      final result = await Process.run(ffmpegPath, [
+        '-y',
+        '-v',
+        'error',
+        '-i',
+        inputPath,
+        '-c:a',
+        'libmp3lame',
+        '-q:a',
+        '4',
+        outputPath,
+      ]);
+      return result.exitCode == 0 && await File(outputPath).exists();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  bool _isMp3ContentType(String contentType) {
+    final lower = contentType.toLowerCase();
+    return lower.contains('mpeg') || lower.contains('mp3');
+  }
+
+  Future<T> _runSerializedNovelTts<T>(Future<T> Function() task) {
+    final previous = _ttsSerialTail;
+    final completer = Completer<T>();
+    _ttsSerialTail = previous.catchError((_) {}).then((_) async {
+      try {
+        completer.complete(await task());
+      } catch (e, st) {
+        completer.completeError(e, st);
+      }
+    });
+    return completer.future;
   }
 
   Future<TtsResult> _synthesizeNovelChunk({
@@ -847,22 +1168,30 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     required db.TtsProvider provider,
     bool preferWav = false,
   }) {
-    return adapter.synthesize(
-      TtsRequest(
-        text: text,
-        voice: asset.presetVoiceName ?? asset.name,
-        speed: asset.speed,
-        responseFormat: preferWav ? 'wav' : null,
-        textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
-        presetVoiceName: asset.presetVoiceName,
-        voiceInstruction: _supportsVoiceInstruction(asset, provider)
-            ? asset.voiceInstruction
-            : null,
-        refAudioPath: asset.refAudioPath,
-        promptText: asset.promptText,
-        promptLang: asset.promptLang,
-      ),
-    );
+    return adapter
+        .synthesize(
+          TtsRequest(
+            text: text,
+            voice: asset.presetVoiceName ?? asset.name,
+            speed: asset.speed,
+            responseFormat: preferWav ? 'wav' : 'mp3',
+            textLang: provider.adapterType == 'gptSovits'
+                ? asset.modelName
+                : null,
+            presetVoiceName: asset.presetVoiceName,
+            voiceInstruction: _supportsVoiceInstruction(asset, provider)
+                ? asset.voiceInstruction
+                : null,
+            refAudioPath: asset.refAudioPath,
+            promptText: asset.promptText,
+            promptLang: asset.promptLang,
+          ),
+        )
+        .timeout(
+          const Duration(minutes: 5),
+          onTimeout: () =>
+              throw TimeoutException('Novel TTS request timed out.'),
+        );
   }
 
   Future<TtsResult> _synthesizeSlicedSegment({
@@ -915,7 +1244,10 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
         reEncode: true,
       );
       if (!ok) throw StateError('FFmpeg failed to merge sliced audio.');
-      return TtsResult(audioBytes: Uint8List(0), contentType: 'audio/wav');
+      return TtsResult(
+        audioBytes: await File(output).readAsBytes(),
+        contentType: 'audio/wav',
+      );
     } finally {
       for (final file in tempFiles) {
         try {
@@ -1515,25 +1847,32 @@ class _EditableSegmentRowState extends State<_EditableSegmentRow> {
   }
 }
 
-class _ReaderPane extends StatelessWidget {
+class _ReaderPane extends ConsumerWidget {
   final db.NovelProject project;
   final db.NovelChapter? chapter;
   final List<db.NovelChapter> chapters;
   final List<db.NovelSegment> segments;
   final List<db.NovelSegment> allSegments;
+  final Map<String, _NovelSegmentCacheState> cacheStates;
   final int? requestedPageIndex;
   final int? currentGlobalIndex;
+  final int? activePlaybackGlobalIndex;
+  final bool readingActive;
+  final String playbackSourceTag;
   final Set<String> generatingSegmentIds;
+  final bool importing;
   final ValueChanged<int> onPageSelected;
   final ValueChanged<db.NovelSegment> onPickSegment;
   final ValueChanged<db.NovelSegment> onPlayFromSegment;
   final ValueChanged<String> onChapterSelected;
+  final VoidCallback onImportFiles;
+  final VoidCallback onImportFolder;
   final VoidCallback onAddChapter;
   final ValueChanged<db.NovelChapter> onEditChapter;
   final ValueChanged<db.NovelChapter> onDeleteChapter;
-  final ValueChanged<String> onThemeChanged;
-  final ValueChanged<double> onFontSizeChanged;
-  final ValueChanged<double> onLineHeightChanged;
+  final void Function(String theme, double fontSize, double lineHeight)
+  onAppearanceChanged;
+  final ValueChanged<bool> onOverwriteWhilePlayingChanged;
   final VoidCallback onStop;
 
   const _ReaderPane({
@@ -1542,25 +1881,32 @@ class _ReaderPane extends StatelessWidget {
     required this.chapters,
     required this.segments,
     required this.allSegments,
+    required this.cacheStates,
     required this.requestedPageIndex,
     required this.currentGlobalIndex,
+    required this.activePlaybackGlobalIndex,
+    required this.readingActive,
+    required this.playbackSourceTag,
     required this.generatingSegmentIds,
+    required this.importing,
     required this.onPageSelected,
     required this.onPickSegment,
     required this.onPlayFromSegment,
     required this.onChapterSelected,
+    required this.onImportFiles,
+    required this.onImportFolder,
     required this.onAddChapter,
     required this.onEditChapter,
     required this.onDeleteChapter,
-    required this.onThemeChanged,
-    required this.onFontSizeChanged,
-    required this.onLineHeightChanged,
+    required this.onAppearanceChanged,
+    required this.onOverwriteWhilePlayingChanged,
     required this.onStop,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = _readerColors(project.readerTheme);
+    final playback = ref.watch(playbackNotifierProvider);
     return LayoutBuilder(
       builder: (context, constraints) {
         final pages = _buildPages(
@@ -1571,7 +1917,7 @@ class _ReaderPane extends StatelessWidget {
           lineHeight: project.lineHeight,
         );
         final pageCount = math.max(1, pages.length);
-        final activePage = _pageForCurrentSegment(pages);
+        final activePage = _pageForCurrentSegment(pages, playback);
         final pageIndex = (requestedPageIndex ?? activePage)
             .clamp(0, pageCount - 1)
             .toInt();
@@ -1615,7 +1961,7 @@ class _ReaderPane extends StatelessWidget {
                   child: chapter == null
                       ? Center(
                           child: Text(
-                            'Create the project first, then import TXT files or a folder.',
+                            'Use Chapters below to import TXT, import a folder, or add a chapter.',
                             style: TextStyle(
                               fontSize: 14,
                               color: colors.text.withValues(alpha: 0.55),
@@ -1635,6 +1981,18 @@ class _ReaderPane extends StatelessWidget {
                                 return _ReaderSegment(
                                   piece: piece,
                                   active: active,
+                                  cacheState:
+                                      cacheStates[piece.segment.id] ??
+                                      _NovelSegmentCacheState.none,
+                                  currentCacheColor: _colorFromHex(
+                                    project.cacheCurrentColor,
+                                    const Color(0xFF2F6B54),
+                                  ),
+                                  staleCacheColor: _colorFromHex(
+                                    project.cacheStaleColor,
+                                    const Color(0xFF7A5A2A),
+                                  ),
+                                  cacheOpacity: project.cacheHighlightOpacity,
                                   colors: colors,
                                   fontSize: project.fontSize,
                                   lineHeight: project.lineHeight,
@@ -1654,7 +2012,11 @@ class _ReaderPane extends StatelessWidget {
                   chapter: chapter,
                   segments: allSegments,
                   generatingSegmentIds: generatingSegmentIds,
+                  importing: importing,
                   selectedSegment: selectedSegment,
+                  activePlaybackGlobalIndex: activePlaybackGlobalIndex,
+                  readingActive: readingActive,
+                  playbackSourceTag: playbackSourceTag,
                   onPreviousChapter: chapterIndex <= 0
                       ? null
                       : () => onChapterSelected(chapters[chapterIndex - 1].id),
@@ -1669,15 +2031,17 @@ class _ReaderPane extends StatelessWidget {
                       ? null
                       : () => goToPage(pageIndex + 1),
                   onChapterSelected: onChapterSelected,
+                  onImportFiles: onImportFiles,
+                  onImportFolder: onImportFolder,
                   onAddChapter: onAddChapter,
                   onEditChapter: onEditChapter,
                   onDeleteChapter: onDeleteChapter,
                   onPlaySelected: selectedSegment == null
                       ? null
                       : () => onPlayFromSegment(selectedSegment),
-                  onThemeChanged: onThemeChanged,
-                  onFontSizeChanged: onFontSizeChanged,
-                  onLineHeightChanged: onLineHeightChanged,
+                  onAppearanceChanged: onAppearanceChanged,
+                  onOverwriteWhilePlayingChanged:
+                      onOverwriteWhilePlayingChanged,
                   onStop: onStop,
                 ),
               ],
@@ -1688,15 +2052,44 @@ class _ReaderPane extends StatelessWidget {
     );
   }
 
-  int _pageForCurrentSegment(List<List<_ReaderPagePiece>> pages) {
+  int _pageForCurrentSegment(
+    List<List<_ReaderPagePiece>> pages,
+    PlaybackState playback,
+  ) {
     final current = currentGlobalIndex;
     if (current == null) return 0;
-    for (var i = 0; i < pages.length; i++) {
-      if (pages[i].any((piece) => piece.segment.globalIndex == current)) {
-        return i;
+    final hits = <_ReaderPageHit>[];
+    for (var pageIndex = 0; pageIndex < pages.length; pageIndex++) {
+      for (final piece in pages[pageIndex]) {
+        if (piece.segment.globalIndex == current) {
+          hits.add(
+            _ReaderPageHit(pageIndex: pageIndex, textLength: piece.text.length),
+          );
+        }
       }
     }
-    return 0;
+    if (hits.isEmpty) return 0;
+    if (hits.length == 1) return hits.first.pageIndex;
+    if (!project.autoTurnPage ||
+        playback.sourceTag != playbackSourceTag ||
+        playback.duration.inMilliseconds <= 0) {
+      return hits.first.pageIndex;
+    }
+
+    final totalTextLength = hits.fold<int>(
+      0,
+      (sum, hit) => sum + math.max(1, hit.textLength),
+    );
+    final fraction =
+        playback.position.inMilliseconds /
+        math.max(1, playback.duration.inMilliseconds);
+    final target = (totalTextLength * fraction.clamp(0.0, 0.999)).floor();
+    var cursor = 0;
+    for (final hit in hits) {
+      cursor += math.max(1, hit.textLength);
+      if (target < cursor) return hit.pageIndex;
+    }
+    return hits.last.pageIndex;
   }
 
   List<List<_ReaderPagePiece>> _buildPages({
@@ -1859,9 +2252,40 @@ class _ReaderPagePiece {
   });
 }
 
+class _ReaderPageHit {
+  final int pageIndex;
+  final int textLength;
+
+  const _ReaderPageHit({required this.pageIndex, required this.textLength});
+}
+
+enum _NovelSegmentCacheState { none, current, stale }
+
+bool _shouldSkipSegment(db.NovelProject project, db.NovelSegment segment) {
+  return project.skipPunctuationOnlySegments &&
+      isNovelPunctuationOnly(segment.segmentText);
+}
+
+Color _colorFromHex(String raw, Color fallback) {
+  final cleaned = raw.trim().replaceFirst('#', '');
+  if (cleaned.length != 6 && cleaned.length != 8) return fallback;
+  final value = int.tryParse(cleaned, radix: 16);
+  if (value == null) return fallback;
+  return Color(cleaned.length == 6 ? 0xFF000000 | value : value);
+}
+
+String _hexFromColor(Color color) {
+  final value = color.toARGB32() & 0xFFFFFF;
+  return '#${value.toRadixString(16).padLeft(6, '0').toUpperCase()}';
+}
+
 class _ReaderSegment extends StatelessWidget {
   final _ReaderPagePiece piece;
   final bool active;
+  final _NovelSegmentCacheState cacheState;
+  final Color currentCacheColor;
+  final Color staleCacheColor;
+  final double cacheOpacity;
   final _ReaderColors colors;
   final double fontSize;
   final double lineHeight;
@@ -1871,6 +2295,10 @@ class _ReaderSegment extends StatelessWidget {
   const _ReaderSegment({
     required this.piece,
     required this.active,
+    required this.cacheState,
+    required this.currentCacheColor,
+    required this.staleCacheColor,
+    required this.cacheOpacity,
     required this.colors,
     required this.fontSize,
     required this.lineHeight,
@@ -1881,6 +2309,11 @@ class _ReaderSegment extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = piece.continuation ? '    ${piece.text}' : piece.text;
+    final cacheColor = switch (cacheState) {
+      _NovelSegmentCacheState.current => currentCacheColor,
+      _NovelSegmentCacheState.stale => staleCacheColor,
+      _NovelSegmentCacheState.none => null,
+    };
     return GestureDetector(
       onTap: onTap,
       onDoubleTap: onDoubleTap,
@@ -1892,7 +2325,9 @@ class _ReaderSegment extends StatelessWidget {
           vertical: active ? 8 : 0,
         ),
         decoration: BoxDecoration(
-          color: active ? colors.active.withValues(alpha: 0.9) : null,
+          color: active
+              ? colors.active.withValues(alpha: 0.9)
+              : cacheColor?.withValues(alpha: cacheOpacity.clamp(0.0, 0.35)),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
@@ -1967,19 +2402,25 @@ class _NovelReaderBottomBar extends ConsumerWidget {
   final db.NovelChapter? chapter;
   final List<db.NovelSegment> segments;
   final Set<String> generatingSegmentIds;
+  final bool importing;
   final db.NovelSegment? selectedSegment;
+  final int? activePlaybackGlobalIndex;
+  final bool readingActive;
+  final String playbackSourceTag;
   final VoidCallback? onPreviousChapter;
   final VoidCallback? onNextChapter;
   final VoidCallback? onPreviousPage;
   final VoidCallback? onNextPage;
   final ValueChanged<String> onChapterSelected;
+  final VoidCallback onImportFiles;
+  final VoidCallback onImportFolder;
   final VoidCallback onAddChapter;
   final ValueChanged<db.NovelChapter> onEditChapter;
   final ValueChanged<db.NovelChapter> onDeleteChapter;
   final VoidCallback? onPlaySelected;
-  final ValueChanged<String> onThemeChanged;
-  final ValueChanged<double> onFontSizeChanged;
-  final ValueChanged<double> onLineHeightChanged;
+  final void Function(String theme, double fontSize, double lineHeight)
+  onAppearanceChanged;
+  final ValueChanged<bool> onOverwriteWhilePlayingChanged;
   final VoidCallback onStop;
 
   const _NovelReaderBottomBar({
@@ -1989,19 +2430,24 @@ class _NovelReaderBottomBar extends ConsumerWidget {
     required this.chapter,
     required this.segments,
     required this.generatingSegmentIds,
+    required this.importing,
     required this.selectedSegment,
+    required this.activePlaybackGlobalIndex,
+    required this.readingActive,
+    required this.playbackSourceTag,
     required this.onPreviousChapter,
     required this.onNextChapter,
     required this.onPreviousPage,
     required this.onNextPage,
     required this.onChapterSelected,
+    required this.onImportFiles,
+    required this.onImportFolder,
     required this.onAddChapter,
     required this.onEditChapter,
     required this.onDeleteChapter,
     required this.onPlaySelected,
-    required this.onThemeChanged,
-    required this.onFontSizeChanged,
-    required this.onLineHeightChanged,
+    required this.onAppearanceChanged,
+    required this.onOverwriteWhilePlayingChanged,
     required this.onStop,
   });
 
@@ -2009,8 +2455,13 @@ class _NovelReaderBottomBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final playback = ref.watch(playbackNotifierProvider);
     final isNovelAudio =
-        playback.audioPath != null &&
-        playback.sourceTag == novelReaderPlaybackSource;
+        playback.audioPath != null && playback.sourceTag == playbackSourceTag;
+    final selectedIsActiveRead =
+        readingActive &&
+        selectedSegment != null &&
+        selectedSegment!.globalIndex == activePlaybackGlobalIndex;
+    final showStopForSelection =
+        selectedIsActiveRead && (!isNovelAudio || playback.isPlaying);
     final notifier = ref.read(playbackNotifierProvider.notifier);
     final durMs = playback.duration.inMilliseconds;
     final posMs = playback.position.inMilliseconds.clamp(
@@ -2018,7 +2469,11 @@ class _NovelReaderBottomBar extends ConsumerWidget {
       durMs == 0 ? 1 : durMs,
     );
     final cached = segments
-        .where((segment) => segment.audioPath != null && !segment.missing)
+        .where(
+          (segment) =>
+              (segment.audioPath != null && !segment.missing) ||
+              _shouldSkipSegment(project, segment),
+        )
         .length;
     final cacheProgress = segments.isEmpty ? 0.0 : cached / segments.length;
 
@@ -2097,22 +2552,13 @@ class _NovelReaderBottomBar extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 IconButton(
-                  tooltip: isNovelAudio && playback.isPlaying
-                      ? 'Pause'
-                      : 'Play',
-                  onPressed: isNovelAudio
-                      ? notifier.togglePlay
-                      : onPlaySelected,
+                  tooltip: playback.isPlaying ? 'Pause' : 'Resume',
+                  onPressed: isNovelAudio ? notifier.togglePlay : null,
                   icon: Icon(
                     isNovelAudio && playback.isPlaying
                         ? Icons.pause_circle_filled_rounded
                         : Icons.play_circle_fill_rounded,
                   ),
-                ),
-                IconButton(
-                  tooltip: 'Stop',
-                  onPressed: isNovelAudio ? onStop : null,
-                  icon: const Icon(Icons.stop_circle_rounded),
                 ),
               ],
             ),
@@ -2133,9 +2579,7 @@ class _NovelReaderBottomBar extends ConsumerWidget {
                 ),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: chapters.isEmpty
-                        ? null
-                        : () => _openChapterPicker(context),
+                    onPressed: () => _openChapterPicker(context),
                     icon: const Icon(Icons.list_alt_rounded, size: 17),
                     label: Text(
                       chapter?.title ?? 'Chapters',
@@ -2144,10 +2588,30 @@ class _NovelReaderBottomBar extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
+                _ReaderToggleButton(
+                  tooltip: project.overwriteCacheWhilePlaying
+                      ? 'Overwrite cache while reading: on'
+                      : 'Overwrite cache while reading: off',
+                  icon: Icons.sync_rounded,
+                  selected: project.overwriteCacheWhilePlaying,
+                  onPressed: () => onOverwriteWhilePlayingChanged(
+                    !project.overwriteCacheWhilePlaying,
+                  ),
+                ),
                 _ReaderControlButton(
-                  tooltip: 'Play selected segment',
-                  icon: Icons.play_arrow_rounded,
-                  onPressed: onPlaySelected,
+                  tooltip: showStopForSelection
+                      ? 'Stop reading'
+                      : selectedIsActiveRead
+                      ? 'Resume reading'
+                      : 'Play selected segment',
+                  icon: showStopForSelection
+                      ? Icons.stop_rounded
+                      : Icons.play_arrow_rounded,
+                  onPressed: showStopForSelection
+                      ? onStop
+                      : selectedIsActiveRead
+                      ? notifier.togglePlay
+                      : onPlaySelected,
                 ),
                 _ReaderControlButton(
                   tooltip: 'Reader appearance',
@@ -2178,6 +2642,7 @@ class _NovelReaderBottomBar extends ConsumerWidget {
       builder: (_) => _ReaderChapterPickerDialog(
         chapters: chapters,
         segments: segments,
+        importing: importing,
         selectedChapterId: chapter?.id,
       ),
     );
@@ -2186,6 +2651,10 @@ class _NovelReaderBottomBar extends ConsumerWidget {
       case _ReaderChapterPickerAction.select:
         final chapter = result.chapter;
         if (chapter != null) onChapterSelected(chapter.id);
+      case _ReaderChapterPickerAction.importFiles:
+        onImportFiles();
+      case _ReaderChapterPickerAction.importFolder:
+        onImportFolder();
       case _ReaderChapterPickerAction.add:
         onAddChapter();
       case _ReaderChapterPickerAction.edit:
@@ -2203,9 +2672,7 @@ class _NovelReaderBottomBar extends ConsumerWidget {
       builder: (_) => _ReaderAppearanceDialog(project: project),
     );
     if (result == null) return;
-    onThemeChanged(result.theme);
-    onFontSizeChanged(result.fontSize);
-    onLineHeightChanged(result.lineHeight);
+    onAppearanceChanged(result.theme, result.fontSize, result.lineHeight);
   }
 
   IconData _themeIcon(String theme) {
@@ -2247,14 +2714,50 @@ class _ReaderControlButton extends StatelessWidget {
   }
 }
 
+class _ReaderToggleButton extends StatelessWidget {
+  final String tooltip;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback? onPressed;
+
+  const _ReaderToggleButton({
+    required this.tooltip,
+    required this.icon,
+    required this.selected,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      child: IconButton(
+        tooltip: tooltip,
+        isSelected: selected,
+        onPressed: onPressed,
+        icon: Icon(icon),
+        selectedIcon: Icon(icon),
+        style: IconButton.styleFrom(
+          backgroundColor: selected
+              ? AppTheme.accentColor.withValues(alpha: 0.22)
+              : null,
+          foregroundColor: selected ? AppTheme.accentColor : null,
+        ),
+      ),
+    );
+  }
+}
+
 class _ReaderChapterPickerDialog extends StatelessWidget {
   final List<db.NovelChapter> chapters;
   final List<db.NovelSegment> segments;
+  final bool importing;
   final String? selectedChapterId;
 
   const _ReaderChapterPickerDialog({
     required this.chapters,
     required this.segments,
+    required this.importing,
     required this.selectedChapterId,
   });
 
@@ -2268,6 +2771,36 @@ class _ReaderChapterPickerDialog extends StatelessWidget {
       title: Row(
         children: [
           const Expanded(child: Text('Chapters')),
+          IconButton(
+            tooltip: 'Import TXT files',
+            onPressed: importing
+                ? null
+                : () => Navigator.pop(
+                    context,
+                    const _ReaderChapterPickerResult(
+                      action: _ReaderChapterPickerAction.importFiles,
+                    ),
+                  ),
+            icon: importing
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.file_upload_rounded),
+          ),
+          IconButton(
+            tooltip: 'Import folder',
+            onPressed: importing
+                ? null
+                : () => Navigator.pop(
+                    context,
+                    const _ReaderChapterPickerResult(
+                      action: _ReaderChapterPickerAction.importFolder,
+                    ),
+                  ),
+            icon: const Icon(Icons.folder_open_rounded),
+          ),
           IconButton.filledTonal(
             tooltip: 'Add chapter',
             onPressed: () => Navigator.pop(
@@ -2283,61 +2816,76 @@ class _ReaderChapterPickerDialog extends StatelessWidget {
       content: SizedBox(
         width: 620,
         height: 480,
-        child: ListView.builder(
-          itemCount: chapters.length,
-          itemBuilder: (context, index) {
-            final chapter = chapters[index];
-            final selected = chapter.id == selectedChapterId;
-            return ListTile(
-              selected: selected,
-              leading: CircleAvatar(radius: 15, child: Text('${index + 1}')),
-              title: Text(chapter.title, overflow: TextOverflow.ellipsis),
-              subtitle: Text(
-                '${counts[chapter.id] ?? 0} segments',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.45)),
-              ),
-              trailing: Wrap(
-                spacing: 2,
-                children: [
-                  if (selected)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 8, right: 2),
-                      child: Icon(Icons.check_rounded),
-                    ),
-                  IconButton(
-                    tooltip: 'Edit chapter',
-                    onPressed: () => Navigator.pop(
-                      context,
-                      _ReaderChapterPickerResult(
-                        action: _ReaderChapterPickerAction.edit,
-                        chapter: chapter,
-                      ),
-                    ),
-                    icon: const Icon(Icons.edit_rounded, size: 18),
-                  ),
-                  IconButton(
-                    tooltip: 'Delete chapter',
-                    onPressed: () => Navigator.pop(
-                      context,
-                      _ReaderChapterPickerResult(
-                        action: _ReaderChapterPickerAction.delete,
-                        chapter: chapter,
-                      ),
-                    ),
-                    icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                  ),
-                ],
-              ),
-              onTap: () => Navigator.pop(
-                context,
-                _ReaderChapterPickerResult(
-                  action: _ReaderChapterPickerAction.select,
-                  chapter: chapter,
+        child: chapters.isEmpty
+            ? Center(
+                child: Text(
+                  'Import TXT files, import a folder, or add a chapter.',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
                 ),
+              )
+            : ListView.builder(
+                itemCount: chapters.length,
+                itemBuilder: (context, index) {
+                  final chapter = chapters[index];
+                  final selected = chapter.id == selectedChapterId;
+                  return ListTile(
+                    selected: selected,
+                    leading: CircleAvatar(
+                      radius: 15,
+                      child: Text('${index + 1}'),
+                    ),
+                    title: Text(chapter.title, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(
+                      '${counts[chapter.id] ?? 0} segments',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    trailing: Wrap(
+                      spacing: 2,
+                      children: [
+                        if (selected)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8, right: 2),
+                            child: Icon(Icons.check_rounded),
+                          ),
+                        IconButton(
+                          tooltip: 'Edit chapter',
+                          onPressed: () => Navigator.pop(
+                            context,
+                            _ReaderChapterPickerResult(
+                              action: _ReaderChapterPickerAction.edit,
+                              chapter: chapter,
+                            ),
+                          ),
+                          icon: const Icon(Icons.edit_rounded, size: 18),
+                        ),
+                        IconButton(
+                          tooltip: 'Delete chapter',
+                          onPressed: () => Navigator.pop(
+                            context,
+                            _ReaderChapterPickerResult(
+                              action: _ReaderChapterPickerAction.delete,
+                              chapter: chapter,
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            size: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                    onTap: () => Navigator.pop(
+                      context,
+                      _ReaderChapterPickerResult(
+                        action: _ReaderChapterPickerAction.select,
+                        chapter: chapter,
+                      ),
+                    ),
+                  );
+                },
               ),
-            );
-          },
-        ),
       ),
       actions: [
         TextButton(
@@ -2349,13 +2897,317 @@ class _ReaderChapterPickerDialog extends StatelessWidget {
   }
 }
 
-enum _ReaderChapterPickerAction { select, add, edit, delete }
+enum _ReaderChapterPickerAction {
+  select,
+  importFiles,
+  importFolder,
+  add,
+  edit,
+  delete,
+}
 
 class _ReaderChapterPickerResult {
   final _ReaderChapterPickerAction action;
   final db.NovelChapter? chapter;
 
   const _ReaderChapterPickerResult({required this.action, this.chapter});
+}
+
+class _NovelDialogueRulesDialog extends ConsumerStatefulWidget {
+  const _NovelDialogueRulesDialog();
+
+  @override
+  ConsumerState<_NovelDialogueRulesDialog> createState() =>
+      _NovelDialogueRulesDialogState();
+}
+
+class _NovelDialogueRulesDialogState
+    extends ConsumerState<_NovelDialogueRulesDialog> {
+  List<NovelDialogueRule> _rules = const [];
+  bool _loading = true;
+  bool _dirty = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final rules = await ref.read(novelDialogueRulesServiceProvider).load();
+    if (!mounted) return;
+    setState(() {
+      _rules = rules;
+      _loading = false;
+    });
+  }
+
+  Future<void> _save() async {
+    await ref.read(novelDialogueRulesServiceProvider).save(_rules);
+    ref.invalidate(novelDialogueRulesProvider);
+    _dirty = false;
+  }
+
+  Future<void> _addRule() async {
+    final rule = await _showNovelDialogueRuleEditor(context);
+    if (rule == null) return;
+    setState(() {
+      _rules = [..._rules, rule];
+      _dirty = true;
+    });
+  }
+
+  Future<void> _editRule(NovelDialogueRule rule) async {
+    final next = await _showNovelDialogueRuleEditor(context, existing: rule);
+    if (next == null) return;
+    setState(() {
+      _rules = [
+        for (final item in _rules)
+          if (item.id == rule.id) next else item,
+      ];
+      _dirty = true;
+    });
+  }
+
+  void _deleteRule(NovelDialogueRule rule) {
+    if (rule.builtIn) return;
+    setState(() {
+      _rules = _rules.where((item) => item.id != rule.id).toList();
+      _dirty = true;
+    });
+  }
+
+  void _toggleRule(NovelDialogueRule rule, bool enabled) {
+    setState(() {
+      _rules = [
+        for (final item in _rules)
+          if (item.id == rule.id) item.copyWith(enabled: enabled) else item,
+      ];
+      _dirty = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          const Expanded(child: Text('Dialogue Rules')),
+          IconButton(
+            tooltip: 'Add rule',
+            onPressed: _loading ? null : _addRule,
+            icon: const Icon(Icons.add_rounded),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 560,
+        height: 430,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.separated(
+                itemCount: _rules.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 6),
+                itemBuilder: (context, index) {
+                  final rule = _rules[index];
+                  return _DialogueRuleTile(
+                    rule: rule,
+                    onToggle: (enabled) => _toggleRule(rule, enabled),
+                    onEdit: rule.builtIn ? null : () => _editRule(rule),
+                    onDelete: rule.builtIn ? null : () => _deleteRule(rule),
+                  );
+                },
+              ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Close'),
+        ),
+        FilledButton(
+          onPressed: () async {
+            if (_dirty) await _save();
+            if (context.mounted) Navigator.pop(context, true);
+          },
+          child: Text(_dirty ? 'Save & Apply' : 'Apply'),
+        ),
+      ],
+    );
+  }
+}
+
+class _DialogueRuleTile extends StatelessWidget {
+  final NovelDialogueRule rule;
+  final ValueChanged<bool> onToggle;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  const _DialogueRuleTile({
+    required this.rule,
+    required this.onToggle,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceDim,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Switch(value: rule.enabled, onChanged: onToggle),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        rule.name,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    if (rule.builtIn) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'built-in',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppTheme.accentColor.withValues(alpha: 0.9),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  rule.pattern,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Edit',
+            icon: const Icon(Icons.edit_rounded, size: 16),
+            onPressed: onEdit,
+          ),
+          IconButton(
+            tooltip: 'Delete',
+            icon: const Icon(Icons.delete_rounded, size: 16),
+            onPressed: onDelete,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+Future<NovelDialogueRule?> _showNovelDialogueRuleEditor(
+  BuildContext context, {
+  NovelDialogueRule? existing,
+}) {
+  final nameCtrl = TextEditingController(text: existing?.name ?? '');
+  final patternCtrl = TextEditingController(text: existing?.pattern ?? '');
+  String? error;
+
+  return showDialog<NovelDialogueRule>(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setDialogState) {
+        return AlertDialog(
+          title: Text(
+            existing == null ? 'New Dialogue Rule' : 'Edit Dialogue Rule',
+          ),
+          content: SizedBox(
+            width: 500,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  autofocus: true,
+                  decoration: const InputDecoration(labelText: 'Name'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: patternCtrl,
+                  style: const TextStyle(fontFamily: 'monospace'),
+                  decoration: InputDecoration(
+                    labelText: 'Regex pattern',
+                    helperText: r'Examples: “[\s\S]*?”   /   "[\s\S]*?"',
+                    errorText: error,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                final pattern = patternCtrl.text.trim();
+                if (name.isEmpty) {
+                  setDialogState(() => error = 'Name is required');
+                  return;
+                }
+                if (pattern.isEmpty) {
+                  setDialogState(() => error = 'Pattern is required');
+                  return;
+                }
+                try {
+                  RegExp(pattern, multiLine: true, dotAll: true);
+                } on FormatException catch (e) {
+                  setDialogState(() => error = 'Invalid regex: ${e.message}');
+                  return;
+                }
+                Navigator.pop(
+                  ctx,
+                  NovelDialogueRule(
+                    id: existing?.id ?? const Uuid().v4(),
+                    name: name,
+                    pattern: pattern,
+                    enabled: existing?.enabled ?? true,
+                  ),
+                );
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    ),
+  ).whenComplete(() {
+    nameCtrl.dispose();
+    patternCtrl.dispose();
+  });
 }
 
 class _ReaderAppearanceDialog extends StatefulWidget {
@@ -2471,6 +3323,8 @@ class _NovelSettingsPane extends StatelessWidget {
   final List<db.NovelSegment> segments;
   final Set<String> generatingSegmentIds;
   final bool importing;
+  final bool exporting;
+  final bool hasAudio;
   final bool generatingAll;
   final bool editing;
   final ValueChanged<String?> onNarratorChanged;
@@ -2481,7 +3335,15 @@ class _NovelSettingsPane extends StatelessWidget {
   final ValueChanged<bool> onAutoSliceChanged;
   final ValueChanged<bool> onSliceOnlyAtPunctuationChanged;
   final ValueChanged<int> onMaxSliceCharsChanged;
+  final ValueChanged<int> onPrefetchSegmentsChanged;
+  final ValueChanged<bool> onOverwriteWhilePlayingChanged;
+  final ValueChanged<bool> onSkipPunctuationOnlyChanged;
+  final VoidCallback onManageDialogueRules;
+  final ValueChanged<String> onCacheCurrentColorChanged;
+  final ValueChanged<String> onCacheStaleColorChanged;
+  final ValueChanged<double> onCacheHighlightOpacityChanged;
   final VoidCallback? onGenerateAll;
+  final VoidCallback? onExport;
 
   const _NovelSettingsPane({
     required this.project,
@@ -2489,6 +3351,8 @@ class _NovelSettingsPane extends StatelessWidget {
     required this.segments,
     required this.generatingSegmentIds,
     required this.importing,
+    required this.exporting,
+    required this.hasAudio,
     required this.generatingAll,
     required this.editing,
     required this.onNarratorChanged,
@@ -2499,7 +3363,15 @@ class _NovelSettingsPane extends StatelessWidget {
     required this.onAutoSliceChanged,
     required this.onSliceOnlyAtPunctuationChanged,
     required this.onMaxSliceCharsChanged,
+    required this.onPrefetchSegmentsChanged,
+    required this.onOverwriteWhilePlayingChanged,
+    required this.onSkipPunctuationOnlyChanged,
+    required this.onManageDialogueRules,
+    required this.onCacheCurrentColorChanged,
+    required this.onCacheStaleColorChanged,
+    required this.onCacheHighlightOpacityChanged,
     required this.onGenerateAll,
+    required this.onExport,
   });
 
   @override
@@ -2551,6 +3423,44 @@ class _NovelSettingsPane extends StatelessWidget {
             valueLabel: '${project.maxSliceChars.clamp(20, 80)}',
             onChanged: (v) => onMaxSliceCharsChanged(v.round()),
           ),
+          const SizedBox(height: 6),
+          _ColorSetting(
+            label: 'Current',
+            value: project.cacheCurrentColor,
+            fallback: const Color(0xFF2F6B54),
+            onChanged: onCacheCurrentColorChanged,
+          ),
+          _ColorSetting(
+            label: 'Changed',
+            value: project.cacheStaleColor,
+            fallback: const Color(0xFF7A5A2A),
+            onChanged: onCacheStaleColorChanged,
+          ),
+          _SliderSetting(
+            label: 'Alpha',
+            value: project.cacheHighlightOpacity.clamp(0.02, 0.24).toDouble(),
+            min: 0.02,
+            max: 0.24,
+            divisions: 11,
+            valueLabel:
+                '${(project.cacheHighlightOpacity.clamp(0.02, 0.24) * 100).round()}%',
+            onChanged: onCacheHighlightOpacityChanged,
+          ),
+          _CompactSwitch(
+            label: 'Overwrite while reading',
+            value: project.overwriteCacheWhilePlaying,
+            onChanged: onOverwriteWhilePlayingChanged,
+          ),
+          _CompactSwitch(
+            label: 'Skip punctuation-only text',
+            value: project.skipPunctuationOnlySegments,
+            onChanged: onSkipPunctuationOnlyChanged,
+          ),
+          OutlinedButton.icon(
+            onPressed: onManageDialogueRules,
+            icon: const Icon(Icons.rule_rounded, size: 17),
+            label: const Text('Dialogue Rules'),
+          ),
           const SizedBox(height: 8),
           FilledButton.icon(
             onPressed: generatingAll || importing ? null : onGenerateAll,
@@ -2574,6 +3484,19 @@ class _NovelSettingsPane extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
+          _PanelTitle('OUTPUT'),
+          OutlinedButton.icon(
+            onPressed: hasAudio && !exporting ? onExport : null,
+            icon: exporting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.ios_share_rounded, size: 17),
+            label: const Text('Export Book'),
+          ),
+          const SizedBox(height: 18),
           _PanelTitle('PLAYBACK'),
           _CompactSwitch(
             label: 'Auto turn page while playing',
@@ -2584,6 +3507,15 @@ class _NovelSettingsPane extends StatelessWidget {
             label: 'Auto switch chapters while playing',
             value: project.autoAdvanceChapters,
             onChanged: onAutoAdvanceChaptersChanged,
+          ),
+          _SliderSetting(
+            label: 'Ahead',
+            value: project.prefetchSegments.clamp(0, 20).toDouble(),
+            min: 0,
+            max: 20,
+            divisions: 20,
+            valueLabel: '${project.prefetchSegments.clamp(0, 20)}',
+            onChanged: (v) => onPrefetchSegmentsChanged(v.round()),
           ),
         ],
       ),
@@ -2688,24 +3620,9 @@ class _ChapterEditResult {
 
 class _NovelEditorBar extends StatelessWidget {
   final db.NovelProject project;
-  final bool importing;
-  final bool exporting;
-  final bool hasAudio;
   final VoidCallback onBack;
-  final VoidCallback onImportFiles;
-  final VoidCallback onImportFolder;
-  final VoidCallback? onExport;
 
-  const _NovelEditorBar({
-    required this.project,
-    required this.importing,
-    required this.exporting,
-    required this.hasAudio,
-    required this.onBack,
-    required this.onImportFiles,
-    required this.onImportFolder,
-    required this.onExport,
-  });
+  const _NovelEditorBar({required this.project, required this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -2731,36 +3648,6 @@ class _NovelEditorBar extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
-          ),
-          const SizedBox(width: 12),
-          TextButton.icon(
-            onPressed: importing ? null : onImportFiles,
-            icon: importing
-                ? const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.file_upload_rounded, size: 16),
-            label: const Text('TXT Files'),
-          ),
-          const SizedBox(width: 6),
-          TextButton.icon(
-            onPressed: importing ? null : onImportFolder,
-            icon: const Icon(Icons.folder_open_rounded, size: 16),
-            label: const Text('Folder'),
-          ),
-          const SizedBox(width: 6),
-          TextButton.icon(
-            onPressed: hasAudio && !exporting ? onExport : null,
-            icon: exporting
-                ? const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.ios_share_rounded, size: 16),
-            label: const Text('Export Book'),
           ),
         ],
       ),
@@ -2911,6 +3798,171 @@ class _VoiceDropdown extends StatelessWidget {
           ),
       ],
       onChanged: onChanged,
+    );
+  }
+}
+
+class _ColorSetting extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color fallback;
+  final ValueChanged<String> onChanged;
+
+  const _ColorSetting({
+    required this.label,
+    required this.value,
+    required this.fallback,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _colorFromHex(value, fallback);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 64,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white.withValues(alpha: 0.55),
+              ),
+            ),
+          ),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () async {
+                final picked = await showDialog<String>(
+                  context: context,
+                  builder: (_) => _ColorPickerDialog(
+                    initialHex: _hexFromColor(color),
+                    fallback: fallback,
+                  ),
+                );
+                if (picked != null) onChanged(picked);
+              },
+              child: Row(
+                children: [
+                  Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _hexFromColor(color),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ColorPickerDialog extends StatefulWidget {
+  final String initialHex;
+  final Color fallback;
+
+  const _ColorPickerDialog({required this.initialHex, required this.fallback});
+
+  @override
+  State<_ColorPickerDialog> createState() => _ColorPickerDialogState();
+}
+
+class _ColorPickerDialogState extends State<_ColorPickerDialog> {
+  late final TextEditingController _controller;
+
+  static const _palette = [
+    Color(0xFF2F6B54),
+    Color(0xFF3E6B8F),
+    Color(0xFF6A5BA8),
+    Color(0xFF7A5A2A),
+    Color(0xFF8C4B4B),
+    Color(0xFF62656F),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialHex);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final current = _colorFromHex(_controller.text, widget.fallback);
+    return AlertDialog(
+      title: const Text('Cache Highlight Color'),
+      content: SizedBox(
+        width: 360,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                for (final color in _palette)
+                  InkWell(
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: () =>
+                        setState(() => _controller.text = _hexFromColor(color)),
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: current == color
+                              ? Colors.white.withValues(alpha: 0.8)
+                              : Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _controller,
+              decoration: const InputDecoration(labelText: 'Hex color'),
+              onChanged: (_) => setState(() {}),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(
+            context,
+            _hexFromColor(_colorFromHex(_controller.text, widget.fallback)),
+          ),
+          child: const Text('Apply'),
+        ),
+      ],
     );
   }
 }

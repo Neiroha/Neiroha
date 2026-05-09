@@ -112,6 +112,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         t == 'systemTts' ||
         t == 'openaiCompatible' ||
         t == 'chatCompletionsTts' ||
+        t == 'gptSovits' ||
         t == 'geminiTts';
   }
 
@@ -131,7 +132,13 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
       _speakers = [];
     });
     final database = ref.read(databaseProvider);
-    final cached = await database.getBindingsForProvider(_selectedProviderId);
+    final adapterType = AdapterType.values.firstWhere(
+      (t) => t.name == (_selectedProvider?.adapterType ?? ''),
+      orElse: () => AdapterType.openaiCompatible,
+    );
+    final cached = adapterType.hasSeparateModelAndVoice
+        ? await database.getVoiceEntriesForProvider(_selectedProviderId)
+        : await database.getBindingsForProvider(_selectedProviderId);
     if (cached.isNotEmpty) {
       final voices = cached.map((b) => b.modelKey).toList()..sort();
       if (mounted) {
@@ -340,6 +347,16 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
                 hintText: _selectedProvider?.adapterType == 'geminiTts'
                     ? 'e.g. gemini-2.5-flash-preview-tts'
                     : 'e.g. tts-1',
+              ),
+            ),
+          ],
+          if (_isGptSovits) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: _textLangCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Text Language (optional)',
+                hintText: 'zh / en / ja / ko ...',
               ),
             ),
           ],

@@ -227,27 +227,29 @@ abstract class TtsAdapter {
 
 ### 2.4 GPT-SoVITS 适配器（`gptSovits`）
 
-适用于 GPT-SoVITS TTS 后端（api_v2.py 风格）。
+适用于 Neiroha GPT-SoVITS 本地启动器，支持已训练说话人 profile 和参考音频克隆模式。
 
 | 操作 | 方法 | 路径 | 状态 |
 |---|---|---|---|
-| 合成 | `POST` | `/tts` | **已实现** |
-| 健康检查 | `GET` | `/control` | **已实现** |
-| 列出说话人 | — | — | 不支持（使用参考音频文件） |
+| 已训练说话人合成 | `POST` | `/v1/audio/speech` | **已实现** |
+| 克隆合成 | `POST` | `/gpt-sovits/clone` | **已实现** |
+| 健康检查 | `GET` | `/health` | **已实现** |
+| 列出原生模型 | `GET` | `/gpt-sovits/models` | **已实现** |
+| 列出说话人 | `GET` | `/gpt-sovits/voices`、`/v1/audio/voices`、`/speakers` | **已实现** |
 
-**合成请求体：**
+**克隆请求体：**
 ```json
 {
-  "text": "要合成的文本",
+  "input": "要合成的文本",
+  "speaker": "clone",
   "text_lang": "zh",
   "ref_audio_path": "/path/to/ref.wav",
   "prompt_text": "参考文本",
   "prompt_lang": "zh",
-  "speed_factor": 1.0,
-  "media_type": "wav",
+  "speed": 1.0,
+  "response_format": "wav",
   "text_split_method": "cut5",
-  "batch_size": 1,
-  "streaming_mode": false
+  "batch_size": 1
 }
 ```
 

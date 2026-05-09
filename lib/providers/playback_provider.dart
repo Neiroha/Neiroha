@@ -9,6 +9,13 @@ const voiceBankQuickTestPlaybackSource = 'voice_bank.quick_tts';
 const phaseTtsPlaybackSource = 'phase_tts.preview';
 const novelReaderPlaybackSource = 'novel_reader.playback';
 
+String novelReaderPlaybackSourceFor(String projectId) =>
+    '$novelReaderPlaybackSource:$projectId';
+
+bool isNovelReaderPlaybackSource(String? sourceTag) =>
+    sourceTag == novelReaderPlaybackSource ||
+    sourceTag?.startsWith('$novelReaderPlaybackSource:') == true;
+
 class PlaybackState {
   final String? audioPath;
   final String? title;
@@ -134,6 +141,11 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
 
   Future<void> stopIfSourceTag(String sourceTag) async {
     if (state.sourceTag != sourceTag) return;
+    await stop();
+  }
+
+  Future<void> stopIfSourceTagPrefix(String sourceTagPrefix) async {
+    if (state.sourceTag?.startsWith(sourceTagPrefix) != true) return;
     await stop();
   }
 

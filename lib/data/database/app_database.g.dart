@@ -5134,6 +5134,85 @@ class $NovelProjectsTable extends NovelProjects
     requiredDuringInsert: false,
     defaultValue: const Constant(50),
   );
+  static const VerificationMeta _prefetchSegmentsMeta = const VerificationMeta(
+    'prefetchSegments',
+  );
+  @override
+  late final GeneratedColumn<int> prefetchSegments = GeneratedColumn<int>(
+    'prefetch_segments',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(5),
+  );
+  static const VerificationMeta _overwriteCacheWhilePlayingMeta =
+      const VerificationMeta('overwriteCacheWhilePlaying');
+  @override
+  late final GeneratedColumn<bool> overwriteCacheWhilePlaying =
+      GeneratedColumn<bool>(
+        'overwrite_cache_while_playing',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("overwrite_cache_while_playing" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _skipPunctuationOnlySegmentsMeta =
+      const VerificationMeta('skipPunctuationOnlySegments');
+  @override
+  late final GeneratedColumn<bool> skipPunctuationOnlySegments =
+      GeneratedColumn<bool>(
+        'skip_punctuation_only_segments',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("skip_punctuation_only_segments" IN (0, 1))',
+        ),
+        defaultValue: const Constant(true),
+      );
+  static const VerificationMeta _cacheCurrentColorMeta = const VerificationMeta(
+    'cacheCurrentColor',
+  );
+  @override
+  late final GeneratedColumn<String> cacheCurrentColor =
+      GeneratedColumn<String>(
+        'cache_current_color',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('#2F6B54'),
+      );
+  static const VerificationMeta _cacheStaleColorMeta = const VerificationMeta(
+    'cacheStaleColor',
+  );
+  @override
+  late final GeneratedColumn<String> cacheStaleColor = GeneratedColumn<String>(
+    'cache_stale_color',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('#7A5A2A'),
+  );
+  static const VerificationMeta _cacheHighlightOpacityMeta =
+      const VerificationMeta('cacheHighlightOpacity');
+  @override
+  late final GeneratedColumn<double> cacheHighlightOpacity =
+      GeneratedColumn<double>(
+        'cache_highlight_opacity',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0.12),
+      );
   static const VerificationMeta _currentGlobalIndexMeta =
       const VerificationMeta('currentGlobalIndex');
   @override
@@ -5193,6 +5272,12 @@ class $NovelProjectsTable extends NovelProjects
     autoSliceLongSegments,
     sliceOnlyAtPunctuation,
     maxSliceChars,
+    prefetchSegments,
+    overwriteCacheWhilePlaying,
+    skipPunctuationOnlySegments,
+    cacheCurrentColor,
+    cacheStaleColor,
+    cacheHighlightOpacity,
     currentGlobalIndex,
     createdAt,
     updatedAt,
@@ -5315,6 +5400,60 @@ class $NovelProjectsTable extends NovelProjects
         ),
       );
     }
+    if (data.containsKey('prefetch_segments')) {
+      context.handle(
+        _prefetchSegmentsMeta,
+        prefetchSegments.isAcceptableOrUnknown(
+          data['prefetch_segments']!,
+          _prefetchSegmentsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('overwrite_cache_while_playing')) {
+      context.handle(
+        _overwriteCacheWhilePlayingMeta,
+        overwriteCacheWhilePlaying.isAcceptableOrUnknown(
+          data['overwrite_cache_while_playing']!,
+          _overwriteCacheWhilePlayingMeta,
+        ),
+      );
+    }
+    if (data.containsKey('skip_punctuation_only_segments')) {
+      context.handle(
+        _skipPunctuationOnlySegmentsMeta,
+        skipPunctuationOnlySegments.isAcceptableOrUnknown(
+          data['skip_punctuation_only_segments']!,
+          _skipPunctuationOnlySegmentsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cache_current_color')) {
+      context.handle(
+        _cacheCurrentColorMeta,
+        cacheCurrentColor.isAcceptableOrUnknown(
+          data['cache_current_color']!,
+          _cacheCurrentColorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cache_stale_color')) {
+      context.handle(
+        _cacheStaleColorMeta,
+        cacheStaleColor.isAcceptableOrUnknown(
+          data['cache_stale_color']!,
+          _cacheStaleColorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cache_highlight_opacity')) {
+      context.handle(
+        _cacheHighlightOpacityMeta,
+        cacheHighlightOpacity.isAcceptableOrUnknown(
+          data['cache_highlight_opacity']!,
+          _cacheHighlightOpacityMeta,
+        ),
+      );
+    }
     if (data.containsKey('current_global_index')) {
       context.handle(
         _currentGlobalIndexMeta,
@@ -5407,6 +5546,30 @@ class $NovelProjectsTable extends NovelProjects
         DriftSqlType.int,
         data['${effectivePrefix}max_slice_chars'],
       )!,
+      prefetchSegments: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}prefetch_segments'],
+      )!,
+      overwriteCacheWhilePlaying: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}overwrite_cache_while_playing'],
+      )!,
+      skipPunctuationOnlySegments: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}skip_punctuation_only_segments'],
+      )!,
+      cacheCurrentColor: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cache_current_color'],
+      )!,
+      cacheStaleColor: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cache_stale_color'],
+      )!,
+      cacheHighlightOpacity: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cache_highlight_opacity'],
+      )!,
       currentGlobalIndex: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}current_global_index'],
@@ -5446,6 +5609,12 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
   final bool autoSliceLongSegments;
   final bool sliceOnlyAtPunctuation;
   final int maxSliceChars;
+  final int prefetchSegments;
+  final bool overwriteCacheWhilePlaying;
+  final bool skipPunctuationOnlySegments;
+  final String cacheCurrentColor;
+  final String cacheStaleColor;
+  final double cacheHighlightOpacity;
   final int currentGlobalIndex;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -5464,6 +5633,12 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
     required this.autoSliceLongSegments,
     required this.sliceOnlyAtPunctuation,
     required this.maxSliceChars,
+    required this.prefetchSegments,
+    required this.overwriteCacheWhilePlaying,
+    required this.skipPunctuationOnlySegments,
+    required this.cacheCurrentColor,
+    required this.cacheStaleColor,
+    required this.cacheHighlightOpacity,
     required this.currentGlobalIndex,
     required this.createdAt,
     required this.updatedAt,
@@ -5489,6 +5664,16 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
     map['auto_slice_long_segments'] = Variable<bool>(autoSliceLongSegments);
     map['slice_only_at_punctuation'] = Variable<bool>(sliceOnlyAtPunctuation);
     map['max_slice_chars'] = Variable<int>(maxSliceChars);
+    map['prefetch_segments'] = Variable<int>(prefetchSegments);
+    map['overwrite_cache_while_playing'] = Variable<bool>(
+      overwriteCacheWhilePlaying,
+    );
+    map['skip_punctuation_only_segments'] = Variable<bool>(
+      skipPunctuationOnlySegments,
+    );
+    map['cache_current_color'] = Variable<String>(cacheCurrentColor);
+    map['cache_stale_color'] = Variable<String>(cacheStaleColor);
+    map['cache_highlight_opacity'] = Variable<double>(cacheHighlightOpacity);
     map['current_global_index'] = Variable<int>(currentGlobalIndex);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -5517,6 +5702,12 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
       autoSliceLongSegments: Value(autoSliceLongSegments),
       sliceOnlyAtPunctuation: Value(sliceOnlyAtPunctuation),
       maxSliceChars: Value(maxSliceChars),
+      prefetchSegments: Value(prefetchSegments),
+      overwriteCacheWhilePlaying: Value(overwriteCacheWhilePlaying),
+      skipPunctuationOnlySegments: Value(skipPunctuationOnlySegments),
+      cacheCurrentColor: Value(cacheCurrentColor),
+      cacheStaleColor: Value(cacheStaleColor),
+      cacheHighlightOpacity: Value(cacheHighlightOpacity),
       currentGlobalIndex: Value(currentGlobalIndex),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -5555,6 +5746,18 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
         json['sliceOnlyAtPunctuation'],
       ),
       maxSliceChars: serializer.fromJson<int>(json['maxSliceChars']),
+      prefetchSegments: serializer.fromJson<int>(json['prefetchSegments']),
+      overwriteCacheWhilePlaying: serializer.fromJson<bool>(
+        json['overwriteCacheWhilePlaying'],
+      ),
+      skipPunctuationOnlySegments: serializer.fromJson<bool>(
+        json['skipPunctuationOnlySegments'],
+      ),
+      cacheCurrentColor: serializer.fromJson<String>(json['cacheCurrentColor']),
+      cacheStaleColor: serializer.fromJson<String>(json['cacheStaleColor']),
+      cacheHighlightOpacity: serializer.fromJson<double>(
+        json['cacheHighlightOpacity'],
+      ),
       currentGlobalIndex: serializer.fromJson<int>(json['currentGlobalIndex']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -5578,6 +5781,16 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
       'autoSliceLongSegments': serializer.toJson<bool>(autoSliceLongSegments),
       'sliceOnlyAtPunctuation': serializer.toJson<bool>(sliceOnlyAtPunctuation),
       'maxSliceChars': serializer.toJson<int>(maxSliceChars),
+      'prefetchSegments': serializer.toJson<int>(prefetchSegments),
+      'overwriteCacheWhilePlaying': serializer.toJson<bool>(
+        overwriteCacheWhilePlaying,
+      ),
+      'skipPunctuationOnlySegments': serializer.toJson<bool>(
+        skipPunctuationOnlySegments,
+      ),
+      'cacheCurrentColor': serializer.toJson<String>(cacheCurrentColor),
+      'cacheStaleColor': serializer.toJson<String>(cacheStaleColor),
+      'cacheHighlightOpacity': serializer.toJson<double>(cacheHighlightOpacity),
       'currentGlobalIndex': serializer.toJson<int>(currentGlobalIndex),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -5599,6 +5812,12 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
     bool? autoSliceLongSegments,
     bool? sliceOnlyAtPunctuation,
     int? maxSliceChars,
+    int? prefetchSegments,
+    bool? overwriteCacheWhilePlaying,
+    bool? skipPunctuationOnlySegments,
+    String? cacheCurrentColor,
+    String? cacheStaleColor,
+    double? cacheHighlightOpacity,
     int? currentGlobalIndex,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -5622,6 +5841,14 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
     sliceOnlyAtPunctuation:
         sliceOnlyAtPunctuation ?? this.sliceOnlyAtPunctuation,
     maxSliceChars: maxSliceChars ?? this.maxSliceChars,
+    prefetchSegments: prefetchSegments ?? this.prefetchSegments,
+    overwriteCacheWhilePlaying:
+        overwriteCacheWhilePlaying ?? this.overwriteCacheWhilePlaying,
+    skipPunctuationOnlySegments:
+        skipPunctuationOnlySegments ?? this.skipPunctuationOnlySegments,
+    cacheCurrentColor: cacheCurrentColor ?? this.cacheCurrentColor,
+    cacheStaleColor: cacheStaleColor ?? this.cacheStaleColor,
+    cacheHighlightOpacity: cacheHighlightOpacity ?? this.cacheHighlightOpacity,
     currentGlobalIndex: currentGlobalIndex ?? this.currentGlobalIndex,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -5660,6 +5887,24 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
       maxSliceChars: data.maxSliceChars.present
           ? data.maxSliceChars.value
           : this.maxSliceChars,
+      prefetchSegments: data.prefetchSegments.present
+          ? data.prefetchSegments.value
+          : this.prefetchSegments,
+      overwriteCacheWhilePlaying: data.overwriteCacheWhilePlaying.present
+          ? data.overwriteCacheWhilePlaying.value
+          : this.overwriteCacheWhilePlaying,
+      skipPunctuationOnlySegments: data.skipPunctuationOnlySegments.present
+          ? data.skipPunctuationOnlySegments.value
+          : this.skipPunctuationOnlySegments,
+      cacheCurrentColor: data.cacheCurrentColor.present
+          ? data.cacheCurrentColor.value
+          : this.cacheCurrentColor,
+      cacheStaleColor: data.cacheStaleColor.present
+          ? data.cacheStaleColor.value
+          : this.cacheStaleColor,
+      cacheHighlightOpacity: data.cacheHighlightOpacity.present
+          ? data.cacheHighlightOpacity.value
+          : this.cacheHighlightOpacity,
       currentGlobalIndex: data.currentGlobalIndex.present
           ? data.currentGlobalIndex.value
           : this.currentGlobalIndex,
@@ -5687,6 +5932,12 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
           ..write('autoSliceLongSegments: $autoSliceLongSegments, ')
           ..write('sliceOnlyAtPunctuation: $sliceOnlyAtPunctuation, ')
           ..write('maxSliceChars: $maxSliceChars, ')
+          ..write('prefetchSegments: $prefetchSegments, ')
+          ..write('overwriteCacheWhilePlaying: $overwriteCacheWhilePlaying, ')
+          ..write('skipPunctuationOnlySegments: $skipPunctuationOnlySegments, ')
+          ..write('cacheCurrentColor: $cacheCurrentColor, ')
+          ..write('cacheStaleColor: $cacheStaleColor, ')
+          ..write('cacheHighlightOpacity: $cacheHighlightOpacity, ')
           ..write('currentGlobalIndex: $currentGlobalIndex, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -5696,7 +5947,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     name,
     bankId,
@@ -5710,11 +5961,17 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
     autoSliceLongSegments,
     sliceOnlyAtPunctuation,
     maxSliceChars,
+    prefetchSegments,
+    overwriteCacheWhilePlaying,
+    skipPunctuationOnlySegments,
+    cacheCurrentColor,
+    cacheStaleColor,
+    cacheHighlightOpacity,
     currentGlobalIndex,
     createdAt,
     updatedAt,
     folderSlug,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5732,6 +5989,13 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
           other.autoSliceLongSegments == this.autoSliceLongSegments &&
           other.sliceOnlyAtPunctuation == this.sliceOnlyAtPunctuation &&
           other.maxSliceChars == this.maxSliceChars &&
+          other.prefetchSegments == this.prefetchSegments &&
+          other.overwriteCacheWhilePlaying == this.overwriteCacheWhilePlaying &&
+          other.skipPunctuationOnlySegments ==
+              this.skipPunctuationOnlySegments &&
+          other.cacheCurrentColor == this.cacheCurrentColor &&
+          other.cacheStaleColor == this.cacheStaleColor &&
+          other.cacheHighlightOpacity == this.cacheHighlightOpacity &&
           other.currentGlobalIndex == this.currentGlobalIndex &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -5752,6 +6016,12 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
   final Value<bool> autoSliceLongSegments;
   final Value<bool> sliceOnlyAtPunctuation;
   final Value<int> maxSliceChars;
+  final Value<int> prefetchSegments;
+  final Value<bool> overwriteCacheWhilePlaying;
+  final Value<bool> skipPunctuationOnlySegments;
+  final Value<String> cacheCurrentColor;
+  final Value<String> cacheStaleColor;
+  final Value<double> cacheHighlightOpacity;
   final Value<int> currentGlobalIndex;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -5771,6 +6041,12 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
     this.autoSliceLongSegments = const Value.absent(),
     this.sliceOnlyAtPunctuation = const Value.absent(),
     this.maxSliceChars = const Value.absent(),
+    this.prefetchSegments = const Value.absent(),
+    this.overwriteCacheWhilePlaying = const Value.absent(),
+    this.skipPunctuationOnlySegments = const Value.absent(),
+    this.cacheCurrentColor = const Value.absent(),
+    this.cacheStaleColor = const Value.absent(),
+    this.cacheHighlightOpacity = const Value.absent(),
     this.currentGlobalIndex = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -5791,6 +6067,12 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
     this.autoSliceLongSegments = const Value.absent(),
     this.sliceOnlyAtPunctuation = const Value.absent(),
     this.maxSliceChars = const Value.absent(),
+    this.prefetchSegments = const Value.absent(),
+    this.overwriteCacheWhilePlaying = const Value.absent(),
+    this.skipPunctuationOnlySegments = const Value.absent(),
+    this.cacheCurrentColor = const Value.absent(),
+    this.cacheStaleColor = const Value.absent(),
+    this.cacheHighlightOpacity = const Value.absent(),
     this.currentGlobalIndex = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -5815,6 +6097,12 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
     Expression<bool>? autoSliceLongSegments,
     Expression<bool>? sliceOnlyAtPunctuation,
     Expression<int>? maxSliceChars,
+    Expression<int>? prefetchSegments,
+    Expression<bool>? overwriteCacheWhilePlaying,
+    Expression<bool>? skipPunctuationOnlySegments,
+    Expression<String>? cacheCurrentColor,
+    Expression<String>? cacheStaleColor,
+    Expression<double>? cacheHighlightOpacity,
     Expression<int>? currentGlobalIndex,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -5840,6 +6128,15 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
       if (sliceOnlyAtPunctuation != null)
         'slice_only_at_punctuation': sliceOnlyAtPunctuation,
       if (maxSliceChars != null) 'max_slice_chars': maxSliceChars,
+      if (prefetchSegments != null) 'prefetch_segments': prefetchSegments,
+      if (overwriteCacheWhilePlaying != null)
+        'overwrite_cache_while_playing': overwriteCacheWhilePlaying,
+      if (skipPunctuationOnlySegments != null)
+        'skip_punctuation_only_segments': skipPunctuationOnlySegments,
+      if (cacheCurrentColor != null) 'cache_current_color': cacheCurrentColor,
+      if (cacheStaleColor != null) 'cache_stale_color': cacheStaleColor,
+      if (cacheHighlightOpacity != null)
+        'cache_highlight_opacity': cacheHighlightOpacity,
       if (currentGlobalIndex != null)
         'current_global_index': currentGlobalIndex,
       if (createdAt != null) 'created_at': createdAt,
@@ -5863,6 +6160,12 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
     Value<bool>? autoSliceLongSegments,
     Value<bool>? sliceOnlyAtPunctuation,
     Value<int>? maxSliceChars,
+    Value<int>? prefetchSegments,
+    Value<bool>? overwriteCacheWhilePlaying,
+    Value<bool>? skipPunctuationOnlySegments,
+    Value<String>? cacheCurrentColor,
+    Value<String>? cacheStaleColor,
+    Value<double>? cacheHighlightOpacity,
     Value<int>? currentGlobalIndex,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -5885,6 +6188,15 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
       sliceOnlyAtPunctuation:
           sliceOnlyAtPunctuation ?? this.sliceOnlyAtPunctuation,
       maxSliceChars: maxSliceChars ?? this.maxSliceChars,
+      prefetchSegments: prefetchSegments ?? this.prefetchSegments,
+      overwriteCacheWhilePlaying:
+          overwriteCacheWhilePlaying ?? this.overwriteCacheWhilePlaying,
+      skipPunctuationOnlySegments:
+          skipPunctuationOnlySegments ?? this.skipPunctuationOnlySegments,
+      cacheCurrentColor: cacheCurrentColor ?? this.cacheCurrentColor,
+      cacheStaleColor: cacheStaleColor ?? this.cacheStaleColor,
+      cacheHighlightOpacity:
+          cacheHighlightOpacity ?? this.cacheHighlightOpacity,
       currentGlobalIndex: currentGlobalIndex ?? this.currentGlobalIndex,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -5943,6 +6255,30 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
     if (maxSliceChars.present) {
       map['max_slice_chars'] = Variable<int>(maxSliceChars.value);
     }
+    if (prefetchSegments.present) {
+      map['prefetch_segments'] = Variable<int>(prefetchSegments.value);
+    }
+    if (overwriteCacheWhilePlaying.present) {
+      map['overwrite_cache_while_playing'] = Variable<bool>(
+        overwriteCacheWhilePlaying.value,
+      );
+    }
+    if (skipPunctuationOnlySegments.present) {
+      map['skip_punctuation_only_segments'] = Variable<bool>(
+        skipPunctuationOnlySegments.value,
+      );
+    }
+    if (cacheCurrentColor.present) {
+      map['cache_current_color'] = Variable<String>(cacheCurrentColor.value);
+    }
+    if (cacheStaleColor.present) {
+      map['cache_stale_color'] = Variable<String>(cacheStaleColor.value);
+    }
+    if (cacheHighlightOpacity.present) {
+      map['cache_highlight_opacity'] = Variable<double>(
+        cacheHighlightOpacity.value,
+      );
+    }
     if (currentGlobalIndex.present) {
       map['current_global_index'] = Variable<int>(currentGlobalIndex.value);
     }
@@ -5977,6 +6313,12 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
           ..write('autoSliceLongSegments: $autoSliceLongSegments, ')
           ..write('sliceOnlyAtPunctuation: $sliceOnlyAtPunctuation, ')
           ..write('maxSliceChars: $maxSliceChars, ')
+          ..write('prefetchSegments: $prefetchSegments, ')
+          ..write('overwriteCacheWhilePlaying: $overwriteCacheWhilePlaying, ')
+          ..write('skipPunctuationOnlySegments: $skipPunctuationOnlySegments, ')
+          ..write('cacheCurrentColor: $cacheCurrentColor, ')
+          ..write('cacheStaleColor: $cacheStaleColor, ')
+          ..write('cacheHighlightOpacity: $cacheHighlightOpacity, ')
           ..write('currentGlobalIndex: $currentGlobalIndex, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -15400,6 +15742,12 @@ typedef $$NovelProjectsTableCreateCompanionBuilder =
       Value<bool> autoSliceLongSegments,
       Value<bool> sliceOnlyAtPunctuation,
       Value<int> maxSliceChars,
+      Value<int> prefetchSegments,
+      Value<bool> overwriteCacheWhilePlaying,
+      Value<bool> skipPunctuationOnlySegments,
+      Value<String> cacheCurrentColor,
+      Value<String> cacheStaleColor,
+      Value<double> cacheHighlightOpacity,
       Value<int> currentGlobalIndex,
       required DateTime createdAt,
       required DateTime updatedAt,
@@ -15421,6 +15769,12 @@ typedef $$NovelProjectsTableUpdateCompanionBuilder =
       Value<bool> autoSliceLongSegments,
       Value<bool> sliceOnlyAtPunctuation,
       Value<int> maxSliceChars,
+      Value<int> prefetchSegments,
+      Value<bool> overwriteCacheWhilePlaying,
+      Value<bool> skipPunctuationOnlySegments,
+      Value<String> cacheCurrentColor,
+      Value<String> cacheStaleColor,
+      Value<double> cacheHighlightOpacity,
       Value<int> currentGlobalIndex,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -15564,6 +15918,36 @@ class $$NovelProjectsTableFilterComposer
 
   ColumnFilters<int> get maxSliceChars => $composableBuilder(
     column: $table.maxSliceChars,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get prefetchSegments => $composableBuilder(
+    column: $table.prefetchSegments,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get overwriteCacheWhilePlaying => $composableBuilder(
+    column: $table.overwriteCacheWhilePlaying,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get skipPunctuationOnlySegments => $composableBuilder(
+    column: $table.skipPunctuationOnlySegments,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cacheCurrentColor => $composableBuilder(
+    column: $table.cacheCurrentColor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cacheStaleColor => $composableBuilder(
+    column: $table.cacheStaleColor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cacheHighlightOpacity => $composableBuilder(
+    column: $table.cacheHighlightOpacity,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15730,6 +16114,36 @@ class $$NovelProjectsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get prefetchSegments => $composableBuilder(
+    column: $table.prefetchSegments,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get overwriteCacheWhilePlaying => $composableBuilder(
+    column: $table.overwriteCacheWhilePlaying,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get skipPunctuationOnlySegments => $composableBuilder(
+    column: $table.skipPunctuationOnlySegments,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cacheCurrentColor => $composableBuilder(
+    column: $table.cacheCurrentColor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cacheStaleColor => $composableBuilder(
+    column: $table.cacheStaleColor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get cacheHighlightOpacity => $composableBuilder(
+    column: $table.cacheHighlightOpacity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get currentGlobalIndex => $composableBuilder(
     column: $table.currentGlobalIndex,
     builder: (column) => ColumnOrderings(column),
@@ -15834,6 +16248,36 @@ class $$NovelProjectsTableAnnotationComposer
 
   GeneratedColumn<int> get maxSliceChars => $composableBuilder(
     column: $table.maxSliceChars,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get prefetchSegments => $composableBuilder(
+    column: $table.prefetchSegments,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get overwriteCacheWhilePlaying => $composableBuilder(
+    column: $table.overwriteCacheWhilePlaying,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get skipPunctuationOnlySegments => $composableBuilder(
+    column: $table.skipPunctuationOnlySegments,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cacheCurrentColor => $composableBuilder(
+    column: $table.cacheCurrentColor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cacheStaleColor => $composableBuilder(
+    column: $table.cacheStaleColor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get cacheHighlightOpacity => $composableBuilder(
+    column: $table.cacheHighlightOpacity,
     builder: (column) => column,
   );
 
@@ -15972,6 +16416,12 @@ class $$NovelProjectsTableTableManager
                 Value<bool> autoSliceLongSegments = const Value.absent(),
                 Value<bool> sliceOnlyAtPunctuation = const Value.absent(),
                 Value<int> maxSliceChars = const Value.absent(),
+                Value<int> prefetchSegments = const Value.absent(),
+                Value<bool> overwriteCacheWhilePlaying = const Value.absent(),
+                Value<bool> skipPunctuationOnlySegments = const Value.absent(),
+                Value<String> cacheCurrentColor = const Value.absent(),
+                Value<String> cacheStaleColor = const Value.absent(),
+                Value<double> cacheHighlightOpacity = const Value.absent(),
                 Value<int> currentGlobalIndex = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -15991,6 +16441,12 @@ class $$NovelProjectsTableTableManager
                 autoSliceLongSegments: autoSliceLongSegments,
                 sliceOnlyAtPunctuation: sliceOnlyAtPunctuation,
                 maxSliceChars: maxSliceChars,
+                prefetchSegments: prefetchSegments,
+                overwriteCacheWhilePlaying: overwriteCacheWhilePlaying,
+                skipPunctuationOnlySegments: skipPunctuationOnlySegments,
+                cacheCurrentColor: cacheCurrentColor,
+                cacheStaleColor: cacheStaleColor,
+                cacheHighlightOpacity: cacheHighlightOpacity,
                 currentGlobalIndex: currentGlobalIndex,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -16012,6 +16468,12 @@ class $$NovelProjectsTableTableManager
                 Value<bool> autoSliceLongSegments = const Value.absent(),
                 Value<bool> sliceOnlyAtPunctuation = const Value.absent(),
                 Value<int> maxSliceChars = const Value.absent(),
+                Value<int> prefetchSegments = const Value.absent(),
+                Value<bool> overwriteCacheWhilePlaying = const Value.absent(),
+                Value<bool> skipPunctuationOnlySegments = const Value.absent(),
+                Value<String> cacheCurrentColor = const Value.absent(),
+                Value<String> cacheStaleColor = const Value.absent(),
+                Value<double> cacheHighlightOpacity = const Value.absent(),
                 Value<int> currentGlobalIndex = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
@@ -16031,6 +16493,12 @@ class $$NovelProjectsTableTableManager
                 autoSliceLongSegments: autoSliceLongSegments,
                 sliceOnlyAtPunctuation: sliceOnlyAtPunctuation,
                 maxSliceChars: maxSliceChars,
+                prefetchSegments: prefetchSegments,
+                overwriteCacheWhilePlaying: overwriteCacheWhilePlaying,
+                skipPunctuationOnlySegments: skipPunctuationOnlySegments,
+                cacheCurrentColor: cacheCurrentColor,
+                cacheStaleColor: cacheStaleColor,
+                cacheHighlightOpacity: cacheHighlightOpacity,
                 currentGlobalIndex: currentGlobalIndex,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

@@ -150,6 +150,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
   bool _exporting = false;
   bool _editing = false;
   int? _activePlaybackGlobalIndex;
+  int _prefetchRunId = 0;
   final Set<String> _generatingSegmentIds = <String>{};
   final Map<String, Future<String>> _audioTasks = <String, Future<String>>{};
   Future<void> _ttsSerialTail = Future<void>.value();
@@ -833,6 +834,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
           setState(() => _activePlaybackGlobalIndex = segment.globalIndex);
         }
         final forceCache = activeProject.overwriteCacheWhilePlaying;
+        _prefetchRunId++;
         final audioPath = await _ensureAudioForSegment(
           activeProject,
           segment,
@@ -856,6 +858,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
             i,
             bankAssets,
             runId,
+            prefetchRunId: _prefetchRunId,
             forceCache: forceCache,
           ),
         );
@@ -875,6 +878,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
 
   void _stopNovel({bool updateUi = true}) {
     _playRunId++;
+    _prefetchRunId++;
     final completer = _stopCompleter;
     if (completer != null && !completer.isCompleted) {
       completer.complete();
@@ -896,6 +900,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     int index,
     List<db.VoiceAsset> bankAssets,
     int runId, {
+    required int prefetchRunId,
     required bool forceCache,
   }) async {
     final prefetchCount = project.prefetchSegments.clamp(0, 20).toInt();
@@ -905,7 +910,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
       i < ordered.length && i <= index + prefetchCount;
       i++
     ) {
-      if (runId != _playRunId) break;
+      if (runId != _playRunId || prefetchRunId != _prefetchRunId) break;
       final segment = ordered[i];
       if (!project.autoAdvanceChapters &&
           segment.chapterId != ordered[index].chapterId) {
@@ -923,7 +928,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
           force: forceCache,
         );
       } catch (_) {}
-      if (runId != _playRunId) break;
+      if (runId != _playRunId || prefetchRunId != _prefetchRunId) break;
     }
   }
 

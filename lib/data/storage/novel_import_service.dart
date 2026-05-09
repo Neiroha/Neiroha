@@ -271,7 +271,7 @@ List<NovelTextSegment> splitNovelText(
       }
     }
   }
-  return out;
+  return _mergeLooseQuoteFragments(out);
 }
 
 String resolveNovelSegmentType(
@@ -383,24 +383,98 @@ List<String> _splitToReadableChunks(String text) {
   final chunks = <String>[];
   var start = 0;
   for (final match in breaks.allMatches(clean)) {
-    final length = match.end - start;
+    if (match.end <= start) continue;
+    final end = _includeTrailingClosingQuotes(clean, match.end);
+    final length = end - start;
     final punctuation = match.group(0) ?? '';
     final isStrongBreak = RegExp(r'[。！？；;.!?\n]').hasMatch(punctuation);
     if ((length >= minLength && isStrongBreak) || length >= maxLength) {
-      _appendBoundedChunks(chunks, clean.substring(start, match.end));
-      start = match.end;
+      _appendBoundedChunks(chunks, clean.substring(start, end));
+      start = end;
     }
   }
   _appendBoundedChunks(chunks, clean.substring(start));
   return chunks;
 }
 
+int _includeTrailingClosingQuotes(String text, int index) {
+  var cursor = index;
+  while (cursor < text.length && text[cursor].trim().isEmpty) {
+    cursor++;
+  }
+  var end = cursor;
+  while (end < text.length && _isClosingQuote(text[end])) {
+    if (text[end] == '"' && !_looksLikeClosingAsciiQuote(text, end)) break;
+    end++;
+  }
+  return end == cursor ? index : end;
+}
+
+bool _looksLikeClosingAsciiQuote(String text, int index) {
+  var next = index + 1;
+  while (next < text.length && text[next].trim().isEmpty) {
+    next++;
+  }
+  if (next >= text.length) return true;
+  return RegExp(r'[。！？；;.!?,，、)\]】》」』”]').hasMatch(text[next]);
+}
+
+bool _isClosingQuote(String value) {
+  return const {
+    '"',
+    '”',
+    '」',
+    '』',
+    '〞',
+    '＂',
+    '）',
+    ')',
+    ']',
+    '】',
+    '》',
+    '〉',
+  }.contains(value);
+}
+
+List<NovelTextSegment> _mergeLooseQuoteFragments(
+  List<NovelTextSegment> segments,
+) {
+  final out = <NovelTextSegment>[];
+  for (final segment in segments) {
+    if (_isLooseQuoteOnly(segment.text) && out.isNotEmpty) {
+      final previous = out.removeLast();
+      out.add(
+        NovelTextSegment(
+          text: '${previous.text}${segment.text}',
+          type: previous.type,
+        ),
+      );
+      continue;
+    }
+    out.add(segment);
+  }
+  return out;
+}
+
+bool _isLooseQuoteOnly(String text) {
+  final clean = text.replaceAll(RegExp(r'\s+'), '');
+  if (clean.isEmpty) return false;
+  return clean.split('').every(_isClosingQuote);
+}
+
 void _appendBoundedChunks(List<String> chunks, String text) {
   const maxLength = 160;
-  var clean = text.trim();
+  var clean = _attachDetachedClosingQuote(text.trim());
   while (clean.length > maxLength) {
     chunks.add(clean.substring(0, maxLength).trim());
-    clean = clean.substring(maxLength).trim();
+    clean = _attachDetachedClosingQuote(clean.substring(maxLength).trim());
   }
   if (clean.isNotEmpty) chunks.add(clean);
+}
+
+String _attachDetachedClosingQuote(String text) {
+  return text.replaceFirstMapped(
+    RegExp(r'\s+([”」』〞＂"\)\]】》〉])$'),
+    (match) => match.group(1) ?? '',
+  );
 }

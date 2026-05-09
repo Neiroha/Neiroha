@@ -64,6 +64,26 @@ void main() {
       isTrue,
     );
   });
+
+  test(
+    'closing quote after sentence punctuation stays with dialogue chunk',
+    () {
+      const source = '“咲...知道了知道了，你就大言不惭地使唤我起来了？\n”\n“嘿嘿...当然要多使唤你啦~”';
+
+      final segments = splitNovelText(source);
+
+      expect(segments.any((segment) => segment.text == '”'), isFalse);
+      expect(
+        segments.first.text.endsWith('？”'),
+        isTrue,
+        reason: segments.map((segment) => '[${segment.text}]').join(' | '),
+      );
+      expect(
+        segments.where((segment) => segment.type == 'dialogue').length,
+        greaterThanOrEqualTo(2),
+      );
+    },
+  );
 }
 
 String _compact(String value) => value.replaceAll(RegExp(r'\s+'), '');

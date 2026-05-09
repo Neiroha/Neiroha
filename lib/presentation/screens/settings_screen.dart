@@ -3,63 +3,387 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:neiroha/data/database/app_database.dart'
+    show AppDatabaseStorageQueries;
 import 'package:neiroha/data/storage/export_prefs.dart';
 import 'package:neiroha/data/storage/ffmpeg_service.dart';
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/server/api_server.dart';
+
+const double _settingsWideBreakpoint = 840;
+const double _settingsInitialRailFraction = 0.22;
+const double _settingsRailMinWidth = 220;
+const double _settingsContentMaxWidth = 920;
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final startup = ref.watch(storageStartupProvider);
+    final selectedSection = ref.watch(settingsSectionProvider);
 
-    return ListView(
-      padding: const EdgeInsets.all(24),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= _settingsWideBreakpoint;
+        if (isWide) {
+          return HorizontalResizableSplitPane(
+            initialLeftFraction: _settingsInitialRailFraction,
+            minPaneWidth: _settingsRailMinWidth,
+            left: _SettingsSectionRail(
+              selected: selectedSection,
+              onSelected: (section) =>
+                  ref.read(settingsSectionProvider.notifier).state = section,
+            ),
+            right: DecoratedBox(
+              decoration: const BoxDecoration(color: Color(0xFF0F0F14)),
+              child: _SettingsSectionContent(section: selectedSection),
+            ),
+          );
+        }
+
+        return Column(
+          children: [
+            _SettingsCompactPicker(
+              selected: selectedSection,
+              onSelected: (section) =>
+                  ref.read(settingsSectionProvider.notifier).state = section,
+            ),
+            const Divider(height: 1),
+            Expanded(child: _SettingsSectionContent(section: selectedSection)),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SettingsSectionRail extends StatelessWidget {
+  final SettingsSection selected;
+  final ValueChanged<SettingsSection> onSelected;
+
+  const _SettingsSectionRail({
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFF12121A),
+      child: Column(
+        children: [
+          const SizedBox(height: 28),
+          Center(
+            child: Text(
+              'Settings',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+          const SizedBox(height: 30),
+          Expanded(
+            child: ListView.builder(
+              padding: EdgeInsets.zero,
+              itemCount: SettingsSection.values.length,
+              itemBuilder: (context, index) {
+                final section = SettingsSection.values[index];
+                return _SettingsSectionTile(
+                  section: section,
+                  selected: section == selected,
+                  onTap: () => onSelected(section),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsSectionTile extends StatefulWidget {
+  final SettingsSection section;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _SettingsSectionTile({
+    required this.section,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  State<_SettingsSectionTile> createState() => _SettingsSectionTileState();
+}
+
+class _SettingsSectionTileState extends State<_SettingsSectionTile> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = widget.selected;
+    final foreground = selected
+        ? Colors.white.withValues(alpha: 0.94)
+        : Colors.white.withValues(alpha: _hovering ? 0.82 : 0.68);
+    final iconColor = selected
+        ? AppTheme.accentColor
+        : Colors.white.withValues(alpha: _hovering ? 0.76 : 0.58);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      child: InkWell(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 130),
+          height: 58,
+          color: _hovering
+              ? Colors.white.withValues(alpha: 0.025)
+              : Colors.transparent,
+          child: Row(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 130),
+                width: 3,
+                height: selected ? 30 : 0,
+                decoration: BoxDecoration(
+                  color: selected ? AppTheme.accentColor : Colors.transparent,
+                  borderRadius: const BorderRadius.horizontal(
+                    right: Radius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 22),
+              Icon(widget.section.icon, size: 22, color: iconColor),
+              const SizedBox(width: 18),
+              Expanded(
+                child: Text(
+                  widget.section.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: foreground,
+                    fontSize: 15,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsCompactPicker extends StatelessWidget {
+  final SettingsSection selected;
+  final ValueChanged<SettingsSection> onSelected;
+
+  const _SettingsCompactPicker({
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppTheme.surfaceDim,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Settings',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final section in SettingsSection.values) ...[
+                  ChoiceChip(
+                    selected: selected == section,
+                    avatar: Icon(section.icon, size: 16),
+                    label: Text(section.label),
+                    onSelected: (_) => onSelected(section),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsSectionContent extends ConsumerWidget {
+  final SettingsSection section;
+
+  const _SettingsSectionContent({required this.section});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final children = switch (section) {
+      SettingsSection.general => const <Widget>[_StartupCard()],
+      SettingsSection.api => const <Widget>[_ApiServerCard()],
+      SettingsSection.storage => <Widget>[
+        _StorageCard(startup: ref.watch(storageStartupProvider)),
+      ],
+      SettingsSection.media => const <Widget>[
+        _FfmpegCard(),
+        SizedBox(height: 12),
+        _ExportPrefsCard(),
+      ],
+      SettingsSection.about => const <Widget>[_AboutCard()],
+    };
+
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _settingsContentMaxWidth),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 22, 24, 32),
+          children: [
+            _SettingsPageHeader(section: section),
+            const SizedBox(height: 16),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsPageHeader extends StatelessWidget {
+  final SettingsSection section;
+
+  const _SettingsPageHeader({required this.section});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          'Settings',
+          section.label,
+          textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.2,
+          ),
         ),
-        const SizedBox(height: 24),
-
-        _SectionHeader(title: 'API SERVER'),
         const SizedBox(height: 8),
-        const _ApiServerCard(),
-        const SizedBox(height: 24),
-
-        _SectionHeader(title: 'STORAGE'),
-        const SizedBox(height: 8),
-        _StorageCard(startup: startup),
-        const SizedBox(height: 24),
-
-        _SectionHeader(title: 'MEDIA TOOLS'),
-        const SizedBox(height: 8),
-        const _FfmpegCard(),
-        const SizedBox(height: 12),
-        const _ExportPrefsCard(),
-        const SizedBox(height: 24),
-
-        _SectionHeader(title: 'ABOUT'),
-        const SizedBox(height: 8),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: _SettingsRow(
-              icon: Icons.info_outline_rounded,
-              title: 'Neiroha',
-              subtitle: 'v0.1.0 — AI Audio Middleware & Dubbing Workstation',
-              trailing: const SizedBox.shrink(),
-            ),
+        Text(
+          section.description,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.48),
+            fontSize: 13,
           ),
         ),
       ],
+    );
+  }
+}
+
+class _StartupCard extends ConsumerStatefulWidget {
+  const _StartupCard();
+
+  @override
+  ConsumerState<_StartupCard> createState() => _StartupCardState();
+}
+
+class _StartupCardState extends ConsumerState<_StartupCard> {
+  NavTab _startupTab = NavTab.voiceBank;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_load);
+  }
+
+  Future<void> _load() async {
+    final stored = await ref
+        .read(databaseProvider)
+        .getSetting(AppNavigationSettings.startupTabKey);
+    if (!mounted) return;
+    setState(() {
+      _startupTab = NavTab.fromName(stored) ?? NavTab.voiceBank;
+      _loaded = true;
+    });
+  }
+
+  Future<void> _setStartupTab(NavTab tab) async {
+    setState(() => _startupTab = tab);
+    await ref
+        .read(databaseProvider)
+        .setSetting(AppNavigationSettings.startupTabKey, tab.name);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Startup screen set to ${tab.label}.')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: _SettingsRow(
+          icon: Icons.home_work_rounded,
+          title: 'Startup Screen',
+          subtitle:
+              'Choose which workspace opens when Neiroha starts. This applies on the next launch.',
+          trailing: DropdownButton<NavTab>(
+            value: _startupTab,
+            underline: const SizedBox.shrink(),
+            items: [
+              for (final tab in NavTab.values)
+                DropdownMenuItem(value: tab, child: Text(tab.label)),
+            ],
+            onChanged: !_loaded
+                ? null
+                : (tab) {
+                    if (tab != null && tab != _startupTab) {
+                      _setStartupTab(tab);
+                    }
+                  },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AboutCard extends StatelessWidget {
+  const _AboutCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Card(
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: _SettingsRow(
+          icon: Icons.info_outline_rounded,
+          title: 'Neiroha',
+          subtitle: 'v0.1.0 - AI Audio Middleware & Dubbing Workstation',
+        ),
+      ),
     );
   }
 }
@@ -107,7 +431,9 @@ class _ApiServerCardState extends ConsumerState<_ApiServerCard> {
 
   ApiServerConfig _readConfig() {
     return ApiServerConfig(
-      bindHost: _hostCtrl.text.trim().isEmpty ? '127.0.0.1' : _hostCtrl.text.trim(),
+      bindHost: _hostCtrl.text.trim().isEmpty
+          ? '127.0.0.1'
+          : _hostCtrl.text.trim(),
       port: int.tryParse(_portCtrl.text.trim()) ?? 8976,
       apiKey: _keyCtrl.text.trim().isEmpty ? null : _keyCtrl.text.trim(),
       corsOrigins: _corsCtrl.text
@@ -128,9 +454,9 @@ class _ApiServerCardState extends ConsumerState<_ApiServerCard> {
       await server.restart(config: cfg);
     }
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('API config saved.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('API config saved.')));
   }
 
   @override
@@ -178,13 +504,17 @@ class _ApiServerCardState extends ConsumerState<_ApiServerCard> {
                 decoration: BoxDecoration(
                   color: Colors.orange.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
-                  border:
-                      Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+                  border: Border.all(
+                    color: Colors.orange.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded,
-                        color: Colors.orange, size: 18),
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.orange,
+                      size: 18,
+                    ),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -197,32 +527,45 @@ class _ApiServerCardState extends ConsumerState<_ApiServerCard> {
                   ],
                 ),
               ),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _hostCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Bind host',
-                      hintText: '127.0.0.1',
-                      isDense: true,
-                    ),
-                    onChanged: (_) => setState(() {}),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 520;
+                final hostField = TextField(
+                  controller: _hostCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Bind host',
+                    hintText: '127.0.0.1',
+                    isDense: true,
                   ),
-                ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 110,
-                  child: TextField(
-                    controller: _portCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Port',
-                      isDense: true,
-                    ),
-                    keyboardType: TextInputType.number,
+                  onChanged: (_) => setState(() {}),
+                );
+                final portField = TextField(
+                  controller: _portCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Port',
+                    isDense: true,
                   ),
-                ),
-              ],
+                  keyboardType: TextInputType.number,
+                );
+
+                if (compact) {
+                  return Column(
+                    children: [
+                      hostField,
+                      const SizedBox(height: 12),
+                      portField,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: hostField),
+                    const SizedBox(width: 12),
+                    SizedBox(width: 110, child: portField),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 12),
             TextField(
@@ -252,26 +595,45 @@ class _ApiServerCardState extends ConsumerState<_ApiServerCard> {
               ),
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                SizedBox(
-                  width: 200,
-                  child: TextField(
-                    controller: _rateCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Rate limit (req/min/IP, 0 = off)',
-                      isDense: true,
-                    ),
-                    keyboardType: TextInputType.number,
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 520;
+                final rateField = TextField(
+                  controller: _rateCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Rate limit (req/min/IP, 0 = off)',
+                    isDense: true,
                   ),
-                ),
-                const Spacer(),
-                FilledButton.icon(
+                  keyboardType: TextInputType.number,
+                );
+                final saveButton = FilledButton.icon(
                   onPressed: _hydrated ? _apply : null,
                   icon: const Icon(Icons.save_rounded, size: 18),
                   label: Text(running ? 'Save & restart' : 'Save'),
-                ),
-              ],
+                );
+
+                if (compact) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      rateField,
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: saveButton,
+                      ),
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    SizedBox(width: 200, child: rateField),
+                    const Spacer(),
+                    saveButton,
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -294,10 +656,7 @@ class _StorageCard extends ConsumerWidget {
     final voiceAssetRoot = paths.voiceAssetRoot.path;
     final isDefault =
         paths.voiceAssetRoot.path == paths.defaultVoiceAssetRoot.path;
-    final missing = startup.maybeWhen(
-      data: (r) => r.missing,
-      orElse: () => 0,
-    );
+    final missing = startup.maybeWhen(data: (r) => r.missing, orElse: () => 0);
 
     return Card(
       child: Padding(
@@ -307,19 +666,22 @@ class _StorageCard extends ConsumerWidget {
             _SettingsRow(
               icon: Icons.storage_rounded,
               title: 'Data Directory',
-              subtitle: '$dataRoot\n'
+              subtitle:
+                  '$dataRoot\n'
                   '${paths.isPortable ? 'Portable (next to executable)' : 'App-support fallback (install dir is read-only)'}',
               trailing: IconButton(
                 icon: const Icon(Icons.copy_rounded, size: 18),
                 tooltip: 'Copy path',
-                onPressed: () => Clipboard.setData(ClipboardData(text: dataRoot)),
+                onPressed: () =>
+                    Clipboard.setData(ClipboardData(text: dataRoot)),
               ),
             ),
             const Divider(),
             _SettingsRow(
               icon: Icons.folder_open_rounded,
               title: 'Voice Asset Directory',
-              subtitle: '$voiceAssetRoot\n'
+              subtitle:
+                  '$voiceAssetRoot\n'
                   '${isDefault ? 'Default location' : 'Custom location'}',
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -436,17 +798,17 @@ class _StorageCard extends ConsumerWidget {
       await storage.clearAllAudioArchives();
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Clear failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Clear failed: $e')));
       }
       return;
     }
     ref.invalidate(storageStartupProvider);
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Archived audio cleared.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Archived audio cleared.')));
     }
   }
 }
@@ -510,8 +872,8 @@ class _FfmpegCardState extends ConsumerState<_FfmpegCard> {
               subtitle: loading
                   ? 'Probing…'
                   : (isAvailable
-                      ? 'Detected. Used for waveform extraction and imported-media analysis.'
-                      : 'Not found. Install ffmpeg (or set a path below) — the app works without it, but waveforms and media probing will be skipped.'),
+                        ? 'Detected. Used for waveform extraction and imported-media analysis.'
+                        : 'Not found. Install ffmpeg (or set a path below) — the app works without it, but waveforms and media probing will be skipped.'),
               trailing: loading
                   ? const SizedBox(
                       width: 18,
@@ -529,64 +891,46 @@ class _FfmpegCardState extends ConsumerState<_FfmpegCard> {
             const Divider(),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Icon(Icons.terminal_rounded,
-                        size: 20, color: AppTheme.accentColor),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  _SettingsRow(
+                    icon: Icons.terminal_rounded,
+                    title: 'Executable Path',
+                    subtitle:
+                        _loadedOverride == null || _loadedOverride!.isEmpty
+                        ? 'Auto-detect from PATH'
+                        : 'Using override',
+                    trailing: Wrap(
+                      spacing: 8,
                       children: [
-                        const Text('Executable Path',
-                            style: TextStyle(fontSize: 14)),
-                        Text(
-                          _loadedOverride == null || _loadedOverride!.isEmpty
-                              ? 'Auto-detect from PATH'
-                              : 'Using override',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.5),
+                        TextButton(onPressed: _save, child: const Text('Save')),
+                        if (_loadedOverride != null &&
+                            _loadedOverride!.isNotEmpty)
+                          TextButton(
+                            onPressed: _clear,
+                            child: const Text('Reset'),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _pathCtrl,
-                          decoration: InputDecoration(
-                            isDense: true,
-                            hintText:
-                                'Leave blank to auto-detect (e.g. C:\\ffmpeg\\bin\\ffmpeg.exe)',
-                            hintStyle: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              fontSize: 12,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.folder_open_rounded,
-                                  size: 18),
-                              tooltip: 'Browse…',
-                              onPressed: _browse,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Column(
-                    children: [
-                      TextButton(
-                        onPressed: _save,
-                        child: const Text('Save'),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _pathCtrl,
+                    decoration: InputDecoration(
+                      isDense: true,
+                      hintText:
+                          'Leave blank to auto-detect (e.g. C:\\ffmpeg\\bin\\ffmpeg.exe)',
+                      hintStyle: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        fontSize: 12,
                       ),
-                      if (_loadedOverride != null && _loadedOverride!.isNotEmpty)
-                        TextButton(
-                          onPressed: _clear,
-                          child: const Text('Reset'),
-                        ),
-                    ],
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.folder_open_rounded, size: 18),
+                        tooltip: 'Browse…',
+                        onPressed: _browse,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -616,11 +960,15 @@ class _FfmpegCardState extends ConsumerState<_FfmpegCard> {
     ref.invalidate(ffmpegAvailabilityProvider);
     setState(() => _loadedOverride = path.isEmpty ? null : path);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(path.isEmpty
-          ? 'FFmpeg path cleared — will auto-detect from PATH.'
-          : 'FFmpeg path saved.'),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          path.isEmpty
+              ? 'FFmpeg path cleared — will auto-detect from PATH.'
+              : 'FFmpeg path saved.',
+        ),
+      ),
+    );
   }
 
   Future<void> _clear() async {
@@ -714,66 +1062,75 @@ class _ClearAudioDialogState extends State<_ClearAudioDialog> {
 
 // ─────────────────────────── Shared widgets ───────────────────────────
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 1.2,
-        color: Colors.white.withValues(alpha: 0.4),
-      ),
-    );
-  }
-}
-
 class _SettingsRow extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final Widget trailing;
+  final Widget? trailing;
 
   const _SettingsRow({
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.trailing,
+    this.trailing,
   });
 
   @override
   Widget build(BuildContext context) {
+    final trailing = this.trailing;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Icon(icon, size: 20, color: AppTheme.accentColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 14)),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.5),
-                  ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 520;
+          final text = Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Icon(icon, size: 20, color: AppTheme.accentColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontSize: 14)),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+            ],
+          );
+
+          if (trailing == null) return text;
+
+          if (compact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                text,
+                const SizedBox(height: 10),
+                Align(alignment: Alignment.centerRight, child: trailing),
               ],
-            ),
-          ),
-          trailing,
-        ],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: text),
+              const SizedBox(width: 12),
+              trailing,
+            ],
+          );
+        },
       ),
     );
   }
@@ -836,11 +1193,12 @@ class _ExportPrefsCardState extends ConsumerState<_ExportPrefsCard> {
             ? const SizedBox(
                 height: 40,
                 child: Center(
-                    child: SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )),
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
               )
             : Column(
                 children: [

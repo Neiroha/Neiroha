@@ -12,8 +12,6 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/data/storage/subtitle_parser.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
-import 'package:neiroha/presentation/screens/app_shell.dart'
-    show selectedTabProvider;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/actions/video_dub/exporter.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
@@ -32,7 +30,9 @@ import 'package:uuid/uuid.dart';
 /// Editor mode: video surface (media_kit), cue-synced timeline, subtitle
 /// panel. Save returns to the list.
 class VideoDubScreen extends ConsumerStatefulWidget {
-  const VideoDubScreen({super.key});
+  final bool active;
+
+  const VideoDubScreen({super.key, this.active = true});
 
   @override
   ConsumerState<VideoDubScreen> createState() => _VideoDubScreenState();
@@ -49,6 +49,7 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
     return _VideoDubEditor(
       key: ValueKey(_selectedProjectId),
       projectId: _selectedProjectId!,
+      active: widget.active,
       onClose: () => setState(() => _selectedProjectId = null),
     );
   }
@@ -212,11 +213,13 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
 
 class _VideoDubEditor extends ConsumerStatefulWidget {
   final String projectId;
+  final bool active;
   final VoidCallback onClose;
 
   const _VideoDubEditor({
     super.key,
     required this.projectId,
+    required this.active,
     required this.onClose,
   });
 
@@ -349,6 +352,20 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     _cuePlayer.dispose();
     _previewPlayer.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _VideoDubEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.active && !widget.active) {
+      unawaited(_pauseForBackground());
+    }
+  }
+
+  Future<void> _pauseForBackground() async {
+    await _player.pause();
+    await _cuePlayer.pause();
+    await _previewPlayer.pause();
   }
 
   Future<void> _syncVideo(db.VideoDubProject project) async {
@@ -557,6 +574,8 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
                   waveformPeaks: _waveformPeaks,
                   ffmpegAvailable: ffmpegAvailable,
                   onConfigureFfmpeg: () {
+                    ref.read(settingsSectionProvider.notifier).state =
+                        SettingsSection.media;
                     ref.read(selectedTabProvider.notifier).state =
                         NavTab.settings;
                   },

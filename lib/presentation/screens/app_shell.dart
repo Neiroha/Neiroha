@@ -3,10 +3,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:neiroha/data/database/app_database.dart'
+    show AppDatabaseStorageQueries;
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/presentation/widgets/sidebar.dart';
+import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -19,8 +22,6 @@ import 'voice_bank_screen.dart';
 import 'provider_screen.dart';
 import 'settings_screen.dart';
 
-final selectedTabProvider = StateProvider<NavTab>((ref) => NavTab.voiceBank);
-
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
@@ -29,11 +30,30 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
+  final Set<NavTab> _visitedTabs = {NavTab.voiceBank};
   PhaseTtsExitGuard? _phaseTtsExitGuard;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_loadStartupTab);
+  }
+
+  Future<void> _loadStartupTab() async {
+    final stored = await ref
+        .read(databaseProvider)
+        .getSetting(AppNavigationSettings.startupTabKey);
+    if (!mounted) return;
+
+    final startupTab = NavTab.fromName(stored) ?? NavTab.voiceBank;
+    _visitedTabs.add(startupTab);
+    ref.read(selectedTabProvider.notifier).state = startupTab;
+  }
 
   @override
   Widget build(BuildContext context) {
     final selectedTab = ref.watch(selectedTabProvider);
+    _visitedTabs.add(selectedTab);
     final playback = ref.watch(playbackNotifierProvider);
     // Dialog/Phase render their own inline players, so the global bottom bar
     // is suppressed there to avoid a double UI.
@@ -58,12 +78,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                   onTabChanged: (tab) => unawaited(_switchTab(tab)),
                 ),
                 const VerticalDivider(width: 1, thickness: 1),
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
-                    child: _buildPage(selectedTab),
-                  ),
-                ),
+                Expanded(child: _buildPageStack(selectedTab)),
               ],
             ),
           ),
@@ -88,7 +103,28 @@ class _AppShellState extends ConsumerState<AppShell> {
     ref.read(selectedTabProvider.notifier).state = tab;
   }
 
-  Widget _buildPage(NavTab tab) {
+  Widget _buildPageStack(NavTab selectedTab) {
+    final tabs = NavTab.values.where(_visitedTabs.contains).toList();
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        for (final tab in tabs)
+          Offstage(
+            offstage: selectedTab != tab,
+            child: TickerMode(
+              enabled: selectedTab == tab,
+              child: KeyedSubtree(
+                key: ValueKey('tab-${tab.name}'),
+                child: _buildPage(tab, active: selectedTab == tab),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildPage(NavTab tab, {required bool active}) {
     return switch (tab) {
       NavTab.phaseTts => PhaseTtsScreen(
         key: const ValueKey('phaseTts'),
@@ -98,7 +134,10 @@ class _AppShellState extends ConsumerState<AppShell> {
         key: ValueKey('novelReader'),
       ),
       NavTab.dialogTts => const DialogTtsScreen(key: ValueKey('dialogTts')),
-      NavTab.videoDub => const VideoDubScreen(key: ValueKey('videoDub')),
+      NavTab.videoDub => VideoDubScreen(
+        key: const ValueKey('videoDub'),
+        active: active,
+      ),
       NavTab.voiceAssets => const VoiceAssetScreen(
         key: ValueKey('voiceAssets'),
       ),

@@ -397,6 +397,8 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
           .synthesize(
             provider: provider,
             modelName: asset.modelName,
+            source: 'Dialog TTS',
+            label: 'Line ${line.orderIndex + 1}: ${line.lineText}',
             request: TtsRequest(
               text: line.lineText,
               voice: asset.presetVoiceName ?? asset.name,

@@ -20,6 +20,7 @@ class _SettingsKeys {
   static const corsOrigins = 'api.corsOrigins';
   static const rateLimitPerMin = 'api.rateLimitPerMin';
   static const maxBodyBytes = 'api.maxBodyBytes';
+  static const apiLogEnabled = 'api.logEnabled';
 }
 
 /// Snapshot of the security/network knobs that gate the local API. Loaded from
@@ -46,6 +47,10 @@ class ApiServerConfig {
   /// beyond declared length aren't a realistic threat on a local API.
   final int maxBodyBytes;
 
+  /// When enabled, request metadata is mirrored to the Settings > API log
+  /// panel. Bodies and auth headers are intentionally never captured.
+  final bool apiLogEnabled;
+
   const ApiServerConfig({
     this.bindHost = '127.0.0.1',
     this.port = 8976,
@@ -53,6 +58,7 @@ class ApiServerConfig {
     this.corsOrigins = const [],
     this.rateLimitPerMin = 60,
     this.maxBodyBytes = 1048576,
+    this.apiLogEnabled = false,
   });
 
   static Future<ApiServerConfig> load(AppDatabase db) async {
@@ -66,6 +72,7 @@ class ApiServerConfig {
     final body = int.tryParse(
       await db.getSetting(_SettingsKeys.maxBodyBytes) ?? '',
     );
+    final apiLogEnabled = await db.getSetting(_SettingsKeys.apiLogEnabled);
 
     return ApiServerConfig(
       bindHost: (host == null || host.isEmpty) ? '127.0.0.1' : host,
@@ -80,6 +87,7 @@ class ApiServerConfig {
                 .toList(),
       rateLimitPerMin: rate ?? 60,
       maxBodyBytes: body ?? 1048576,
+      apiLogEnabled: _parseBool(apiLogEnabled),
     );
   }
 
@@ -93,13 +101,66 @@ class ApiServerConfig {
       '${cfg.rateLimitPerMin}',
     );
     await db.setSetting(_SettingsKeys.maxBodyBytes, '${cfg.maxBodyBytes}');
+    await saveLogEnabled(db, cfg.apiLogEnabled);
   }
+
+  static Future<void> saveLogEnabled(AppDatabase db, bool enabled) {
+    return db.setSetting(_SettingsKeys.apiLogEnabled, enabled ? 'true' : '');
+  }
+
+  ApiServerConfig copyWith({
+    String? bindHost,
+    int? port,
+    String? apiKey,
+    List<String>? corsOrigins,
+    int? rateLimitPerMin,
+    int? maxBodyBytes,
+    bool? apiLogEnabled,
+  }) {
+    return ApiServerConfig(
+      bindHost: bindHost ?? this.bindHost,
+      port: port ?? this.port,
+      apiKey: apiKey ?? this.apiKey,
+      corsOrigins: corsOrigins ?? this.corsOrigins,
+      rateLimitPerMin: rateLimitPerMin ?? this.rateLimitPerMin,
+      maxBodyBytes: maxBodyBytes ?? this.maxBodyBytes,
+      apiLogEnabled: apiLogEnabled ?? this.apiLogEnabled,
+    );
+  }
+
+  static bool _parseBool(String? value) {
+    final normalized = value?.trim().toLowerCase();
+    return normalized == 'true' || normalized == '1' || normalized == 'yes';
+  }
+}
+
+class ApiLogEntry {
+  const ApiLogEntry({
+    required this.startedAt,
+    required this.method,
+    required this.path,
+    required this.statusCode,
+    required this.durationMs,
+    required this.remoteAddress,
+    this.errorMessage,
+  });
+
+  final DateTime startedAt;
+  final String method;
+  final String path;
+  final int statusCode;
+  final int durationMs;
+  final String remoteAddress;
+  final String? errorMessage;
 }
 
 class ApiServer {
   final AppDatabase db;
   HttpServer? _server;
   ApiServerConfig _config = const ApiServerConfig();
+  final List<ApiLogEntry> _logs = <ApiLogEntry>[];
+  final StreamController<List<ApiLogEntry>> _logController =
+      StreamController<List<ApiLogEntry>>.broadcast();
 
   ApiServer({required this.db});
 
@@ -107,6 +168,24 @@ class ApiServer {
   String get bindHost => _config.bindHost;
   ApiServerConfig get config => _config;
   bool get isRunning => _server != null;
+  bool get apiLogEnabled => _config.apiLogEnabled;
+  List<ApiLogEntry> get logs => List.unmodifiable(_logs);
+
+  Stream<List<ApiLogEntry>> watchLogs() async* {
+    yield logs;
+    yield* _logController.stream;
+  }
+
+  Future<void> setApiLogEnabled(bool enabled) async {
+    _config = _config.copyWith(apiLogEnabled: enabled);
+    await ApiServerConfig.saveLogEnabled(db, enabled);
+    _emitLogs();
+  }
+
+  void clearLogs() {
+    _logs.clear();
+    _emitLogs();
+  }
 
   /// Start with the persisted config (loaded from [AppSettings]). Pass an
   /// explicit [config] to override (used by the Settings screen after the user
@@ -127,7 +206,7 @@ class ApiServer {
         .addMiddleware(_rateLimitMiddleware(_config.rateLimitPerMin))
         .addMiddleware(_corsMiddleware(_config.corsOrigins))
         .addMiddleware(_apiKeyMiddleware(_config.apiKey))
-        .addMiddleware(logRequests())
+        .addMiddleware(_apiLogMiddleware())
         .addHandler(router.call);
 
     final addr =
@@ -150,6 +229,56 @@ class ApiServer {
   }
 
   // ───────────────────── Middlewares ─────────────────────
+
+  /// In-app request log for users exposing the local API to external tools.
+  Middleware _apiLogMiddleware() {
+    return (Handler inner) {
+      return (Request request) async {
+        final startedAt = DateTime.now();
+        try {
+          final response = await inner(request);
+          _recordApiLog(request, response.statusCode, startedAt);
+          return response;
+        } catch (error) {
+          _recordApiLog(request, 500, startedAt, error: error.toString());
+          rethrow;
+        }
+      };
+    };
+  }
+
+  void _recordApiLog(
+    Request request,
+    int statusCode,
+    DateTime startedAt, {
+    String? error,
+  }) {
+    if (!_config.apiLogEnabled) return;
+    final info =
+        request.context['shelf.io.connection_info'] as HttpConnectionInfo?;
+    final path = request.url.path.isEmpty ? '/' : '/${request.url.path}';
+    final query = request.url.hasQuery ? '?${request.url.query}' : '';
+    final entry = ApiLogEntry(
+      startedAt: startedAt,
+      method: request.method,
+      path: '$path$query',
+      statusCode: statusCode,
+      durationMs: DateTime.now().difference(startedAt).inMilliseconds,
+      remoteAddress: info?.remoteAddress.address ?? 'unknown',
+      errorMessage: error,
+    );
+    _logs.insert(0, entry);
+    if (_logs.length > 200) {
+      _logs.removeRange(200, _logs.length);
+    }
+    _emitLogs();
+  }
+
+  void _emitLogs() {
+    if (!_logController.isClosed) {
+      _logController.add(logs);
+    }
+  }
 
   /// Reject requests whose declared Content-Length exceeds [maxBytes].
   /// `0` disables the check.
@@ -310,6 +439,8 @@ class ApiServer {
       final result = await TtsQueueService.instance.synthesize(
         provider: provider,
         modelName: asset.modelName,
+        source: 'External API',
+        label: '$voice: $input',
         request: ttsRequest,
       );
 

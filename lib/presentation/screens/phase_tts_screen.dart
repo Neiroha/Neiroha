@@ -497,6 +497,8 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
           .synthesize(
             provider: provider,
             modelName: asset.modelName,
+            source: 'Phase TTS',
+            label: 'Segment ${seg.orderIndex + 1}: ${seg.segmentText}',
             request: TtsRequest(
               text: seg.segmentText,
               voice: asset.presetVoiceName ?? asset.name,

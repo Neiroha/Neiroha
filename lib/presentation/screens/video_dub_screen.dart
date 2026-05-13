@@ -1684,6 +1684,8 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
           .synthesize(
             provider: provider,
             modelName: asset.modelName,
+            source: 'Video Dub',
+            label: 'Cue ${cue.orderIndex + 1}: ${cue.cueText}',
             request: TtsRequest(
               text: cue.cueText,
               voice: asset.presetVoiceName ?? asset.name,

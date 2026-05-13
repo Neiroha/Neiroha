@@ -26,6 +26,11 @@ enum NavTab {
 
 enum SettingsSection {
   general(Icons.tune_rounded, 'General', 'Startup and workspace behavior'),
+  tasks(
+    Icons.task_alt_rounded,
+    'Tasks',
+    'Current TTS work, queue depth and recent results',
+  ),
   api(
     Icons.power_settings_new_rounded,
     'API Server',
@@ -55,8 +60,25 @@ class AppNavigationSettings {
   const AppNavigationSettings._();
 }
 
+class AppBehaviorSettings {
+  static const continueTtsAcrossScreensKey = 'app.continueTtsAcrossScreens';
+  static const defaultContinueTtsAcrossScreens = true;
+
+  const AppBehaviorSettings._();
+
+  static bool parseBool(String? value, {required bool defaultValue}) {
+    if (value == null || value.trim().isEmpty) return defaultValue;
+    final normalized = value.trim().toLowerCase();
+    return normalized == 'true' || normalized == '1' || normalized == 'yes';
+  }
+}
+
 final selectedTabProvider = StateProvider<NavTab>((ref) => NavTab.voiceBank);
 
 final settingsSectionProvider = StateProvider<SettingsSection>(
   (ref) => SettingsSection.general,
+);
+
+final continueTtsAcrossScreensProvider = StateProvider<bool>(
+  (ref) => AppBehaviorSettings.defaultContinueTtsAcrossScreens,
 );

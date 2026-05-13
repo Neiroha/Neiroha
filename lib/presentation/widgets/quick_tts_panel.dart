@@ -524,6 +524,8 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
           .synthesize(
             provider: provider,
             modelName: asset.modelName,
+            source: 'Quick TTS',
+            label: '${asset.name}: $text',
             request: TtsRequest(
               text: text,
               voice: asset.presetVoiceName ?? asset.name,

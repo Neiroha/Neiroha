@@ -19,7 +19,6 @@ import 'package:neiroha/presentation/widgets/voice_character/components.dart';
 
 class CreateCharacterDialog extends StatefulWidget {
   final List<db.TtsProvider> providers;
-  final List<db.VoiceAsset> existingAssets;
   final List<db.AudioTrack> audioTracks;
   final Future<void> Function(db.VoiceAssetsCompanion) onSave;
   final Future<void> Function(db.AudioTracksCompanion) onSaveAudioTrack;
@@ -31,7 +30,6 @@ class CreateCharacterDialog extends StatefulWidget {
     required this.onSave,
     required this.onSaveAudioTrack,
     required this.database,
-    this.existingAssets = const [],
     this.audioTracks = const [],
   });
 
@@ -1309,14 +1307,6 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Name is required')));
-      return;
-    }
-    if (widget.existingAssets.any((a) => a.name == name)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('A character with this name already exists'),
-        ),
-      );
       return;
     }
 

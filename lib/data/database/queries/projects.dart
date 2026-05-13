@@ -21,6 +21,7 @@ extension AppDatabaseProjectQueries on AppDatabase {
       update(phaseTtsProjects).replace(project);
 
   Future<int> deletePhaseTtsProject(String id) => transaction(() async {
+    await _deleteTimelineClipsForProject(id, 'phase');
     await (delete(phaseTtsSegments)..where((t) => t.projectId.equals(id))).go();
     return (delete(phaseTtsProjects)..where((t) => t.id.equals(id))).go();
   });
@@ -45,12 +46,17 @@ extension AppDatabaseProjectQueries on AppDatabase {
   Future<bool> updatePhaseTtsSegment(PhaseTtsSegment seg) =>
       update(phaseTtsSegments).replace(seg);
 
-  Future<int> deletePhaseTtsSegment(String id) =>
-      (delete(phaseTtsSegments)..where((t) => t.id.equals(id))).go();
+  Future<int> deletePhaseTtsSegment(String id) => transaction(() async {
+    await deleteTimelineClipsByLine(id, projectType: 'phase');
+    return (delete(phaseTtsSegments)..where((t) => t.id.equals(id))).go();
+  });
 
-  Future<int> clearPhaseTtsSegments(String projectId) => (delete(
-    phaseTtsSegments,
-  )..where((t) => t.projectId.equals(projectId))).go();
+  Future<int> clearPhaseTtsSegments(String projectId) => transaction(() async {
+    await _deleteTimelineClipsForProject(projectId, 'phase');
+    return (delete(
+      phaseTtsSegments,
+    )..where((t) => t.projectId.equals(projectId))).go();
+  });
 
   // --- Novel Reader Projects ---
 
@@ -294,6 +300,7 @@ extension AppDatabaseProjectQueries on AppDatabase {
       update(dialogTtsProjects).replace(project);
 
   Future<int> deleteDialogTtsProject(String id) => transaction(() async {
+    await _deleteTimelineClipsForProject(id, 'dialog');
     await (delete(dialogTtsLines)..where((t) => t.projectId.equals(id))).go();
     return (delete(dialogTtsProjects)..where((t) => t.id.equals(id))).go();
   });
@@ -318,12 +325,17 @@ extension AppDatabaseProjectQueries on AppDatabase {
   Future<bool> updateDialogTtsLine(DialogTtsLine line) =>
       update(dialogTtsLines).replace(line);
 
-  Future<int> deleteDialogTtsLine(String id) =>
-      (delete(dialogTtsLines)..where((t) => t.id.equals(id))).go();
+  Future<int> deleteDialogTtsLine(String id) => transaction(() async {
+    await deleteTimelineClipsByLine(id, projectType: 'dialog');
+    return (delete(dialogTtsLines)..where((t) => t.id.equals(id))).go();
+  });
 
-  Future<int> clearDialogTtsLines(String projectId) => (delete(
-    dialogTtsLines,
-  )..where((t) => t.projectId.equals(projectId))).go();
+  Future<int> clearDialogTtsLines(String projectId) => transaction(() async {
+    await _deleteTimelineClipsForProject(projectId, 'dialog');
+    return (delete(
+      dialogTtsLines,
+    )..where((t) => t.projectId.equals(projectId))).go();
+  });
 
   /// Reorder a dialog line within its project by rewriting all affected
   /// `orderIndex` values in a single transaction. `oldIndex` and `newIndex`
@@ -373,6 +385,7 @@ extension AppDatabaseProjectQueries on AppDatabase {
       update(videoDubProjects).replace(project);
 
   Future<int> deleteVideoDubProject(String id) => transaction(() async {
+    await _deleteTimelineClipsForProject(id, 'videodub');
     await (delete(subtitleCues)..where((t) => t.projectId.equals(id))).go();
     return (delete(videoDubProjects)..where((t) => t.id.equals(id))).go();
   });
@@ -440,8 +453,23 @@ extension AppDatabaseProjectQueries on AppDatabase {
   Future<bool> updateTimelineClip(TimelineClip clip) =>
       update(timelineClips).replace(clip);
 
-  Future<int> deleteTimelineClip(String id) =>
-      (delete(timelineClips)..where((t) => t.id.equals(id))).go();
+  Future<int> deleteTimelineClip(String id) => transaction(() async {
+    final clip = await (select(
+      timelineClips,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (clip == null) return 0;
+    final linkGroupId = clip.linkGroupId;
+    if (linkGroupId != null && linkGroupId.isNotEmpty) {
+      return (delete(timelineClips)..where(
+            (t) =>
+                t.projectId.equals(clip.projectId) &
+                t.projectType.equals(clip.projectType) &
+                t.linkGroupId.equals(linkGroupId),
+          ))
+          .go();
+    }
+    return (delete(timelineClips)..where((t) => t.id.equals(id))).go();
+  });
 
   /// Replace a clip's position (lane + start). Use for drag operations.
   Future<int> moveTimelineClip(
@@ -455,9 +483,28 @@ extension AppDatabaseProjectQueries on AppDatabase {
     ),
   );
 
-  Future<int> deleteTimelineClipsByLine(String sourceLineId) => (delete(
-    timelineClips,
-  )..where((t) => t.sourceLineId.equals(sourceLineId))).go();
+  Future<int> deleteTimelineClipsByLine(
+    String sourceLineId, {
+    String? projectType,
+  }) {
+    return (delete(timelineClips)..where((t) {
+          final byLine = t.sourceLineId.equals(sourceLineId);
+          if (projectType == null) return byLine;
+          return byLine & t.projectType.equals(projectType);
+        }))
+        .go();
+  }
+
+  Future<int> _deleteTimelineClipsForProject(
+    String projectId,
+    String projectType,
+  ) {
+    return (delete(timelineClips)..where(
+          (t) =>
+              t.projectId.equals(projectId) & t.projectType.equals(projectType),
+        ))
+        .go();
+  }
 
   // --- Audio Tracks ---
 
@@ -471,6 +518,38 @@ extension AppDatabaseProjectQueries on AppDatabase {
   Future<bool> updateAudioTrack(AudioTrack track) =>
       update(audioTracks).replace(track);
 
-  Future<int> deleteAudioTrack(String id) =>
-      (delete(audioTracks)..where((t) => t.id.equals(id))).go();
+  Future<int> deleteAudioTrack(String id) => transaction(() async {
+    final track = await (select(
+      audioTracks,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (track == null) return 0;
+    await (update(
+      voiceAssets,
+    )..where((t) => t.refAudioPath.equals(track.audioPath))).write(
+      const VoiceAssetsCompanion(
+        refAudioPath: Value(null),
+        refAudioTrimStart: Value(null),
+        refAudioTrimEnd: Value(null),
+      ),
+    );
+    await (update(quickTtsHistories)
+          ..where((t) => t.audioPath.equals(track.audioPath)))
+        .write(const QuickTtsHistoriesCompanion(missing: Value(true)));
+    await (update(phaseTtsSegments)
+          ..where((t) => t.audioPath.equals(track.audioPath)))
+        .write(const PhaseTtsSegmentsCompanion(missing: Value(true)));
+    await (update(dialogTtsLines)
+          ..where((t) => t.audioPath.equals(track.audioPath)))
+        .write(const DialogTtsLinesCompanion(missing: Value(true)));
+    await (update(novelSegments)
+          ..where((t) => t.audioPath.equals(track.audioPath)))
+        .write(const NovelSegmentsCompanion(missing: Value(true)));
+    await (update(subtitleCues)
+          ..where((t) => t.audioPath.equals(track.audioPath)))
+        .write(const SubtitleCuesCompanion(missing: Value(true)));
+    await (update(timelineClips)
+          ..where((t) => t.audioPath.equals(track.audioPath)))
+        .write(const TimelineClipsCompanion(missing: Value(true)));
+    return (delete(audioTracks)..where((t) => t.id.equals(id))).go();
+  });
 }

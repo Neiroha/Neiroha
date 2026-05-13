@@ -27,8 +27,16 @@ extension AppDatabaseProviderQueries on AppDatabase {
   Future<bool> updateProvider(TtsProvider provider) =>
       update(ttsProviders).replace(provider);
 
-  Future<int> deleteProvider(String id) =>
-      (delete(ttsProviders)..where((t) => t.id.equals(id))).go();
+  Future<int> deleteProvider(String id) => transaction(() async {
+    final linkedAssets = await (select(
+      voiceAssets,
+    )..where((t) => t.providerId.equals(id))).get();
+    for (final asset in linkedAssets) {
+      await deleteVoiceAsset(asset.id);
+    }
+    await (delete(modelBindings)..where((t) => t.providerId.equals(id))).go();
+    return (delete(ttsProviders)..where((t) => t.id.equals(id))).go();
+  });
 
   /// Duplicate a provider with a new name. Copies all fields except id.
   Future<TtsProvider> duplicateProvider(String id, String newName) async {
@@ -95,6 +103,9 @@ extension AppDatabaseProviderQueries on AppDatabase {
   Future<int> insertBinding(ModelBindingsCompanion binding) =>
       into(modelBindings).insert(binding);
 
-  Future<int> deleteBinding(String id) =>
-      (delete(modelBindings)..where((t) => t.id.equals(id))).go();
+  Future<int> deleteBinding(String id) => transaction(() async {
+    await (update(voiceAssets)..where((t) => t.modelBindingId.equals(id)))
+        .write(const VoiceAssetsCompanion(modelBindingId: Value(null)));
+    return (delete(modelBindings)..where((t) => t.id.equals(id))).go();
+  });
 }

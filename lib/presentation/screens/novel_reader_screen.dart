@@ -904,6 +904,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
   }) async {
     final prefetchCount = project.prefetchSegments.clamp(0, 20).toInt();
     if (prefetchCount <= 0) return;
+    final candidates = <db.NovelSegment>[];
     for (
       var i = index + 1;
       i < ordered.length && i <= index + prefetchCount;
@@ -919,16 +920,35 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
         continue;
       }
       if (_shouldSkipSegment(project, segment)) continue;
-      try {
-        await _ensureAudioForSegment(
-          project,
-          segment,
-          bankAssets,
-          force: forceCache,
-        );
-      } catch (_) {}
-      if (runId != _playRunId || prefetchRunId != _prefetchRunId) break;
+      candidates.add(segment);
     }
+    if (candidates.isEmpty) return;
+
+    final providers = await ref.read(databaseProvider).getAllProviders();
+    if (runId != _playRunId || prefetchRunId != _prefetchRunId) return;
+
+    final taskFactories = [
+      for (final segment in candidates)
+        () {
+          if (runId != _playRunId || prefetchRunId != _prefetchRunId) {
+            return Future<String>.value('');
+          }
+          return _ensureAudioForSegment(
+            project,
+            segment,
+            bankAssets,
+            force: forceCache,
+          );
+        },
+    ];
+    final failures = <Object>[];
+    await _runNovelGenerationWorkers(
+      taskFactories,
+      workerCount: _novelGenerationWorkerCount(project, bankAssets, providers),
+      failures: failures,
+      shouldContinue: () =>
+          runId == _playRunId && prefetchRunId == _prefetchRunId,
+    );
   }
 
   Future<void> _generateAllMissing(
@@ -981,6 +1001,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     List<Future<String> Function()> taskFactories, {
     required int workerCount,
     required List<Object> failures,
+    bool Function()? shouldContinue,
   }) async {
     if (taskFactories.isEmpty) return;
     var nextIndex = 0;
@@ -988,6 +1009,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
 
     Future<void> worker() async {
       while (true) {
+        if (shouldContinue?.call() == false) return;
         final current = nextIndex++;
         if (current >= taskFactories.length) return;
         try {
@@ -1105,11 +1127,14 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
       final chunks = _ttsChunksForSegment(project, activeSegment.segmentText);
       final fileBase =
           'seg_${activeSegment.globalIndex}_${_stableHash(activeCacheKey)}';
+      final taskLabel =
+          'Segment ${activeSegment.globalIndex + 1}: ${activeSegment.segmentText}';
       final result = chunks.length == 1
           ? await _synthesizeNovelChunk(
               text: chunks.first,
               asset: asset,
               provider: provider,
+              taskLabel: taskLabel,
             )
           : await _synthesizeSlicedSegment(
               chunks: chunks,
@@ -1117,6 +1142,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
               provider: provider,
               outDir: outDir,
               fileBase: fileBase,
+              taskLabel: taskLabel,
             );
       final oldAudioPath = activeSegment.audioPath;
       final filePath = await _writeNovelCacheAudio(
@@ -1219,12 +1245,15 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     required db.VoiceAsset asset,
     required db.TtsProvider provider,
     bool preferWav = false,
+    String? taskLabel,
   }) {
     return ref
         .read(ttsQueueServiceProvider)
         .synthesize(
           provider: provider,
           modelName: asset.modelName,
+          source: 'Novel Reader',
+          label: taskLabel ?? text,
           request: TtsRequest(
             text: text,
             voice: asset.presetVoiceName ?? asset.name,
@@ -1255,14 +1284,16 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     required db.TtsProvider provider,
     required Directory outDir,
     required String fileBase,
+    required String taskLabel,
   }) async {
     final results = await Future.wait([
-      for (final chunk in chunks)
+      for (var i = 0; i < chunks.length; i++)
         _synthesizeNovelChunk(
-          text: chunk,
+          text: chunks[i],
           asset: asset,
           provider: provider,
           preferWav: true,
+          taskLabel: '$taskLabel (${i + 1}/${chunks.length})',
         ),
     ]);
 

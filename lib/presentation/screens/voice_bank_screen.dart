@@ -66,8 +66,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     // loop tick, after finalizeTree completes.
     Future(() {
       selectedCtl.state = null;
-      unawaited(
-          playback.stopIfSourceTag(voiceBankQuickTestPlaybackSource));
+      unawaited(playback.stopIfSourceTag(voiceBankQuickTestPlaybackSource));
     });
     _searchCtrl.dispose();
     super.dispose();
@@ -78,7 +77,8 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
   void _clearVoiceBankInspectorState() {
     _selectedCharacterCtl.state = null;
     unawaited(
-        _playbackNotifier.stopIfSourceTag(voiceBankQuickTestPlaybackSource));
+      _playbackNotifier.stopIfSourceTag(voiceBankQuickTestPlaybackSource),
+    );
   }
 
   @override
@@ -109,18 +109,21 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
       child: Row(
         children: [
-          Text('Voice Bank',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Voice Bank',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'Banks, characters and inspector',
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 14,
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -143,12 +146,15 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Text('BANKS',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.4))),
+          child: Text(
+            'BANKS',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.2,
+              color: Colors.white.withValues(alpha: 0.4),
+            ),
+          ),
         ),
         Expanded(
           child: banksAsync.when(
@@ -157,10 +163,13 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
             data: (banks) {
               if (banks.isEmpty) {
                 return Center(
-                  child: Text('No banks yet',
-                      style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.3),
-                          fontSize: 13)),
+                  child: Text(
+                    'No banks yet',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      fontSize: 13,
+                    ),
+                  ),
                 );
               }
               return ListView.builder(
@@ -177,10 +186,17 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                       setState(() => _selectedBankId = bank.id);
                     },
                     onDelete: () async {
-                      await ref.read(databaseProvider).deleteBank(bank.id);
-                      if (_selectedBankId == bank.id) {
-                        _clearVoiceBankInspectorState();
-                        setState(() => _selectedBankId = null);
+                      try {
+                        await ref.read(databaseProvider).deleteBank(bank.id);
+                        if (_selectedBankId == bank.id) {
+                          _clearVoiceBankInspectorState();
+                          setState(() => _selectedBankId = null);
+                        }
+                      } catch (e) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(_databaseErrorMessage(e))),
+                        );
                       }
                     },
                     onDuplicate: () async {
@@ -209,6 +225,11 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     );
   }
 
+  String _databaseErrorMessage(Object error) {
+    if (error is StateError) return error.message;
+    return error.toString();
+  }
+
   // ───────────────── Middle column: Characters in bank ─────────────────
 
   Widget _buildCharacterColumn() {
@@ -217,20 +238,28 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.people_outline_rounded,
-                size: 64, color: Colors.white.withValues(alpha: 0.1)),
+            Icon(
+              Icons.people_outline_rounded,
+              size: 64,
+              color: Colors.white.withValues(alpha: 0.1),
+            ),
             const SizedBox(height: 16),
-            Text('Select or create a Voice Bank',
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    fontSize: 15)),
+            Text(
+              'Select or create a Voice Bank',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.4),
+                fontSize: 15,
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
               'A Voice Bank groups characters for a project.\n'
               'Only one bank can be active at a time.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.25), fontSize: 13),
+                color: Colors.white.withValues(alpha: 0.25),
+                fontSize: 13,
+              ),
             ),
           ],
         ),
@@ -243,8 +272,9 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     final assetsAsync = ref.watch(voiceAssetsStreamProvider);
     final providersAsync = ref.watch(ttsProvidersStreamProvider);
 
-    final bank =
-        banksAsync.valueOrNull?.where((b) => b.id == bankId).firstOrNull;
+    final bank = banksAsync.valueOrNull
+        ?.where((b) => b.id == bankId)
+        .firstOrNull;
     if (bank == null) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -252,8 +282,12 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildCharacterColumnHeader(bank, membersAsync, assetsAsync,
-            providersAsync),
+        _buildCharacterColumnHeader(
+          bank,
+          membersAsync,
+          assetsAsync,
+          providersAsync,
+        ),
         const Divider(height: 1),
         _buildCharacterSearchBar(),
         Expanded(
@@ -261,11 +295,9 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(child: Text('Error: $e')),
             data: (members) => assetsAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(child: Text('Error: $e')),
-              data: (allAssets) =>
-                  _buildMemberList(bank, members, allAssets),
+              data: (allAssets) => _buildMemberList(bank, members, allAssets),
             ),
           ),
         ),
@@ -283,9 +315,11 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       child: Row(
         children: [
-          Icon(Icons.people_alt_rounded,
-              color: bank.isActive ? Colors.green : AppTheme.accentColor,
-              size: 20),
+          Icon(
+            Icons.people_alt_rounded,
+            color: bank.isActive ? Colors.green : AppTheme.accentColor,
+            size: 20,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -294,42 +328,56 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                 Row(
                   children: [
                     Flexible(
-                      child: Text(bank.name,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w600)),
+                      child: Text(
+                        bank.name,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                     if (bank.isActive) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.green.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                              color:
-                                  Colors.green.withValues(alpha: 0.3)),
+                            color: Colors.green.withValues(alpha: 0.3),
+                          ),
                         ),
-                        child: const Text('Active',
-                            style: TextStyle(
-                                color: Colors.green, fontSize: 11)),
+                        child: const Text(
+                          'Active',
+                          style: TextStyle(color: Colors.green, fontSize: 11),
+                        ),
                       ),
                     ],
                   ],
                 ),
-                Text('CHARACTERS',
-                    style: TextStyle(
-                        fontSize: 10,
-                        letterSpacing: 1.2,
-                        color: Colors.white.withValues(alpha: 0.35))),
+                Text(
+                  'CHARACTERS',
+                  style: TextStyle(
+                    fontSize: 10,
+                    letterSpacing: 1.2,
+                    color: Colors.white.withValues(alpha: 0.35),
+                  ),
+                ),
               ],
             ),
           ),
           IconButton(
             tooltip: 'Health Check',
             onPressed: () => _healthCheckBank(
-                bank, membersAsync, assetsAsync, providersAsync),
+              bank,
+              membersAsync,
+              assetsAsync,
+              providersAsync,
+            ),
             icon: const Icon(Icons.favorite_border_rounded, size: 18),
           ),
           IconButton(
@@ -377,13 +425,19 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.person_outline_rounded,
-                size: 48, color: Colors.white.withValues(alpha: 0.1)),
+            Icon(
+              Icons.person_outline_rounded,
+              size: 48,
+              color: Colors.white.withValues(alpha: 0.1),
+            ),
             const SizedBox(height: 12),
-            Text('No characters in this bank yet',
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    fontSize: 13)),
+            Text(
+              'No characters in this bank yet',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.4),
+                fontSize: 13,
+              ),
+            ),
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: () => _createCharacterForBank(bank),
@@ -407,17 +461,22 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         .map((m) => assetMap[m.voiceAssetId])
         .whereType<db.VoiceAsset>()
         .where((a) {
-      if (q.isEmpty) return true;
-      return a.name.toLowerCase().contains(q) ||
-          (a.description?.toLowerCase().contains(q) ?? false) ||
-          a.taskMode.toLowerCase().contains(q);
-    }).toList();
+          if (q.isEmpty) return true;
+          return a.name.toLowerCase().contains(q) ||
+              (a.description?.toLowerCase().contains(q) ?? false) ||
+              a.taskMode.toLowerCase().contains(q);
+        })
+        .toList();
 
     if (filtered.isEmpty) {
       return Center(
-        child: Text('No characters match "$_characterFilter"',
-            style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
+        child: Text(
+          'No characters match "$_characterFilter"',
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.4),
+            fontSize: 13,
+          ),
+        ),
       );
     }
 
@@ -431,13 +490,16 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         return _CharacterTile(
           asset: asset,
           isSelected: isSelected,
-          onTap: () => ref
-              .read(selectedCharacterIdProvider.notifier)
-              .state = asset.id,
+          onTap: () =>
+              ref.read(selectedCharacterIdProvider.notifier).state = asset.id,
           onRemove: () async {
             await ref
                 .read(databaseProvider)
-                .removeMemberByAssetAndBank(bank.id, asset.id);
+                .removeMemberByAssetAndBank(
+                  bank.id,
+                  asset.id,
+                  deleteOrphanAsset: true,
+                );
             if (selectedId == asset.id) {
               _clearVoiceBankInspectorState();
             }
@@ -455,13 +517,19 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.tune_rounded,
-                size: 48, color: Colors.white.withValues(alpha: 0.1)),
+            Icon(
+              Icons.tune_rounded,
+              size: 48,
+              color: Colors.white.withValues(alpha: 0.1),
+            ),
             const SizedBox(height: 12),
-            Text('Select a bank and character to edit',
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    fontSize: 13)),
+            Text(
+              'Select a bank and character to edit',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.4),
+                fontSize: 13,
+              ),
+            ),
           ],
         ),
       );
@@ -473,13 +541,19 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.person_search_rounded,
-                size: 48, color: Colors.white.withValues(alpha: 0.1)),
+            Icon(
+              Icons.person_search_rounded,
+              size: 48,
+              color: Colors.white.withValues(alpha: 0.1),
+            ),
             const SizedBox(height: 12),
-            Text('Select a character to edit',
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    fontSize: 13)),
+            Text(
+              'Select a character to edit',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.4),
+                fontSize: 13,
+              ),
+            ),
           ],
         ),
       );
@@ -489,13 +563,13 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (assets) {
-        final asset =
-            assets.where((a) => a.id == selectedId).firstOrNull;
+        final asset = assets.where((a) => a.id == selectedId).firstOrNull;
         if (asset == null) {
           return Center(
-            child: Text('Character not found',
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4))),
+            child: Text(
+              'Character not found',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+            ),
           );
         }
         // Quick Test sits on top so the user can audition the voice while
@@ -504,13 +578,11 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         return VerticalResizableSplitPane(
           initialTopFraction: 0.5,
           minPaneHeight: 140,
-          top: QuickTtsPanel(
-            key: ValueKey('qtts_${asset.id}'),
-            asset: asset,
-          ),
+          top: QuickTtsPanel(key: ValueKey('qtts_${asset.id}'), asset: asset),
           bottom: CharacterInspector(
             key: ValueKey(asset.id),
             asset: asset,
+            bankId: _selectedBankId,
           ),
         );
       },
@@ -533,28 +605,37 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, nameCtrl.text),
-              child: const Text('Create')),
+            onPressed: () => Navigator.pop(ctx, nameCtrl.text),
+            child: const Text('Create'),
+          ),
         ],
       ),
     );
     if (result != null && result.isNotEmpty) {
       if (banks.any((b) => b.name == result)) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('A bank with this name already exists')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('A bank with this name already exists'),
+            ),
+          );
         }
         return;
       }
       final id = const Uuid().v4();
-      await ref.read(databaseProvider).insertBank(db.VoiceBanksCompanion(
-            id: Value(id),
-            name: Value(result),
-            createdAt: Value(DateTime.now()),
-          ));
+      await ref
+          .read(databaseProvider)
+          .insertBank(
+            db.VoiceBanksCompanion(
+              id: Value(id),
+              name: Value(result),
+              createdAt: Value(DateTime.now()),
+            ),
+          );
       _clearVoiceBankInspectorState();
       setState(() => _selectedBankId = id);
     }
@@ -573,25 +654,28 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, nameCtrl.text),
-              child: const Text('Rename')),
+            onPressed: () => Navigator.pop(ctx, nameCtrl.text),
+            child: const Text('Rename'),
+          ),
         ],
       ),
     );
     if (result != null && result.isNotEmpty && result != bank.name) {
       if (allBanks.any((b) => b.name == result && b.id != bank.id)) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('A bank with this name already exists')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('A bank with this name already exists'),
+            ),
+          );
         }
         return;
       }
-      await ref.read(databaseProvider).updateBank(
-            bank.copyWith(name: result),
-          );
+      await ref.read(databaseProvider).updateBank(bank.copyWith(name: result));
     }
   }
 
@@ -603,7 +687,9 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
       ref,
       onCreated: (assetId) async {
         // Auto-add the freshly-created character to this bank.
-        await ref.read(databaseProvider).addMemberToBank(
+        await ref
+            .read(databaseProvider)
+            .addMemberToBank(
               db.VoiceBankMembersCompanion(
                 id: Value(const Uuid().v4()),
                 bankId: Value(bank.id),
@@ -633,8 +719,9 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     final allProviders = providersAsync.valueOrNull ?? [];
     if (members.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Bank has no characters')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Bank has no characters')));
       }
       return;
     }
@@ -652,8 +739,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         continue;
       }
       try {
-        final adapter =
-            createAdapter(provider, modelName: asset.modelName);
+        final adapter = createAdapter(provider, modelName: asset.modelName);
         results[asset.name] = await adapter.healthCheck();
       } catch (_) {
         results[asset.name] = false;
@@ -670,26 +756,28 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: results.entries
-                .map((e) => ListTile(
-                      dense: true,
-                      leading: Icon(
-                        e.value
-                            ? Icons.check_circle_rounded
-                            : Icons.error_rounded,
-                        color: e.value ? Colors.green : Colors.redAccent,
-                        size: 20,
-                      ),
-                      title: Text(e.key),
-                      subtitle:
-                          Text(e.value ? 'Reachable' : 'Unreachable'),
-                    ))
+                .map(
+                  (e) => ListTile(
+                    dense: true,
+                    leading: Icon(
+                      e.value
+                          ? Icons.check_circle_rounded
+                          : Icons.error_rounded,
+                      color: e.value ? Colors.green : Colors.redAccent,
+                      size: 20,
+                    ),
+                    title: Text(e.key),
+                    subtitle: Text(e.value ? 'Reachable' : 'Unreachable'),
+                  ),
+                )
                 .toList(),
           ),
         ),
         actions: [
           FilledButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('OK')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
         ],
       ),
     );
@@ -730,8 +818,7 @@ class _BankTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           onTap: onTap,
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Row(
               children: [
                 Icon(
@@ -742,22 +829,28 @@ class _BankTile extends StatelessWidget {
                   color: bank.isActive
                       ? Colors.green
                       : (isSelected
-                          ? AppTheme.accentColor
-                          : Colors.white.withValues(alpha: 0.4)),
+                            ? AppTheme.accentColor
+                            : Colors.white.withValues(alpha: 0.4)),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(bank.name,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w500)),
+                  child: Text(
+                    bank.name,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
                 PopupMenuButton<String>(
                   padding: EdgeInsets.zero,
                   iconSize: 16,
-                  icon: Icon(Icons.more_vert_rounded,
-                      size: 16,
-                      color: Colors.white.withValues(alpha: 0.3)),
+                  icon: Icon(
+                    Icons.more_vert_rounded,
+                    size: 16,
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                   onSelected: (v) {
                     switch (v) {
                       case 'activate':
@@ -773,21 +866,19 @@ class _BankTile extends StatelessWidget {
                   itemBuilder: (_) => [
                     PopupMenuItem(
                       value: 'activate',
-                      child: Text(
-                          bank.isActive ? 'Deactivate' : 'Set Active'),
+                      child: Text(bank.isActive ? 'Deactivate' : 'Set Active'),
                     ),
-                    const PopupMenuItem(
-                      value: 'rename',
-                      child: Text('Rename'),
-                    ),
+                    const PopupMenuItem(value: 'rename', child: Text('Rename')),
                     const PopupMenuItem(
                       value: 'duplicate',
                       child: Text('Duplicate'),
                     ),
                     const PopupMenuItem(
                       value: 'delete',
-                      child: Text('Delete',
-                          style: TextStyle(color: Colors.redAccent)),
+                      child: Text(
+                        'Delete',
+                        style: TextStyle(color: Colors.redAccent),
+                      ),
                     ),
                   ],
                 ),
@@ -828,44 +919,53 @@ class _CharacterTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           onTap: onTap,
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
                 _MiniAvatar(
-                    name: asset.name,
-                    avatarPath: asset.avatarPath,
-                    selected: isSelected),
+                  name: asset.name,
+                  avatarPath: asset.avatarPath,
+                  selected: isSelected,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(asset.name,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w500)),
-                      Text(_modeLabel(asset.taskMode),
-                          style: TextStyle(
-                              fontSize: 11,
-                              color:
-                                  Colors.white.withValues(alpha: 0.4))),
+                      Text(
+                        asset.name,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        _modeLabel(asset.taskMode),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white.withValues(alpha: 0.4),
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.only(right: 4),
-                    decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color:
-                            asset.enabled ? Colors.green : Colors.grey)),
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.only(right: 4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: asset.enabled ? Colors.green : Colors.grey,
+                  ),
+                ),
                 IconButton(
                   tooltip: 'Remove from bank',
-                  icon: Icon(Icons.remove_circle_outline_rounded,
-                      size: 18,
-                      color: Colors.white.withValues(alpha: 0.4)),
+                  icon: Icon(
+                    Icons.remove_circle_outline_rounded,
+                    size: 18,
+                    color: Colors.white.withValues(alpha: 0.4),
+                  ),
                   onPressed: onRemove,
                 ),
               ],
@@ -898,8 +998,9 @@ class _MiniAvatar extends StatelessWidget {
     }
     return CircleAvatar(
       radius: 16,
-      backgroundColor:
-          selected ? AppTheme.accentColor : const Color(0xFF2A2A36),
+      backgroundColor: selected
+          ? AppTheme.accentColor
+          : const Color(0xFF2A2A36),
       child: Text(
         name.isNotEmpty ? name[0].toUpperCase() : '?',
         style: const TextStyle(fontSize: 12, color: Colors.white),
@@ -909,11 +1010,11 @@ class _MiniAvatar extends StatelessWidget {
 }
 
 String _modeLabel(String mode) => switch (mode) {
-      'cloneWithPrompt' => 'Voice Clone',
-      'presetVoice' => 'Preset Voice',
-      'voiceDesign' => 'Voice Design',
-      _ => mode,
-    };
+  'cloneWithPrompt' => 'Voice Clone',
+  'presetVoice' => 'Preset Voice',
+  'voiceDesign' => 'Voice Design',
+  _ => mode,
+};
 
 // ─────────────────── Import From Another Bank dialog ────────────────────
 
@@ -926,8 +1027,7 @@ class _ImportFromBankDialog extends ConsumerStatefulWidget {
       _ImportFromBankDialogState();
 }
 
-class _ImportFromBankDialogState
-    extends ConsumerState<_ImportFromBankDialog> {
+class _ImportFromBankDialogState extends ConsumerState<_ImportFromBankDialog> {
   String? _sourceBankId;
   final _searchCtrl = TextEditingController();
   String _filter = '';
@@ -947,15 +1047,17 @@ class _ImportFromBankDialogState
 
   @override
   Widget build(BuildContext context) {
-    final banks =
-        ref.watch(voiceBanksStreamProvider).valueOrNull ?? const [];
-    final otherBanks =
-        banks.where((b) => b.id != widget.targetBank.id).toList();
+    final banks = ref.watch(voiceBanksStreamProvider).valueOrNull ?? const [];
+    final otherBanks = banks
+        .where((b) => b.id != widget.targetBank.id)
+        .toList();
     final allAssets =
         ref.watch(voiceAssetsStreamProvider).valueOrNull ?? const [];
     final targetMembers =
-        ref.watch(bankMembersStreamProvider(widget.targetBank.id)).valueOrNull ??
-            const [];
+        ref
+            .watch(bankMembersStreamProvider(widget.targetBank.id))
+            .valueOrNull ??
+        const [];
     final targetAssetIds = targetMembers.map((m) => m.voiceAssetId).toSet();
 
     return Dialog(
@@ -970,8 +1072,10 @@ class _ImportFromBankDialogState
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-              child: Text('Import into "${widget.targetBank.name}"',
-                  style: Theme.of(context).textTheme.titleLarge),
+              child: Text(
+                'Import into "${widget.targetBank.name}"',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
@@ -979,8 +1083,9 @@ class _ImportFromBankDialogState
                 'Characters are shared — importing just adds them as '
                 'members of this bank.',
                 style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.5)),
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
               ),
             ),
             Padding(
@@ -988,18 +1093,18 @@ class _ImportFromBankDialogState
               child: DropdownButtonFormField<String>(
                 decoration: const InputDecoration(
                   labelText: 'Source Bank',
-                  prefixIcon:
-                      Icon(Icons.account_tree_rounded, size: 18),
+                  prefixIcon: Icon(Icons.account_tree_rounded, size: 18),
                   isDense: true,
                 ),
                 initialValue: _sourceBankId,
                 isExpanded: true,
                 items: otherBanks
-                    .map((b) => DropdownMenuItem(
-                          value: b.id,
-                          child: Text(b.name,
-                              overflow: TextOverflow.ellipsis),
-                        ))
+                    .map(
+                      (b) => DropdownMenuItem(
+                        value: b.id,
+                        child: Text(b.name, overflow: TextOverflow.ellipsis),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _sourceBankId = v),
               ),
@@ -1011,8 +1116,7 @@ class _ImportFromBankDialogState
                   controller: _searchCtrl,
                   decoration: InputDecoration(
                     hintText: 'Search characters...',
-                    prefixIcon:
-                        const Icon(Icons.search_rounded, size: 18),
+                    prefixIcon: const Icon(Icons.search_rounded, size: 18),
                     suffixIcon: _filter.isEmpty
                         ? null
                         : IconButton(
@@ -1033,8 +1137,8 @@ class _ImportFromBankDialogState
                               ? 'No other banks to import from'
                               : 'Select a source bank above',
                           style: TextStyle(
-                              color:
-                                  Colors.white.withValues(alpha: 0.4)),
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
                         ),
                       ),
                     )
@@ -1042,8 +1146,7 @@ class _ImportFromBankDialogState
             ),
             const Divider(height: 1),
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -1054,9 +1157,7 @@ class _ImportFromBankDialogState
                     child: const Text('Import All'),
                   ),
                   TextButton(
-                    onPressed: _busy
-                        ? null
-                        : () => Navigator.pop(context),
+                    onPressed: _busy ? null : () => Navigator.pop(context),
                     child: const Text('Done'),
                   ),
                 ],
@@ -1072,8 +1173,9 @@ class _ImportFromBankDialogState
     List<db.VoiceAsset> allAssets,
     Set<String> targetAssetIds,
   ) {
-    final sourceMembersAsync =
-        ref.watch(bankMembersStreamProvider(_sourceBankId!));
+    final sourceMembersAsync = ref.watch(
+      bankMembersStreamProvider(_sourceBankId!),
+    );
     return sourceMembersAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Error: $e')),
@@ -1088,8 +1190,8 @@ class _ImportFromBankDialogState
         final filtered = q.isEmpty
             ? candidates
             : candidates
-                .where((a) => a.name.toLowerCase().contains(q))
-                .toList();
+                  .where((a) => a.name.toLowerCase().contains(q))
+                  .toList();
 
         if (candidates.isEmpty) {
           return Padding(
@@ -1097,8 +1199,7 @@ class _ImportFromBankDialogState
             child: Center(
               child: Text(
                 'All characters from this bank are already members',
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4)),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
               ),
             ),
           );
@@ -1107,9 +1208,10 @@ class _ImportFromBankDialogState
           return Padding(
             padding: const EdgeInsets.all(24),
             child: Center(
-              child: Text('No characters match "$_filter"',
-                  style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4))),
+              child: Text(
+                'No characters match "$_filter"',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+              ),
             ),
           );
         }
@@ -1121,18 +1223,20 @@ class _ImportFromBankDialogState
             final a = filtered[i];
             return ListTile(
               leading: _MiniAvatar(
-                  name: a.name,
-                  avatarPath: a.avatarPath,
-                  selected: false),
-              title:
-                  Text(a.name, style: const TextStyle(fontSize: 14)),
-              subtitle: Text(_modeLabel(a.taskMode),
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withValues(alpha: 0.4))),
+                name: a.name,
+                avatarPath: a.avatarPath,
+                selected: false,
+              ),
+              title: Text(a.name, style: const TextStyle(fontSize: 14)),
+              subtitle: Text(
+                _modeLabel(a.taskMode),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.4),
+                ),
+              ),
               trailing: IconButton(
-                icon: const Icon(Icons.add_circle_outline_rounded,
-                    size: 20),
+                icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
                 tooltip: 'Import this character',
                 onPressed: _busy ? null : () => _addOne(a),
               ),
@@ -1146,7 +1250,9 @@ class _ImportFromBankDialogState
 
   Future<void> _addOne(db.VoiceAsset asset) async {
     setState(() => _busy = true);
-    await ref.read(databaseProvider).addMemberToBank(
+    await ref
+        .read(databaseProvider)
+        .addMemberToBank(
           db.VoiceBankMembersCompanion(
             id: Value(const Uuid().v4()),
             bankId: Value(widget.targetBank.id),
@@ -1160,9 +1266,8 @@ class _ImportFromBankDialogState
     List<db.VoiceAsset> allAssets,
     Set<String> targetAssetIds,
   ) async {
-    final sourceMembers = ref
-            .read(bankMembersStreamProvider(_sourceBankId!))
-            .valueOrNull ??
+    final sourceMembers =
+        ref.read(bankMembersStreamProvider(_sourceBankId!)).valueOrNull ??
         const [];
     final assetMap = {for (final a in allAssets) a.id: a};
     final toAdd = sourceMembers
@@ -1174,16 +1279,19 @@ class _ImportFromBankDialogState
     setState(() => _busy = true);
     final database = ref.read(databaseProvider);
     for (final a in toAdd) {
-      await database.addMemberToBank(db.VoiceBankMembersCompanion(
-        id: Value(const Uuid().v4()),
-        bankId: Value(widget.targetBank.id),
-        voiceAssetId: Value(a.id),
-      ));
+      await database.addMemberToBank(
+        db.VoiceBankMembersCompanion(
+          id: Value(const Uuid().v4()),
+          bankId: Value(widget.targetBank.id),
+          voiceAssetId: Value(a.id),
+        ),
+      );
     }
     if (mounted) {
       setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Imported ${toAdd.length} character(s)')));
+        SnackBar(content: Text('Imported ${toAdd.length} character(s)')),
+      );
     }
   }
 }

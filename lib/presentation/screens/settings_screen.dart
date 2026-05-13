@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:neiroha/data/database/app_database.dart'
     show AppDatabaseStorageQueries;
+import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/data/storage/export_prefs.dart';
 import 'package:neiroha/data/storage/ffmpeg_service.dart';
 import 'package:neiroha/data/storage/path_service.dart';
@@ -238,7 +239,12 @@ class _SettingsSectionContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final children = switch (section) {
-      SettingsSection.general => const <Widget>[_StartupCard()],
+      SettingsSection.general => const <Widget>[
+        _StartupCard(),
+        SizedBox(height: 12),
+        _TaskBehaviorCard(),
+      ],
+      SettingsSection.tasks => const <Widget>[_TaskMonitorCard()],
       SettingsSection.api => const <Widget>[_ApiServerCard()],
       SettingsSection.storage => <Widget>[
         _StorageCard(startup: ref.watch(storageStartupProvider)),
@@ -370,6 +376,432 @@ class _StartupCardState extends ConsumerState<_StartupCard> {
   }
 }
 
+class _TaskBehaviorCard extends ConsumerStatefulWidget {
+  const _TaskBehaviorCard();
+
+  @override
+  ConsumerState<_TaskBehaviorCard> createState() => _TaskBehaviorCardState();
+}
+
+class _TaskBehaviorCardState extends ConsumerState<_TaskBehaviorCard> {
+  bool _loaded = false;
+  bool _continueAcrossScreens =
+      AppBehaviorSettings.defaultContinueTtsAcrossScreens;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_load);
+  }
+
+  Future<void> _load() async {
+    final stored = await ref
+        .read(databaseProvider)
+        .getSetting(AppBehaviorSettings.continueTtsAcrossScreensKey);
+    final enabled = AppBehaviorSettings.parseBool(
+      stored,
+      defaultValue: AppBehaviorSettings.defaultContinueTtsAcrossScreens,
+    );
+    if (!mounted) return;
+    ref.read(continueTtsAcrossScreensProvider.notifier).state = enabled;
+    setState(() {
+      _continueAcrossScreens = enabled;
+      _loaded = true;
+    });
+  }
+
+  Future<void> _setContinueAcrossScreens(bool enabled) async {
+    setState(() => _continueAcrossScreens = enabled);
+    ref.read(continueTtsAcrossScreensProvider.notifier).state = enabled;
+    await ref
+        .read(databaseProvider)
+        .setSetting(
+          AppBehaviorSettings.continueTtsAcrossScreensKey,
+          enabled ? 'true' : '',
+        );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          enabled
+              ? 'TTS will continue when switching screens.'
+              : 'Novel playback will stop when leaving the reader.',
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: _SettingsRow(
+          icon: Icons.swap_horiz_rounded,
+          title: 'Keep TTS Running Across Screens',
+          subtitle:
+              'Useful for reading with Novel Reader while checking task progress or settings.',
+          trailing: Switch(
+            value: _continueAcrossScreens,
+            onChanged: _loaded ? _setContinueAcrossScreens : null,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ───────────────────────────── Task monitor card ────────────────────────────
+
+class _TaskMonitorCard extends ConsumerWidget {
+  const _TaskMonitorCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final snapshot = ref
+        .watch(ttsQueueSnapshotProvider)
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => ref.read(ttsQueueServiceProvider).snapshot,
+        );
+    final recent = snapshot.recent.take(8).toList();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _SettingsRow(
+              icon: Icons.task_alt_rounded,
+              title: 'Current TTS Tasks',
+              subtitle: snapshot.hasUnfinished
+                  ? '${snapshot.runningCount} running, ${snapshot.queuedCount} waiting'
+                  : 'No unfinished TTS tasks right now.',
+              trailing: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _TaskCountChip(
+                    label: 'Running',
+                    count: snapshot.runningCount,
+                    color: Colors.lightGreenAccent,
+                  ),
+                  _TaskCountChip(
+                    label: 'Queued',
+                    count: snapshot.queuedCount,
+                    color: AppTheme.accentColor,
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            if (!snapshot.hasUnfinished)
+              const _EmptyTaskState()
+            else ...[
+              _TaskSection(title: 'Running', tasks: snapshot.running),
+              _TaskSection(title: 'Waiting', tasks: snapshot.queued),
+            ],
+            if (recent.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              _TaskSection(title: 'Recent', tasks: recent, compact: true),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyTaskState extends StatelessWidget {
+  const _EmptyTaskState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceBright.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.inbox_rounded,
+            size: 32,
+            color: Colors.white.withValues(alpha: 0.28),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'TTS queue is idle',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.62)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaskCountChip extends StatelessWidget {
+  const _TaskCountChip({
+    required this.label,
+    required this.count,
+    required this.color,
+  });
+
+  final String label;
+  final int count;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Text(
+        '$label $count',
+        style: TextStyle(
+          color: color.withValues(alpha: 0.9),
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _TaskSection extends StatelessWidget {
+  const _TaskSection({
+    required this.title,
+    required this.tasks,
+    this.compact = false,
+  });
+
+  final String title;
+  final List<TtsQueueTaskSnapshot> tasks;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    if (tasks.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.58),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (final task in tasks) _TaskRow(task: task, compact: compact),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaskRow extends StatelessWidget {
+  const _TaskRow({required this.task, required this.compact});
+
+  final TtsQueueTaskSnapshot task;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _taskStatusColor(task.status);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 8 : 10),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceBright,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(_taskStatusIcon(task.status), size: 18, color: color),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  task.label,
+                  maxLines: compact ? 1 : 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    _TaskMetaChip(
+                      icon: Icons.layers_rounded,
+                      label: task.source,
+                    ),
+                    _TaskMetaChip(
+                      icon: Icons.dns_rounded,
+                      label: task.providerName,
+                    ),
+                    _TaskMetaChip(
+                      icon: Icons.schedule_rounded,
+                      label: _taskTimeLabel(task),
+                    ),
+                    _TaskMetaChip(
+                      icon: Icons.data_usage_rounded,
+                      label: '${task.estimatedTokens} tok',
+                    ),
+                  ],
+                ),
+                if (task.errorMessage != null &&
+                    task.errorMessage!.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    task.errorMessage!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          _TaskStatusPill(status: task.status),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaskMetaChip extends StatelessWidget {
+  const _TaskMetaChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.045),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.white.withValues(alpha: 0.45)),
+          const SizedBox(width: 4),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 180),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.54),
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaskStatusPill extends StatelessWidget {
+  const _TaskStatusPill({required this.status});
+
+  final TtsQueueTaskStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _taskStatusColor(status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Text(
+        _taskStatusLabel(status),
+        style: TextStyle(
+          color: color.withValues(alpha: 0.9),
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+Color _taskStatusColor(TtsQueueTaskStatus status) {
+  return switch (status) {
+    TtsQueueTaskStatus.queued => AppTheme.accentColor,
+    TtsQueueTaskStatus.running => Colors.lightGreenAccent,
+    TtsQueueTaskStatus.completed => Colors.greenAccent,
+    TtsQueueTaskStatus.failed => Colors.redAccent,
+  };
+}
+
+IconData _taskStatusIcon(TtsQueueTaskStatus status) {
+  return switch (status) {
+    TtsQueueTaskStatus.queued => Icons.schedule_rounded,
+    TtsQueueTaskStatus.running => Icons.sync_rounded,
+    TtsQueueTaskStatus.completed => Icons.check_circle_rounded,
+    TtsQueueTaskStatus.failed => Icons.error_rounded,
+  };
+}
+
+String _taskStatusLabel(TtsQueueTaskStatus status) {
+  return switch (status) {
+    TtsQueueTaskStatus.queued => 'Queued',
+    TtsQueueTaskStatus.running => 'Running',
+    TtsQueueTaskStatus.completed => 'Done',
+    TtsQueueTaskStatus.failed => 'Failed',
+  };
+}
+
+String _taskTimeLabel(TtsQueueTaskSnapshot task) {
+  final time = switch (task.status) {
+    TtsQueueTaskStatus.running => task.startedAt ?? task.queuedAt,
+    TtsQueueTaskStatus.completed ||
+    TtsQueueTaskStatus.failed => task.completedAt ?? task.queuedAt,
+    TtsQueueTaskStatus.queued => task.queuedAt,
+  };
+  return _formatClock(time);
+}
+
+String _formatClock(DateTime time) {
+  final hour = time.hour.toString().padLeft(2, '0');
+  final minute = time.minute.toString().padLeft(2, '0');
+  final second = time.second.toString().padLeft(2, '0');
+  return '$hour:$minute:$second';
+}
+
 class _AboutCard extends StatelessWidget {
   const _AboutCard();
 
@@ -405,6 +837,7 @@ class _ApiServerCardState extends ConsumerState<_ApiServerCard> {
   final _rateCtrl = TextEditingController();
   bool _hydrated = false;
   bool _showKey = false;
+  bool _apiLogEnabled = false;
 
   @override
   void dispose() {
@@ -425,6 +858,7 @@ class _ApiServerCardState extends ConsumerState<_ApiServerCard> {
       _keyCtrl.text = cfg.apiKey ?? '';
       _corsCtrl.text = cfg.corsOrigins.join(', ');
       _rateCtrl.text = '${cfg.rateLimitPerMin}';
+      _apiLogEnabled = cfg.apiLogEnabled;
       _hydrated = true;
     });
   }
@@ -442,6 +876,7 @@ class _ApiServerCardState extends ConsumerState<_ApiServerCard> {
           .where((s) => s.isNotEmpty)
           .toList(),
       rateLimitPerMin: int.tryParse(_rateCtrl.text.trim()) ?? 60,
+      apiLogEnabled: _apiLogEnabled,
     );
   }
 
@@ -459,10 +894,26 @@ class _ApiServerCardState extends ConsumerState<_ApiServerCard> {
     ).showSnackBar(const SnackBar(content: Text('API config saved.')));
   }
 
+  Future<void> _setApiLogEnabled(bool enabled) async {
+    setState(() => _apiLogEnabled = enabled);
+    await ref.read(apiServerProvider).setApiLogEnabled(enabled);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          enabled ? 'API log output enabled.' : 'API log output disabled.',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final running = ref.watch(serverRunningProvider);
     final server = ref.read(apiServerProvider);
+    final apiLogs = ref
+        .watch(apiServerLogsProvider)
+        .maybeWhen(data: (logs) => logs, orElse: () => server.logs);
 
     if (!_hydrated) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _hydrate());
@@ -635,8 +1086,169 @@ class _ApiServerCardState extends ConsumerState<_ApiServerCard> {
                 );
               },
             ),
+            const Divider(),
+            _SettingsRow(
+              icon: Icons.receipt_long_rounded,
+              title: 'API Log Output',
+              subtitle:
+                  'Record external API request metadata in this panel. Request bodies and auth headers are not stored.',
+              trailing: Switch(
+                value: _apiLogEnabled,
+                onChanged: _hydrated ? _setApiLogEnabled : null,
+              ),
+            ),
+            if (_apiLogEnabled) ...[
+              const SizedBox(height: 8),
+              _ApiLogPanel(
+                logs: apiLogs,
+                onClear: () => ref.read(apiServerProvider).clearLogs(),
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ApiLogPanel extends StatelessWidget {
+  const _ApiLogPanel({required this.logs, required this.onClear});
+
+  final List<ApiLogEntry> logs;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceBright,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+            child: Row(
+              children: [
+                Text(
+                  '${logs.length} request(s)',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.58),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: logs.isEmpty ? null : onClear,
+                  icon: const Icon(Icons.delete_sweep_rounded, size: 16),
+                  label: const Text('Clear'),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          SizedBox(
+            height: 220,
+            child: logs.isEmpty
+                ? Center(
+                    child: Text(
+                      'No API requests logged yet.',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.42),
+                        fontSize: 12,
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    itemCount: logs.length,
+                    separatorBuilder: (_, _) => Divider(
+                      height: 1,
+                      color: Colors.white.withValues(alpha: 0.05),
+                    ),
+                    itemBuilder: (context, index) =>
+                        _ApiLogRow(entry: logs[index]),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ApiLogRow extends StatelessWidget {
+  const _ApiLogRow({required this.entry});
+
+  final ApiLogEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final ok = entry.statusCode < 400;
+    final color = ok ? Colors.greenAccent : Colors.redAccent;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: Text(
+              '${entry.statusCode}',
+              style: TextStyle(
+                color: color.withValues(alpha: 0.92),
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${entry.method} ${entry.path}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${_formatClock(entry.startedAt)}  ${entry.remoteAddress}  ${entry.durationMs} ms',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.white.withValues(alpha: 0.46),
+                  ),
+                ),
+                if (entry.errorMessage != null) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    entry.errorMessage!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

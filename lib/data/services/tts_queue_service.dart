@@ -5,6 +5,57 @@ import 'dart:math' as math;
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 
+enum TtsQueueTaskStatus { queued, running, completed, failed }
+
+class TtsQueueTaskSnapshot {
+  const TtsQueueTaskSnapshot({
+    required this.id,
+    required this.providerId,
+    required this.providerName,
+    required this.source,
+    required this.label,
+    required this.status,
+    required this.estimatedTokens,
+    required this.queuedAt,
+    this.startedAt,
+    this.completedAt,
+    this.errorMessage,
+  });
+
+  final String id;
+  final String providerId;
+  final String providerName;
+  final String source;
+  final String label;
+  final TtsQueueTaskStatus status;
+  final int estimatedTokens;
+  final DateTime queuedAt;
+  final DateTime? startedAt;
+  final DateTime? completedAt;
+  final String? errorMessage;
+
+  bool get isUnfinished =>
+      status == TtsQueueTaskStatus.queued ||
+      status == TtsQueueTaskStatus.running;
+}
+
+class TtsQueueSnapshot {
+  const TtsQueueSnapshot({
+    this.running = const <TtsQueueTaskSnapshot>[],
+    this.queued = const <TtsQueueTaskSnapshot>[],
+    this.recent = const <TtsQueueTaskSnapshot>[],
+  });
+
+  final List<TtsQueueTaskSnapshot> running;
+  final List<TtsQueueTaskSnapshot> queued;
+  final List<TtsQueueTaskSnapshot> recent;
+
+  int get runningCount => running.length;
+  int get queuedCount => queued.length;
+  int get unfinishedCount => running.length + queued.length;
+  bool get hasUnfinished => unfinishedCount > 0;
+}
+
 /// Process-wide scheduler for all TTS synthesis requests.
 ///
 /// The limits are intentionally owned by the provider instead of individual
@@ -19,15 +70,50 @@ class TtsQueueService {
   static const Duration _minuteWindow = Duration(minutes: 1);
 
   final Map<String, _ProviderQueueState> _states = {};
+  final StreamController<TtsQueueSnapshot> _snapshotController =
+      StreamController<TtsQueueSnapshot>.broadcast();
+  final List<TtsQueueTaskSnapshot> _recentFinished = <TtsQueueTaskSnapshot>[];
+  int _nextTaskId = 0;
+
+  TtsQueueSnapshot get snapshot {
+    final running = <TtsQueueTaskSnapshot>[];
+    final queued = <TtsQueueTaskSnapshot>[];
+
+    for (final state in _states.values) {
+      running.addAll(state.activeTasks.map((task) => task.toSnapshot()));
+      queued.addAll(state.pending.map((task) => task.toSnapshot()));
+    }
+
+    running.sort(
+      (a, b) =>
+          (a.startedAt ?? a.queuedAt).compareTo(b.startedAt ?? b.queuedAt),
+    );
+    queued.sort((a, b) => a.queuedAt.compareTo(b.queuedAt));
+
+    return TtsQueueSnapshot(
+      running: List.unmodifiable(running),
+      queued: List.unmodifiable(queued),
+      recent: List.unmodifiable(_recentFinished),
+    );
+  }
+
+  Stream<TtsQueueSnapshot> watchSnapshots() async* {
+    yield snapshot;
+    yield* _snapshotController.stream;
+  }
 
   Future<TtsResult> synthesize({
     required db.TtsProvider provider,
     required TtsRequest request,
     String? modelName,
+    String source = 'TTS',
+    String? label,
   }) {
     return enqueue(
       provider: provider,
       estimatedTokens: estimateTokens(request),
+      source: source,
+      label: label ?? _labelForRequest(request),
       task: () {
         final adapter = createAdapter(provider, modelName: modelName);
         return adapter.synthesize(request);
@@ -39,14 +125,20 @@ class TtsQueueService {
     required db.TtsProvider provider,
     required Future<T> Function() task,
     int estimatedTokens = 1,
+    String source = 'TTS',
+    String label = 'TTS request',
   }) {
     final state = _states.putIfAbsent(provider.id, () => _ProviderQueueState());
     final queuedTask = _QueuedTtsTask<T>(
+      id: '${++_nextTaskId}',
       provider: provider,
+      source: source,
+      label: label,
       estimatedTokens: math.max(1, estimatedTokens),
       run: task,
     );
     state.pending.add(queuedTask);
+    _emitSnapshot();
     _drain(provider.id);
     return queuedTask.completer.future;
   }
@@ -68,6 +160,13 @@ class TtsQueueService {
     return math.max(1, (ascii / 4 + nonAscii / 1.6).ceil());
   }
 
+  String _labelForRequest(TtsRequest request) {
+    final text = request.text.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (text.isEmpty) return 'TTS request';
+    if (text.length <= 72) return text;
+    return '${text.substring(0, 72)}...';
+  }
+
   void _drain(String providerId) {
     final state = _states[providerId];
     if (state == null) return;
@@ -77,7 +176,7 @@ class TtsQueueService {
     while (state.pending.isNotEmpty) {
       final next = state.pending.first;
       final maxConcurrency = _maxConcurrency(next.provider);
-      if (state.active >= maxConcurrency) return;
+      if (state.activeTasks.length >= maxConcurrency) return;
 
       final wait = state.waitBeforeStart(next.provider, next.estimatedTokens);
       if (wait > Duration.zero) {
@@ -87,7 +186,9 @@ class TtsQueueService {
 
       state.pending.removeFirst();
       state.recordStart(next.estimatedTokens);
-      state.active++;
+      next.markRunning();
+      state.activeTasks.add(next);
+      _emitSnapshot();
       unawaited(_run(providerId, state, next));
     }
   }
@@ -99,13 +200,17 @@ class TtsQueueService {
   ) async {
     try {
       final result = await task.run();
+      task.markCompleted();
       if (!task.completer.isCompleted) task.completer.complete(result);
     } catch (error, stackTrace) {
+      task.markFailed(error);
       if (!task.completer.isCompleted) {
         task.completer.completeError(error, stackTrace);
       }
     } finally {
-      state.active--;
+      state.activeTasks.remove(task);
+      _addRecent(task.toSnapshot());
+      _emitSnapshot();
       _drain(providerId);
     }
   }
@@ -113,14 +218,27 @@ class TtsQueueService {
   int _maxConcurrency(db.TtsProvider provider) {
     return provider.maxConcurrency.clamp(1, 64).toInt();
   }
+
+  void _addRecent(TtsQueueTaskSnapshot task) {
+    _recentFinished.insert(0, task);
+    if (_recentFinished.length > 50) {
+      _recentFinished.removeRange(50, _recentFinished.length);
+    }
+  }
+
+  void _emitSnapshot() {
+    if (!_snapshotController.isClosed) {
+      _snapshotController.add(snapshot);
+    }
+  }
 }
 
 class _ProviderQueueState {
   final Queue<_QueuedTtsTask<dynamic>> pending =
       Queue<_QueuedTtsTask<dynamic>>();
+  final Set<_QueuedTtsTask<dynamic>> activeTasks = <_QueuedTtsTask<dynamic>>{};
   final List<_UsageStamp> _minuteUsage = <_UsageStamp>[];
 
-  int active = 0;
   int _dayRequests = 0;
   int _dayTokens = 0;
   DateTime _dayStart = _today(DateTime.now());
@@ -218,15 +336,58 @@ class _ProviderQueueState {
 
 class _QueuedTtsTask<T> {
   _QueuedTtsTask({
+    required this.id,
     required this.provider,
+    required this.source,
+    required this.label,
     required this.estimatedTokens,
     required this.run,
-  });
+  }) : queuedAt = DateTime.now();
 
+  final String id;
   final db.TtsProvider provider;
+  final String source;
+  final String label;
   final int estimatedTokens;
   final Future<T> Function() run;
+  final DateTime queuedAt;
   final Completer<T> completer = Completer<T>();
+  DateTime? startedAt;
+  DateTime? completedAt;
+  String? errorMessage;
+  TtsQueueTaskStatus status = TtsQueueTaskStatus.queued;
+
+  void markRunning() {
+    status = TtsQueueTaskStatus.running;
+    startedAt = DateTime.now();
+  }
+
+  void markCompleted() {
+    status = TtsQueueTaskStatus.completed;
+    completedAt = DateTime.now();
+  }
+
+  void markFailed(Object error) {
+    status = TtsQueueTaskStatus.failed;
+    completedAt = DateTime.now();
+    errorMessage = error.toString();
+  }
+
+  TtsQueueTaskSnapshot toSnapshot() {
+    return TtsQueueTaskSnapshot(
+      id: id,
+      providerId: provider.id,
+      providerName: provider.name,
+      source: source,
+      label: label,
+      status: status,
+      estimatedTokens: estimatedTokens,
+      queuedAt: queuedAt,
+      startedAt: startedAt,
+      completedAt: completedAt,
+      errorMessage: errorMessage,
+    );
+  }
 }
 
 class _UsageStamp {

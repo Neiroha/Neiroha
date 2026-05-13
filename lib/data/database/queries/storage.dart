@@ -102,5 +102,20 @@ extension AppDatabaseStorageQueries on AppDatabase {
         missing: Value(false),
       ),
     );
+    await update(subtitleCues).write(
+      const SubtitleCuesCompanion(
+        audioPath: Value(null),
+        audioDuration: Value(null),
+        error: Value(null),
+        missing: Value(false),
+      ),
+    );
+    await update(voiceAssets).write(
+      const VoiceAssetsCompanion(
+        refAudioPath: Value(null),
+        refAudioTrimStart: Value(null),
+        refAudioTrimEnd: Value(null),
+      ),
+    );
   });
 }

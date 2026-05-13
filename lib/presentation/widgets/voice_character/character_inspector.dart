@@ -21,7 +21,9 @@ import 'package:neiroha/providers/playback_provider.dart';
 
 class CharacterInspector extends ConsumerStatefulWidget {
   final db.VoiceAsset asset;
-  const CharacterInspector({super.key, required this.asset});
+  final String? bankId;
+
+  const CharacterInspector({super.key, required this.asset, this.bankId});
 
   @override
   ConsumerState<CharacterInspector> createState() => _CharacterInspectorState();
@@ -608,17 +610,6 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
       ).showSnackBar(const SnackBar(content: Text('Name is required')));
       return;
     }
-    final existingAssets =
-        ref.read(voiceAssetsStreamProvider).valueOrNull ?? [];
-    if (existingAssets.any((x) => x.name == name && x.id != widget.asset.id)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('A character with this name already exists'),
-        ),
-      );
-      return;
-    }
-
     setState(() => _saving = true);
 
     final speed = double.tryParse(_speedCtrl.text) ?? 1.0;
@@ -675,29 +666,38 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
 
   Future<void> _duplicateCharacter(db.VoiceAsset asset) async {
     final newId = const Uuid().v4();
-    await ref
-        .read(databaseProvider)
-        .insertVoiceAsset(
-          db.VoiceAssetsCompanion(
-            id: Value(newId),
-            name: Value('${asset.name} (copy)'),
-            description: Value(asset.description),
-            providerId: Value(asset.providerId),
-            modelBindingId: Value(asset.modelBindingId),
-            modelName: Value(asset.modelName),
-            taskMode: Value(asset.taskMode),
-            refAudioPath: Value(asset.refAudioPath),
-            refAudioTrimStart: Value(asset.refAudioTrimStart),
-            refAudioTrimEnd: Value(asset.refAudioTrimEnd),
-            promptText: Value(asset.promptText),
-            promptLang: Value(asset.promptLang),
-            voiceInstruction: Value(asset.voiceInstruction),
-            presetVoiceName: Value(asset.presetVoiceName),
-            avatarPath: Value(asset.avatarPath),
-            speed: Value(asset.speed),
-            enabled: Value(asset.enabled),
-          ),
-        );
+    final database = ref.read(databaseProvider);
+    await database.insertVoiceAsset(
+      db.VoiceAssetsCompanion(
+        id: Value(newId),
+        name: Value('${asset.name} (copy)'),
+        description: Value(asset.description),
+        providerId: Value(asset.providerId),
+        modelBindingId: Value(asset.modelBindingId),
+        modelName: Value(asset.modelName),
+        taskMode: Value(asset.taskMode),
+        refAudioPath: Value(asset.refAudioPath),
+        refAudioTrimStart: Value(asset.refAudioTrimStart),
+        refAudioTrimEnd: Value(asset.refAudioTrimEnd),
+        promptText: Value(asset.promptText),
+        promptLang: Value(asset.promptLang),
+        voiceInstruction: Value(asset.voiceInstruction),
+        presetVoiceName: Value(asset.presetVoiceName),
+        avatarPath: Value(asset.avatarPath),
+        speed: Value(asset.speed),
+        enabled: Value(asset.enabled),
+      ),
+    );
+    final bankId = widget.bankId;
+    if (bankId != null) {
+      await database.addMemberToBank(
+        db.VoiceBankMembersCompanion(
+          id: Value(const Uuid().v4()),
+          bankId: Value(bankId),
+          voiceAssetId: Value(newId),
+        ),
+      );
+    }
     ref.read(selectedCharacterIdProvider.notifier).state = newId;
   }
 }

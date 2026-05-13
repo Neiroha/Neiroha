@@ -37,6 +37,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   void initState() {
     super.initState();
     Future.microtask(_loadStartupTab);
+    Future.microtask(_loadAppBehaviorSettings);
   }
 
   Future<void> _loadStartupTab() async {
@@ -50,9 +51,25 @@ class _AppShellState extends ConsumerState<AppShell> {
     ref.read(selectedTabProvider.notifier).state = startupTab;
   }
 
+  Future<void> _loadAppBehaviorSettings() async {
+    final stored = await ref
+        .read(databaseProvider)
+        .getSetting(AppBehaviorSettings.continueTtsAcrossScreensKey);
+    if (!mounted) return;
+    ref
+        .read(continueTtsAcrossScreensProvider.notifier)
+        .state = AppBehaviorSettings.parseBool(
+      stored,
+      defaultValue: AppBehaviorSettings.defaultContinueTtsAcrossScreens,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedTab = ref.watch(selectedTabProvider);
+    final continueTtsAcrossScreens = ref.watch(
+      continueTtsAcrossScreensProvider,
+    );
     _visitedTabs.add(selectedTab);
     final playback = ref.watch(playbackNotifierProvider);
     // Dialog/Phase render their own inline players, so the global bottom bar
@@ -62,7 +79,8 @@ class _AppShellState extends ConsumerState<AppShell> {
         selectedTab != NavTab.dialogTts &&
         selectedTab != NavTab.phaseTts &&
         selectedTab != NavTab.novelReader &&
-        !isNovelReaderPlaybackSource(playback.sourceTag) &&
+        (continueTtsAcrossScreens ||
+            !isNovelReaderPlaybackSource(playback.sourceTag)) &&
         !(selectedTab == NavTab.voiceBank &&
             playback.sourceTag == voiceBankQuickTestPlaybackSource);
 
@@ -95,7 +113,8 @@ class _AppShellState extends ConsumerState<AppShell> {
       final guard = _phaseTtsExitGuard;
       if (guard != null && !await guard()) return;
     }
-    if (current == NavTab.novelReader) {
+    if (current == NavTab.novelReader &&
+        !ref.read(continueTtsAcrossScreensProvider)) {
       await ref
           .read(playbackNotifierProvider.notifier)
           .stopIfSourceTagPrefix(novelReaderPlaybackSource);

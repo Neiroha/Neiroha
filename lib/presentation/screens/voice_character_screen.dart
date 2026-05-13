@@ -28,14 +28,12 @@ void openCreateCharacterDialog(
     );
     return;
   }
-  final existingAssets = ref.read(voiceAssetsStreamProvider).valueOrNull ?? [];
   final audioTracks = ref.read(audioTracksStreamProvider).valueOrNull ?? [];
   showDialog(
     context: context,
     barrierDismissible: false,
     builder: (ctx) => CreateCharacterDialog(
       providers: enabledProviders,
-      existingAssets: existingAssets,
       audioTracks: audioTracks,
       database: ref.read(databaseProvider),
       onSave: (companion) async {

@@ -78,6 +78,11 @@ final ttsQueueServiceProvider = Provider<TtsQueueService>((ref) {
   return TtsQueueService.instance;
 });
 
+/// Live process-wide TTS queue snapshot for task monitoring surfaces.
+final ttsQueueSnapshotProvider = StreamProvider<TtsQueueSnapshot>((ref) {
+  return ref.watch(ttsQueueServiceProvider).watchSnapshots();
+});
+
 /// Probes `ffmpeg -version` once per session. Watch this in the Settings
 /// screen (so the badge updates after the user changes the path) and in
 /// the Video Dub editor (so the waveform banner toggles). Invalidate via
@@ -104,6 +109,11 @@ final storageStartupProvider = FutureProvider<StorageScanReport>((ref) async {
 final apiServerProvider = Provider<ApiServer>((ref) {
   final db = ref.watch(databaseProvider);
   return ApiServer(db: db);
+});
+
+/// In-memory API request log emitted by the local middleware server.
+final apiServerLogsProvider = StreamProvider<List<ApiLogEntry>>((ref) {
+  return ref.watch(apiServerProvider).watchLogs();
 });
 
 /// Stream of all providers from the database.

@@ -21,9 +21,26 @@ extension AppDatabaseVoiceQueries on AppDatabase {
       update(voiceAssets).replace(asset);
 
   Future<int> deleteVoiceAsset(String id) => transaction(() async {
-    // Drop FK references before deleting the asset itself, otherwise
-    // SQLite raises a foreign-key constraint and the asset stays in the
-    // table — leading to "name already exists" on the next create attempt.
+    return _deleteVoiceAssetRows(id);
+  });
+
+  Future<int> _deleteVoiceAssetRows(String id) async {
+    // Drop FK references before deleting the asset itself, otherwise SQLite
+    // raises a foreign-key constraint and the asset stays in the table. Also
+    // clear nullable project references so editors do not keep stale ids.
+    await (update(phaseTtsSegments)..where((t) => t.voiceAssetId.equals(id)))
+        .write(const PhaseTtsSegmentsCompanion(voiceAssetId: Value(null)));
+    await (update(novelProjects)
+          ..where((t) => t.narratorVoiceAssetId.equals(id)))
+        .write(const NovelProjectsCompanion(narratorVoiceAssetId: Value(null)));
+    await (update(novelProjects)
+          ..where((t) => t.dialogueVoiceAssetId.equals(id)))
+        .write(const NovelProjectsCompanion(dialogueVoiceAssetId: Value(null)));
+    await (update(dialogTtsLines)..where((t) => t.voiceAssetId.equals(id)))
+        .write(const DialogTtsLinesCompanion(voiceAssetId: Value(null)));
+    await (update(subtitleCues)..where((t) => t.voiceAssetId.equals(id))).write(
+      const SubtitleCuesCompanion(voiceAssetId: Value(null)),
+    );
     await (delete(
       voiceBankMembers,
     )..where((t) => t.voiceAssetId.equals(id))).go();
@@ -32,7 +49,7 @@ extension AppDatabaseVoiceQueries on AppDatabase {
       quickTtsHistories,
     )..where((t) => t.voiceAssetId.equals(id))).go();
     return (delete(voiceAssets)..where((t) => t.id.equals(id))).go();
-  });
+  }
 
   // --- VoiceBank CRUD ---
 
@@ -46,10 +63,63 @@ extension AppDatabaseVoiceQueries on AppDatabase {
   Future<bool> updateBank(VoiceBank bank) => update(voiceBanks).replace(bank);
 
   Future<int> deleteBank(String id) => transaction(() async {
-    // Remove members first
+    final usage = await _voiceBankProjectUsage(id);
+    if (_voiceBankProjectUsageCount(usage) > 0) {
+      throw StateError(
+        'Voice bank is used by ${_formatVoiceBankProjectUsage(usage)}',
+      );
+    }
+    final members = await getBankMembers(id);
     await (delete(voiceBankMembers)..where((t) => t.bankId.equals(id))).go();
-    return (delete(voiceBanks)..where((t) => t.id.equals(id))).go();
+    final removed = await (delete(
+      voiceBanks,
+    )..where((t) => t.id.equals(id))).go();
+    for (final member in members) {
+      if (await _voiceAssetMembershipCount(member.voiceAssetId) == 0) {
+        await _deleteVoiceAssetRows(member.voiceAssetId);
+      }
+    }
+    return removed;
   });
+
+  Future<({int phase, int novel, int dialog, int video})>
+  _voiceBankProjectUsage(String bankId) async {
+    final phase = await (select(
+      phaseTtsProjects,
+    )..where((t) => t.bankId.equals(bankId))).get();
+    final novel = await (select(
+      novelProjects,
+    )..where((t) => t.bankId.equals(bankId))).get();
+    final dialog = await (select(
+      dialogTtsProjects,
+    )..where((t) => t.bankId.equals(bankId))).get();
+    final video = await (select(
+      videoDubProjects,
+    )..where((t) => t.bankId.equals(bankId))).get();
+    return (
+      phase: phase.length,
+      novel: novel.length,
+      dialog: dialog.length,
+      video: video.length,
+    );
+  }
+
+  int _voiceBankProjectUsageCount(
+    ({int phase, int novel, int dialog, int video}) usage,
+  ) {
+    return usage.phase + usage.novel + usage.dialog + usage.video;
+  }
+
+  String _formatVoiceBankProjectUsage(
+    ({int phase, int novel, int dialog, int video}) usage,
+  ) {
+    final parts = <String>[];
+    if (usage.phase > 0) parts.add('${usage.phase} Phase project(s)');
+    if (usage.novel > 0) parts.add('${usage.novel} Novel project(s)');
+    if (usage.dialog > 0) parts.add('${usage.dialog} Dialog project(s)');
+    if (usage.video > 0) parts.add('${usage.video} Video Dub project(s)');
+    return parts.join(', ');
+  }
 
   /// Set one bank as active, deactivating all others.
   Future<void> setActiveBank(String bankId) => transaction(() async {
@@ -93,18 +163,64 @@ extension AppDatabaseVoiceQueries on AppDatabase {
   Future<List<VoiceBankMember>> getBankMembers(String bankId) =>
       (select(voiceBankMembers)..where((t) => t.bankId.equals(bankId))).get();
 
-  Future<int> addMemberToBank(VoiceBankMembersCompanion member) =>
-      into(voiceBankMembers).insert(member);
+  Future<int> addMemberToBank(VoiceBankMembersCompanion member) async {
+    if (member.bankId.present && member.voiceAssetId.present) {
+      final existing =
+          await (select(voiceBankMembers)..where(
+                (t) =>
+                    t.bankId.equals(member.bankId.value) &
+                    t.voiceAssetId.equals(member.voiceAssetId.value),
+              ))
+              .getSingleOrNull();
+      if (existing != null) return 0;
+    }
+    return into(voiceBankMembers).insert(member);
+  }
 
-  Future<int> removeMemberFromBank(String memberId) =>
-      (delete(voiceBankMembers)..where((t) => t.id.equals(memberId))).go();
+  Future<int> removeMemberFromBank(
+    String memberId, {
+    bool deleteOrphanAsset = false,
+  }) => transaction(() async {
+    final member = await (select(
+      voiceBankMembers,
+    )..where((t) => t.id.equals(memberId))).getSingleOrNull();
+    if (member == null) return 0;
+    final removed = await (delete(
+      voiceBankMembers,
+    )..where((t) => t.id.equals(memberId))).go();
+    if (deleteOrphanAsset &&
+        removed > 0 &&
+        await _voiceAssetMembershipCount(member.voiceAssetId) == 0) {
+      await _deleteVoiceAssetRows(member.voiceAssetId);
+    }
+    return removed;
+  });
 
-  Future<void> removeMemberByAssetAndBank(String bankId, String voiceAssetId) =>
-      (delete(voiceBankMembers)..where(
-            (t) =>
-                t.bankId.equals(bankId) & t.voiceAssetId.equals(voiceAssetId),
-          ))
-          .go();
+  Future<int> removeMemberByAssetAndBank(
+    String bankId,
+    String voiceAssetId, {
+    bool deleteOrphanAsset = false,
+  }) => transaction(() async {
+    final removed =
+        await (delete(voiceBankMembers)..where(
+              (t) =>
+                  t.bankId.equals(bankId) & t.voiceAssetId.equals(voiceAssetId),
+            ))
+            .go();
+    if (deleteOrphanAsset &&
+        removed > 0 &&
+        await _voiceAssetMembershipCount(voiceAssetId) == 0) {
+      await _deleteVoiceAssetRows(voiceAssetId);
+    }
+    return removed;
+  });
+
+  Future<int> _voiceAssetMembershipCount(String voiceAssetId) async {
+    final rows = await (select(
+      voiceBankMembers,
+    )..where((t) => t.voiceAssetId.equals(voiceAssetId))).get();
+    return rows.length;
+  }
 
   /// Duplicate a bank with all its members.
   Future<VoiceBank> duplicateBank(String bankId, String newName) => transaction(

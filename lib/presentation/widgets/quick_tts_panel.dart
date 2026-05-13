@@ -76,12 +76,19 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.graphic_eq_rounded,
-              size: 40, color: Colors.white.withValues(alpha: 0.1)),
+          Icon(
+            Icons.graphic_eq_rounded,
+            size: 40,
+            color: Colors.white.withValues(alpha: 0.1),
+          ),
           const SizedBox(height: 10),
-          Text('Select a character to quick-test',
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.4), fontSize: 12)),
+          Text(
+            'Select a character to quick-test',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.4),
+              fontSize: 12,
+            ),
+          ),
         ],
       ),
     );
@@ -96,22 +103,27 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
       padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
       child: Row(
         children: [
-          Icon(Icons.graphic_eq_rounded,
-              size: 16, color: AppTheme.accentColor),
+          Icon(Icons.graphic_eq_rounded, size: 16, color: AppTheme.accentColor),
           const SizedBox(width: 8),
-          Text('QUICK TEST',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.5))),
+          Text(
+            'QUICK TEST',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.2,
+              color: Colors.white.withValues(alpha: 0.5),
+            ),
+          ),
           const SizedBox(width: 8),
           Flexible(
-            child: Text(asset.name,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.4))),
+            child: Text(
+              asset.name,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white.withValues(alpha: 0.4),
+              ),
+            ),
           ),
           const Spacer(),
           if (hasHistory)
@@ -131,19 +143,24 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                       minimumSize: const Size(0, 28),
                     ),
                     icon: const Icon(Icons.delete_forever_rounded, size: 14),
-                    label: const Text('Confirm',
-                        style: TextStyle(fontSize: 11)),
+                    label: const Text(
+                      'Confirm',
+                      style: TextStyle(fontSize: 11),
+                    ),
                   )
                 : IconButton(
                     tooltip: 'Clear history for this character',
-                    onPressed: () =>
-                        setState(() => _deleteAllConfirm = true),
+                    onPressed: () => setState(() => _deleteAllConfirm = true),
                     iconSize: 16,
                     padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints(minWidth: 28, minHeight: 28),
-                    icon: Icon(Icons.delete_sweep_rounded,
-                        color: Colors.white.withValues(alpha: 0.4)),
+                    constraints: const BoxConstraints(
+                      minWidth: 28,
+                      minHeight: 28,
+                    ),
+                    icon: Icon(
+                      Icons.delete_sweep_rounded,
+                      color: Colors.white.withValues(alpha: 0.4),
+                    ),
                   ),
         ],
       ),
@@ -160,13 +177,19 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.history_rounded,
-                    size: 36, color: Colors.white.withValues(alpha: 0.1)),
+                Icon(
+                  Icons.history_rounded,
+                  size: 36,
+                  color: Colors.white.withValues(alpha: 0.1),
+                ),
                 const SizedBox(height: 8),
-                Text('Type below to test this voice',
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.3))),
+                Text(
+                  'Type below to test this voice',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
+                ),
               ],
             ),
           );
@@ -178,7 +201,8 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
           itemBuilder: (ctx, i) {
             final entry = history[i];
             final playback = ref.watch(playbackNotifierProvider);
-            final isPlaying = entry.audioPath != null &&
+            final isPlaying =
+                entry.audioPath != null &&
                 playback.audioPath == entry.audioPath &&
                 playback.isPlaying;
             final hasAudio = entry.audioPath != null;
@@ -195,19 +219,24 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Text(entry.inputText,
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color:
-                                      Colors.white.withValues(alpha: 0.8)),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            entry.inputText,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.8),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         if (hasError)
                           Tooltip(
                             message: entry.error!,
-                            child: const Icon(Icons.error_rounded,
-                                color: Colors.redAccent, size: 14),
+                            child: const Icon(
+                              Icons.error_rounded,
+                              color: Colors.redAccent,
+                              size: 14,
+                            ),
                           ),
                         IconButton(
                           onPressed: () async {
@@ -221,13 +250,16 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                                 .read(databaseProvider)
                                 .deleteQuickTtsHistory(entry.id);
                           },
-                          icon: Icon(Icons.close_rounded,
-                              size: 12,
-                              color:
-                                  Colors.white.withValues(alpha: 0.3)),
+                          icon: Icon(
+                            Icons.close_rounded,
+                            size: 12,
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(
-                              minWidth: 20, minHeight: 20),
+                            minWidth: 20,
+                            minHeight: 20,
+                          ),
                           tooltip: 'Delete',
                         ),
                       ],
@@ -340,8 +372,9 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
     final src = entry.audioPath;
     if (src == null || !File(src).existsSync()) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Audio file is missing — cannot save')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Audio file is missing — cannot save')),
+        );
       }
       return;
     }
@@ -355,8 +388,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
       // Trim the input text for the asset name so long prompts don't create
       // unusable labels.
       final raw = entry.inputText.trim();
-      final shortText =
-          raw.length > 24 ? '${raw.substring(0, 24)}…' : raw;
+      final shortText = raw.length > 24 ? '${raw.substring(0, 24)}…' : raw;
       final assetName = shortText.isEmpty
           ? '${entry.voiceName} quicktest'
           : '${entry.voiceName} · $shortText';
@@ -371,27 +403,32 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
       );
       await File(src).copy(dest);
 
-      await database.insertAudioTrack(db.AudioTracksCompanion(
-        id: Value(trackId),
-        name: Value(assetName),
-        description: Value('Saved from Quick Test'),
-        audioPath: Value(dest),
-        refText: Value(raw.isEmpty ? null : raw),
-        refLang: Value(asset?.promptLang),
-        durationSec: Value(entry.audioDuration),
-        sourceType: const Value('quickTts'),
-        createdAt: Value(DateTime.now()),
-      ));
+      await database.insertAudioTrack(
+        db.AudioTracksCompanion(
+          id: Value(trackId),
+          name: Value(assetName),
+          description: Value('Saved from Quick Test'),
+          audioPath: Value(dest),
+          refText: Value(raw.isEmpty ? null : raw),
+          refLang: Value(asset?.promptLang),
+          durationSec: Value(entry.audioDuration),
+          sourceType: const Value('quickTts'),
+          createdAt: Value(DateTime.now()),
+        ),
+      );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Saved "$assetName" to Voice Assets'),
-          duration: const Duration(seconds: 2),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Saved "$assetName" to Voice Assets'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to save: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save: $e')));
       }
     }
   }
@@ -415,11 +452,14 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
               decoration: InputDecoration(
                 hintText: 'Type something to test...',
                 hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    fontSize: 13),
+                  color: Colors.white.withValues(alpha: 0.3),
+                  fontSize: 13,
+                ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 10),
+                  horizontal: 14,
+                  vertical: 10,
+                ),
               ),
             ),
           ),
@@ -441,8 +481,9 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                     : () => _generate(asset),
                 style: IconButton.styleFrom(
                   backgroundColor: AppTheme.accentColor,
-                  disabledBackgroundColor:
-                      AppTheme.accentColor.withValues(alpha: 0.3),
+                  disabledBackgroundColor: AppTheme.accentColor.withValues(
+                    alpha: 0.3,
+                  ),
                   minimumSize: const Size(32, 32),
                 ),
                 icon: const Icon(Icons.auto_awesome_rounded, size: 16),
@@ -454,14 +495,17 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
   }
 
   Future<void> _generate(db.VoiceAsset asset) async {
-    final providers =
-        ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
-    final provider =
-        providers.where((p) => p.id == asset.providerId).firstOrNull;
+    final providers = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
+    final provider = providers
+        .where((p) => p.id == asset.providerId)
+        .firstOrNull;
     if (provider == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Provider not found for this character')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Provider not found for this character'),
+          ),
+        );
       }
       return;
     }
@@ -475,25 +519,36 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
     final entryId = const Uuid().v4();
 
     try {
-      final adapter = createAdapter(provider, modelName: asset.modelName);
-      final result = await adapter.synthesize(TtsRequest(
-        text: text,
-        voice: asset.presetVoiceName ?? asset.name,
-        speed: asset.speed,
-        textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
-        presetVoiceName: asset.presetVoiceName,
-        voiceInstruction: asset.voiceInstruction,
-        refAudioPath: asset.refAudioPath,
-        promptText: asset.promptText,
-        promptLang: asset.promptLang,
-      ));
+      final result = await ref
+          .read(ttsQueueServiceProvider)
+          .synthesize(
+            provider: provider,
+            modelName: asset.modelName,
+            request: TtsRequest(
+              text: text,
+              voice: asset.presetVoiceName ?? asset.name,
+              speed: asset.speed,
+              textLang: provider.adapterType == 'gptSovits'
+                  ? asset.modelName
+                  : null,
+              presetVoiceName: asset.presetVoiceName,
+              voiceInstruction: asset.voiceInstruction,
+              refAudioPath: asset.refAudioPath,
+              promptText: asset.promptText,
+              promptLang: asset.promptLang,
+            ),
+          );
 
-      final slug =
-          await ref.read(storageServiceProvider).ensureVoiceAssetSlug(asset.id);
+      final slug = await ref
+          .read(storageServiceProvider)
+          .ensureVoiceAssetSlug(asset.id);
       final outDir = await PathService.instance.quickTtsDir(slug);
       final ext = result.contentType.contains('wav') ? '.wav' : '.mp3';
       final filePath = PathService.dedupeFilename(
-          outDir, PathService.formatTimestamp(), ext);
+        outDir,
+        PathService.formatTimestamp(),
+        ext,
+      );
       await File(filePath).writeAsBytes(result.audioBytes);
 
       await database.insertQuickTtsHistory(
@@ -508,16 +563,20 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
       );
 
       final player = ref.read(audioPlayerProvider);
-      await ref.read(playbackNotifierProvider.notifier).load(
+      await ref
+          .read(playbackNotifierProvider.notifier)
+          .load(
             filePath,
             text,
             subtitle: asset.name,
             sourceTag: voiceBankQuickTestPlaybackSource,
           );
-      player.onDurationChanged.first.then((d) async {
-        final secs = d.inMilliseconds / 1000.0;
-        await database.updateQuickTtsHistoryDuration(entryId, secs);
-      }).catchError((_) {});
+      player.onDurationChanged.first
+          .then((d) async {
+            final secs = d.inMilliseconds / 1000.0;
+            await database.updateQuickTtsHistoryDuration(entryId, secs);
+          })
+          .catchError((_) {});
     } catch (e) {
       await database.insertQuickTtsHistory(
         db.QuickTtsHistoriesCompanion(

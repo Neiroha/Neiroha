@@ -295,6 +295,11 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
   late final TextEditingController _urlCtrl;
   late final TextEditingController _keyCtrl;
   late final TextEditingController _modelCtrl;
+  late final TextEditingController _concurrencyCtrl;
+  late final TextEditingController _rpmCtrl;
+  late final TextEditingController _rpdCtrl;
+  late final TextEditingController _tpmCtrl;
+  late final TextEditingController _tpdCtrl;
   late AdapterType _adapterType;
 
   bool _showKey = false;
@@ -329,6 +334,21 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     _urlCtrl = TextEditingController(text: widget.provider.baseUrl);
     _keyCtrl = TextEditingController(text: widget.provider.apiKey);
     _modelCtrl = TextEditingController(text: widget.provider.defaultModelName);
+    _concurrencyCtrl = TextEditingController(
+      text: widget.provider.maxConcurrency.toString(),
+    );
+    _rpmCtrl = TextEditingController(
+      text: widget.provider.requestsPerMinute?.toString() ?? '',
+    );
+    _rpdCtrl = TextEditingController(
+      text: widget.provider.requestsPerDay?.toString() ?? '',
+    );
+    _tpmCtrl = TextEditingController(
+      text: widget.provider.tokensPerMinute?.toString() ?? '',
+    );
+    _tpdCtrl = TextEditingController(
+      text: widget.provider.tokensPerDay?.toString() ?? '',
+    );
     _adapterType = AdapterType.values.firstWhere(
       (t) => t.name == widget.provider.adapterType,
       orElse: () => AdapterType.openaiCompatible,
@@ -494,7 +514,23 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     _urlCtrl.dispose();
     _keyCtrl.dispose();
     _modelCtrl.dispose();
+    _concurrencyCtrl.dispose();
+    _rpmCtrl.dispose();
+    _rpdCtrl.dispose();
+    _tpmCtrl.dispose();
+    _tpdCtrl.dispose();
     super.dispose();
+  }
+
+  int _parseConcurrency() {
+    final parsed = int.tryParse(_concurrencyCtrl.text.trim());
+    return (parsed ?? 1).clamp(1, 64).toInt();
+  }
+
+  int? _parseOptionalLimit(TextEditingController controller) {
+    final parsed = int.tryParse(controller.text.trim());
+    if (parsed == null || parsed <= 0) return null;
+    return parsed;
   }
 
   Future<void> _save() async {
@@ -509,6 +545,11 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
             defaultModelName: _modelCtrl.text.trim().isEmpty
                 ? _adapterType.defaultModel
                 : _modelCtrl.text.trim(),
+            maxConcurrency: _parseConcurrency(),
+            requestsPerMinute: Value(_parseOptionalLimit(_rpmCtrl)),
+            requestsPerDay: Value(_parseOptionalLimit(_rpdCtrl)),
+            tokensPerMinute: Value(_parseOptionalLimit(_tpmCtrl)),
+            tokensPerDay: Value(_parseOptionalLimit(_tpdCtrl)),
           ),
         );
     if (mounted) {
@@ -735,6 +776,54 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                   ),
                 ),
               ],
+              const SizedBox(height: 20),
+              Text(
+                'Queue & Rate Limits',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Concurrency 1 is safest for local GPU TTS. Leave rate fields blank for unlimited.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.45),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  _LimitField(
+                    controller: _concurrencyCtrl,
+                    label: 'Concurrency',
+                    helperText: '1-64',
+                    width: 150,
+                  ),
+                  _LimitField(
+                    controller: _rpmCtrl,
+                    label: 'RPM',
+                    helperText: 'Requests / min',
+                  ),
+                  _LimitField(
+                    controller: _rpdCtrl,
+                    label: 'RPD',
+                    helperText: 'Requests / day',
+                  ),
+                  _LimitField(
+                    controller: _tpmCtrl,
+                    label: 'TPM',
+                    helperText: 'Approx tokens / min',
+                  ),
+                  _LimitField(
+                    controller: _tpdCtrl,
+                    label: 'TPD',
+                    helperText: 'Approx tokens / day',
+                  ),
+                ],
+              ),
               // ── Model / Voice sections ──
               if (_adapterType.supportsModelQuery ||
                   _adapterType.supportsVoiceQuery) ...[
@@ -903,6 +992,32 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _LimitField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final String helperText;
+  final double width;
+
+  const _LimitField({
+    required this.controller,
+    required this.label,
+    required this.helperText,
+    this.width = 170,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      child: TextField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(labelText: label, helperText: helperText),
+      ),
     );
   }
 }

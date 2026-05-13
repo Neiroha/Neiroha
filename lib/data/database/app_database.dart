@@ -44,7 +44,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 24;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -107,6 +107,13 @@ class AppDatabase extends _$AppDatabase {
             novelProjects.skipPunctuationOnlySegments,
           );
         }
+      }
+      if (from < 25) {
+        await m.addColumn(ttsProviders, ttsProviders.maxConcurrency);
+        await m.addColumn(ttsProviders, ttsProviders.requestsPerMinute);
+        await m.addColumn(ttsProviders, ttsProviders.requestsPerDay);
+        await m.addColumn(ttsProviders, ttsProviders.tokensPerMinute);
+        await m.addColumn(ttsProviders, ttsProviders.tokensPerDay);
       }
     },
   );

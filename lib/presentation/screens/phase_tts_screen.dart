@@ -324,10 +324,9 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
       _showSnack('No generated audio to play.');
       return;
     }
-    await ref.read(playbackNotifierProvider.notifier).playSequenceFrom(
-          items,
-          sourceTag: phaseTtsPlaybackSource,
-        );
+    await ref
+        .read(playbackNotifierProvider.notifier)
+        .playSequenceFrom(items, sourceTag: phaseTtsPlaybackSource);
   }
 
   void _createProject() async {
@@ -450,16 +449,16 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     setState(() => _generatingAll = true);
     try {
       final segmentSettings = await _loadSegmentSettings(project);
-      for (final seg in segments) {
-        if (seg.audioPath != null) continue;
-        if (seg.voiceAssetId == null) continue;
-        await _generateOne(
-          project,
-          seg,
-          bankAssets,
-          segmentSettings: segmentSettings,
-        );
-      }
+      await Future.wait([
+        for (final seg in segments)
+          if (seg.audioPath == null && seg.voiceAssetId != null)
+            _generateOne(
+              project,
+              seg,
+              bankAssets,
+              segmentSettings: segmentSettings,
+            ),
+      ]);
     } finally {
       if (mounted) setState(() => _generatingAll = false);
     }
@@ -493,31 +492,34 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
           .ensurePhaseProjectSlug(project.id);
       final outDir = await PathService.instance.phaseTtsDir(slug);
 
-      final adapter = createAdapter(provider, modelName: asset.modelName);
-      final result = await adapter.synthesize(
-        TtsRequest(
-          text: seg.segmentText,
-          voice: asset.presetVoiceName ?? asset.name,
-          speed: asset.speed,
-          textLang: provider.adapterType == 'gptSovits'
-              ? asset.modelName
-              : null,
-          presetVoiceName: asset.presetVoiceName,
-          voiceInstruction: _supportsVoiceInstruction(asset, provider)
-              ? (instructionOverride == null || instructionOverride.isEmpty
-                    ? asset.voiceInstruction
-                    : instructionOverride)
-              : null,
-          audioTagPrefix: _supportsAudioTags(asset, provider)
-              ? (audioTagPrefix == null || audioTagPrefix.isEmpty
-                    ? null
-                    : audioTagPrefix)
-              : null,
-          refAudioPath: asset.refAudioPath,
-          promptText: asset.promptText,
-          promptLang: asset.promptLang,
-        ),
-      );
+      final result = await ref
+          .read(ttsQueueServiceProvider)
+          .synthesize(
+            provider: provider,
+            modelName: asset.modelName,
+            request: TtsRequest(
+              text: seg.segmentText,
+              voice: asset.presetVoiceName ?? asset.name,
+              speed: asset.speed,
+              textLang: provider.adapterType == 'gptSovits'
+                  ? asset.modelName
+                  : null,
+              presetVoiceName: asset.presetVoiceName,
+              voiceInstruction: _supportsVoiceInstruction(asset, provider)
+                  ? (instructionOverride == null || instructionOverride.isEmpty
+                        ? asset.voiceInstruction
+                        : instructionOverride)
+                  : null,
+              audioTagPrefix: _supportsAudioTags(asset, provider)
+                  ? (audioTagPrefix == null || audioTagPrefix.isEmpty
+                        ? null
+                        : audioTagPrefix)
+                  : null,
+              refAudioPath: asset.refAudioPath,
+              promptText: asset.promptText,
+              promptLang: asset.promptLang,
+            ),
+          );
       final ext = result.contentType.contains('wav') ? '.wav' : '.mp3';
       final filePath = PathService.dedupeFilename(
         outDir,
@@ -544,10 +546,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     }
   }
 
-  bool _supportsVoiceInstruction(
-    db.VoiceAsset asset,
-    db.TtsProvider provider,
-  ) {
+  bool _supportsVoiceInstruction(db.VoiceAsset asset, db.TtsProvider provider) {
     return switch (provider.adapterType) {
       'chatCompletionsTts' => _isMimoTtsModel(asset, provider),
       'cosyvoice' => true,

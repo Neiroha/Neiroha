@@ -9,6 +9,7 @@ import 'package:shelf_router/shelf_router.dart';
 
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/services/tts_queue_service.dart';
 
 /// Persistent KV keys backing [ApiServerConfig]. Mirror [ApiServerConfig.load]
 /// when adding fields.
@@ -60,9 +61,11 @@ class ApiServerConfig {
     final key = await db.getSetting(_SettingsKeys.apiKey);
     final cors = await db.getSetting(_SettingsKeys.corsOrigins);
     final rate = int.tryParse(
-        await db.getSetting(_SettingsKeys.rateLimitPerMin) ?? '');
-    final body =
-        int.tryParse(await db.getSetting(_SettingsKeys.maxBodyBytes) ?? '');
+      await db.getSetting(_SettingsKeys.rateLimitPerMin) ?? '',
+    );
+    final body = int.tryParse(
+      await db.getSetting(_SettingsKeys.maxBodyBytes) ?? '',
+    );
 
     return ApiServerConfig(
       bindHost: (host == null || host.isEmpty) ? '127.0.0.1' : host,
@@ -71,10 +74,10 @@ class ApiServerConfig {
       corsOrigins: cors == null || cors.trim().isEmpty
           ? const []
           : cors
-              .split(',')
-              .map((s) => s.trim())
-              .where((s) => s.isNotEmpty)
-              .toList(),
+                .split(',')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty)
+                .toList(),
       rateLimitPerMin: rate ?? 60,
       maxBodyBytes: body ?? 1048576,
     );
@@ -86,7 +89,9 @@ class ApiServerConfig {
     await db.setSetting(_SettingsKeys.apiKey, cfg.apiKey ?? '');
     await db.setSetting(_SettingsKeys.corsOrigins, cfg.corsOrigins.join(','));
     await db.setSetting(
-        _SettingsKeys.rateLimitPerMin, '${cfg.rateLimitPerMin}');
+      _SettingsKeys.rateLimitPerMin,
+      '${cfg.rateLimitPerMin}',
+    );
     await db.setSetting(_SettingsKeys.maxBodyBytes, '${cfg.maxBodyBytes}');
   }
 }
@@ -125,11 +130,13 @@ class ApiServer {
         .addMiddleware(logRequests())
         .addHandler(router.call);
 
-    final addr = InternetAddress.tryParse(_config.bindHost) ??
+    final addr =
+        InternetAddress.tryParse(_config.bindHost) ??
         InternetAddress.loopbackIPv4;
     _server = await shelf_io.serve(handler, addr, _config.port);
     stdout.writeln(
-        'Neiroha API server running on ${addr.address}:${_config.port}');
+      'Neiroha API server running on ${addr.address}:${_config.port}',
+    );
   }
 
   Future<void> stop() async {
@@ -152,8 +159,10 @@ class ApiServer {
         if (maxBytes > 0) {
           final declared = request.contentLength;
           if (declared != null && declared > maxBytes) {
-            return _jsonError(413,
-                'Request body too large (limit ${maxBytes ~/ 1024} KiB)');
+            return _jsonError(
+              413,
+              'Request body too large (limit ${maxBytes ~/ 1024} KiB)',
+            );
           }
         }
         return inner(request);
@@ -168,8 +177,8 @@ class ApiServer {
       return (Request request) async {
         if (perMin <= 0) return inner(request);
         // shelf_io stores the connection info under 'shelf.io.connection_info'.
-        final info = request.context['shelf.io.connection_info']
-            as HttpConnectionInfo?;
+        final info =
+            request.context['shelf.io.connection_info'] as HttpConnectionInfo?;
         final ip = info?.remoteAddress.address ?? 'unknown';
         final now = DateTime.now();
         final cutoff = now.subtract(const Duration(minutes: 1));
@@ -194,8 +203,8 @@ class ApiServer {
     return (Handler inner) {
       return (Request request) async {
         final origin = request.headers['origin'];
-        final isAllowed = origin != null &&
-            (allowAll || allowed.contains(origin));
+        final isAllowed =
+            origin != null && (allowAll || allowed.contains(origin));
 
         // Preflight short-circuit.
         if (request.method == 'OPTIONS') {
@@ -214,13 +223,12 @@ class ApiServer {
   }
 
   Map<String, String> _corsHeaders(String origin, bool allowAll) => {
-        'access-control-allow-origin': allowAll ? '*' : origin,
-        'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
-        'access-control-allow-headers':
-            'authorization, content-type, x-api-key',
-        'access-control-max-age': '600',
-        if (!allowAll) 'vary': 'origin',
-      };
+    'access-control-allow-origin': allowAll ? '*' : origin,
+    'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
+    'access-control-allow-headers': 'authorization, content-type, x-api-key',
+    'access-control-max-age': '600',
+    if (!allowAll) 'vary': 'origin',
+  };
 
   /// Require `Authorization: Bearer <key>` or `X-API-Key: <key>` when an API
   /// key is configured. `/health` is always public so monitors can probe it.
@@ -276,15 +284,16 @@ class ApiServer {
 
       // Resolve provider
       final providers = await db.getAllProviders();
-      final provider =
-          providers.where((p) => p.id == asset!.providerId).firstOrNull;
+      final provider = providers
+          .where((p) => p.id == asset!.providerId)
+          .firstOrNull;
 
       if (provider == null) {
         return _jsonError(500, 'Provider not found for voice');
       }
 
-      // Build the adapter and synthesize
-      final adapter = createAdapter(provider);
+      // Submit through the global TTS scheduler so local API calls obey the
+      // same provider limits as the desktop UI.
       final ttsRequest = TtsRequest(
         text: input,
         voice: voice,
@@ -298,10 +307,16 @@ class ApiServer {
         presetVoiceName: asset.presetVoiceName,
       );
 
-      final result = await adapter.synthesize(ttsRequest);
+      final result = await TtsQueueService.instance.synthesize(
+        provider: provider,
+        modelName: asset.modelName,
+        request: ttsRequest,
+      );
 
-      return Response.ok(result.audioBytes,
-          headers: {'content-type': result.contentType});
+      return Response.ok(
+        result.audioBytes,
+        headers: {'content-type': result.contentType},
+      );
     } catch (e) {
       return _jsonError(500, e.toString());
     }
@@ -309,7 +324,9 @@ class ApiServer {
 
   /// Look up a voice asset by name within a specific bank (matched by bank name).
   Future<VoiceAsset?> _resolveVoiceInBank(
-      String bankName, String voiceName) async {
+    String bankName,
+    String voiceName,
+  ) async {
     final banks = await db.getActiveBanks();
     final bank = banks
         .where((b) => b.name.toLowerCase() == bankName.toLowerCase())
@@ -322,7 +339,9 @@ class ApiServer {
 
     for (final m in members) {
       final a = assetMap[m.voiceAssetId];
-      if (a != null && a.enabled && a.name.toLowerCase() == voiceName.toLowerCase()) {
+      if (a != null &&
+          a.enabled &&
+          a.name.toLowerCase() == voiceName.toLowerCase()) {
         return a;
       }
     }
@@ -367,11 +386,7 @@ class ApiServer {
   Future<Response> _handleListModels(Request request) async {
     final activeBanks = await db.getActiveBanks();
     final models = activeBanks
-        .map((b) => {
-              'id': b.name,
-              'object': 'model',
-              'owned_by': 'neiroha',
-            })
+        .map((b) => {'id': b.name, 'object': 'model', 'owned_by': 'neiroha'})
         .toList();
 
     return Response.ok(
@@ -393,11 +408,7 @@ class ApiServer {
       for (final m in members) {
         final a = assetMap[m.voiceAssetId];
         if (a == null || !a.enabled) continue;
-        speakers.add({
-          'name': a.name,
-          'voice_id': a.id,
-          'model': bank.name,
-        });
+        speakers.add({'name': a.name, 'voice_id': a.id, 'model': bank.name});
       }
     }
 
@@ -424,8 +435,10 @@ class ApiServer {
   // ────────────── Helpers ──────────────
 
   Response _jsonError(int status, String message) {
-    return Response(status,
-        body: jsonEncode({'error': message}),
-        headers: {'content-type': 'application/json'});
+    return Response(
+      status,
+      body: jsonEncode({'error': message}),
+      headers: {'content-type': 'application/json'},
+    );
   }
 }

@@ -307,6 +307,62 @@ class $TtsProvidersTable extends TtsProviders
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _maxConcurrencyMeta = const VerificationMeta(
+    'maxConcurrency',
+  );
+  @override
+  late final GeneratedColumn<int> maxConcurrency = GeneratedColumn<int>(
+    'max_concurrency',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _requestsPerMinuteMeta = const VerificationMeta(
+    'requestsPerMinute',
+  );
+  @override
+  late final GeneratedColumn<int> requestsPerMinute = GeneratedColumn<int>(
+    'requests_per_minute',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _requestsPerDayMeta = const VerificationMeta(
+    'requestsPerDay',
+  );
+  @override
+  late final GeneratedColumn<int> requestsPerDay = GeneratedColumn<int>(
+    'requests_per_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tokensPerMinuteMeta = const VerificationMeta(
+    'tokensPerMinute',
+  );
+  @override
+  late final GeneratedColumn<int> tokensPerMinute = GeneratedColumn<int>(
+    'tokens_per_minute',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tokensPerDayMeta = const VerificationMeta(
+    'tokensPerDay',
+  );
+  @override
+  late final GeneratedColumn<int> tokensPerDay = GeneratedColumn<int>(
+    'tokens_per_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -317,6 +373,11 @@ class $TtsProvidersTable extends TtsProviders
     defaultModelName,
     enabled,
     position,
+    maxConcurrency,
+    requestsPerMinute,
+    requestsPerDay,
+    tokensPerMinute,
+    tokensPerDay,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -389,6 +450,51 @@ class $TtsProvidersTable extends TtsProviders
         position.isAcceptableOrUnknown(data['position']!, _positionMeta),
       );
     }
+    if (data.containsKey('max_concurrency')) {
+      context.handle(
+        _maxConcurrencyMeta,
+        maxConcurrency.isAcceptableOrUnknown(
+          data['max_concurrency']!,
+          _maxConcurrencyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('requests_per_minute')) {
+      context.handle(
+        _requestsPerMinuteMeta,
+        requestsPerMinute.isAcceptableOrUnknown(
+          data['requests_per_minute']!,
+          _requestsPerMinuteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('requests_per_day')) {
+      context.handle(
+        _requestsPerDayMeta,
+        requestsPerDay.isAcceptableOrUnknown(
+          data['requests_per_day']!,
+          _requestsPerDayMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tokens_per_minute')) {
+      context.handle(
+        _tokensPerMinuteMeta,
+        tokensPerMinute.isAcceptableOrUnknown(
+          data['tokens_per_minute']!,
+          _tokensPerMinuteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tokens_per_day')) {
+      context.handle(
+        _tokensPerDayMeta,
+        tokensPerDay.isAcceptableOrUnknown(
+          data['tokens_per_day']!,
+          _tokensPerDayMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -430,6 +536,26 @@ class $TtsProvidersTable extends TtsProviders
         DriftSqlType.int,
         data['${effectivePrefix}position'],
       )!,
+      maxConcurrency: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}max_concurrency'],
+      )!,
+      requestsPerMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}requests_per_minute'],
+      ),
+      requestsPerDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}requests_per_day'],
+      ),
+      tokensPerMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_per_minute'],
+      ),
+      tokensPerDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_per_day'],
+      ),
     );
   }
 
@@ -448,6 +574,11 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
   final String defaultModelName;
   final bool enabled;
   final int position;
+  final int maxConcurrency;
+  final int? requestsPerMinute;
+  final int? requestsPerDay;
+  final int? tokensPerMinute;
+  final int? tokensPerDay;
   const TtsProvider({
     required this.id,
     required this.name,
@@ -457,6 +588,11 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     required this.defaultModelName,
     required this.enabled,
     required this.position,
+    required this.maxConcurrency,
+    this.requestsPerMinute,
+    this.requestsPerDay,
+    this.tokensPerMinute,
+    this.tokensPerDay,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -469,6 +605,19 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     map['default_model_name'] = Variable<String>(defaultModelName);
     map['enabled'] = Variable<bool>(enabled);
     map['position'] = Variable<int>(position);
+    map['max_concurrency'] = Variable<int>(maxConcurrency);
+    if (!nullToAbsent || requestsPerMinute != null) {
+      map['requests_per_minute'] = Variable<int>(requestsPerMinute);
+    }
+    if (!nullToAbsent || requestsPerDay != null) {
+      map['requests_per_day'] = Variable<int>(requestsPerDay);
+    }
+    if (!nullToAbsent || tokensPerMinute != null) {
+      map['tokens_per_minute'] = Variable<int>(tokensPerMinute);
+    }
+    if (!nullToAbsent || tokensPerDay != null) {
+      map['tokens_per_day'] = Variable<int>(tokensPerDay);
+    }
     return map;
   }
 
@@ -482,6 +631,19 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
       defaultModelName: Value(defaultModelName),
       enabled: Value(enabled),
       position: Value(position),
+      maxConcurrency: Value(maxConcurrency),
+      requestsPerMinute: requestsPerMinute == null && nullToAbsent
+          ? const Value.absent()
+          : Value(requestsPerMinute),
+      requestsPerDay: requestsPerDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(requestsPerDay),
+      tokensPerMinute: tokensPerMinute == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tokensPerMinute),
+      tokensPerDay: tokensPerDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tokensPerDay),
     );
   }
 
@@ -499,6 +661,11 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
       defaultModelName: serializer.fromJson<String>(json['defaultModelName']),
       enabled: serializer.fromJson<bool>(json['enabled']),
       position: serializer.fromJson<int>(json['position']),
+      maxConcurrency: serializer.fromJson<int>(json['maxConcurrency']),
+      requestsPerMinute: serializer.fromJson<int?>(json['requestsPerMinute']),
+      requestsPerDay: serializer.fromJson<int?>(json['requestsPerDay']),
+      tokensPerMinute: serializer.fromJson<int?>(json['tokensPerMinute']),
+      tokensPerDay: serializer.fromJson<int?>(json['tokensPerDay']),
     );
   }
   @override
@@ -513,6 +680,11 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
       'defaultModelName': serializer.toJson<String>(defaultModelName),
       'enabled': serializer.toJson<bool>(enabled),
       'position': serializer.toJson<int>(position),
+      'maxConcurrency': serializer.toJson<int>(maxConcurrency),
+      'requestsPerMinute': serializer.toJson<int?>(requestsPerMinute),
+      'requestsPerDay': serializer.toJson<int?>(requestsPerDay),
+      'tokensPerMinute': serializer.toJson<int?>(tokensPerMinute),
+      'tokensPerDay': serializer.toJson<int?>(tokensPerDay),
     };
   }
 
@@ -525,6 +697,11 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     String? defaultModelName,
     bool? enabled,
     int? position,
+    int? maxConcurrency,
+    Value<int?> requestsPerMinute = const Value.absent(),
+    Value<int?> requestsPerDay = const Value.absent(),
+    Value<int?> tokensPerMinute = const Value.absent(),
+    Value<int?> tokensPerDay = const Value.absent(),
   }) => TtsProvider(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -534,6 +711,17 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     defaultModelName: defaultModelName ?? this.defaultModelName,
     enabled: enabled ?? this.enabled,
     position: position ?? this.position,
+    maxConcurrency: maxConcurrency ?? this.maxConcurrency,
+    requestsPerMinute: requestsPerMinute.present
+        ? requestsPerMinute.value
+        : this.requestsPerMinute,
+    requestsPerDay: requestsPerDay.present
+        ? requestsPerDay.value
+        : this.requestsPerDay,
+    tokensPerMinute: tokensPerMinute.present
+        ? tokensPerMinute.value
+        : this.tokensPerMinute,
+    tokensPerDay: tokensPerDay.present ? tokensPerDay.value : this.tokensPerDay,
   );
   TtsProvider copyWithCompanion(TtsProvidersCompanion data) {
     return TtsProvider(
@@ -549,6 +737,21 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
           : this.defaultModelName,
       enabled: data.enabled.present ? data.enabled.value : this.enabled,
       position: data.position.present ? data.position.value : this.position,
+      maxConcurrency: data.maxConcurrency.present
+          ? data.maxConcurrency.value
+          : this.maxConcurrency,
+      requestsPerMinute: data.requestsPerMinute.present
+          ? data.requestsPerMinute.value
+          : this.requestsPerMinute,
+      requestsPerDay: data.requestsPerDay.present
+          ? data.requestsPerDay.value
+          : this.requestsPerDay,
+      tokensPerMinute: data.tokensPerMinute.present
+          ? data.tokensPerMinute.value
+          : this.tokensPerMinute,
+      tokensPerDay: data.tokensPerDay.present
+          ? data.tokensPerDay.value
+          : this.tokensPerDay,
     );
   }
 
@@ -562,7 +765,12 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
           ..write('apiKey: $apiKey, ')
           ..write('defaultModelName: $defaultModelName, ')
           ..write('enabled: $enabled, ')
-          ..write('position: $position')
+          ..write('position: $position, ')
+          ..write('maxConcurrency: $maxConcurrency, ')
+          ..write('requestsPerMinute: $requestsPerMinute, ')
+          ..write('requestsPerDay: $requestsPerDay, ')
+          ..write('tokensPerMinute: $tokensPerMinute, ')
+          ..write('tokensPerDay: $tokensPerDay')
           ..write(')'))
         .toString();
   }
@@ -577,6 +785,11 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     defaultModelName,
     enabled,
     position,
+    maxConcurrency,
+    requestsPerMinute,
+    requestsPerDay,
+    tokensPerMinute,
+    tokensPerDay,
   );
   @override
   bool operator ==(Object other) =>
@@ -589,7 +802,12 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
           other.apiKey == this.apiKey &&
           other.defaultModelName == this.defaultModelName &&
           other.enabled == this.enabled &&
-          other.position == this.position);
+          other.position == this.position &&
+          other.maxConcurrency == this.maxConcurrency &&
+          other.requestsPerMinute == this.requestsPerMinute &&
+          other.requestsPerDay == this.requestsPerDay &&
+          other.tokensPerMinute == this.tokensPerMinute &&
+          other.tokensPerDay == this.tokensPerDay);
 }
 
 class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
@@ -601,6 +819,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
   final Value<String> defaultModelName;
   final Value<bool> enabled;
   final Value<int> position;
+  final Value<int> maxConcurrency;
+  final Value<int?> requestsPerMinute;
+  final Value<int?> requestsPerDay;
+  final Value<int?> tokensPerMinute;
+  final Value<int?> tokensPerDay;
   final Value<int> rowid;
   const TtsProvidersCompanion({
     this.id = const Value.absent(),
@@ -611,6 +834,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     this.defaultModelName = const Value.absent(),
     this.enabled = const Value.absent(),
     this.position = const Value.absent(),
+    this.maxConcurrency = const Value.absent(),
+    this.requestsPerMinute = const Value.absent(),
+    this.requestsPerDay = const Value.absent(),
+    this.tokensPerMinute = const Value.absent(),
+    this.tokensPerDay = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TtsProvidersCompanion.insert({
@@ -622,6 +850,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     this.defaultModelName = const Value.absent(),
     this.enabled = const Value.absent(),
     this.position = const Value.absent(),
+    this.maxConcurrency = const Value.absent(),
+    this.requestsPerMinute = const Value.absent(),
+    this.requestsPerDay = const Value.absent(),
+    this.tokensPerMinute = const Value.absent(),
+    this.tokensPerDay = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -636,6 +869,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     Expression<String>? defaultModelName,
     Expression<bool>? enabled,
     Expression<int>? position,
+    Expression<int>? maxConcurrency,
+    Expression<int>? requestsPerMinute,
+    Expression<int>? requestsPerDay,
+    Expression<int>? tokensPerMinute,
+    Expression<int>? tokensPerDay,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -647,6 +885,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
       if (defaultModelName != null) 'default_model_name': defaultModelName,
       if (enabled != null) 'enabled': enabled,
       if (position != null) 'position': position,
+      if (maxConcurrency != null) 'max_concurrency': maxConcurrency,
+      if (requestsPerMinute != null) 'requests_per_minute': requestsPerMinute,
+      if (requestsPerDay != null) 'requests_per_day': requestsPerDay,
+      if (tokensPerMinute != null) 'tokens_per_minute': tokensPerMinute,
+      if (tokensPerDay != null) 'tokens_per_day': tokensPerDay,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -660,6 +903,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     Value<String>? defaultModelName,
     Value<bool>? enabled,
     Value<int>? position,
+    Value<int>? maxConcurrency,
+    Value<int?>? requestsPerMinute,
+    Value<int?>? requestsPerDay,
+    Value<int?>? tokensPerMinute,
+    Value<int?>? tokensPerDay,
     Value<int>? rowid,
   }) {
     return TtsProvidersCompanion(
@@ -671,6 +919,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
       defaultModelName: defaultModelName ?? this.defaultModelName,
       enabled: enabled ?? this.enabled,
       position: position ?? this.position,
+      maxConcurrency: maxConcurrency ?? this.maxConcurrency,
+      requestsPerMinute: requestsPerMinute ?? this.requestsPerMinute,
+      requestsPerDay: requestsPerDay ?? this.requestsPerDay,
+      tokensPerMinute: tokensPerMinute ?? this.tokensPerMinute,
+      tokensPerDay: tokensPerDay ?? this.tokensPerDay,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -702,6 +955,21 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     if (position.present) {
       map['position'] = Variable<int>(position.value);
     }
+    if (maxConcurrency.present) {
+      map['max_concurrency'] = Variable<int>(maxConcurrency.value);
+    }
+    if (requestsPerMinute.present) {
+      map['requests_per_minute'] = Variable<int>(requestsPerMinute.value);
+    }
+    if (requestsPerDay.present) {
+      map['requests_per_day'] = Variable<int>(requestsPerDay.value);
+    }
+    if (tokensPerMinute.present) {
+      map['tokens_per_minute'] = Variable<int>(tokensPerMinute.value);
+    }
+    if (tokensPerDay.present) {
+      map['tokens_per_day'] = Variable<int>(tokensPerDay.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -719,6 +987,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
           ..write('defaultModelName: $defaultModelName, ')
           ..write('enabled: $enabled, ')
           ..write('position: $position, ')
+          ..write('maxConcurrency: $maxConcurrency, ')
+          ..write('requestsPerMinute: $requestsPerMinute, ')
+          ..write('requestsPerDay: $requestsPerDay, ')
+          ..write('tokensPerMinute: $tokensPerMinute, ')
+          ..write('tokensPerDay: $tokensPerDay, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -11284,6 +11557,11 @@ typedef $$TtsProvidersTableCreateCompanionBuilder =
       Value<String> defaultModelName,
       Value<bool> enabled,
       Value<int> position,
+      Value<int> maxConcurrency,
+      Value<int?> requestsPerMinute,
+      Value<int?> requestsPerDay,
+      Value<int?> tokensPerMinute,
+      Value<int?> tokensPerDay,
       Value<int> rowid,
     });
 typedef $$TtsProvidersTableUpdateCompanionBuilder =
@@ -11296,6 +11574,11 @@ typedef $$TtsProvidersTableUpdateCompanionBuilder =
       Value<String> defaultModelName,
       Value<bool> enabled,
       Value<int> position,
+      Value<int> maxConcurrency,
+      Value<int?> requestsPerMinute,
+      Value<int?> requestsPerDay,
+      Value<int?> tokensPerMinute,
+      Value<int?> tokensPerDay,
       Value<int> rowid,
     });
 
@@ -11392,6 +11675,31 @@ class $$TtsProvidersTableFilterComposer
 
   ColumnFilters<int> get position => $composableBuilder(
     column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get maxConcurrency => $composableBuilder(
+    column: $table.maxConcurrency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get requestsPerMinute => $composableBuilder(
+    column: $table.requestsPerMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get requestsPerDay => $composableBuilder(
+    column: $table.requestsPerDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensPerMinute => $composableBuilder(
+    column: $table.tokensPerMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensPerDay => $composableBuilder(
+    column: $table.tokensPerDay,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11494,6 +11802,31 @@ class $$TtsProvidersTableOrderingComposer
     column: $table.position,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get maxConcurrency => $composableBuilder(
+    column: $table.maxConcurrency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get requestsPerMinute => $composableBuilder(
+    column: $table.requestsPerMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get requestsPerDay => $composableBuilder(
+    column: $table.requestsPerDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tokensPerMinute => $composableBuilder(
+    column: $table.tokensPerMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tokensPerDay => $composableBuilder(
+    column: $table.tokensPerDay,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TtsProvidersTableAnnotationComposer
@@ -11532,6 +11865,31 @@ class $$TtsProvidersTableAnnotationComposer
 
   GeneratedColumn<int> get position =>
       $composableBuilder(column: $table.position, builder: (column) => column);
+
+  GeneratedColumn<int> get maxConcurrency => $composableBuilder(
+    column: $table.maxConcurrency,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get requestsPerMinute => $composableBuilder(
+    column: $table.requestsPerMinute,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get requestsPerDay => $composableBuilder(
+    column: $table.requestsPerDay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tokensPerMinute => $composableBuilder(
+    column: $table.tokensPerMinute,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tokensPerDay => $composableBuilder(
+    column: $table.tokensPerDay,
+    builder: (column) => column,
+  );
 
   Expression<T> modelBindingsRefs<T extends Object>(
     Expression<T> Function($$ModelBindingsTableAnnotationComposer a) f,
@@ -11620,6 +11978,11 @@ class $$TtsProvidersTableTableManager
                 Value<String> defaultModelName = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
                 Value<int> position = const Value.absent(),
+                Value<int> maxConcurrency = const Value.absent(),
+                Value<int?> requestsPerMinute = const Value.absent(),
+                Value<int?> requestsPerDay = const Value.absent(),
+                Value<int?> tokensPerMinute = const Value.absent(),
+                Value<int?> tokensPerDay = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TtsProvidersCompanion(
                 id: id,
@@ -11630,6 +11993,11 @@ class $$TtsProvidersTableTableManager
                 defaultModelName: defaultModelName,
                 enabled: enabled,
                 position: position,
+                maxConcurrency: maxConcurrency,
+                requestsPerMinute: requestsPerMinute,
+                requestsPerDay: requestsPerDay,
+                tokensPerMinute: tokensPerMinute,
+                tokensPerDay: tokensPerDay,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -11642,6 +12010,11 @@ class $$TtsProvidersTableTableManager
                 Value<String> defaultModelName = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
                 Value<int> position = const Value.absent(),
+                Value<int> maxConcurrency = const Value.absent(),
+                Value<int?> requestsPerMinute = const Value.absent(),
+                Value<int?> requestsPerDay = const Value.absent(),
+                Value<int?> tokensPerMinute = const Value.absent(),
+                Value<int?> tokensPerDay = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TtsProvidersCompanion.insert(
                 id: id,
@@ -11652,6 +12025,11 @@ class $$TtsProvidersTableTableManager
                 defaultModelName: defaultModelName,
                 enabled: enabled,
                 position: position,
+                maxConcurrency: maxConcurrency,
+                requestsPerMinute: requestsPerMinute,
+                requestsPerDay: requestsPerDay,
+                tokensPerMinute: tokensPerMinute,
+                tokensPerDay: tokensPerDay,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

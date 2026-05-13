@@ -2,6 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
+import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/data/storage/export_prefs.dart';
 import 'package:neiroha/data/storage/ffmpeg_service.dart';
 import 'package:neiroha/data/storage/novel_dialogue_rules_service.dart';
@@ -70,6 +71,12 @@ final phaseSegmentSettingsFileServiceProvider =
     Provider<PhaseSegmentSettingsFileService>((ref) {
       return PhaseSegmentSettingsFileService();
     });
+
+/// Shared TTS scheduler. Every synthesis entry point should go through this
+/// provider so per-provider concurrency and rate limits are enforced globally.
+final ttsQueueServiceProvider = Provider<TtsQueueService>((ref) {
+  return TtsQueueService.instance;
+});
 
 /// Probes `ffmpeg -version` once per session. Watch this in the Settings
 /// screen (so the badge updates after the user changes the path) and in

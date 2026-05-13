@@ -153,7 +153,6 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
   int _prefetchRunId = 0;
   final Set<String> _generatingSegmentIds = <String>{};
   final Map<String, Future<String>> _audioTasks = <String, Future<String>>{};
-  Future<void> _ttsSerialTail = Future<void>.value();
 
   String get _playbackSourceTag =>
       novelReaderPlaybackSourceFor(widget.projectId);
@@ -942,22 +941,89 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     setState(() => _generatingAll = true);
     final ordered = [...segments]
       ..sort((a, b) => a.globalIndex.compareTo(b.globalIndex));
+    final providers = await ref.read(databaseProvider).getAllProviders();
+    final taskFactories = [
+      for (final segment in ordered)
+        if (!_shouldSkipSegment(project, segment))
+          () => _ensureAudioForSegment(
+            project,
+            segment,
+            bankAssets,
+            force: force,
+          ),
+    ];
+    final failures = <Object>[];
     try {
-      for (final segment in ordered) {
-        if (_shouldSkipSegment(project, segment)) continue;
-        await _ensureAudioForSegment(
+      await _runNovelGenerationWorkers(
+        taskFactories,
+        workerCount: _novelGenerationWorkerCount(
           project,
-          segment,
           bankAssets,
-          force: force,
+          providers,
+        ),
+        failures: failures,
+      );
+      if (failures.isEmpty) {
+        _snack(force ? 'Novel cache overwritten.' : 'Novel cache completed.');
+      } else {
+        _snack(
+          'Novel cache completed with ${failures.length} failed segment(s).',
         );
       }
-      _snack(force ? 'Novel cache overwritten.' : 'Novel cache completed.');
     } catch (e) {
       _snack('Generate all stopped: $e');
     } finally {
       if (mounted) setState(() => _generatingAll = false);
     }
+  }
+
+  Future<void> _runNovelGenerationWorkers(
+    List<Future<String> Function()> taskFactories, {
+    required int workerCount,
+    required List<Object> failures,
+  }) async {
+    if (taskFactories.isEmpty) return;
+    var nextIndex = 0;
+    final workers = math.min(workerCount, taskFactories.length);
+
+    Future<void> worker() async {
+      while (true) {
+        final current = nextIndex++;
+        if (current >= taskFactories.length) return;
+        try {
+          await taskFactories[current]();
+        } catch (e) {
+          failures.add(e);
+        }
+      }
+    }
+
+    await Future.wait([for (var i = 0; i < workers; i++) worker()]);
+  }
+
+  int _novelGenerationWorkerCount(
+    db.NovelProject project,
+    List<db.VoiceAsset> bankAssets,
+    List<db.TtsProvider> providers,
+  ) {
+    final assetMap = {for (final asset in bankAssets) asset.id: asset};
+    final providerMap = {
+      for (final provider in providers) provider.id: provider,
+    };
+    final voiceIds = <String>{
+      if (project.narratorVoiceAssetId != null) project.narratorVoiceAssetId!,
+      if (project.dialogueVoiceAssetId != null) project.dialogueVoiceAssetId!,
+    };
+
+    var total = 0;
+    for (final voiceId in voiceIds) {
+      final asset = assetMap[voiceId];
+      if (asset == null) continue;
+      final provider = providerMap[asset.providerId];
+      if (provider == null) continue;
+      total += provider.maxConcurrency.clamp(1, 64).toInt();
+    }
+    return total.clamp(1, 32).toInt();
   }
 
   Future<String> _ensureAudioForSegment(
@@ -993,14 +1059,12 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     final existingTask = _audioTasks[taskKey];
     if (existingTask != null) return existingTask;
 
-    final task = _runSerializedNovelTts(
-      () => _generateAudioForSegment(
-        project: project,
-        segment: segment,
-        asset: asset,
-        provider: provider,
-        force: force,
-      ),
+    final task = _generateAudioForSegment(
+      project: project,
+      segment: segment,
+      asset: asset,
+      provider: provider,
+      force: force,
     );
     _audioTasks[taskKey] = task;
     try {
@@ -1039,18 +1103,15 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
           .ensureNovelProjectSlug(project.id);
       final outDir = await PathService.instance.novelReaderAudioDir(slug);
       final chunks = _ttsChunksForSegment(project, activeSegment.segmentText);
-      final adapter = createAdapter(provider, modelName: asset.modelName);
       final fileBase =
           'seg_${activeSegment.globalIndex}_${_stableHash(activeCacheKey)}';
       final result = chunks.length == 1
           ? await _synthesizeNovelChunk(
-              adapter: adapter,
               text: chunks.first,
               asset: asset,
               provider: provider,
             )
           : await _synthesizeSlicedSegment(
-              adapter: adapter,
               chunks: chunks,
               asset: asset,
               provider: provider,
@@ -1153,29 +1214,18 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     return lower.contains('mpeg') || lower.contains('mp3');
   }
 
-  Future<T> _runSerializedNovelTts<T>(Future<T> Function() task) {
-    final previous = _ttsSerialTail;
-    final completer = Completer<T>();
-    _ttsSerialTail = previous.catchError((_) {}).then((_) async {
-      try {
-        completer.complete(await task());
-      } catch (e, st) {
-        completer.completeError(e, st);
-      }
-    });
-    return completer.future;
-  }
-
   Future<TtsResult> _synthesizeNovelChunk({
-    required TtsAdapter adapter,
     required String text,
     required db.VoiceAsset asset,
     required db.TtsProvider provider,
     bool preferWav = false,
   }) {
-    return adapter
+    return ref
+        .read(ttsQueueServiceProvider)
         .synthesize(
-          TtsRequest(
+          provider: provider,
+          modelName: asset.modelName,
+          request: TtsRequest(
             text: text,
             voice: asset.presetVoiceName ?? asset.name,
             speed: asset.speed,
@@ -1200,25 +1250,21 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
   }
 
   Future<TtsResult> _synthesizeSlicedSegment({
-    required TtsAdapter adapter,
     required List<String> chunks,
     required db.VoiceAsset asset,
     required db.TtsProvider provider,
     required Directory outDir,
     required String fileBase,
   }) async {
-    final results = <TtsResult>[];
-    for (final chunk in chunks) {
-      results.add(
-        await _synthesizeNovelChunk(
-          adapter: adapter,
+    final results = await Future.wait([
+      for (final chunk in chunks)
+        _synthesizeNovelChunk(
           text: chunk,
           asset: asset,
           provider: provider,
           preferWav: true,
         ),
-      );
-    }
+    ]);
 
     final wavBytes = _concatWavResults(results);
     if (wavBytes != null) {

@@ -23,6 +23,11 @@ class TtsProviders extends Table {
       text().withDefault(const Constant('tts-1'))();
   BoolColumn get enabled => boolean().withDefault(const Constant(false))();
   IntColumn get position => integer().withDefault(const Constant(0))();
+  IntColumn get maxConcurrency => integer().withDefault(const Constant(1))();
+  IntColumn get requestsPerMinute => integer().nullable()();
+  IntColumn get requestsPerDay => integer().nullable()();
+  IntColumn get tokensPerMinute => integer().nullable()();
+  IntColumn get tokensPerDay => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

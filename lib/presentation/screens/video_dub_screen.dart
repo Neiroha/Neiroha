@@ -1623,16 +1623,17 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
     var done = 0;
     var failed = 0;
     try {
-      for (final cue in cues) {
-        if (cue.voiceAssetId == null) continue;
-        if (!forceRegen && cue.audioPath != null) continue;
-        try {
-          await _generateOne(project, cue, bankAssets);
-          done++;
-        } catch (_) {
-          failed++;
-        }
-      }
+      final results = await Future.wait([
+        for (final cue in cues)
+          if (cue.voiceAssetId != null && (forceRegen || cue.audioPath == null))
+            _generateOne(
+              project,
+              cue,
+              bankAssets,
+            ).then((_) => true).catchError((_) => false),
+      ]);
+      done = results.where((ok) => ok).length;
+      failed = results.length - done;
     } finally {
       if (mounted) setState(() => _generatingAll = false);
     }
@@ -1678,22 +1679,25 @@ class _VideoDubEditorState extends ConsumerState<_VideoDubEditor> {
 
     setState(() => _generatingCueIds.add(cue.id));
     try {
-      final adapter = createAdapter(provider, modelName: asset.modelName);
-      final result = await adapter.synthesize(
-        TtsRequest(
-          text: cue.cueText,
-          voice: asset.presetVoiceName ?? asset.name,
-          speed: asset.speed,
-          textLang: provider.adapterType == 'gptSovits'
-              ? asset.modelName
-              : null,
-          presetVoiceName: asset.presetVoiceName,
-          voiceInstruction: asset.voiceInstruction,
-          refAudioPath: asset.refAudioPath,
-          promptText: asset.promptText,
-          promptLang: asset.promptLang,
-        ),
-      );
+      final result = await ref
+          .read(ttsQueueServiceProvider)
+          .synthesize(
+            provider: provider,
+            modelName: asset.modelName,
+            request: TtsRequest(
+              text: cue.cueText,
+              voice: asset.presetVoiceName ?? asset.name,
+              speed: asset.speed,
+              textLang: provider.adapterType == 'gptSovits'
+                  ? asset.modelName
+                  : null,
+              presetVoiceName: asset.presetVoiceName,
+              voiceInstruction: asset.voiceInstruction,
+              refAudioPath: asset.refAudioPath,
+              promptText: asset.promptText,
+              promptLang: asset.promptLang,
+            ),
+          );
       final ext = result.contentType.contains('wav') ? '.wav' : '.mp3';
       final filePath = PathService.dedupeFilename(
         outDir,

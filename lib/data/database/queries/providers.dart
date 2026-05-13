@@ -46,6 +46,11 @@ extension AppDatabaseProviderQueries on AppDatabase {
         defaultModelName: Value(original.defaultModelName),
         enabled: const Value(false),
         position: Value(original.position + 1),
+        maxConcurrency: Value(original.maxConcurrency),
+        requestsPerMinute: Value(original.requestsPerMinute),
+        requestsPerDay: Value(original.requestsPerDay),
+        tokensPerMinute: Value(original.tokensPerMinute),
+        tokensPerDay: Value(original.tokensPerDay),
       ),
     );
     return (select(ttsProviders)..where((t) => t.id.equals(newId))).getSingle();

@@ -1,0 +1,260 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:neiroha/data/storage/path_service.dart';
+import 'package:neiroha/data/storage/storage_service.dart';
+import 'package:neiroha/providers/app_providers.dart';
+
+import 'settings_shared.dart';
+
+// ───────────────────────────── Storage card ─────────────────────────────
+
+class StorageSettingsCard extends ConsumerWidget {
+  const StorageSettingsCard({super.key, required this.startup});
+
+  final AsyncValue<StorageScanReport> startup;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final paths = PathService.instance;
+    final dataRoot = paths.dataRoot.path;
+    final voiceAssetRoot = paths.voiceAssetRoot.path;
+    final isDefault =
+        paths.voiceAssetRoot.path == paths.defaultVoiceAssetRoot.path;
+    final missing = startup.maybeWhen(data: (r) => r.missing, orElse: () => 0);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            SettingsRow(
+              icon: Icons.storage_rounded,
+              title: 'Data Directory',
+              subtitle:
+                  '$dataRoot\n'
+                  '${paths.isPortable ? 'Portable (next to executable)' : 'App-support fallback (install dir is read-only)'}',
+              trailing: IconButton(
+                icon: const Icon(Icons.copy_rounded, size: 18),
+                tooltip: 'Copy path',
+                onPressed: () =>
+                    Clipboard.setData(ClipboardData(text: dataRoot)),
+              ),
+            ),
+            const Divider(),
+            SettingsRow(
+              icon: Icons.folder_open_rounded,
+              title: 'Voice Asset Directory',
+              subtitle:
+                  '$voiceAssetRoot\n'
+                  '${isDefault ? 'Default location' : 'Custom location'}',
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!isDefault)
+                    TextButton(
+                      onPressed: () => _resetRoot(context, ref),
+                      child: const Text('Reset'),
+                    ),
+                  TextButton(
+                    onPressed: () => _pickRoot(context, ref),
+                    child: const Text('Change'),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            SettingsRow(
+              icon: missing > 0
+                  ? Icons.warning_amber_rounded
+                  : Icons.sync_rounded,
+              title: 'Sync with Disk',
+              subtitle: startup.when(
+                data: (r) => missing > 0
+                    ? '$missing archived file(s) are missing on disk — rows flagged, not deleted.'
+                    : 'All ${r.checked} archived file(s) are present.',
+                loading: () => 'Scanning…',
+                error: (e, _) => 'Scan failed: $e',
+              ),
+              trailing: startup.isLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : TextButton(
+                      onPressed: () => _manualSync(context, ref),
+                      child: const Text('Scan Now'),
+                    ),
+            ),
+            const Divider(),
+            SettingsRow(
+              icon: Icons.delete_forever_rounded,
+              title: 'Clear All Archived Audio',
+              subtitle:
+                  'Deletes every generated take + imported reference audio. '
+                  'Projects, characters, banks are preserved.',
+              trailing: TextButton(
+                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                onPressed: () => _clearAll(context, ref),
+                child: const Text('Clear…'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickRoot(BuildContext context, WidgetRef ref) async {
+    final picked = await FilePicker.platform.getDirectoryPath(
+      dialogTitle: 'Choose voice asset directory',
+    );
+    if (picked == null || picked.isEmpty) return;
+    final storage = ref.read(storageServiceProvider);
+    try {
+      await storage.setVoiceAssetRoot(picked);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not use that folder: $e')),
+        );
+      }
+      return;
+    }
+    ref.invalidate(storageStartupProvider);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Voice asset directory set to $picked')),
+      );
+    }
+  }
+
+  Future<void> _resetRoot(BuildContext context, WidgetRef ref) async {
+    await ref.read(storageServiceProvider).setVoiceAssetRoot(null);
+    ref.invalidate(storageStartupProvider);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Voice asset directory reset to default')),
+      );
+    }
+  }
+
+  Future<void> _manualSync(BuildContext context, WidgetRef ref) async {
+    ref.invalidate(storageStartupProvider);
+    final report = await ref.read(storageStartupProvider.future);
+    if (!context.mounted) return;
+    final msg = report.missing == 0
+        ? 'Scan complete — all ${report.checked} file(s) present.'
+        : 'Scan complete — ${report.missing} missing of ${report.checked}.${report.recovered > 0 ? ' ${report.recovered} recovered.' : ''}';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<void> _clearAll(BuildContext context, WidgetRef ref) async {
+    final storage = ref.read(storageServiceProvider);
+    final usage = await storage.measureVoiceAssetRoot();
+    if (!context.mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => _ClearAudioDialog(usage: usage),
+    );
+    if (confirmed != true) return;
+    try {
+      await storage.clearAllAudioArchives();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Clear failed: $e')));
+      }
+      return;
+    }
+    ref.invalidate(storageStartupProvider);
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Archived audio cleared.')));
+    }
+  }
+}
+
+// ─────────────────── Clear-all double confirmation dialog ──────────────────
+
+class _ClearAudioDialog extends StatefulWidget {
+  const _ClearAudioDialog({required this.usage});
+
+  final StorageUsage usage;
+
+  @override
+  State<_ClearAudioDialog> createState() => _ClearAudioDialogState();
+}
+
+class _ClearAudioDialogState extends State<_ClearAudioDialog> {
+  final _confirmCtrl = TextEditingController();
+  bool _acknowledged = false;
+
+  @override
+  void dispose() {
+    _confirmCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Case-sensitive: label reads "Type CLEAR" and the whole point of the
+    // ceremony is to stop autopilot confirmations.
+    final canConfirm = _acknowledged && _confirmCtrl.text.trim() == 'CLEAR';
+    return AlertDialog(
+      title: const Text('Clear all archived audio?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'This will delete ${widget.usage.fileCount} file(s) '
+            '(${widget.usage.prettyBytes}) from disk and wipe:\n'
+            ' • Quick TTS history\n'
+            ' • Generated takes on Phase/Dialog project lines\n'
+            ' • Voice asset library (reference audio)\n'
+            ' • Timeline clips\n\n'
+            'Your projects, characters, providers, and scripts are preserved.',
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Checkbox(
+                value: _acknowledged,
+                onChanged: (v) => setState(() => _acknowledged = v ?? false),
+              ),
+              const Expanded(
+                child: Text('I understand this cannot be undone.'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _confirmCtrl,
+            decoration: const InputDecoration(
+              labelText: "Type CLEAR to confirm",
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+          onPressed: canConfirm ? () => Navigator.pop(context, true) : null,
+          child: const Text('Clear Audio'),
+        ),
+      ],
+    );
+  }
+}

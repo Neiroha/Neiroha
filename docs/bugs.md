@@ -3,48 +3,37 @@
 Confirmed or likely defects are tracked here so review notes do not scatter
 across root-level docs.
 
-Last organized: 2026-05-03.
+Last organized: 2026-05-14.
 
 ## P0 / P1
 
-### API Server Has No Auth or Network Boundary
-
-File: `lib/server/api_server.dart`
-
-The shelf server starts on `InternetAddress.anyIPv4` with no authentication,
-no CORS allowlist, no rate limiting, and no body-size limit. Any host on the
-LAN can hit `/v1/audio/speech` and run arbitrary TTS jobs against the local
-provider keys.
-
-Fix: bind `127.0.0.1` by default; add an optional API key middleware, an
-explicit CORS origin allowlist, and a per-IP request budget. Surface the
-config in the Settings screen.
-
-### Async Job Queue Is Unimplemented
+### Async Job Queue Is Still In-Memory
 
 Files:
 
+- `lib/data/services/tts_queue_service.dart`
 - `lib/data/database/tables.dart` (`TtsJobs`)
 - `lib/server/api_server.dart`
 
-`TtsJobs` exists in the schema but the API only offers synchronous
-`POST /v1/audio/speech`. There is no queue worker, no progress reporting,
-no cancel/retry, and no version history for regenerated takes — so any
-client wanting Voicebox-style background jobs has to poll on its own.
+The shared TTS queue now enforces provider concurrency/rate limits and powers
+the Settings task monitor, but it is still process-memory only. `TtsJobs`
+exists in the schema, yet the API only exposes synchronous
+`POST /v1/audio/speech`; there is no durable job API, cancel/retry endpoint,
+progress persistence, or regenerated-take lineage.
 
-Fix: add a job runner that drains pending `TtsJobs`, expose
+Fix: add a durable job runner backed by `TtsJobs`, expose
 `POST /v1/jobs`, `GET /v1/jobs/:id`, `DELETE /v1/jobs/:id`,
-`POST /v1/jobs/:id/retry`, and an SSE stream at `GET /v1/jobs/:id/events`.
-Schema needs `parentJobId` (for retry/regen lineage), `attempt`, `progress`,
-and `version` columns.
+`POST /v1/jobs/:id/retry`, and optionally `GET /v1/jobs/:id/events`.
+Because Neiroha has not shipped a stable release yet, schema/migration
+compatibility is not a current blocker.
 
 ### LLM Chat Fallback Throws Raw DioException
 
 File: `lib/data/adapters/llm_chat_adapter.dart`
 
 If the first JSON-mode request fails due to `response_format`, the fallback
-`_dio.post(...)` at line 104 is not wrapped, so a `DioException` from the
-retry bubbles up untyped instead of as `LlmChatException`.
+`_dio.post(...)` is not wrapped, so a `DioException` from the retry bubbles up
+untyped instead of as `LlmChatException`.
 
 Fix: wrap the fallback in the same try/catch path that the primary request
 uses.
@@ -84,17 +73,18 @@ whole-or-nothing.
 Fix: build an ffmpeg volume-enable chain from A1 clips and feed the gated audio
 into the mix.
 
-### Missing Media Scan Does Not Mark Video Dub Rows
+### Missing Media Scan Needs Video Dub Project-Open Coverage
 
 Files:
 
 - `lib/data/storage/storage_service.dart`
 - `lib/presentation/screens/video_dub_screen.dart`
 
-`clip.missing` is not written for Video Dub timeline rows, and subtitle audio
-paths are not checked on project open.
+The global storage scan can mark timeline clips and archived audio rows, but
+Video Dub should also run a focused scan when a project opens so missing video,
+A1/A3 media and subtitle-generated audio are visible immediately.
 
-Fix: scan Video Dub clips and subtitle cue audio paths when opening a project.
+Fix: scan Video Dub timeline rows and subtitle cue audio paths on project open.
 
 ## P3 / UX Risks
 
@@ -135,3 +125,16 @@ Files:
 TTS model-kind detection is duplicated and string-based.
 
 Fix: extract a shared model-kind utility or persist model capabilities.
+
+## Recently Fixed
+
+- API server now defaults to loopback and has optional API key, CORS allowlist,
+  request budget, body-size limit and in-app request logs.
+- The shared TTS queue now enforces provider concurrency/rate limits across UI
+  screens and the local API server.
+- Settings includes a Tasks view for current queued/running TTS work.
+- Novel Reader prefetch now uses concurrent workers instead of serial awaits.
+- Voice Bank / Voice Asset delete paths now clean or block database boundaries
+  for dependent rows.
+- Unsupported SVG filters were removed from the logo asset, clearing the
+  `flutter_svg` warning in widget tests.

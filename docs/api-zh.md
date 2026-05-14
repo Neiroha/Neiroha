@@ -11,13 +11,30 @@ Neiroha 在两个层面上暴露音频 API：
 
 ## 1. 本地 API 服务器（Shelf）
 
-内置服务器运行在 `0.0.0.0:8976`（可配置），可从设置页面开关。
+内置服务器默认运行在 `127.0.0.1:8976`，可从 **设置 → API Server**
+开关。只有在明确需要局域网访问时，才将绑定地址改为 `0.0.0.0`。
+
+### 安全与运行配置
+
+设置页会将本地 API 配置持久化到 `AppSettings`：
+
+| 设置 | 默认值 | 说明 |
+|---|---|---|
+| 绑定地址 | `127.0.0.1` | 默认仅本机回环访问 |
+| 端口 | `8976` | 修改后需要重启服务器 |
+| API Key | 空 | 设置后请求需发送 `Authorization: Bearer <key>` 或 `X-API-Key: <key>` |
+| CORS origins | 空 | 空值拒绝浏览器跨域访问；`*` 允许任意 origin |
+| 限流 | `60` req/min/IP | `0` 表示禁用 |
+| 最大请求体 | `1048576` 字节 | `0` 表示不检查声明的 Content-Length |
+| API 日志输出 | 关闭 | 仅记录元数据；不会记录请求体和认证头 |
+
+所有合成请求都会进入共享的 `TtsQueueService`，因此 Provider 并发数和
+限流规则同时作用于桌面端界面和外部 API 客户端。
 
 ### 音色库作为模型
 
 API 以**音色库（Voice Bank）**作为 `model` 的抽象层：
-- 多个音色库可以**同时处于激活状态**
-- 每个激活的音色库在 `/v1/models` 中作为一个模型出现
+- 激活的音色库记录会在 `/v1/models` 中作为模型出现
 - 音色库名称用作 API 请求中的 `model` 值
 - `/v1/audio/voices` 和 `/speakers` 列出的声音均限定在激活的音色库范围内
 
@@ -62,6 +79,9 @@ API 以**音色库（Voice Bank）**作为 `model` 的抽象层：
 
 **错误响应：**
 - `400` — 缺少 `input` 或 `voice` 字段
+- `401` — 配置鉴权后缺少或传入了错误的 API Key
+- `413` — 请求体超过配置的大小限制
+- `429` — 超过按 IP 统计的请求预算
 - `404` — 未找到声音角色
 - `500` — 未找到 Provider 或上游合成失败
 
@@ -117,7 +137,12 @@ API 以**音色库（Voice Bank）**作为 `model` 的抽象层：
 
 **响应：**
 ```json
-{ "status": "ok", "port": 8976 }
+{
+  "status": "ok",
+  "host": "127.0.0.1",
+  "port": 8976,
+  "authRequired": false
+}
 ```
 
 ---
@@ -302,10 +327,12 @@ Microsoft Azure 认知服务文本转语音 REST API。免费层每月 50 万字
 |---|---|---|
 | `openaiCompatible` | 是 | 是 |
 | `chatCompletionsTts` | 是 | 是 |
-| `azureTts` | 否 | 是 |
+| `azureTts` | 通过语音列表返回 locale | 是 |
 | `systemTts` | 否 | 是 |
-| `cosyvoice` | 否 | 否 |
-| `gptSovits` | 否 | 否 |
+| `cosyvoice` | profile | profile |
+| `gptSovits` | 原生模型列表 | 是 |
+| `geminiTts` | 否 | 手动配置预设/指令 |
+| `voxcpm2Native` | 否 | 手动配置参考音频/指令 |
 
 ---
 
@@ -321,6 +348,11 @@ Microsoft Azure 认知服务文本转语音 REST API。免费层每月 50 万字
 
 | 方法 | 路径 | 说明 | 优先级 |
 |---|---|---|---|
+| `POST` | `/v1/jobs` | 创建持久化异步 TTS 任务 | 高 |
+| `GET` | `/v1/jobs/:id` | 查看任务状态、进度和结果元数据 | 高 |
+| `DELETE` | `/v1/jobs/:id` | 取消排队/运行中的任务 | 高 |
+| `POST` | `/v1/jobs/:id/retry` | 将失败或完成的任务作为新 attempt 重试 | 中 |
+| `GET` | `/v1/jobs/:id/events` | 可选 SSE 进度流 | 中 |
 | `GET` | `/v1/audio/speech/:id` | 通过 ID 检索之前生成的音频 | 中 |
 
 ### 缺少的适配器功能

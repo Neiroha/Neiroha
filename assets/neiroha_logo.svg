@@ -30,24 +30,6 @@
       <stop offset="1" stop-color="#000000" stop-opacity="0"></stop>
     </radialGradient>
 
-    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="14" result="blur"></feGaussianBlur>
-      <feMerge>
-        <feMergeNode in="blur"></feMergeNode>
-        <feMergeNode in="SourceGraphic"></feMergeNode>
-      </feMerge>
-    </filter>
-
-    <filter id="strongGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="24" result="blur1"></feGaussianBlur>
-      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur2"></feGaussianBlur>
-      <feMerge>
-        <feMergeNode in="blur1"></feMergeNode>
-        <feMergeNode in="blur2"></feMergeNode>
-        <feMergeNode in="SourceGraphic"></feMergeNode>
-      </feMerge>
-    </filter>
-
     <clipPath id="clip">
       <rect x="96" y="96" width="832" height="832" rx="220"></rect>
     </clipPath>
@@ -96,7 +78,8 @@
     </g>
 
     <!-- Main N -->
-    <g filter="url(#strongGlow)">
+    <g>
+      <path opacity="0.18" d="M292 746V278C292 256.327 309.327 246 332 246H386C401.973 246 416.931 253.008 425.262 268.336L595 572.6V286C595 264.327 612.327 246 635 246H692C714.673 246 732 264.327 732 286V746C732 768.673 714.673 778 692 778H638C622.027 778 607.069 770.992 598.738 755.664L429 451.4V738C429 760.673 411.673 778 389 778H332C309.327 778 292 760.673 292 746Z" fill="#7DF9FF"></path>
       <path d="M300 738V286C300 268.327 314.327 254 332 254H386C398.973 254 410.931 261.008 417.262 272.336L603 604.6V286C603 268.327 617.327 254 635 254H692C709.673 254 724 268.327 724 286V738C724 755.673 709.673 770 692 770H638C625.027 770 613.069 762.992 606.738 751.664L421 419.4V738C421 755.673 406.673 770 389 770H332C314.327 770 300 755.673 300 738Z" fill="url(#nFill)"></path>
     </g>
 
@@ -105,7 +88,8 @@
     <path d="M668 338V698" stroke="#FFEAFE" stroke-opacity="0.34" stroke-width="8" stroke-linecap="round"></path>
 
     <!-- Voice synthesis pulse -->
-    <g filter="url(#softGlow)">
+    <g>
+      <path opacity="0.22" d="M226 512H338L392 438L454 602L512 462L566 558L628 392L686 512H798" stroke="#7DF9FF" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"></path>
       <path d="M226 512H338L392 438L454 602L512 462L566 558L628 392L686 512H798" stroke="url(#wave)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"></path>
     </g>
 

@@ -1672,4 +1672,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String fontModeSaved(String font) {
     return '字体已设为 $font。';
   }
+
+  @override
+  String get uiDetails => '详情';
 }

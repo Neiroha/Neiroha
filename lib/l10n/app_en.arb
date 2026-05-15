@@ -702,5 +702,6 @@
         "example": "System font"
       }
     }
-  }
+  },
+  "uiDetails": "Details"
 }

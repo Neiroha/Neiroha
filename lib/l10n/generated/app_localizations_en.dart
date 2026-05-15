@@ -1718,4 +1718,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String fontModeSaved(String font) {
     return 'Font set to $font.';
   }
+
+  @override
+  String get uiDetails => 'Details';
 }

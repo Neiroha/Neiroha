@@ -66,7 +66,13 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     if (_selectedProjectId == null) {
       return _buildProjectListScreen();
     }
-    return _buildProjectContent();
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_backActiveProject());
+      },
+      child: _buildProjectContent(),
+    );
   }
 
   // ───────────────── List mode (card grid) ─────────────────
@@ -163,6 +169,8 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         Expanded(
           child: ResizableSplitPane(
             initialLeftFraction: 0.55,
+            compactRightIcon: Icons.tune_rounded,
+            compactRightLabel: AppLocalizations.of(context).uiDetails,
             left: PhaseScriptWorkspace(
               controller: _scriptController,
               onScriptChanged: () => _saveScript(project),
@@ -248,6 +256,19 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         .getPhaseTtsProjectById(projectId);
     if (project == null) return true;
     return _confirmLeave(project);
+  }
+
+  Future<void> _backActiveProject() async {
+    final projectId = _selectedProjectId;
+    if (projectId == null) return;
+    final project = await ref
+        .read(databaseProvider)
+        .getPhaseTtsProjectById(projectId);
+    if (project == null) {
+      if (mounted) setState(() => _selectedProjectId = null);
+      return;
+    }
+    await _back(project);
   }
 
   Future<bool> _confirmLeave(db.PhaseTtsProject project) async {

@@ -3166,6 +3166,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Font set to {font}.'**
   String fontModeSaved(String font);
+
+  /// No description provided for @uiDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get uiDetails;
 }
 
 class _AppLocalizationsDelegate

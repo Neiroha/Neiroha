@@ -360,100 +360,109 @@ class _VideoDubEditorState extends ConsumerState<VideoDubEditor> {
         .watch(ffmpegAvailabilityProvider)
         .maybeWhen(data: (v) => v, orElse: () => false);
 
-    return Column(
-      children: [
-        _buildBar(project, bankAssets.length),
-        const Divider(height: 1),
-        Expanded(
-          child: HorizontalResizableSplitPane(
-            initialLeftFraction: 0.74,
-            minPaneWidth: 280,
-            left: VerticalResizableSplitPane(
-              initialTopFraction: 0.7,
-              minPaneHeight: 160,
-              top: Column(
-                children: [
-                  Expanded(child: _buildVideoSurface(project)),
-                  const Divider(height: 1),
-                  SizedBox(
-                    height: 64,
-                    child: AnimatedBuilder(
-                      animation: _playbackTimelineListenable,
-                      builder: (context, _) => _buildTransport(project),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_back(project));
+      },
+      child: Column(
+        children: [
+          _buildBar(project, bankAssets.length),
+          const Divider(height: 1),
+          Expanded(
+            child: ResizableSplitPane(
+              initialLeftFraction: 0.74,
+              minPaneWidth: 280,
+              compactRightIcon: Icons.subtitles_rounded,
+              compactRightLabel: AppLocalizations.of(context).uiSubtitles,
+              left: VerticalResizableSplitPane(
+                initialTopFraction: 0.7,
+                minPaneHeight: 160,
+                top: Column(
+                  children: [
+                    Expanded(child: _buildVideoSurface(project)),
+                    const Divider(height: 1),
+                    SizedBox(
+                      height: 64,
+                      child: AnimatedBuilder(
+                        animation: _playbackTimelineListenable,
+                        builder: (context, _) => _buildTransport(project),
+                      ),
                     ),
+                  ],
+                ),
+                bottom: AnimatedBuilder(
+                  animation: _playbackTimelineListenable,
+                  builder: (context, _) => VideoDubTimeline(
+                    cues: cues,
+                    clips: clips,
+                    assetMap: assetMap,
+                    position: _position,
+                    duration: _duration,
+                    selectedCueId: _selectedCueId,
+                    selectedClipId: _selectedClipId,
+                    waveformPeaks: _waveformPeaks,
+                    ffmpegAvailable: ffmpegAvailable,
+                    onConfigureFfmpeg: () {
+                      ref.read(settingsSectionProvider.notifier).state =
+                          SettingsSection.media;
+                      ref.read(selectedTabProvider.notifier).state =
+                          NavTab.settings;
+                    },
+                    onSeek: (d) async {
+                      await _cuePlayer.stop();
+                      _activeCueId = null;
+                      await _player.seek(d);
+                    },
+                    onTapCue: (cue) async {
+                      setState(() {
+                        _selectedCueId = cue.id;
+                        _selectedClipId = null;
+                      });
+                      await _cuePlayer.stop();
+                      _activeCueId = null;
+                      await _player.seek(Duration(milliseconds: cue.startMs));
+                    },
+                    onTapClip: (clip) async {
+                      setState(() {
+                        _selectedClipId = clip.id;
+                        _selectedCueId = null;
+                      });
+                      await _player.seek(
+                        Duration(milliseconds: clip.startTimeMs),
+                      );
+                    },
+                    onDeleteClip: (clip) async {
+                      if (_selectedClipId == clip.id) {
+                        setState(() => _selectedClipId = null);
+                      }
+                      // NOTE: intentionally does NOT delete the file on
+                      // disk. The startup storage scan flags orphans;
+                      // the same media may be referenced by other rows
+                      // (re-imported or cue-generated).
+                      await ref
+                          .read(databaseProvider)
+                          .deleteTimelineClip(clip.id);
+                      _markDirty();
+                    },
+                    onImport: (kind) => _importMedia(project, kind, clips),
+                    onMoveCue: (cue, newStartMs) => _moveCueTo(cue, newStartMs),
+                    v1Occupied: clips.any((c) => c.laneIndex == DubLanes.v1),
+                    a1Muted: _muteVideoAudio,
+                    onToggleA1Mute: () async {
+                      setState(() => _muteVideoAudio = !_muteVideoAudio);
+                      _a1Covers = null;
+                      _applyA1Gating(_position.inMilliseconds);
+                    },
                   ),
-                ],
-              ),
-              bottom: AnimatedBuilder(
-                animation: _playbackTimelineListenable,
-                builder: (context, _) => VideoDubTimeline(
-                  cues: cues,
-                  clips: clips,
-                  assetMap: assetMap,
-                  position: _position,
-                  duration: _duration,
-                  selectedCueId: _selectedCueId,
-                  selectedClipId: _selectedClipId,
-                  waveformPeaks: _waveformPeaks,
-                  ffmpegAvailable: ffmpegAvailable,
-                  onConfigureFfmpeg: () {
-                    ref.read(settingsSectionProvider.notifier).state =
-                        SettingsSection.media;
-                    ref.read(selectedTabProvider.notifier).state =
-                        NavTab.settings;
-                  },
-                  onSeek: (d) async {
-                    await _cuePlayer.stop();
-                    _activeCueId = null;
-                    await _player.seek(d);
-                  },
-                  onTapCue: (cue) async {
-                    setState(() {
-                      _selectedCueId = cue.id;
-                      _selectedClipId = null;
-                    });
-                    await _cuePlayer.stop();
-                    _activeCueId = null;
-                    await _player.seek(Duration(milliseconds: cue.startMs));
-                  },
-                  onTapClip: (clip) async {
-                    setState(() {
-                      _selectedClipId = clip.id;
-                      _selectedCueId = null;
-                    });
-                    await _player.seek(
-                      Duration(milliseconds: clip.startTimeMs),
-                    );
-                  },
-                  onDeleteClip: (clip) async {
-                    if (_selectedClipId == clip.id) {
-                      setState(() => _selectedClipId = null);
-                    }
-                    // NOTE: intentionally does NOT delete the file on
-                    // disk. The startup storage scan flags orphans;
-                    // the same media may be referenced by other rows
-                    // (re-imported or cue-generated).
-                    await ref
-                        .read(databaseProvider)
-                        .deleteTimelineClip(clip.id);
-                    _markDirty();
-                  },
-                  onImport: (kind) => _importMedia(project, kind, clips),
-                  onMoveCue: (cue, newStartMs) => _moveCueTo(cue, newStartMs),
-                  v1Occupied: clips.any((c) => c.laneIndex == DubLanes.v1),
-                  a1Muted: _muteVideoAudio,
-                  onToggleA1Mute: () async {
-                    setState(() => _muteVideoAudio = !_muteVideoAudio);
-                    _a1Covers = null;
-                    _applyA1Gating(_position.inMilliseconds);
-                  },
                 ),
               ),
+              rightBuilder: (_) =>
+                  _buildSubtitlePanel(project, cues, bankAssets, assetMap),
             ),
-            right: _buildSubtitlePanel(project, cues, bankAssets, assetMap),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -29,6 +29,9 @@ class ResizableSplitPane extends StatefulWidget {
   final bool startCollapsedLeft;
   final bool startCollapsedRight;
   final ValueChanged<bool?>? onCollapseChanged;
+  final double compactBreakpoint;
+  final IconData compactRightIcon;
+  final String? compactRightLabel;
 
   const ResizableSplitPane({
     super.key,
@@ -40,6 +43,9 @@ class ResizableSplitPane extends StatefulWidget {
     this.startCollapsedLeft = false,
     this.startCollapsedRight = false,
     this.onCollapseChanged,
+    this.compactBreakpoint = 600,
+    this.compactRightIcon = Icons.tune_rounded,
+    this.compactRightLabel,
   });
 
   @override
@@ -114,6 +120,11 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final totalWidth = constraints.maxWidth;
+          final compact = totalWidth < widget.compactBreakpoint;
+
+          if (compact && !_draggingFromCollapsed) {
+            return _buildCompact();
+          }
 
           // ── While dragging out of collapsed, show normal split ──
           if (_draggingFromCollapsed) {
@@ -213,6 +224,49 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
         SizedBox(
           width: rightWidth,
           child: widget.rightBuilder(_goBackFromRight),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompact() {
+    if (_collapsed == true) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _goBackFromRight();
+        },
+        child: Stack(
+          children: [
+            widget.rightBuilder(_goBackFromRight),
+            Positioned(
+              left: 12,
+              top: 12,
+              child: _BackButton(onTap: _goBackFromRight),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final label =
+        widget.compactRightLabel ?? AppLocalizations.of(context).uiDetails;
+    return Stack(
+      children: [
+        widget.left,
+        Positioned(
+          right: 16,
+          bottom: 16 + MediaQuery.paddingOf(context).bottom,
+          child: FloatingActionButton.extended(
+            heroTag: null,
+            onPressed: () {
+              _savedFraction = _leftFraction;
+              setState(() => _collapsed = true);
+              widget.onCollapseChanged?.call(true);
+            },
+            icon: Icon(widget.compactRightIcon, size: 18),
+            label: Text(label),
+          ),
         ),
       ],
     );

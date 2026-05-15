@@ -41,10 +41,16 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
     if (_selectedProjectId == null) {
       return _buildProjectListScreen();
     }
-    return _DialogTtsEditor(
-      key: ValueKey(_selectedProjectId),
-      projectId: _selectedProjectId!,
-      onClose: () => setState(() => _selectedProjectId = null),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) setState(() => _selectedProjectId = null);
+      },
+      child: _DialogTtsEditor(
+        key: ValueKey(_selectedProjectId),
+        projectId: _selectedProjectId!,
+        onClose: () => setState(() => _selectedProjectId = null),
+      ),
     );
   }
 
@@ -176,6 +182,8 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
         Expanded(
           child: ResizableSplitPane(
             initialLeftFraction: 0.68,
+            compactRightIcon: Icons.tune_rounded,
+            compactRightLabel: AppLocalizations.of(context).navSettings,
             left: LayoutBuilder(
               builder: (ctx, leftConstraints) {
                 final inputMaxHeight = leftConstraints.maxHeight * 0.3;

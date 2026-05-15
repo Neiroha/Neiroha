@@ -91,9 +91,13 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         Expanded(
           child: ResizableSplitPane(
             initialLeftFraction: 0.22,
+            compactRightIcon: Icons.people_alt_rounded,
+            compactRightLabel: AppLocalizations.of(context).uiCHARACTERS,
             left: _buildBankList(),
             rightBuilder: (_) => ResizableSplitPane(
               initialLeftFraction: 0.45,
+              compactRightIcon: Icons.tune_rounded,
+              compactRightLabel: AppLocalizations.of(context).uiDetails,
               left: _buildCharacterColumn(),
               rightBuilder: (_) => _buildInspectorColumn(),
             ),

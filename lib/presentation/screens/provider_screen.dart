@@ -42,6 +42,8 @@ class ProviderScreen extends ConsumerWidget {
 
         return ResizableSplitPane(
           initialLeftFraction: 0.35,
+          compactRightIcon: Icons.tune_rounded,
+          compactRightLabel: AppLocalizations.of(context).uiDetails,
           left: _ProviderListPane(
             providers: providers,
             selectedId: effectiveSelectedId,

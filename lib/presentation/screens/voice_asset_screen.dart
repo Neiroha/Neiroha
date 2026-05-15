@@ -47,6 +47,8 @@ class VoiceAssetScreen extends ConsumerWidget {
                   .firstOrNull;
               return ResizableSplitPane(
                 initialLeftFraction: 0.6,
+                compactRightIcon: Icons.tune_rounded,
+                compactRightLabel: AppLocalizations.of(context).uiDetails,
                 left: _TrackList(
                   tracks: tracks,
                   selectedId: selectedId,

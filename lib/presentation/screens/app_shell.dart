@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart'
     show AppDatabaseStorageQueries;
+import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/l10n/localized_labels.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
@@ -21,7 +23,8 @@ import 'voice_asset_screen.dart';
 import 'voice_bank_screen.dart';
 import 'provider_screen.dart';
 import 'settings_screen.dart';
-import 'package:neiroha/l10n/generated/app_localizations.dart';
+
+const double _compactShellBreakpoint = 600;
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -31,6 +34,7 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final Set<NavTab> _visitedTabs = {AppNavigationSettings.defaultStartupTab};
   PhaseTtsExitGuard? _phaseTtsExitGuard;
   String? _lastPersistedTabName;
@@ -95,26 +99,54 @@ class _AppShellState extends ConsumerState<AppShell> {
         !(selectedTab == NavTab.voiceBank &&
             playback.sourceTag == voiceBankQuickTestPlaybackSource);
 
-    return Scaffold(
-      body: Column(
-        children: [
-          if (Platform.isWindows) const _WindowsTitleBar(),
-          Expanded(
-            child: Row(
-              children: [
-                Sidebar(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < _compactShellBreakpoint;
+        return Scaffold(
+          key: _scaffoldKey,
+          drawerEnableOpenDragGesture: compact,
+          drawer: compact
+              ? AppNavigationDrawer(
                   selected: selectedTab,
-                  onTabChanged: (tab) => unawaited(_switchTab(tab)),
+                  onTabChanged: (tab) => unawaited(_switchFromDrawer(tab)),
+                )
+              : null,
+          body: Column(
+            children: [
+              if (Platform.isWindows) const _WindowsTitleBar(),
+              if (compact)
+                _MobileTopBar(
+                  selectedTab: selectedTab,
+                  onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
                 ),
-                const VerticalDivider(width: 1, thickness: 1),
-                Expanded(child: _buildPageStack(selectedTab)),
-              ],
-            ),
+              Expanded(
+                child: compact
+                    ? _buildPageStack(selectedTab)
+                    : Row(
+                        children: [
+                          Sidebar(
+                            selected: selectedTab,
+                            onTabChanged: (tab) => unawaited(_switchTab(tab)),
+                          ),
+                          const VerticalDivider(width: 1, thickness: 1),
+                          Expanded(child: _buildPageStack(selectedTab)),
+                        ],
+                      ),
+              ),
+              if (showGlobalPlayer) const PersistentAudioBar(),
+            ],
           ),
-          if (showGlobalPlayer) const PersistentAudioBar(),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  Future<void> _switchFromDrawer(NavTab tab) async {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    }
+    await _switchTab(tab);
   }
 
   Future<void> _switchTab(NavTab tab) async {
@@ -183,6 +215,45 @@ class _AppShellState extends ConsumerState<AppShell> {
       NavTab.providers => const ProviderScreen(key: ValueKey('providers')),
       NavTab.settings => const SettingsScreen(key: ValueKey('settings')),
     };
+  }
+}
+
+class _MobileTopBar extends StatelessWidget {
+  final NavTab selectedTab;
+  final VoidCallback onMenuPressed;
+
+  const _MobileTopBar({required this.selectedTab, required this.onMenuPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        height: 52,
+        color: AppTheme.sidebarBg,
+        child: Row(
+          children: [
+            IconButton(
+              tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+              onPressed: onMenuPressed,
+              icon: const Icon(Icons.menu_rounded),
+            ),
+            Expanded(
+              child: Text(
+                selectedTab.localizedLabel(l10n),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+        ),
+      ),
+    );
   }
 }
 

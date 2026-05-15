@@ -509,5 +509,6 @@
   "fontSettingsSubtitle": "使用应用默认字体或操作系统界面字体。",
   "fontModeAppDefault": "应用默认",
   "fontModeSystem": "系统字体",
-  "fontModeSaved": "字体已设为 {font}。"
+  "fontModeSaved": "字体已设为 {font}。",
+  "uiDetails": "详情"
 }

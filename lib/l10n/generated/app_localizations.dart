@@ -269,7 +269,7 @@ abstract class AppLocalizations {
   /// No description provided for @startupScreenSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Choose which workspace opens when Neiroha starts. This applies on the next launch.'**
+  /// **'Choose the workspace Neiroha opens on launch, or restore the page used before closing.'**
   String get startupScreenSubtitle;
 
   /// No description provided for @startupScreenSaved.
@@ -3130,6 +3130,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SRT sidecar written to {name}.'**
   String uiSRTSidecarWrittenTo(Object name);
+
+  /// No description provided for @startupLastPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Last page before close'**
+  String get startupLastPage;
+
+  /// No description provided for @fontSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Interface Font'**
+  String get fontSettingsTitle;
+
+  /// No description provided for @fontSettingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the app default font or your operating system UI font.'**
+  String get fontSettingsSubtitle;
+
+  /// No description provided for @fontModeAppDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'App default'**
+  String get fontModeAppDefault;
+
+  /// No description provided for @fontModeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System font'**
+  String get fontModeSystem;
+
+  /// No description provided for @fontModeSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Font set to {font}.'**
+  String fontModeSaved(String font);
 }
 
 class _AppLocalizationsDelegate

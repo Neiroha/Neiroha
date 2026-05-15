@@ -95,7 +95,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get startupScreenTitle => '启动页面';
 
   @override
-  String get startupScreenSubtitle => '选择 Neiroha 启动时打开的工作区。下次启动生效。';
+  String get startupScreenSubtitle => '选择 Neiroha 启动时打开的工作区，或恢复上次关闭前的页面。';
 
   @override
   String startupScreenSaved(String tab) {
@@ -1651,5 +1651,25 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String uiSRTSidecarWrittenTo(Object name) {
     return 'SRT 字幕文件已写入 $name。';
+  }
+
+  @override
+  String get startupLastPage => '上次关闭前的页面';
+
+  @override
+  String get fontSettingsTitle => '界面字体';
+
+  @override
+  String get fontSettingsSubtitle => '使用应用默认字体或操作系统界面字体。';
+
+  @override
+  String get fontModeAppDefault => '应用默认';
+
+  @override
+  String get fontModeSystem => '系统字体';
+
+  @override
+  String fontModeSaved(String font) {
+    return '字体已设为 $font。';
   }
 }

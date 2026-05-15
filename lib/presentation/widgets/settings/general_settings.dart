@@ -7,6 +7,7 @@ import 'package:neiroha/l10n/app_locale.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/l10n/localized_labels.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
+import 'package:neiroha/presentation/theme/app_font.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
 import 'settings_shared.dart';
@@ -60,6 +61,83 @@ class LanguageSettingsCard extends ConsumerWidget {
   }
 }
 
+class FontSettingsCard extends ConsumerStatefulWidget {
+  const FontSettingsCard({super.key});
+
+  @override
+  ConsumerState<FontSettingsCard> createState() => _FontSettingsCardState();
+}
+
+class _FontSettingsCardState extends ConsumerState<FontSettingsCard> {
+  AppFontMode _fontMode = AppFontSettings.defaultMode;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_load);
+  }
+
+  Future<void> _load() async {
+    final stored = await ref
+        .read(databaseProvider)
+        .getSetting(AppFontSettings.fontModeKey);
+    final mode = AppFontMode.parse(stored);
+    if (!mounted) return;
+    ref.read(appFontModeProvider.notifier).state = mode;
+    setState(() {
+      _fontMode = mode;
+      _loaded = true;
+    });
+  }
+
+  Future<void> _setFontMode(AppFontMode mode) async {
+    setState(() => _fontMode = mode);
+    ref.read(appFontModeProvider.notifier).state = mode;
+    await ref
+        .read(databaseProvider)
+        .setSetting(AppFontSettings.fontModeKey, mode.storageValue);
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.fontModeSaved(_fontModeLabel(l10n, mode)))),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SettingsRow(
+          icon: Icons.font_download_rounded,
+          title: l10n.fontSettingsTitle,
+          subtitle: l10n.fontSettingsSubtitle,
+          trailing: DropdownButton<AppFontMode>(
+            value: _fontMode,
+            underline: const SizedBox.shrink(),
+            items: [
+              for (final mode in AppFontMode.values)
+                DropdownMenuItem(
+                  value: mode,
+                  child: Text(_fontModeLabel(l10n, mode)),
+                ),
+            ],
+            onChanged: !_loaded
+                ? null
+                : (mode) {
+                    if (mode != null && mode != _fontMode) {
+                      _setFontMode(mode);
+                    }
+                  },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class StartupSettingsCard extends ConsumerStatefulWidget {
   const StartupSettingsCard({super.key});
 
@@ -69,7 +147,7 @@ class StartupSettingsCard extends ConsumerStatefulWidget {
 }
 
 class _StartupSettingsCardState extends ConsumerState<StartupSettingsCard> {
-  NavTab _startupTab = NavTab.voiceBank;
+  String _startupValue = AppNavigationSettings.defaultStartupTab.name;
   bool _loaded = false;
 
   @override
@@ -82,23 +160,27 @@ class _StartupSettingsCardState extends ConsumerState<StartupSettingsCard> {
     final stored = await ref
         .read(databaseProvider)
         .getSetting(AppNavigationSettings.startupTabKey);
+    final value = AppNavigationSettings.isLastStartupValue(stored)
+        ? AppNavigationSettings.startupLastValue
+        : (NavTab.fromName(stored) ?? AppNavigationSettings.defaultStartupTab)
+              .name;
     if (!mounted) return;
     setState(() {
-      _startupTab = NavTab.fromName(stored) ?? NavTab.voiceBank;
+      _startupValue = value;
       _loaded = true;
     });
   }
 
-  Future<void> _setStartupTab(NavTab tab) async {
-    setState(() => _startupTab = tab);
+  Future<void> _setStartupValue(String value) async {
+    setState(() => _startupValue = value);
     await ref
         .read(databaseProvider)
-        .setSetting(AppNavigationSettings.startupTabKey, tab.name);
+        .setSetting(AppNavigationSettings.startupTabKey, value);
     if (!mounted) return;
     final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(l10n.startupScreenSaved(tab.localizedLabel(l10n))),
+        content: Text(l10n.startupScreenSaved(_startupLabel(l10n, value))),
       ),
     );
   }
@@ -113,21 +195,25 @@ class _StartupSettingsCardState extends ConsumerState<StartupSettingsCard> {
           icon: Icons.home_work_rounded,
           title: l10n.startupScreenTitle,
           subtitle: l10n.startupScreenSubtitle,
-          trailing: DropdownButton<NavTab>(
-            value: _startupTab,
+          trailing: DropdownButton<String>(
+            value: _startupValue,
             underline: const SizedBox.shrink(),
             items: [
+              DropdownMenuItem(
+                value: AppNavigationSettings.startupLastValue,
+                child: Text(l10n.startupLastPage),
+              ),
               for (final tab in NavTab.values)
                 DropdownMenuItem(
-                  value: tab,
+                  value: tab.name,
                   child: Text(tab.localizedLabel(l10n)),
                 ),
             ],
             onChanged: !_loaded
                 ? null
-                : (tab) {
-                    if (tab != null && tab != _startupTab) {
-                      _setStartupTab(tab);
+                : (value) {
+                    if (value != null && value != _startupValue) {
+                      _setStartupValue(value);
                     }
                   },
           ),
@@ -135,6 +221,21 @@ class _StartupSettingsCardState extends ConsumerState<StartupSettingsCard> {
       ),
     );
   }
+}
+
+String _fontModeLabel(AppLocalizations l10n, AppFontMode mode) {
+  return switch (mode) {
+    AppFontMode.appDefault => l10n.fontModeAppDefault,
+    AppFontMode.system => l10n.fontModeSystem,
+  };
+}
+
+String _startupLabel(AppLocalizations l10n, String value) {
+  if (value == AppNavigationSettings.startupLastValue) {
+    return l10n.startupLastPage;
+  }
+  final tab = NavTab.fromName(value) ?? AppNavigationSettings.defaultStartupTab;
+  return tab.localizedLabel(l10n);
 }
 
 class TaskBehaviorSettingsCard extends ConsumerStatefulWidget {

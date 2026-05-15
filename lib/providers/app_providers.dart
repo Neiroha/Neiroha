@@ -11,6 +11,7 @@ import 'package:neiroha/data/storage/novel_import_service.dart';
 import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
 import 'package:neiroha/l10n/app_locale.dart';
+import 'package:neiroha/presentation/theme/app_font.dart';
 import 'package:neiroha/server/api_server.dart';
 
 /// Single database instance for the app.
@@ -24,6 +25,12 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 /// [AppLocaleSettings.localeKey] and watched by MaterialApp.
 final appLocaleProvider = StateProvider<Locale>((ref) {
   return AppLocaleSettings.defaultLocale;
+});
+
+/// Current app font mode. Persisted in AppSettings via
+/// [AppFontSettings.fontModeKey] and watched by MaterialApp.
+final appFontModeProvider = StateProvider<AppFontMode>((ref) {
+  return AppFontSettings.defaultMode;
 });
 
 /// Disk-backed storage orchestration (voice-asset root, sync, clear-all).

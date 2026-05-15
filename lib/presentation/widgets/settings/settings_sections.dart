@@ -202,6 +202,8 @@ class SettingsSectionContent extends ConsumerWidget {
       SettingsSection.general => const <Widget>[
         LanguageSettingsCard(),
         SizedBox(height: 12),
+        FontSettingsCard(),
+        SizedBox(height: 12),
         StartupSettingsCard(),
         SizedBox(height: 12),
         TaskBehaviorSettingsCard(),

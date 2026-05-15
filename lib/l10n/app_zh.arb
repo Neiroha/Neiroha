@@ -28,7 +28,7 @@
   "languageChinese": "中文",
   "languageSaved": "语言已切换为 {language}。",
   "startupScreenTitle": "启动页面",
-  "startupScreenSubtitle": "选择 Neiroha 启动时打开的工作区。下次启动生效。",
+  "startupScreenSubtitle": "选择 Neiroha 启动时打开的工作区，或恢复上次关闭前的页面。",
   "startupScreenSaved": "启动页面已设为 {tab}。",
   "keepTtsRunningTitle": "切换页面时继续运行 TTS",
   "keepTtsRunningSubtitle": "适合边听小说边查看任务进度或设置。",
@@ -503,5 +503,11 @@
   "uiExportedCuesAudioFilesToMissing": "已导出 {cueCount} 个片段 + {audioCount} 个音频文件到 {path}（{missingCount} 个缺失）",
   "uiNoNovelProjectsYet": "还没有小说项目",
   "uiSidecarSRTFailed": "SRT 字幕文件写入失败：{error}",
-  "uiSRTSidecarWrittenTo": "SRT 字幕文件已写入 {name}。"
+  "uiSRTSidecarWrittenTo": "SRT 字幕文件已写入 {name}。",
+  "startupLastPage": "上次关闭前的页面",
+  "fontSettingsTitle": "界面字体",
+  "fontSettingsSubtitle": "使用应用默认字体或操作系统界面字体。",
+  "fontModeAppDefault": "应用默认",
+  "fontModeSystem": "系统字体",
+  "fontModeSaved": "字体已设为 {font}。"
 }

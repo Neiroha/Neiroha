@@ -11,6 +11,7 @@ import 'data/storage/path_service.dart';
 import 'l10n/app_locale.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'presentation/screens/app_shell.dart';
+import 'presentation/theme/app_font.dart';
 import 'presentation/theme/app_theme.dart';
 import 'providers/app_providers.dart';
 
@@ -53,27 +54,31 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(_loadLocale);
+    Future.microtask(_loadAppSettings);
   }
 
-  Future<void> _loadLocale() async {
-    final stored = await ref
-        .read(databaseProvider)
-        .getSetting(AppLocaleSettings.localeKey);
+  Future<void> _loadAppSettings() async {
+    final db = ref.read(databaseProvider);
+    final storedLocale = await db.getSetting(AppLocaleSettings.localeKey);
+    final storedFont = await db.getSetting(AppFontSettings.fontModeKey);
     if (!mounted) return;
     ref.read(appLocaleProvider.notifier).state = AppLocaleSettings.parse(
-      stored,
+      storedLocale,
+    );
+    ref.read(appFontModeProvider.notifier).state = AppFontMode.parse(
+      storedFont,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final locale = ref.watch(appLocaleProvider);
+    final fontMode = ref.watch(appFontModeProvider);
     return MaterialApp(
       title: 'Neiroha',
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
+      theme: AppTheme.dark(fontMode: fontMode),
       locale: locale,
       supportedLocales: AppLocaleSettings.supportedLocales,
       localizationsDelegates: const [

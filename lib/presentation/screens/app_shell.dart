@@ -31,8 +31,9 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
-  final Set<NavTab> _visitedTabs = {NavTab.voiceBank};
+  final Set<NavTab> _visitedTabs = {AppNavigationSettings.defaultStartupTab};
   PhaseTtsExitGuard? _phaseTtsExitGuard;
+  String? _lastPersistedTabName;
 
   @override
   void initState() {
@@ -42,14 +43,20 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 
   Future<void> _loadStartupTab() async {
-    final stored = await ref
-        .read(databaseProvider)
-        .getSetting(AppNavigationSettings.startupTabKey);
+    final db = ref.read(databaseProvider);
+    final stored = await db.getSetting(AppNavigationSettings.startupTabKey);
+    final lastStored = AppNavigationSettings.isLastStartupValue(stored)
+        ? await db.getSetting(AppNavigationSettings.lastTabKey)
+        : null;
     if (!mounted) return;
 
-    final startupTab = NavTab.fromName(stored) ?? NavTab.voiceBank;
+    final startupTab =
+        NavTab.fromName(lastStored) ??
+        NavTab.fromName(stored) ??
+        AppNavigationSettings.defaultStartupTab;
     _visitedTabs.add(startupTab);
     ref.read(selectedTabProvider.notifier).state = startupTab;
+    unawaited(_storeLastTab(startupTab));
   }
 
   Future<void> _loadAppBehaviorSettings() async {
@@ -67,6 +74,9 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<NavTab>(selectedTabProvider, (_, next) {
+      unawaited(_storeLastTab(next));
+    });
     final selectedTab = ref.watch(selectedTabProvider);
     final continueTtsAcrossScreens = ref.watch(
       continueTtsAcrossScreensProvider,
@@ -121,6 +131,14 @@ class _AppShellState extends ConsumerState<AppShell> {
           .stopIfSourceTagPrefix(novelReaderPlaybackSource);
     }
     ref.read(selectedTabProvider.notifier).state = tab;
+  }
+
+  Future<void> _storeLastTab(NavTab tab) async {
+    if (_lastPersistedTabName == tab.name) return;
+    _lastPersistedTabName = tab.name;
+    await ref
+        .read(databaseProvider)
+        .setSetting(AppNavigationSettings.lastTabKey, tab.name);
   }
 
   Widget _buildPageStack(NavTab selectedTab) {

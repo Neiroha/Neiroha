@@ -56,8 +56,15 @@ enum SettingsSection {
 
 class AppNavigationSettings {
   static const startupTabKey = 'app.startupTab';
+  static const lastTabKey = 'app.lastTab';
+  static const startupLastValue = 'last';
+  static const defaultStartupTab = NavTab.voiceBank;
 
   const AppNavigationSettings._();
+
+  static bool isLastStartupValue(String? value) {
+    return value?.trim().toLowerCase() == startupLastValue;
+  }
 }
 
 class AppBehaviorSettings {

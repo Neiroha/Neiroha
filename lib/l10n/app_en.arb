@@ -39,7 +39,7 @@
     }
   },
   "startupScreenTitle": "Startup Screen",
-  "startupScreenSubtitle": "Choose which workspace opens when Neiroha starts. This applies on the next launch.",
+  "startupScreenSubtitle": "Choose the workspace Neiroha opens on launch, or restore the page used before closing.",
   "startupScreenSaved": "Startup screen set to {tab}.",
   "@startupScreenSaved": {
     "placeholders": {
@@ -687,6 +687,20 @@
   "@uiSRTSidecarWrittenTo": {
     "placeholders": {
       "name": {}
+    }
+  },
+  "startupLastPage": "Last page before close",
+  "fontSettingsTitle": "Interface Font",
+  "fontSettingsSubtitle": "Use the app default font or your operating system UI font.",
+  "fontModeAppDefault": "App default",
+  "fontModeSystem": "System font",
+  "fontModeSaved": "Font set to {font}.",
+  "@fontModeSaved": {
+    "placeholders": {
+      "font": {
+        "type": "String",
+        "example": "System font"
+      }
     }
   }
 }

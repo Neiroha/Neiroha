@@ -99,7 +99,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get startupScreenSubtitle =>
-      'Choose which workspace opens when Neiroha starts. This applies on the next launch.';
+      'Choose the workspace Neiroha opens on launch, or restore the page used before closing.';
 
   @override
   String startupScreenSaved(String tab) {
@@ -1696,5 +1696,26 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String uiSRTSidecarWrittenTo(Object name) {
     return 'SRT sidecar written to $name.';
+  }
+
+  @override
+  String get startupLastPage => 'Last page before close';
+
+  @override
+  String get fontSettingsTitle => 'Interface Font';
+
+  @override
+  String get fontSettingsSubtitle =>
+      'Use the app default font or your operating system UI font.';
+
+  @override
+  String get fontModeAppDefault => 'App default';
+
+  @override
+  String get fontModeSystem => 'System font';
+
+  @override
+  String fontModeSaved(String font) {
+    return 'Font set to $font.';
   }
 }

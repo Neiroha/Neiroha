@@ -64,41 +64,41 @@ class _NovelSettingsPane extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
         children: [
-          _PanelTitle('VOICES'),
+          _PanelTitle(AppLocalizations.of(context).uiVOICES),
           _VoiceDropdown(
             value: project.narratorVoiceAssetId,
             assets: bankAssets,
-            label: 'Narrator',
+            label: AppLocalizations.of(context).uiNarrator,
             onChanged: onNarratorChanged,
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           _VoiceDropdown(
             value: project.dialogueVoiceAssetId,
             assets: bankAssets,
-            label: 'Dialogue',
+            label: AppLocalizations.of(context).uiDialogue,
             onChanged: onDialogueChanged,
           ),
-          const SizedBox(height: 18),
-          _PanelTitle('EDIT'),
+          SizedBox(height: 18),
+          _PanelTitle(AppLocalizations.of(context).uiEDIT),
           _CompactSwitch(
-            label: 'Edit novel text',
+            label: AppLocalizations.of(context).uiEditNovelText,
             value: editing,
             onChanged: onEditingChanged,
           ),
-          const SizedBox(height: 18),
-          _PanelTitle('CACHE'),
+          SizedBox(height: 18),
+          _PanelTitle(AppLocalizations.of(context).uiCACHE),
           _CompactSwitch(
-            label: 'Auto slice long segments',
+            label: AppLocalizations.of(context).uiAutoSliceLongSegments,
             value: project.autoSliceLongSegments,
             onChanged: onAutoSliceChanged,
           ),
           _CompactSwitch(
-            label: 'Slice after punctuation',
+            label: AppLocalizations.of(context).uiSliceAfterPunctuation,
             value: project.sliceOnlyAtPunctuation,
             onChanged: onSliceOnlyAtPunctuationChanged,
           ),
           _SliderSetting(
-            label: 'Slice',
+            label: AppLocalizations.of(context).uiSlice,
             value: project.maxSliceChars.clamp(20, 80).toDouble(),
             min: 20,
             max: 80,
@@ -106,21 +106,21 @@ class _NovelSettingsPane extends StatelessWidget {
             valueLabel: '${project.maxSliceChars.clamp(20, 80)}',
             onChanged: (v) => onMaxSliceCharsChanged(v.round()),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           _ColorSetting(
-            label: 'Current',
+            label: AppLocalizations.of(context).uiCurrent,
             value: project.cacheCurrentColor,
             fallback: const Color(0xFF2F6B54),
             onChanged: onCacheCurrentColorChanged,
           ),
           _ColorSetting(
-            label: 'Changed',
+            label: AppLocalizations.of(context).uiChanged,
             value: project.cacheStaleColor,
             fallback: const Color(0xFF7A5A2A),
             onChanged: onCacheStaleColorChanged,
           ),
           _SliderSetting(
-            label: 'Alpha',
+            label: AppLocalizations.of(context).uiAlpha,
             value: project.cacheHighlightOpacity.clamp(0.02, 0.24).toDouble(),
             min: 0.02,
             max: 0.24,
@@ -130,33 +130,33 @@ class _NovelSettingsPane extends StatelessWidget {
             onChanged: onCacheHighlightOpacityChanged,
           ),
           _CompactSwitch(
-            label: 'Overwrite while reading',
+            label: AppLocalizations.of(context).uiOverwriteWhileReading,
             value: project.overwriteCacheWhilePlaying,
             onChanged: onOverwriteWhilePlayingChanged,
           ),
           _CompactSwitch(
-            label: 'Skip punctuation-only text',
+            label: AppLocalizations.of(context).uiSkipPunctuationOnlyText,
             value: project.skipPunctuationOnlySegments,
             onChanged: onSkipPunctuationOnlyChanged,
           ),
           OutlinedButton.icon(
             onPressed: onManageDialogueRules,
             icon: const Icon(Icons.rule_rounded, size: 17),
-            label: const Text('Dialogue Rules'),
+            label: Text(AppLocalizations.of(context).uiDialogueRules),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           FilledButton.icon(
             onPressed: generatingAll || importing ? null : onGenerateAll,
             icon: generatingAll
-                ? const SizedBox(
+                ? SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.download_done_rounded, size: 17),
-            label: const Text('Generate Book'),
+            label: Text(AppLocalizations.of(context).uiGenerateBook),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             generatingSegmentIds.isEmpty
                 ? 'Idle'
@@ -166,33 +166,35 @@ class _NovelSettingsPane extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.45),
             ),
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
           _PanelTitle('OUTPUT'),
           OutlinedButton.icon(
             onPressed: hasAudio && !exporting ? onExport : null,
             icon: exporting
-                ? const SizedBox(
+                ? SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.ios_share_rounded, size: 17),
-            label: const Text('Export Book'),
+            label: Text(AppLocalizations.of(context).uiExportBook),
           ),
-          const SizedBox(height: 18),
-          _PanelTitle('PLAYBACK'),
+          SizedBox(height: 18),
+          _PanelTitle(AppLocalizations.of(context).uiPLAYBACK),
           _CompactSwitch(
-            label: 'Auto turn page while playing',
+            label: AppLocalizations.of(context).uiAutoTurnPageWhilePlaying,
             value: project.autoTurnPage,
             onChanged: onAutoTurnPageChanged,
           ),
           _CompactSwitch(
-            label: 'Auto switch chapters while playing',
+            label: AppLocalizations.of(
+              context,
+            ).uiAutoSwitchChaptersWhilePlaying,
             value: project.autoAdvanceChapters,
             onChanged: onAutoAdvanceChaptersChanged,
           ),
           _SliderSetting(
-            label: 'Ahead',
+            label: AppLocalizations.of(context).uiAhead,
             value: project.prefetchSegments.clamp(0, 20).toDouble(),
             min: 0,
             max: 20,
@@ -232,37 +234,37 @@ class _ReaderAppearanceDialogState extends State<_ReaderAppearanceDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Reader Appearance'),
+      title: Text(AppLocalizations.of(context).uiReaderAppearance2),
       content: SizedBox(
         width: 440,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             SegmentedButton<String>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: 'comfort',
                   icon: Icon(Icons.eco_rounded, size: 16),
-                  label: Text('Comfort'),
+                  label: Text(AppLocalizations.of(context).uiComfort),
                 ),
                 ButtonSegment(
                   value: 'paper',
                   icon: Icon(Icons.article_rounded, size: 16),
-                  label: Text('Paper'),
+                  label: Text(AppLocalizations.of(context).uiPaper),
                 ),
                 ButtonSegment(
                   value: 'dark',
                   icon: Icon(Icons.dark_mode_rounded, size: 16),
-                  label: Text('Dark'),
+                  label: Text(AppLocalizations.of(context).uiDark),
                 ),
               ],
               selected: {_theme},
               onSelectionChanged: (values) =>
                   setState(() => _theme = values.first),
             ),
-            const SizedBox(height: 18),
+            SizedBox(height: 18),
             _SliderSetting(
-              label: 'Font',
+              label: AppLocalizations.of(context).uiFont,
               value: _fontSize,
               min: 16,
               max: 28,
@@ -270,7 +272,7 @@ class _ReaderAppearanceDialogState extends State<_ReaderAppearanceDialog> {
               onChanged: (value) => setState(() => _fontSize = value),
             ),
             _SliderSetting(
-              label: 'Line',
+              label: AppLocalizations.of(context).uiLine,
               value: _lineHeight,
               min: 1.4,
               max: 2.1,
@@ -283,7 +285,7 @@ class _ReaderAppearanceDialogState extends State<_ReaderAppearanceDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).uiCancel),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(
@@ -294,7 +296,7 @@ class _ReaderAppearanceDialogState extends State<_ReaderAppearanceDialog> {
               lineHeight: _lineHeight,
             ),
           ),
-          child: const Text('Apply'),
+          child: Text(AppLocalizations.of(context).uiApply),
         ),
       ],
     );
@@ -335,9 +337,9 @@ class _VoiceDropdown extends StatelessWidget {
       decoration: InputDecoration(labelText: label, isDense: true),
       isExpanded: true,
       items: [
-        const DropdownMenuItem<String>(
+        DropdownMenuItem<String>(
           value: null,
-          child: Text('-- Unassigned --'),
+          child: Text(AppLocalizations.of(context).uiUnassigned),
         ),
         for (final asset in assets)
           DropdownMenuItem(
@@ -402,7 +404,7 @@ class _ColorSetting extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       _hexFromColor(color),
@@ -457,7 +459,7 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
   Widget build(BuildContext context) {
     final current = _colorFromHex(_controller.text, widget.fallback);
     return AlertDialog(
-      title: const Text('Cache Highlight Color'),
+      title: Text(AppLocalizations.of(context).uiCacheHighlightColor),
       content: SizedBox(
         width: 360,
         child: Column(
@@ -489,10 +491,12 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                   ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             TextField(
               controller: _controller,
-              decoration: const InputDecoration(labelText: 'Hex color'),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).uiHexColor,
+              ),
               onChanged: (_) => setState(() {}),
             ),
           ],
@@ -501,14 +505,14 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).uiCancel),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(
             context,
             _hexFromColor(_colorFromHex(_controller.text, widget.fallback)),
           ),
-          child: const Text('Apply'),
+          child: Text(AppLocalizations.of(context).uiApply),
         ),
       ],
     );
@@ -710,9 +714,9 @@ class _NovelDialogueRulesDialogState
     return AlertDialog(
       title: Row(
         children: [
-          const Expanded(child: Text('Dialogue Rules')),
+          Expanded(child: Text(AppLocalizations.of(context).uiDialogueRules)),
           IconButton(
-            tooltip: 'Add rule',
+            tooltip: AppLocalizations.of(context).uiAddRule,
             onPressed: _loading ? null : _addRule,
             icon: const Icon(Icons.add_rounded),
           ),
@@ -722,10 +726,10 @@ class _NovelDialogueRulesDialogState
         width: 560,
         height: 430,
         child: _loading
-            ? const Center(child: CircularProgressIndicator())
+            ? Center(child: CircularProgressIndicator())
             : ListView.separated(
                 itemCount: _rules.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 6),
+                separatorBuilder: (_, _) => SizedBox(height: 6),
                 itemBuilder: (context, index) {
                   final rule = _rules[index];
                   return _DialogueRuleTile(
@@ -740,7 +744,7 @@ class _NovelDialogueRulesDialogState
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Close'),
+          child: Text(AppLocalizations.of(context).uiClose),
         ),
         FilledButton(
           onPressed: () async {
@@ -778,7 +782,7 @@ class _DialogueRuleTile extends StatelessWidget {
       child: Row(
         children: [
           Switch(value: rule.enabled, onChanged: onToggle),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -793,7 +797,7 @@ class _DialogueRuleTile extends StatelessWidget {
                       ),
                     ),
                     if (rule.builtIn) ...[
-                      const SizedBox(width: 6),
+                      SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 6,
@@ -804,7 +808,7 @@ class _DialogueRuleTile extends StatelessWidget {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          'built-in',
+                          AppLocalizations.of(context).uiBuiltIn,
                           style: TextStyle(
                             fontSize: 10,
                             color: AppTheme.accentColor.withValues(alpha: 0.9),
@@ -814,7 +818,7 @@ class _DialogueRuleTile extends StatelessWidget {
                     ],
                   ],
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: 2),
                 Text(
                   rule.pattern,
                   maxLines: 1,
@@ -829,12 +833,12 @@ class _DialogueRuleTile extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Edit',
+            tooltip: AppLocalizations.of(context).uiEdit,
             icon: const Icon(Icons.edit_rounded, size: 16),
             onPressed: onEdit,
           ),
           IconButton(
-            tooltip: 'Delete',
+            tooltip: AppLocalizations.of(context).uiDelete,
             icon: const Icon(Icons.delete_rounded, size: 16),
             onPressed: onDelete,
           ),
@@ -868,14 +872,16 @@ Future<NovelDialogueRule?> _showNovelDialogueRuleEditor(
                 TextField(
                   controller: nameCtrl,
                   autofocus: true,
-                  decoration: const InputDecoration(labelText: 'Name'),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).uiName,
+                  ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 TextField(
                   controller: patternCtrl,
                   style: const TextStyle(fontFamily: 'monospace'),
                   decoration: InputDecoration(
-                    labelText: 'Regex pattern',
+                    labelText: AppLocalizations.of(context).uiRegexPattern,
                     helperText: r'Examples: “[\s\S]*?”   /   "[\s\S]*?"',
                     errorText: error,
                   ),
@@ -886,7 +892,7 @@ Future<NovelDialogueRule?> _showNovelDialogueRuleEditor(
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context).uiCancel),
             ),
             FilledButton(
               onPressed: () {
@@ -916,7 +922,7 @@ Future<NovelDialogueRule?> _showNovelDialogueRuleEditor(
                   ),
                 );
               },
-              child: const Text('Save'),
+              child: Text(AppLocalizations.of(context).uiSave),
             ),
           ],
         );

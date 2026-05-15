@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 class VoiceBankTile extends StatelessWidget {
   final db.VoiceBank bank;
@@ -56,7 +57,7 @@ class VoiceBankTile extends StatelessWidget {
                             ? AppTheme.accentColor
                             : Colors.white.withValues(alpha: 0.4)),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     bank.name,
@@ -92,15 +93,18 @@ class VoiceBankTile extends StatelessWidget {
                       value: 'activate',
                       child: Text(bank.isActive ? 'Deactivate' : 'Set Active'),
                     ),
-                    const PopupMenuItem(value: 'rename', child: Text('Rename')),
-                    const PopupMenuItem(
-                      value: 'duplicate',
-                      child: Text('Duplicate'),
+                    PopupMenuItem(
+                      value: 'rename',
+                      child: Text(AppLocalizations.of(context).uiRename),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
+                      value: 'duplicate',
+                      child: Text(AppLocalizations.of(context).uiDuplicate),
+                    ),
+                    PopupMenuItem(
                       value: 'delete',
                       child: Text(
-                        'Delete',
+                        AppLocalizations.of(context).uiDelete,
                         style: TextStyle(color: Colors.redAccent),
                       ),
                     ),
@@ -152,7 +156,7 @@ class VoiceBankCharacterTile extends StatelessWidget {
                   avatarPath: asset.avatarPath,
                   selected: isSelected,
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,7 +189,7 @@ class VoiceBankCharacterTile extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Remove from bank',
+                  tooltip: AppLocalizations.of(context).uiRemoveFromBank,
                   icon: Icon(
                     Icons.remove_circle_outline_rounded,
                     size: 18,
@@ -305,8 +309,9 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
               child: Text(
-                'Characters are shared — importing just adds them as '
-                'members of this bank.',
+                AppLocalizations.of(
+                  context,
+                ).uiCharactersAreSharedImportingJustAddsThemAsMembersOfThisBank,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.white.withValues(alpha: 0.5),
@@ -316,8 +321,8 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
               child: DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Source Bank',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).uiSourceBank,
                   prefixIcon: Icon(Icons.account_tree_rounded, size: 18),
                   isDense: true,
                 ),
@@ -340,7 +345,7 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
                 child: TextField(
                   controller: _searchCtrl,
                   decoration: InputDecoration(
-                    hintText: 'Search characters...',
+                    hintText: AppLocalizations.of(context).uiSearchCharacters,
                     prefixIcon: const Icon(Icons.search_rounded, size: 18),
                     suffixIcon: _filter.isEmpty
                         ? null
@@ -379,11 +384,11 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
                     onPressed: _sourceBankId == null || _busy
                         ? null
                         : () => _addAll(allAssets, targetAssetIds),
-                    child: const Text('Import All'),
+                    child: Text(AppLocalizations.of(context).uiImportAll),
                   ),
                   TextButton(
                     onPressed: _busy ? null : () => Navigator.pop(context),
-                    child: const Text('Done'),
+                    child: Text(AppLocalizations.of(context).uiDone),
                   ),
                 ],
               ),
@@ -402,8 +407,9 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
       bankMembersStreamProvider(_sourceBankId!),
     );
     return sourceMembersAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      loading: () => Center(child: CircularProgressIndicator()),
+      error: (e, _) =>
+          Center(child: Text(AppLocalizations.of(context).uiError2(e))),
       data: (sourceMembers) {
         final assetMap = {for (final a in allAssets) a.id: a};
         final candidates = sourceMembers
@@ -423,7 +429,9 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
             padding: const EdgeInsets.all(24),
             child: Center(
               child: Text(
-                'All characters from this bank are already members',
+                AppLocalizations.of(
+                  context,
+                ).uiAllCharactersFromThisBankAreAlreadyMembers,
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
               ),
             ),
@@ -462,7 +470,7 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
               ),
               trailing: IconButton(
                 icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
-                tooltip: 'Import this character',
+                tooltip: AppLocalizations.of(context).uiImportThisCharacter,
                 onPressed: _busy ? null : () => _addOne(a),
               ),
               onTap: _busy ? null : () => _addOne(a),
@@ -515,7 +523,11 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
     if (mounted) {
       setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Imported ${toAdd.length} character(s)')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).uiImportedCharacterS(toAdd.length),
+          ),
+        ),
       );
     }
   }

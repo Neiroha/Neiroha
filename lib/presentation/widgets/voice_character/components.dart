@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 class VoiceCharacterVoxCpm2ModeSelector extends StatelessWidget {
   final String? selected;
@@ -70,7 +71,7 @@ class VoiceCharacterVoxCpm2ModeSelector extends StatelessWidget {
                           ? AppTheme.accentColor
                           : Colors.white.withValues(alpha: 0.5),
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Text(
                       label,
                       style: TextStyle(
@@ -81,7 +82,7 @@ class VoiceCharacterVoxCpm2ModeSelector extends StatelessWidget {
                             : Colors.white.withValues(alpha: 0.7),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       hint,
                       style: TextStyle(
@@ -168,7 +169,7 @@ class VoiceCharacterCosyVoiceModeSelector extends StatelessWidget {
                           ? AppTheme.accentColor
                           : Colors.white.withValues(alpha: 0.5),
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Text(
                       label,
                       style: TextStyle(
@@ -179,7 +180,7 @@ class VoiceCharacterCosyVoiceModeSelector extends StatelessWidget {
                             : Colors.white.withValues(alpha: 0.7),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       hint,
                       style: TextStyle(
@@ -255,7 +256,7 @@ class VoiceCharacterGptSovitsModeSelector extends StatelessWidget {
                           ? AppTheme.accentColor
                           : Colors.white.withValues(alpha: 0.5),
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Text(
                       label,
                       style: TextStyle(
@@ -266,7 +267,7 @@ class VoiceCharacterGptSovitsModeSelector extends StatelessWidget {
                             : Colors.white.withValues(alpha: 0.7),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       hint,
                       style: TextStyle(
@@ -321,9 +322,9 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
                     Icons.upload_file_rounded,
                     color: Colors.white.withValues(alpha: 0.4),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Text(
-                    'Click to select audio file',
+                    AppLocalizations.of(context).uiClickToSelectAudioFile,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.4),
                     ),
@@ -333,7 +334,7 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
             : Row(
                 children: [
                   const Icon(Icons.audio_file_rounded, color: Colors.green),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,7 +348,7 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          'Tap to change',
+                          AppLocalizations.of(context).uiTapToChange,
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.white.withValues(alpha: 0.3),
@@ -577,12 +578,12 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
         ),
         // Search field + filtered list — only shown when open
         if (_isOpen) ...[
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           TextField(
             controller: _searchCtrl,
             autofocus: true,
             decoration: InputDecoration(
-              hintText: 'Search…',
+              hintText: AppLocalizations.of(context).uiSearch,
               prefixIcon: const Icon(Icons.filter_list_rounded, size: 18),
               suffixIcon: _searchCtrl.text.isNotEmpty
                   ? IconButton(
@@ -597,7 +598,7 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
               ),
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Container(
             height: 200,
             decoration: BoxDecoration(

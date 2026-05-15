@@ -68,11 +68,13 @@ class SubtitleParser {
       if (cueLines.isEmpty) continue;
       final cueText = cueLines.join('\n').trim();
       if (cueText.isEmpty) continue;
-      out.add(ParsedCue(
-        startMs: times.$1,
-        endMs: times.$2,
-        text: _stripTags(cueText),
-      ));
+      out.add(
+        ParsedCue(
+          startMs: times.$1,
+          endMs: times.$2,
+          text: _stripTags(cueText),
+        ),
+      );
     }
     return out;
   }
@@ -119,10 +121,9 @@ class SubtitleParser {
       // `[ar:...]`, `[ti:...]`, `[by:...]` metadata — skip.
       if (RegExp(r'^\[[a-zA-Z]{2}:').hasMatch(line)) continue;
 
-      final matches =
-          RegExp(r'\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]')
-              .allMatches(line)
-              .toList();
+      final matches = RegExp(
+        r'\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]',
+      ).allMatches(line).toList();
       if (matches.isEmpty) continue;
       final lyric = line.substring(matches.last.end).trim();
       if (lyric.isEmpty) continue;
@@ -144,11 +145,9 @@ class SubtitleParser {
       final nextStart = i + 1 < pending.length
           ? pending[i + 1].startMs
           : cur.startMs + 3000;
-      out.add(ParsedCue(
-        startMs: cur.startMs,
-        endMs: nextStart,
-        text: cur.text,
-      ));
+      out.add(
+        ParsedCue(startMs: cur.startMs, endMs: nextStart, text: cur.text),
+      );
     }
     return out;
   }

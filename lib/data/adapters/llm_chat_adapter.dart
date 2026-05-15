@@ -41,14 +41,17 @@ class LlmChatAdapter {
     required this.modelName,
     this.apiKeyHeader = 'Authorization',
   }) {
-    _dio = Dio(BaseOptions(
-      baseUrl: baseUrl.endsWith('/') ? baseUrl : '$baseUrl/',
-      headers: {
-        apiKeyHeader:
-            apiKeyHeader == 'Authorization' ? 'Bearer $apiKey' : apiKey,
-        'Content-Type': 'application/json',
-      },
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl.endsWith('/') ? baseUrl : '$baseUrl/',
+        headers: {
+          apiKeyHeader: apiKeyHeader == 'Authorization'
+              ? 'Bearer $apiKey'
+              : apiKey,
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
   }
 
   /// Build an adapter from one of the rows in the `TtsProviders` table.
@@ -95,14 +98,20 @@ class LlmChatAdapter {
 
     Response<dynamic> response;
     try {
-      response =
-          await _dio.post('chat/completions', data: payload, options: options);
+      response = await _dio.post(
+        'chat/completions',
+        data: payload,
+        options: options,
+      );
     } on DioException catch (e) {
       if (jsonMode && _looksLikeResponseFormatRejection(e)) {
         final fallback = Map<String, dynamic>.from(payload)
           ..remove('response_format');
-        response = await _dio.post('chat/completions',
-            data: fallback, options: options);
+        response = await _dio.post(
+          'chat/completions',
+          data: fallback,
+          options: options,
+        );
       } else {
         throw LlmChatException(_describeDioError(e));
       }

@@ -137,9 +137,9 @@ extension _VideoDubEditorMediaActions on _VideoDubEditorState {
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Imported "$base"')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).uiImported(base))),
+      );
     }
   }
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/l10n/localized_labels.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 
@@ -85,8 +87,9 @@ class _SidebarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Tooltip(
-      message: tab.label,
+      message: tab.localizedLabel(l10n),
       preferBelow: false,
       waitDuration: const Duration(milliseconds: 400),
       child: Padding(

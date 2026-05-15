@@ -93,12 +93,11 @@ class ExportPrefs {
     String? audioFormat,
     String? videoCodec,
     String? videoAudioCodec,
-  }) =>
-      ExportPrefs(
-        audioFormat: audioFormat ?? this.audioFormat,
-        videoCodec: videoCodec ?? this.videoCodec,
-        videoAudioCodec: videoAudioCodec ?? this.videoAudioCodec,
-      );
+  }) => ExportPrefs(
+    audioFormat: audioFormat ?? this.audioFormat,
+    videoCodec: videoCodec ?? this.videoCodec,
+    videoAudioCodec: videoAudioCodec ?? this.videoAudioCodec,
+  );
 }
 
 /// Thin reader/writer over the settings table for [ExportPrefs].

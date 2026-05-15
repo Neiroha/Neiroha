@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// User-selected range from [TrimDialog]. The caller runs ffmpeg + the DB
 /// update; the dialog stays presentation-only so its lifecycle doesn't have
@@ -129,11 +130,13 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
   }
 
   void _confirm() {
-    Navigator.of(context).pop(TrimResult(
-      startSec: _startSec,
-      endSec: _endSec,
-      replaceOriginal: _replaceOriginal,
-    ));
+    Navigator.of(context).pop(
+      TrimResult(
+        startSec: _startSec,
+        endSec: _endSec,
+        replaceOriginal: _replaceOriginal,
+      ),
+    );
   }
 
   // ───────────────────── UI ─────────────────────
@@ -144,7 +147,7 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
       title: Row(
         children: [
           Icon(Icons.content_cut_rounded, color: AppTheme.accentColor),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Expanded(
             child: Text(
               'Trim "${widget.trackName}"',
@@ -160,15 +163,15 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildWaveformPanel(),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildTimeReadout(),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             _buildRangeSliders(),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildPreviewRow(),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             const Divider(height: 1),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildSaveModeRow(),
           ],
         ),
@@ -176,12 +179,12 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(null),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).uiCancel),
         ),
         FilledButton.icon(
           onPressed: _endSec > _startSec ? _confirm : null,
           icon: const Icon(Icons.save_rounded, size: 18),
-          label: const Text('Save'),
+          label: Text(AppLocalizations.of(context).uiSave),
         ),
       ],
     );
@@ -197,7 +200,7 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           if (_waveformLoading) {
-            return const Center(
+            return Center(
               child: SizedBox(
                 width: 18,
                 height: 18,
@@ -268,7 +271,7 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
               SizedBox(
                 width: 50,
                 child: Text(
-                  'Start',
+                  AppLocalizations.of(context).uiStart,
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.white.withValues(alpha: 0.6),
@@ -296,7 +299,7 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
               SizedBox(
                 width: 50,
                 child: Text(
-                  'End',
+                  AppLocalizations.of(context).uiEnd,
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.white.withValues(alpha: 0.6),
@@ -336,7 +339,7 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
           ),
           label: Text(_playing ? 'Stop' : 'Preview range'),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Text(
           _playing ? _fmt(_playheadSec) : '',
           style: const TextStyle(
@@ -353,15 +356,15 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
       children: [
         Expanded(
           child: SegmentedButton<bool>(
-            segments: const [
+            segments: [
               ButtonSegment(
                 value: true,
-                label: Text('Replace original'),
+                label: Text(AppLocalizations.of(context).uiReplaceOriginal),
                 icon: Icon(Icons.swap_horiz_rounded, size: 16),
               ),
               ButtonSegment(
                 value: false,
-                label: Text('Save as new'),
+                label: Text(AppLocalizations.of(context).uiSaveAsNew),
                 icon: Icon(Icons.note_add_outlined, size: 16),
               ),
             ],
@@ -370,9 +373,7 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
                 setState(() => _replaceOriginal = s.first),
             style: ButtonStyle(
               visualDensity: VisualDensity.compact,
-              textStyle: WidgetStateProperty.all(
-                const TextStyle(fontSize: 12),
-              ),
+              textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 12)),
             ),
           ),
         ),
@@ -421,9 +422,10 @@ class _TrimWaveformPainter extends CustomPainter {
       final paint = inRange ? hot : dim;
       double amp = 0;
       if (peaks.isNotEmpty) {
-        final idx = ((secs / totalSec) * (peaks.length - 1))
-            .round()
-            .clamp(0, peaks.length - 1);
+        final idx = ((secs / totalSec) * (peaks.length - 1)).round().clamp(
+          0,
+          peaks.length - 1,
+        );
         amp = peaks[idx];
       } else {
         amp = 0.05;
@@ -450,16 +452,8 @@ class _TrimWaveformPainter extends CustomPainter {
     final edge = Paint()
       ..color = accent
       ..strokeWidth = 2;
-    canvas.drawLine(
-      Offset(keepLeft, 0),
-      Offset(keepLeft, size.height),
-      edge,
-    );
-    canvas.drawLine(
-      Offset(keepRight, 0),
-      Offset(keepRight, size.height),
-      edge,
-    );
+    canvas.drawLine(Offset(keepLeft, 0), Offset(keepLeft, size.height), edge);
+    canvas.drawLine(Offset(keepRight, 0), Offset(keepRight, size.height), edge);
 
     // Playhead.
     if (playheadSec != null) {
@@ -492,7 +486,8 @@ Future<bool> applyTrim({
     required String trimmedPath,
     required double newDurationSec,
     required bool replaceOriginal,
-  }) onSaved,
+  })
+  onSaved,
 }) async {
   final result = await showDialog<TrimResult>(
     context: context,
@@ -509,7 +504,11 @@ Future<bool> applyTrim({
   if (!await svc.isAvailable()) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('FFmpeg required for trimming.')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).uiFFmpegRequiredForTrimming,
+          ),
+        ),
       );
     }
     return false;
@@ -520,7 +519,10 @@ Future<bool> applyTrim({
   final ext = p.extension(audioPath);
   final dir = p.dirname(audioPath);
   final base = p.basenameWithoutExtension(audioPath);
-  final tempPath = p.join(dir, '$base.trim_${DateTime.now().microsecondsSinceEpoch}$ext');
+  final tempPath = p.join(
+    dir,
+    '$base.trim_${DateTime.now().microsecondsSinceEpoch}$ext',
+  );
 
   final ok = await svc.trimAudio(
     inputPath: audioPath,
@@ -534,7 +536,9 @@ Future<bool> applyTrim({
     } catch (_) {}
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('FFmpeg trim failed.')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).uiFFmpegTrimFailed),
+        ),
       );
     }
     return false;

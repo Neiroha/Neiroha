@@ -13,17 +13,17 @@ class _NovelEditorBar extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            tooltip: 'Back to novels',
+            tooltip: AppLocalizations.of(context).uiBackToNovels,
             onPressed: onBack,
             icon: const Icon(Icons.arrow_back_rounded, size: 20),
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           const Icon(
             Icons.menu_book_rounded,
             color: AppTheme.accentColor,
             size: 18,
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Expanded(
             child: Text(
               project.name,
@@ -49,16 +49,16 @@ class _NovelProjectHeader extends StatelessWidget {
       child: Row(
         children: [
           const Icon(Icons.menu_book_rounded, color: AppTheme.accentColor),
-          const SizedBox(width: 12),
-          const Text(
-            'Novel Reader',
+          SizedBox(width: 12),
+          Text(
+            AppLocalizations.of(context).navNovelReader,
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
           ),
           const Spacer(),
           FilledButton.icon(
             onPressed: onCreate,
             icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('New Novel'),
+            label: Text(AppLocalizations.of(context).uiNewNovel),
           ),
         ],
       ),
@@ -96,7 +96,7 @@ class _CreateNovelDialogState extends State<_CreateNovelDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('New Novel'),
+      title: Text(AppLocalizations.of(context).uiNewNovel),
       content: SizedBox(
         width: 420,
         child: Column(
@@ -105,13 +105,17 @@ class _CreateNovelDialogState extends State<_CreateNovelDialog> {
             TextField(
               controller: _nameController,
               autofocus: true,
-              decoration: const InputDecoration(labelText: 'Project name'),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).uiProjectName,
+              ),
               onSubmitted: (_) => _submit(),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: _bankId,
-              decoration: const InputDecoration(labelText: 'Voice bank'),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).uiVoiceBank,
+              ),
               items: [
                 for (final bank in widget.banks)
                   DropdownMenuItem(value: bank.id, child: Text(bank.name)),
@@ -126,9 +130,12 @@ class _CreateNovelDialogState extends State<_CreateNovelDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).uiCancel),
         ),
-        FilledButton(onPressed: _submit, child: const Text('Create')),
+        FilledButton(
+          onPressed: _submit,
+          child: Text(AppLocalizations.of(context).uiCreate),
+        ),
       ],
     );
   }

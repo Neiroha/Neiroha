@@ -8,6 +8,7 @@ import 'package:neiroha/data/storage/storage_service.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
 import 'settings_shared.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 // ───────────────────────────── Storage card ─────────────────────────────
 
@@ -32,13 +33,13 @@ class StorageSettingsCard extends ConsumerWidget {
           children: [
             SettingsRow(
               icon: Icons.storage_rounded,
-              title: 'Data Directory',
+              title: AppLocalizations.of(context).uiDataDirectory,
               subtitle:
                   '$dataRoot\n'
-                  '${paths.isPortable ? 'Portable (next to executable)' : 'App-support fallback (install dir is read-only)'}',
+                  '${paths.isPortable ? AppLocalizations.of(context).uiPortableNextToExecutable : AppLocalizations.of(context).uiAppSupportFallbackInstallDirIsReadOnly}',
               trailing: IconButton(
                 icon: const Icon(Icons.copy_rounded, size: 18),
-                tooltip: 'Copy path',
+                tooltip: AppLocalizations.of(context).uiCopyPath,
                 onPressed: () =>
                     Clipboard.setData(ClipboardData(text: dataRoot)),
               ),
@@ -46,21 +47,21 @@ class StorageSettingsCard extends ConsumerWidget {
             const Divider(),
             SettingsRow(
               icon: Icons.folder_open_rounded,
-              title: 'Voice Asset Directory',
+              title: AppLocalizations.of(context).uiVoiceAssetDirectory,
               subtitle:
                   '$voiceAssetRoot\n'
-                  '${isDefault ? 'Default location' : 'Custom location'}',
+                  '${isDefault ? AppLocalizations.of(context).uiDefaultLocation : AppLocalizations.of(context).uiCustomLocation}',
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (!isDefault)
                     TextButton(
                       onPressed: () => _resetRoot(context, ref),
-                      child: const Text('Reset'),
+                      child: Text(AppLocalizations.of(context).uiReset),
                     ),
                   TextButton(
                     onPressed: () => _pickRoot(context, ref),
-                    child: const Text('Change'),
+                    child: Text(AppLocalizations.of(context).uiChange),
                   ),
                 ],
               ),
@@ -70,36 +71,40 @@ class StorageSettingsCard extends ConsumerWidget {
               icon: missing > 0
                   ? Icons.warning_amber_rounded
                   : Icons.sync_rounded,
-              title: 'Sync with Disk',
+              title: AppLocalizations.of(context).uiSyncWithDisk,
               subtitle: startup.when(
                 data: (r) => missing > 0
-                    ? '$missing archived file(s) are missing on disk — rows flagged, not deleted.'
-                    : 'All ${r.checked} archived file(s) are present.',
-                loading: () => 'Scanning…',
-                error: (e, _) => 'Scan failed: $e',
+                    ? AppLocalizations.of(
+                        context,
+                      ).uiArchivedFileSAreMissingOnDiskRowsFlaggedNotDeleted(
+                        missing,
+                      )
+                    : AppLocalizations.of(
+                        context,
+                      ).uiAllArchivedFileSArePresent(r.checked),
+                loading: () => AppLocalizations.of(context).uiScanning,
+                error: (e, _) => AppLocalizations.of(context).uiScanFailed(e),
               ),
               trailing: startup.isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : TextButton(
                       onPressed: () => _manualSync(context, ref),
-                      child: const Text('Scan Now'),
+                      child: Text(AppLocalizations.of(context).uiScanNow),
                     ),
             ),
             const Divider(),
             SettingsRow(
               icon: Icons.delete_forever_rounded,
-              title: 'Clear All Archived Audio',
-              subtitle:
-                  'Deletes every generated take + imported reference audio. '
-                  'Projects, characters, banks are preserved.',
+              title: AppLocalizations.of(context).uiClearAllArchivedAudio,
+              subtitle: AppLocalizations.of(context).uiText,
               trailing: TextButton(
                 style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
                 onPressed: () => _clearAll(context, ref),
-                child: const Text('Clear…'),
+                child: Text(AppLocalizations.of(context).uiClear2),
               ),
             ),
           ],
@@ -119,7 +124,11 @@ class StorageSettingsCard extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not use that folder: $e')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).uiCouldNotUseThatFolder(e),
+            ),
+          ),
         );
       }
       return;
@@ -127,7 +136,11 @@ class StorageSettingsCard extends ConsumerWidget {
     ref.invalidate(storageStartupProvider);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Voice asset directory set to $picked')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).uiVoiceAssetDirectorySetTo(picked),
+          ),
+        ),
       );
     }
   }
@@ -137,7 +150,11 @@ class StorageSettingsCard extends ConsumerWidget {
     ref.invalidate(storageStartupProvider);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Voice asset directory reset to default')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).uiVoiceAssetDirectoryResetToDefault,
+          ),
+        ),
       );
     }
   }
@@ -165,17 +182,21 @@ class StorageSettingsCard extends ConsumerWidget {
       await storage.clearAllAudioArchives();
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Clear failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).uiClearFailed(e)),
+          ),
+        );
       }
       return;
     }
     ref.invalidate(storageStartupProvider);
     if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Archived audio cleared.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).uiArchivedAudioCleared),
+        ),
+      );
     }
   }
 }
@@ -207,7 +228,7 @@ class _ClearAudioDialogState extends State<_ClearAudioDialog> {
     // ceremony is to stop autopilot confirmations.
     final canConfirm = _acknowledged && _confirmCtrl.text.trim() == 'CLEAR';
     return AlertDialog(
-      title: const Text('Clear all archived audio?'),
+      title: Text(AppLocalizations.of(context).uiClearAllArchivedAudio2),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,22 +242,24 @@ class _ClearAudioDialogState extends State<_ClearAudioDialog> {
             ' • Timeline clips\n\n'
             'Your projects, characters, providers, and scripts are preserved.',
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Row(
             children: [
               Checkbox(
                 value: _acknowledged,
                 onChanged: (v) => setState(() => _acknowledged = v ?? false),
               ),
-              const Expanded(
-                child: Text('I understand this cannot be undone.'),
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context).uiIUnderstandThisCannotBeUndone,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           TextField(
             controller: _confirmCtrl,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: "Type CLEAR to confirm",
               border: OutlineInputBorder(),
             ),
@@ -247,12 +270,12 @@ class _ClearAudioDialogState extends State<_ClearAudioDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).uiCancel),
         ),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
           onPressed: canConfirm ? () => Navigator.pop(context, true) : null,
-          child: const Text('Clear Audio'),
+          child: Text(AppLocalizations.of(context).uiClearAudio),
         ),
       ],
     );

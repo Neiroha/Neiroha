@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Result of [showCreateDialogTtsProjectDialog].
 class CreateDialogProjectResult {
@@ -23,24 +24,28 @@ Future<CreateDialogProjectResult?> showCreateDialogTtsProjectDialog({
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('New Dialog TTS Project'),
+          title: Text(AppLocalizations.of(context).uiNewDialogTTSProject),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameCtrl,
                 autofocus: true,
-                decoration:
-                    const InputDecoration(labelText: 'Project name'),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).uiProjectName,
+                ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Voice Bank'),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).navVoiceBank,
+                ),
                 isExpanded: true,
                 initialValue: selectedBankId,
                 items: banks
-                    .map((b) => DropdownMenuItem(
-                        value: b.id, child: Text(b.name)))
+                    .map(
+                      (b) => DropdownMenuItem(value: b.id, child: Text(b.name)),
+                    )
                     .toList(),
                 onChanged: (v) {
                   if (v != null) {
@@ -52,17 +57,19 @@ Future<CreateDialogProjectResult?> showCreateDialogTtsProjectDialog({
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel')),
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(AppLocalizations.of(context).uiCancel),
+            ),
             FilledButton(
-                onPressed: () => Navigator.pop(
-                      ctx,
-                      CreateDialogProjectResult(
-                        name: nameCtrl.text,
-                        bankId: selectedBankId,
-                      ),
-                    ),
-                child: const Text('Create')),
+              onPressed: () => Navigator.pop(
+                ctx,
+                CreateDialogProjectResult(
+                  name: nameCtrl.text,
+                  bankId: selectedBankId,
+                ),
+              ),
+              child: Text(AppLocalizations.of(context).uiCreate),
+            ),
           ],
         ),
       ),

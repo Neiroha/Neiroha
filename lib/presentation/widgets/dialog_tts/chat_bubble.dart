@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Telegram-like chat bubble for one Dialog TTS line.
 ///
@@ -38,7 +39,7 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = asset?.name ?? 'Unknown';
+    final name = asset?.name ?? AppLocalizations.of(context).uiUnknown;
     final hasAudio = line.audioPath != null;
     final hasError = line.error != null;
 
@@ -48,17 +49,20 @@ class ChatBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildAvatar(name),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name,
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.accentColor)),
-                const SizedBox(height: 4),
+                Text(
+                  name,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.accentColor,
+                  ),
+                ),
+                SizedBox(height: 4),
                 ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: maxBubbleWidth),
                   child: Container(
@@ -75,11 +79,13 @@ class ChatBubble extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(line.lineText,
-                            style: const TextStyle(fontSize: 14)),
+                        Text(
+                          line.lineText,
+                          style: const TextStyle(fontSize: 14),
+                        ),
                         if (hasAudio || hasError) ...[
-                          const SizedBox(height: 8),
-                          _buildAudioRow(hasAudio, hasError),
+                          SizedBox(height: 8),
+                          _buildAudioRow(context, hasAudio, hasError),
                         ],
                       ],
                     ),
@@ -88,9 +94,9 @@ class ChatBubble extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           if (isGenerating)
-            const SizedBox(
+            SizedBox(
               width: 18,
               height: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
@@ -108,24 +114,31 @@ class ChatBubble extends StatelessWidget {
               ),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
-              tooltip:
-                  line.audioPath != null ? 'Regenerate' : 'Generate',
+              tooltip: line.audioPath != null
+                  ? AppLocalizations.of(context).uiRegenerate
+                  : AppLocalizations.of(context).uiGenerate,
               onPressed: onGenerate,
             ),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           if (onPlayFrom != null)
             IconButton(
-              icon: Icon(Icons.playlist_play_rounded,
-                  size: 18, color: Colors.white.withValues(alpha: 0.4)),
+              icon: Icon(
+                Icons.playlist_play_rounded,
+                size: 18,
+                color: Colors.white.withValues(alpha: 0.4),
+              ),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
-              tooltip: 'Play from here',
+              tooltip: AppLocalizations.of(context).uiPlayFromHere,
               onPressed: onPlayFrom,
             ),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           IconButton(
-            icon: Icon(Icons.close_rounded,
-                size: 14, color: Colors.white.withValues(alpha: 0.2)),
+            icon: Icon(
+              Icons.close_rounded,
+              size: 14,
+              color: Colors.white.withValues(alpha: 0.2),
+            ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             onPressed: onDelete,
@@ -136,8 +149,7 @@ class ChatBubble extends StatelessWidget {
   }
 
   Widget _buildAvatar(String name) {
-    if (asset?.avatarPath != null &&
-        File(asset!.avatarPath!).existsSync()) {
+    if (asset?.avatarPath != null && File(asset!.avatarPath!).existsSync()) {
       return CircleAvatar(
         radius: 18,
         backgroundImage: FileImage(File(asset!.avatarPath!)),
@@ -153,17 +165,20 @@ class ChatBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildAudioRow(bool hasAudio, bool hasError) {
+  Widget _buildAudioRow(BuildContext context, bool hasAudio, bool hasError) {
     if (hasError) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.error_rounded, size: 16, color: Colors.redAccent),
-          const SizedBox(width: 6),
-          Text('Error',
-              style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.redAccent.withValues(alpha: 0.7))),
+          SizedBox(width: 6),
+          Text(
+            AppLocalizations.of(context).uiError,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.redAccent.withValues(alpha: 0.7),
+            ),
+          ),
         ],
       );
     }
@@ -173,17 +188,15 @@ class ChatBubble extends StatelessWidget {
         playbackPosition != null &&
         line.audioDuration != null &&
         line.audioDuration! > 0) {
-      progressFraction = (playbackPosition!.inMilliseconds /
-              (line.audioDuration! * 1000))
-          .clamp(0.0, 1.0);
+      progressFraction =
+          (playbackPosition!.inMilliseconds / (line.audioDuration! * 1000))
+              .clamp(0.0, 1.0);
     } else {
       progressFraction = 0.0;
     }
 
     String timeText;
-    if (isPlaying &&
-        playbackPosition != null &&
-        line.audioDuration != null) {
+    if (isPlaying && playbackPosition != null && line.audioDuration != null) {
       final playedSecs = playbackPosition!.inSeconds;
       final totalSecs = line.audioDuration!.floor();
       timeText = '$playedSecs/$totalSecs';
@@ -221,7 +234,7 @@ class ChatBubble extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         SizedBox(
           width: waveformWidth,
           height: 20,
@@ -253,7 +266,7 @@ class ChatBubble extends StatelessWidget {
             }),
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         Text(
           timeText,
           style: TextStyle(

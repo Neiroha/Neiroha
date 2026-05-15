@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/video_dub/tracks.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Multi-track timeline for Video Dub. Shows:
 ///   • V1 — imported video (from TimelineClips)
@@ -172,11 +173,11 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Row(
           children: [
-            const Text(
-              'Dub Timeline',
+            Text(
+              AppLocalizations.of(context).uiDubTimeline,
               style: TextStyle(fontSize: 12, color: Colors.white54),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Text(
               '${widget.cues.length} cues · ${widget.clips.length} clips · ${_fmtMs(_contentTotalMs)}',
               style: const TextStyle(fontSize: 11, color: Colors.white38),
@@ -189,14 +190,14 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
                     ? null
                     : () => widget.onImport(DubImportKind.video),
                 icon: const Icon(Icons.movie_outlined, size: 16),
-                label: const Text('Import Video'),
+                label: Text(AppLocalizations.of(context).uiImportVideo),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             OutlinedButton.icon(
               onPressed: () => widget.onImport(DubImportKind.audio),
               icon: const Icon(Icons.audiotrack_rounded, size: 16),
-              label: const Text('Import Audio'),
+              label: Text(AppLocalizations.of(context).uiImportAudio),
             ),
           ],
         ),
@@ -213,10 +214,12 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
       child: Row(
         children: [
           const Icon(Icons.info_outline_rounded, size: 14, color: Colors.amber),
-          const SizedBox(width: 6),
-          const Expanded(
+          SizedBox(width: 6),
+          Expanded(
             child: Text(
-              'FFmpeg not detected — waveforms and media probing are skipped.',
+              AppLocalizations.of(
+                context,
+              ).uiFFmpegNotDetectedWaveformsAndMediaProbingAreSkipped,
               style: TextStyle(fontSize: 11, color: Colors.white70),
             ),
           ),
@@ -227,7 +230,10 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
               minimumSize: const Size(0, 24),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: const Text('Settings', style: TextStyle(fontSize: 11)),
+            child: Text(
+              AppLocalizations.of(context).navSettings,
+              style: TextStyle(fontSize: 11),
+            ),
           ),
         ],
       ),
@@ -250,7 +256,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: _rulerHeight),
+        SizedBox(height: _rulerHeight),
         for (final t in tracks)
           SizedBox(
             height: _trackHeight,
@@ -589,7 +595,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: 11, color: Colors.white),
-              const SizedBox(width: 4),
+              SizedBox(width: 4),
               Expanded(
                 child: Text(
                   clip.label.isEmpty ? kind.name : clip.label,

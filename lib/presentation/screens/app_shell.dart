@@ -21,6 +21,7 @@ import 'voice_asset_screen.dart';
 import 'voice_bank_screen.dart';
 import 'provider_screen.dart';
 import 'settings_screen.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -188,12 +189,12 @@ class _WindowsTitleBar extends StatelessWidget {
                   windowManager.maximize();
                 }
               },
-              child: const Padding(
+              child: Padding(
                 padding: EdgeInsets.only(left: 12),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Neiroha',
+                    AppLocalizations.of(context).appTitle,
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.white54,

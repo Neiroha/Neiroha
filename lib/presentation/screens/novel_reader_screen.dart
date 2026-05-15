@@ -13,6 +13,7 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/storage/novel_dialogue_rules_service.dart';
 import 'package:neiroha/data/storage/novel_import_service.dart';
 import 'package:neiroha/data/storage/path_service.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/export_progress.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
@@ -61,9 +62,10 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
         Expanded(
           child: projectsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            error: (e, _) =>
+                Center(child: Text(AppLocalizations.of(context).uiError2(e))),
             data: (projects) => ProjectCardGrid(
-              emptyLabel: 'No novel projects yet',
+              emptyLabel: AppLocalizations.of(context).uiNoNovelProjectsYet,
               projects: [
                 for (final p in projects)
                   ProjectCardData(

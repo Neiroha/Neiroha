@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Modal where the user manages global split rules: rename, edit pattern,
 /// add custom rules, delete user-added rules. Built-in rules can only be
@@ -94,9 +95,9 @@ class _SplitRulesDialogState extends ConsumerState<_SplitRulesDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          const Expanded(child: Text('Split Rules')),
+          Expanded(child: Text(AppLocalizations.of(context).uiSplitRules)),
           IconButton(
-            tooltip: 'Add rule',
+            tooltip: AppLocalizations.of(context).uiAddRule,
             onPressed: _addRule,
             icon: const Icon(Icons.add_rounded),
           ),
@@ -106,24 +107,24 @@ class _SplitRulesDialogState extends ConsumerState<_SplitRulesDialog> {
         width: 520,
         height: 420,
         child: _loading
-            ? const Center(child: CircularProgressIndicator())
+            ? Center(child: CircularProgressIndicator())
             : _rules.isEmpty
-                ? const Center(child: Text('No rules'))
-                : ListView.separated(
-                    itemCount: _rules.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 6),
-                    itemBuilder: (_, i) => _RuleTile(
-                      rule: _rules[i],
-                      onEdit: () => _editRule(_rules[i]),
-                      onDelete: () => _deleteRule(_rules[i]),
-                      onToggle: (v) => _toggle(_rules[i], v),
-                    ),
-                  ),
+            ? Center(child: Text(AppLocalizations.of(context).uiNoRules))
+            : ListView.separated(
+                itemCount: _rules.length,
+                separatorBuilder: (_, _) => SizedBox(height: 6),
+                itemBuilder: (_, i) => _RuleTile(
+                  rule: _rules[i],
+                  onEdit: () => _editRule(_rules[i]),
+                  onDelete: () => _deleteRule(_rules[i]),
+                  onToggle: (v) => _toggle(_rules[i], v),
+                ),
+              ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, _dirty),
-          child: const Text('Close'),
+          child: Text(AppLocalizations.of(context).uiClose),
         ),
         FilledButton(
           onPressed: _dirty
@@ -132,7 +133,7 @@ class _SplitRulesDialogState extends ConsumerState<_SplitRulesDialog> {
                   if (context.mounted) Navigator.pop(context, true);
                 }
               : null,
-          child: const Text('Save'),
+          child: Text(AppLocalizations.of(context).uiSave),
         ),
       ],
     );
@@ -154,8 +155,7 @@ class _RuleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subtitle =
-        rule.isNewline ? 'paragraph (blank line)' : rule.pattern;
+    final subtitle = rule.isNewline ? 'paragraph (blank line)' : rule.pattern;
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.surfaceDim,
@@ -164,11 +164,8 @@ class _RuleTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
-          Switch(
-            value: rule.enabled,
-            onChanged: onToggle,
-          ),
-          const SizedBox(width: 8),
+          Switch(value: rule.enabled, onChanged: onToggle),
+          SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,7 +180,7 @@ class _RuleTile extends StatelessWidget {
                       ),
                     ),
                     if (rule.builtIn) ...[
-                      const SizedBox(width: 6),
+                      SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 6,
@@ -194,7 +191,7 @@ class _RuleTile extends StatelessWidget {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          'built-in',
+                          AppLocalizations.of(context).uiBuiltIn,
                           style: TextStyle(
                             fontSize: 10,
                             color: AppTheme.accentColor.withValues(alpha: 0.9),
@@ -204,7 +201,7 @@ class _RuleTile extends StatelessWidget {
                     ],
                   ],
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: 2),
                 Text(
                   subtitle,
                   style: TextStyle(
@@ -220,12 +217,12 @@ class _RuleTile extends StatelessWidget {
           ),
           if (!rule.builtIn) ...[
             IconButton(
-              tooltip: 'Edit',
+              tooltip: AppLocalizations.of(context).uiEdit,
               icon: const Icon(Icons.edit_rounded, size: 16),
               onPressed: onEdit,
             ),
             IconButton(
-              tooltip: 'Delete',
+              tooltip: AppLocalizations.of(context).uiDelete,
               icon: const Icon(Icons.delete_rounded, size: 16),
               onPressed: onDelete,
             ),
@@ -253,7 +250,11 @@ Future<SplitRule?> showSplitRuleEditor(
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setDialogState) {
         return AlertDialog(
-          title: Text(existing == null ? 'New Split Rule' : 'Edit Split Rule'),
+          title: Text(
+            existing == null
+                ? AppLocalizations.of(context).uiNewSplitRule
+                : AppLocalizations.of(context).uiEditSplitRule,
+          ),
           content: SizedBox(
             width: 480,
             child: Column(
@@ -263,20 +264,28 @@ Future<SplitRule?> showSplitRuleEditor(
                 TextField(
                   controller: nameCtrl,
                   autofocus: true,
-                  decoration: const InputDecoration(labelText: 'Name'),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).uiName,
+                  ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'Mode'),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).uiMode,
+                  ),
                   initialValue: mode,
-                  items: const [
+                  items: [
                     DropdownMenuItem(
                       value: 'regex',
-                      child: Text('Split at regex match'),
+                      child: Text(
+                        AppLocalizations.of(context).uiSplitAtRegexMatch,
+                      ),
                     ),
                     DropdownMenuItem(
                       value: 'newline',
-                      child: Text('Split at blank lines'),
+                      child: Text(
+                        AppLocalizations.of(context).uiSplitAtBlankLines,
+                      ),
                     ),
                   ],
                   onChanged: (v) {
@@ -284,14 +293,13 @@ Future<SplitRule?> showSplitRuleEditor(
                   },
                 ),
                 if (mode == 'regex') ...[
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   TextField(
                     controller: patternCtrl,
                     style: const TextStyle(fontFamily: 'monospace'),
                     decoration: InputDecoration(
-                      labelText: 'Regex pattern',
-                      helperText:
-                          r'Examples: [\.。!！?？]   /  ["”]   /  \n+',
+                      labelText: AppLocalizations.of(context).uiRegexPattern,
+                      helperText: r'Examples: [\.。!！?？]   /  ["”]   /  \n+',
                       errorText: error,
                     ),
                   ),
@@ -302,25 +310,35 @@ Future<SplitRule?> showSplitRuleEditor(
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context).uiCancel),
             ),
             FilledButton(
               onPressed: () {
                 final name = nameCtrl.text.trim();
                 if (name.isEmpty) {
-                  setDialogState(() => error = 'Name is required');
+                  setDialogState(
+                    () => error = AppLocalizations.of(context).uiNameIsRequired,
+                  );
                   return;
                 }
                 if (mode == 'regex') {
                   final pat = patternCtrl.text;
                   if (pat.trim().isEmpty) {
-                    setDialogState(() => error = 'Pattern is required');
+                    setDialogState(
+                      () => error = AppLocalizations.of(
+                        context,
+                      ).uiPatternIsRequired,
+                    );
                     return;
                   }
                   try {
                     RegExp(pat);
                   } on FormatException catch (e) {
-                    setDialogState(() => error = 'Invalid regex: ${e.message}');
+                    setDialogState(
+                      () => error = AppLocalizations.of(
+                        context,
+                      ).uiInvalidRegex(e.message),
+                    );
                     return;
                   }
                 }
@@ -336,7 +354,7 @@ Future<SplitRule?> showSplitRuleEditor(
                   ),
                 );
               },
-              child: const Text('Save'),
+              child: Text(AppLocalizations.of(context).uiSave),
             ),
           ],
         );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Left-pane multiline script editor for the Phase TTS project.
 ///
@@ -23,12 +24,15 @@ class ScriptEditor extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Text('SCRIPT',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.4))),
+          child: Text(
+            AppLocalizations.of(context).uiSCRIPT,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.2,
+              color: Colors.white.withValues(alpha: 0.4),
+            ),
+          ),
         ),
         Expanded(
           child: Padding(
@@ -40,10 +44,12 @@ class ScriptEditor extends StatelessWidget {
               textAlignVertical: TextAlignVertical.top,
               onChanged: (_) => onChanged(),
               decoration: InputDecoration(
-                hintText:
-                    'Paste your novel text here...\n\nEach paragraph becomes a TTS segment.',
-                hintStyle:
-                    TextStyle(color: Colors.white.withValues(alpha: 0.25)),
+                hintText: AppLocalizations.of(
+                  context,
+                ).uiPasteYourNovelTextHereEachParagraphBecomesATTSSegment,
+                hintStyle: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.25),
+                ),
                 filled: true,
                 fillColor: AppTheme.surfaceDim,
               ),

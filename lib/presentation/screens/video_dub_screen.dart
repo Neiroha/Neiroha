@@ -6,6 +6,7 @@ import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/video_dub/editor.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:uuid/uuid.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Video Dub — dub video with TTS generated from subtitle cues.
 ///
@@ -47,10 +48,11 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
         const Divider(height: 1),
         Expanded(
           child: projectsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            loading: () => Center(child: CircularProgressIndicator()),
+            error: (e, _) =>
+                Center(child: Text(AppLocalizations.of(context).uiError2(e))),
             data: (projects) => ProjectCardGrid(
-              emptyLabel: 'No video dub projects yet',
+              emptyLabel: AppLocalizations.of(context).uiNoVideoDubProjectsYet,
               projects: [
                 for (final p in projects)
                   ProjectCardData(
@@ -59,7 +61,7 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
                     updatedAt: p.updatedAt,
                     icon: Icons.movie_filter_rounded,
                     subtitle: p.videoPath == null
-                        ? 'No video loaded'
+                        ? AppLocalizations.of(context).uiNoVideoLoaded
                         : _fileBaseName(p.videoPath!),
                   ),
               ],
@@ -80,15 +82,15 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
       child: Row(
         children: [
           Text(
-            'Video Dub',
+            AppLocalizations.of(context).navVideoDub,
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Dub video with TTS from subtitle cues',
+              AppLocalizations.of(context).uiDubVideoWithTTSFromSubtitleCues,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.5),
@@ -96,11 +98,11 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           FilledButton.icon(
             onPressed: _createProject,
             icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('New Project'),
+            label: Text(AppLocalizations.of(context).uiNewProject),
           ),
         ],
       ),
@@ -112,7 +114,9 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
     if (banks.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Create a Voice Bank first')),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).uiCreateAVoiceBankFirst),
+          ),
         );
       }
       return;
@@ -125,18 +129,22 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('New Video Dub Project'),
+          title: Text(AppLocalizations.of(context).uiNewVideoDubProject),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameCtrl,
                 autofocus: true,
-                decoration: const InputDecoration(labelText: 'Project name'),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).uiProjectName,
+                ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Voice Bank'),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).navVoiceBank,
+                ),
                 isExpanded: true,
                 initialValue: selectedBankId,
                 items: banks
@@ -155,12 +163,12 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context).uiCancel),
             ),
             FilledButton(
               onPressed: () =>
                   Navigator.pop(ctx, (nameCtrl.text, selectedBankId)),
-              child: const Text('Create'),
+              child: Text(AppLocalizations.of(context).uiCreate),
             ),
           ],
         ),

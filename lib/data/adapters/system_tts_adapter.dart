@@ -16,16 +16,15 @@ class SystemTtsAdapter extends TtsAdapter {
   final String apiKey; // unused
   final String modelName; // unused
 
-  SystemTtsAdapter({
-    this.baseUrl = '',
-    this.apiKey = '',
-    this.modelName = '',
-  });
+  SystemTtsAdapter({this.baseUrl = '', this.apiKey = '', this.modelName = ''});
 
   @override
   Future<TtsResult> synthesize(TtsRequest request) async {
     final tempDir = await getTemporaryDirectory();
-    final outFile = p.join(tempDir.path, 'sapi_tts_${DateTime.now().millisecondsSinceEpoch}.wav');
+    final outFile = p.join(
+      tempDir.path,
+      'sapi_tts_${DateTime.now().millisecondsSinceEpoch}.wav',
+    );
 
     // Escape single quotes for PowerShell string
     final escapedText = request.text.replaceAll("'", "''");
@@ -34,7 +33,9 @@ class SystemTtsAdapter extends TtsAdapter {
     // Build PowerShell script
     final script = StringBuffer()
       ..writeln('Add-Type -AssemblyName System.Speech')
-      ..writeln('\$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer');
+      ..writeln(
+        '\$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer',
+      );
 
     // Select voice if specified
     if (voiceName.isNotEmpty) {
@@ -53,10 +54,12 @@ class SystemTtsAdapter extends TtsAdapter {
       ..writeln('\$synth.Speak(\'$escapedText\')')
       ..writeln('\$synth.Dispose()');
 
-    final result = await Process.run(
-      'powershell',
-      ['-NoProfile', '-NonInteractive', '-Command', script.toString()],
-    );
+    final result = await Process.run('powershell', [
+      '-NoProfile',
+      '-NonInteractive',
+      '-Command',
+      script.toString(),
+    ]);
 
     if (result.exitCode != 0) {
       throw Exception('SAPI TTS failed: ${result.stderr}');

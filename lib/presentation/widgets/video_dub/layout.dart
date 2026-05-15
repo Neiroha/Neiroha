@@ -7,17 +7,17 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
       child: Row(
         children: [
           IconButton(
-            tooltip: 'Back to projects',
+            tooltip: AppLocalizations.of(context).uiBackToProjects,
             onPressed: () => _back(project),
             icon: const Icon(Icons.arrow_back_rounded, size: 20),
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           Icon(
             Icons.movie_filter_rounded,
             color: AppTheme.accentColor,
             size: 18,
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Expanded(
             child: Text(
               _dirty ? '• ${project.name}' : project.name,
@@ -39,25 +39,25 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           OutlinedButton.icon(
             onPressed: _exporting ? null : () => _exportAudio(project),
             icon: _exporting
-                ? const SizedBox(
+                ? SizedBox(
                     width: 14,
                     height: 14,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.audiotrack_rounded, size: 16),
-            label: const Text('Export Audio'),
+            label: Text(AppLocalizations.of(context).uiExportAudio),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           OutlinedButton.icon(
             onPressed: project.videoPath == null || _exporting
                 ? null
                 : () => _exportVideo(project),
             icon: _exporting
-                ? const SizedBox(
+                ? SizedBox(
                     width: 14,
                     height: 14,
                     child: CircularProgressIndicator(strokeWidth: 2),
@@ -65,11 +65,11 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                 : const Icon(Icons.file_download_outlined, size: 16),
             label: Text(_exporting ? 'Exporting…' : 'Export Video'),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           FilledButton.icon(
             onPressed: () => _save(project),
             icon: const Icon(Icons.save_rounded, size: 16),
-            label: const Text('Save'),
+            label: Text(AppLocalizations.of(context).uiSave),
           ),
         ],
       ),
@@ -89,17 +89,19 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                 size: 56,
                 color: Colors.white.withValues(alpha: 0.25),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
-                'No video loaded',
+                AppLocalizations.of(context).uiNoVideoLoaded,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.4),
                   fontSize: 14,
                 ),
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               Text(
-                'Import a video onto the V1 track from the timeline.',
+                AppLocalizations.of(
+                  context,
+                ).uiImportAVideoOntoTheV1TrackFromTheTimeline,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.3),
                   fontSize: 12,
@@ -148,7 +150,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                 _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               _formatDuration(_position),
               style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
@@ -174,7 +176,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
               _formatDuration(_duration),
               style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             // Mute original video audio (default on — dubbing use case).
             Tooltip(
               message: _muteVideoAudio
@@ -245,29 +247,33 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
             padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
             child: Row(
               children: [
-                const Text(
-                  'Subtitles',
+                Text(
+                  AppLocalizations.of(context).uiSubtitles,
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 const Spacer(),
                 IconButton(
-                  tooltip: 'Add cue',
+                  tooltip: AppLocalizations.of(context).uiAddCue,
                   onPressed: () => _addCueDialog(project, cues),
                   icon: const Icon(Icons.add, size: 18),
                 ),
                 IconButton(
-                  tooltip: 'Add subtitles (import SRT/LRC)',
+                  tooltip: AppLocalizations.of(
+                    context,
+                  ).uiAddSubtitlesImportSRTLRC,
                   onPressed: () => _importSubtitles(project, cues),
                   icon: const Icon(Icons.subtitles_outlined, size: 18),
                 ),
                 if (cues.isNotEmpty)
                   IconButton(
-                    tooltip: 'Export subtitles + Single TTS audio',
+                    tooltip: AppLocalizations.of(
+                      context,
+                    ).uiExportSubtitlesSingleTTSAudio,
                     onPressed: _exportingSubtitles
                         ? null
                         : () => _exportSubtitlesAndTts(project, cues),
                     icon: _exportingSubtitles
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 14,
                             height: 14,
                             child: CircularProgressIndicator(strokeWidth: 2),
@@ -276,7 +282,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                   ),
                 if (cues.isNotEmpty)
                   IconButton(
-                    tooltip: 'Clear all cues',
+                    tooltip: AppLocalizations.of(context).uiClearAllCues,
                     onPressed: () => _confirmClearCues(project),
                     icon: const Icon(Icons.delete_sweep_outlined, size: 18),
                   ),
@@ -297,9 +303,11 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                             size: 42,
                             color: Colors.white.withValues(alpha: 0.2),
                           ),
-                          const SizedBox(height: 10),
+                          SizedBox(height: 10),
                           Text(
-                            'No cues yet.\nImport an SRT/LRC file or add one manually.',
+                            AppLocalizations.of(
+                              context,
+                            ).uiNoCuesYetImportAnSRTLRCFileOrAddOneManually,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.4),
@@ -357,22 +365,24 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                       ? null
                       : () => _syncCueLengthsToAudio(cues),
                   icon: _syncingCueLengths
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 14,
                           height: 14,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.sync_alt_rounded, size: 16),
-                  label: const Text('Sync cue lengths to TTS'),
+                  label: Text(
+                    AppLocalizations.of(context).uiSyncCueLengthsToTTS,
+                  ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 FilledButton.icon(
                   onPressed:
                       cues.isEmpty || _generatingAll || bankAssets.isEmpty
                       ? null
                       : () => _generateAll(project, cues, bankAssets),
                   icon: _generatingAll
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
@@ -381,7 +391,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                           ),
                         )
                       : const Icon(Icons.auto_awesome, size: 18),
-                  label: const Text('Generate All'),
+                  label: Text(AppLocalizations.of(context).uiGenerateAll),
                 ),
               ],
             ),

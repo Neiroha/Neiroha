@@ -232,7 +232,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     db.NovelChapter chapter,
   ) async {
     final ok = await _confirm(
-      title: 'Delete chapter?',
+      title: AppLocalizations.of(context).uiDeleteChapter2,
       message: 'This removes "${chapter.title}" and its cached audio.',
       action: 'Delete',
     );
@@ -332,7 +332,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).uiCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
@@ -386,7 +386,7 @@ class _ChapterEditPane extends StatelessWidget {
                   size: 18,
                   color: AppTheme.accentColor,
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     chapter?.title ?? 'No chapter selected',
@@ -411,7 +411,9 @@ class _ChapterEditPane extends StatelessWidget {
             child: chapter == null
                 ? Center(
                     child: Text(
-                      'Import or add a chapter to edit novel text.',
+                      AppLocalizations.of(
+                        context,
+                      ).uiImportOrAddAChapterToEditNovelText,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.white.withValues(alpha: 0.45),
@@ -535,7 +537,7 @@ class _EditableSegmentRowState extends State<_EditableSegmentRow> {
                               : Colors.white.withValues(alpha: 0.45),
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6),
                       Icon(
                         widget.segment.segmentType == 'dialogue'
                             ? Icons.record_voice_over_rounded
@@ -548,7 +550,7 @@ class _EditableSegmentRowState extends State<_EditableSegmentRow> {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Expanded(
               child: TextField(
                 controller: _controller,
@@ -559,7 +561,7 @@ class _EditableSegmentRowState extends State<_EditableSegmentRow> {
                   height: widget.lineHeight.clamp(1.35, 2.0),
                   letterSpacing: 0,
                 ),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   isDense: true,
                   border: InputBorder.none,
                 ),
@@ -569,18 +571,18 @@ class _EditableSegmentRowState extends State<_EditableSegmentRow> {
                 },
               ),
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: 6),
             Column(
               children: [
                 IconButton(
-                  tooltip: 'Save segment',
+                  tooltip: AppLocalizations.of(context).uiSaveSegment,
                   onPressed: _dirty
                       ? () => widget.onSave(_controller.text)
                       : null,
                   icon: const Icon(Icons.check_rounded, size: 18),
                 ),
                 IconButton(
-                  tooltip: 'Delete segment',
+                  tooltip: AppLocalizations.of(context).uiDeleteSegment,
                   onPressed: widget.onDelete,
                   icon: const Icon(Icons.delete_outline_rounded, size: 18),
                 ),
@@ -638,10 +640,12 @@ class _ChapterEditDialogState extends State<_ChapterEditDialog> {
             TextField(
               controller: _titleController,
               autofocus: widget.isNew,
-              decoration: const InputDecoration(labelText: 'Chapter title'),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).uiChapterTitle,
+              ),
               onChanged: (_) => setState(() {}),
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
             Expanded(
               child: TextField(
                 controller: _textController,
@@ -649,8 +653,8 @@ class _ChapterEditDialogState extends State<_ChapterEditDialog> {
                 minLines: null,
                 maxLines: null,
                 textAlignVertical: TextAlignVertical.top,
-                decoration: const InputDecoration(
-                  labelText: 'Chapter text',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).uiChapterText,
                   alignLabelWithHint: true,
                 ),
               ),
@@ -661,11 +665,11 @@ class _ChapterEditDialogState extends State<_ChapterEditDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).uiCancel),
         ),
         FilledButton(
           onPressed: _titleController.text.trim().isEmpty ? null : _submit,
-          child: const Text('Save'),
+          child: Text(AppLocalizations.of(context).uiSave),
         ),
       ],
     );

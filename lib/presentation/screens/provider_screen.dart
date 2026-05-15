@@ -10,6 +10,7 @@ import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Two-pane provider configuration screen.
 ///
@@ -28,8 +29,9 @@ class ProviderScreen extends ConsumerWidget {
     final selectedId = ref.watch(_selectedProviderIdProvider);
 
     return providersAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      loading: () => Center(child: CircularProgressIndicator()),
+      error: (e, _) =>
+          Center(child: Text(AppLocalizations.of(context).uiError2(e))),
       data: (providers) {
         // Auto-select the first provider if nothing selected and list is not empty.
         final effectiveSelectedId =
@@ -64,9 +66,9 @@ class ProviderScreen extends ConsumerWidget {
             size: 64,
             color: Colors.white.withValues(alpha: 0.1),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
-            'Select or add a provider',
+            AppLocalizations.of(context).uiSelectOrAddAProvider,
             style: TextStyle(
               fontSize: 16,
               color: Colors.white.withValues(alpha: 0.4),
@@ -102,7 +104,7 @@ class _ProviderListPane extends ConsumerWidget {
             child: Row(
               children: [
                 Text(
-                  'Providers',
+                  AppLocalizations.of(context).navProviders,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -111,7 +113,7 @@ class _ProviderListPane extends ConsumerWidget {
                 IconButton(
                   onPressed: () => _showAddDialog(context, ref),
                   icon: const Icon(Icons.add_rounded),
-                  tooltip: 'Add Provider',
+                  tooltip: AppLocalizations.of(context).uiAddProvider,
                 ),
               ],
             ),
@@ -121,7 +123,7 @@ class _ProviderListPane extends ConsumerWidget {
             child: providers.isEmpty
                 ? Center(
                     child: Text(
-                      'No providers yet',
+                      AppLocalizations.of(context).uiNoProvidersYet,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.4),
                       ),
@@ -210,7 +212,7 @@ class _ProviderRow extends ConsumerWidget {
                     color: Colors.white.withValues(alpha: 0.25),
                   ),
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Container(
                   width: 32,
                   height: 32,
@@ -230,7 +232,7 @@ class _ProviderRow extends ConsumerWidget {
                         : Colors.grey,
                   ),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,9 +456,11 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
       await _loadModels();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to fetch: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).uiFailedToFetch(e)),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _fetchingModels = false);
@@ -480,11 +484,11 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).uiCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-            child: const Text('Add'),
+            child: Text(AppLocalizations.of(context).uiAdd),
           ),
         ],
       ),
@@ -554,7 +558,10 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
         );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Saved'), duration: Duration(seconds: 1)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).uiSaved),
+          duration: Duration(seconds: 1),
+        ),
       );
     }
   }
@@ -566,20 +573,22 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     final newName = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Duplicate Provider'),
+        title: Text(AppLocalizations.of(context).uiDuplicateProvider),
         content: TextField(
           controller: nameCtrl,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'New name'),
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).uiNewName,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).uiCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, nameCtrl.text.trim()),
-            child: const Text('Duplicate'),
+            child: Text(AppLocalizations.of(context).uiDuplicate),
           ),
         ],
       ),
@@ -600,17 +609,19 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete provider?'),
-        content: Text('"${widget.provider.name}" will be removed.'),
+        title: Text(AppLocalizations.of(context).uiDeleteProvider),
+        content: Text(
+          AppLocalizations.of(context).uiWillBeRemoved(widget.provider.name),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).uiCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context).uiDelete),
           ),
         ],
       ),
@@ -694,13 +705,13 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
               IconButton(
                 onPressed: _duplicate,
                 icon: const Icon(Icons.copy_rounded),
-                tooltip: 'Duplicate as Template',
+                tooltip: AppLocalizations.of(context).uiDuplicateAsTemplate,
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: 4),
               IconButton(
                 onPressed: _delete,
                 icon: const Icon(Icons.delete_outline_rounded),
-                tooltip: 'Delete',
+                tooltip: AppLocalizations.of(context).uiDelete,
                 color: Colors.redAccent,
               ),
             ],
@@ -713,11 +724,15 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
             children: [
               TextField(
                 controller: _nameCtrl,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).uiName,
+                ),
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: 14),
               DropdownButtonFormField<AdapterType>(
-                decoration: const InputDecoration(labelText: 'Adapter Type'),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).uiAdapterType,
+                ),
                 initialValue: _adapterType,
                 items: AdapterType.values
                     .map(
@@ -737,23 +752,23 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                   });
                 },
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: 14),
               TextField(
                 controller: _urlCtrl,
                 decoration: InputDecoration(
-                  labelText: 'Base URL',
+                  labelText: AppLocalizations.of(context).uiBaseURL,
                   hintText: _baseUrlHint(_adapterType),
                   helperText: _adapterType == AdapterType.azureTts
                       ? 'Accepts region name, tts.speech.microsoft.com, or api.cognitive.microsoft.com URL'
                       : null,
                 ),
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: 14),
               TextField(
                 controller: _keyCtrl,
                 obscureText: !_showKey,
                 decoration: InputDecoration(
-                  labelText: 'API Key',
+                  labelText: AppLocalizations.of(context).uiAPIKey,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _showKey
@@ -767,67 +782,69 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
               ),
               // ── Default Model Name (only for adapters without model/voice query) ──
               if (_adapterType.showDefaultModelField) ...[
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
                 TextField(
                   controller: _modelCtrl,
                   decoration: InputDecoration(
-                    labelText: 'Default Model Name',
+                    labelText: AppLocalizations.of(context).uiDefaultModelName,
                     hintText: _adapterType.defaultModel,
                   ),
                 ),
               ],
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               Text(
-                'Queue & Rate Limits',
+                AppLocalizations.of(context).uiQueueRateLimits,
                 style: Theme.of(
                   context,
                 ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
-                'Concurrency 1 is safest for local GPU TTS. Leave rate fields blank for unlimited.',
+                AppLocalizations.of(
+                  context,
+                ).uiConcurrency1IsSafestForLocalGPUTTSLeaveRateFieldsBlank,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.white.withValues(alpha: 0.45),
                 ),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Wrap(
                 spacing: 12,
                 runSpacing: 12,
                 children: [
                   _LimitField(
                     controller: _concurrencyCtrl,
-                    label: 'Concurrency',
+                    label: AppLocalizations.of(context).uiConcurrency,
                     helperText: '1-64',
                     width: 150,
                   ),
                   _LimitField(
                     controller: _rpmCtrl,
                     label: 'RPM',
-                    helperText: 'Requests / min',
+                    helperText: AppLocalizations.of(context).uiRequestsMin,
                   ),
                   _LimitField(
                     controller: _rpdCtrl,
                     label: 'RPD',
-                    helperText: 'Requests / day',
+                    helperText: AppLocalizations.of(context).uiRequestsDay,
                   ),
                   _LimitField(
                     controller: _tpmCtrl,
                     label: 'TPM',
-                    helperText: 'Approx tokens / min',
+                    helperText: AppLocalizations.of(context).uiApproxTokensMin,
                   ),
                   _LimitField(
                     controller: _tpdCtrl,
                     label: 'TPD',
-                    helperText: 'Approx tokens / day',
+                    helperText: AppLocalizations.of(context).uiApproxTokensDay,
                   ),
                 ],
               ),
               // ── Model / Voice sections ──
               if (_adapterType.supportsModelQuery ||
                   _adapterType.supportsVoiceQuery) ...[
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
 
                 // ── Models + Voices section ──
                 if (_adapterType.supportsModelQuery ||
@@ -846,7 +863,7 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                       TextButton.icon(
                         onPressed: _fetchingModels ? null : _fetchModelsFromApi,
                         icon: _fetchingModels
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 14,
                                 height: 14,
                                 child: CircularProgressIndicator(
@@ -867,24 +884,26 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                         TextButton.icon(
                           onPressed: () => _addEntryManually(isVoice: false),
                           icon: const Icon(Icons.add_rounded, size: 16),
-                          label: const Text('Add Model'),
+                          label: Text(AppLocalizations.of(context).uiAddModel),
                         ),
                       if (_adapterType.supportsVoiceQuery)
                         TextButton.icon(
                           onPressed: () => _addEntryManually(isVoice: true),
                           icon: const Icon(Icons.add_rounded, size: 16),
-                          label: const Text('Add Voice'),
+                          label: Text(AppLocalizations.of(context).uiAddVoice),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   if (_adapterType.hasSeparateModelAndVoice) ...[
                     // ── Models (TTS with type badge, non-TTS with capability badges) ──
                     if (_models.isEmpty && _voices.isEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         child: Text(
-                          'No models or voices yet. Use "Fetch All" or add manually.',
+                          AppLocalizations.of(
+                            context,
+                          ).uiNoModelsOrVoicesYetUseFetchAllOrAddManually,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withValues(alpha: 0.4),
@@ -918,16 +937,16 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                       // user-added or API-fetched voices. Schema has no
                       // model→voice link, so we can't attribute them.
                       if (_voices.isNotEmpty) ...[
-                        const SizedBox(height: 12),
+                        SizedBox(height: 12),
                         Text(
-                          'Custom Voices',
+                          AppLocalizations.of(context).uiCustomVoices,
                           style: Theme.of(context).textTheme.labelMedium
                               ?.copyWith(
                                 color: Colors.white.withValues(alpha: 0.5),
                                 fontWeight: FontWeight.w600,
                               ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         ..._voices.map(
                           (v) => _BindingRow(
                             key: ValueKey(v.id),
@@ -944,7 +963,9 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         child: Text(
-                          'No voices yet. Use "Fetch" to get available voices.',
+                          AppLocalizations.of(
+                            context,
+                          ).uiNoVoicesYetUseFetchToGetAvailableVoices,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withValues(alpha: 0.4),
@@ -963,27 +984,27 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                   ],
                 ],
               ],
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Row(
                 children: [
                   FilledButton.icon(
                     onPressed: _save,
                     icon: const Icon(Icons.save_rounded, size: 18),
-                    label: const Text('Save'),
+                    label: Text(AppLocalizations.of(context).uiSave),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   OutlinedButton.icon(
                     onPressed: _checking ? null : _healthCheck,
                     icon: _checking
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 14,
                             height: 14,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.favorite_rounded, size: 18),
-                    label: const Text('Health Check'),
+                    label: Text(AppLocalizations.of(context).uiHealthCheck),
                   ),
-                  const SizedBox(width: 14),
+                  SizedBox(width: 14),
                   if (_lastHealth != null)
                     _HealthBadge(ok: _lastHealth!, errorMessage: _healthError),
                 ],
@@ -1049,12 +1070,12 @@ class _BindingRow extends StatelessWidget {
         child: Row(
           children: [
             Icon(icon, size: 16, color: Colors.grey),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Expanded(child: Text(label, style: const TextStyle(fontSize: 13))),
             InkWell(
               onTap: onDelete,
               borderRadius: BorderRadius.circular(4),
-              child: const Padding(
+              child: Padding(
                 padding: EdgeInsets.all(4),
                 child: Icon(Icons.close_rounded, size: 14, color: Colors.grey),
               ),
@@ -1127,7 +1148,7 @@ class _TtsModelRowState extends State<_TtsModelRow> {
                       size: 16,
                       color: Colors.purpleAccent.withValues(alpha: 0.7),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         widget.model.modelKey,
@@ -1155,7 +1176,7 @@ class _TtsModelRowState extends State<_TtsModelRow> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                     ],
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -1182,11 +1203,11 @@ class _TtsModelRowState extends State<_TtsModelRow> {
                         size: 16,
                         color: Colors.white.withValues(alpha: 0.5),
                       ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4),
                     InkWell(
                       onTap: widget.onDelete,
                       borderRadius: BorderRadius.circular(4),
-                      child: const Padding(
+                      child: Padding(
                         padding: EdgeInsets.all(4),
                         child: Icon(
                           Icons.close_rounded,
@@ -1290,7 +1311,7 @@ class _NonTtsModelRow extends StatelessWidget {
               size: 16,
               color: Colors.blueAccent.withValues(alpha: 0.7),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Expanded(
               child: Text(model.modelKey, style: const TextStyle(fontSize: 13)),
             ),
@@ -1316,11 +1337,11 @@ class _NonTtsModelRow extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: 4),
             InkWell(
               onTap: onDelete,
               borderRadius: BorderRadius.circular(4),
-              child: const Padding(
+              child: Padding(
                 padding: EdgeInsets.all(4),
                 child: Icon(Icons.close_rounded, size: 14, color: Colors.grey),
               ),
@@ -1357,7 +1378,7 @@ class _HealthBadge extends StatelessWidget {
               size: 14,
               color: color,
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: 6),
             Text(
               ok ? 'Healthy' : 'Failed',
               style: TextStyle(
@@ -1396,7 +1417,7 @@ class _AddProviderDialogState extends State<_AddProviderDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add Provider'),
+      title: Text(AppLocalizations.of(context).uiAddProvider),
       content: SizedBox(
         width: 380,
         child: Column(
@@ -1406,11 +1427,15 @@ class _AddProviderDialogState extends State<_AddProviderDialog> {
             TextField(
               controller: _nameCtrl,
               autofocus: true,
-              decoration: const InputDecoration(labelText: 'Name'),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).uiName,
+              ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             DropdownButtonFormField<AdapterType>(
-              decoration: const InputDecoration(labelText: 'Adapter Type'),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).uiAdapterType,
+              ),
               initialValue: _selectedType,
               items: AdapterType.values
                   .map(
@@ -1423,9 +1448,11 @@ class _AddProviderDialogState extends State<_AddProviderDialog> {
                 setState(() => _selectedType = v);
               },
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
-              'You can configure the URL, API key, and model after creation.',
+              AppLocalizations.of(
+                context,
+              ).uiYouCanConfigureTheURLAPIKeyAndModelAfterCreation,
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.white.withValues(alpha: 0.4),
@@ -1437,7 +1464,7 @@ class _AddProviderDialogState extends State<_AddProviderDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).uiCancel),
         ),
         FilledButton(
           onPressed: () async {
@@ -1456,7 +1483,7 @@ class _AddProviderDialogState extends State<_AddProviderDialog> {
             );
             if (context.mounted) Navigator.pop(context);
           },
-          child: const Text('Create'),
+          child: Text(AppLocalizations.of(context).uiCreate),
         ),
       ],
     );

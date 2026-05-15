@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:flutter/material.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:path/path.dart' as p;
 
 import 'package:neiroha/presentation/theme/app_theme.dart';
@@ -304,10 +305,10 @@ class _ProgressDialog extends StatelessWidget {
                   value: indeterminate ? null : value,
                   minHeight: 6,
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Text(
                   indeterminate
-                      ? 'Encoding…'
+                      ? AppLocalizations.of(context).uiEncoding
                       : '${(value * 100).clamp(0, 100).toStringAsFixed(1)}%',
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -320,7 +321,12 @@ class _ProgressDialog extends StatelessWidget {
           },
         ),
       ),
-      actions: [TextButton(onPressed: onCancel, child: const Text('Cancel'))],
+      actions: [
+        TextButton(
+          onPressed: onCancel,
+          child: Text(AppLocalizations.of(context).uiCancel),
+        ),
+      ],
     );
   }
 }
@@ -336,7 +342,7 @@ Future<void> showExportSuccessDialog({
   await showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text('Export successful'),
+      title: Text(AppLocalizations.of(context).uiExportSuccessful),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -346,7 +352,7 @@ Future<void> showExportSuccessDialog({
             style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
           ),
           if (extraNote != null) ...[
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             Text(
               extraNote,
               style: TextStyle(
@@ -364,12 +370,12 @@ Future<void> showExportSuccessDialog({
             unawaited(revealInFileManager(filePath));
           },
           icon: const Icon(Icons.folder_open_rounded, size: 16),
-          label: const Text('Open folder'),
+          label: Text(AppLocalizations.of(context).uiOpenFolder),
           style: TextButton.styleFrom(foregroundColor: AppTheme.accentColor),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Done'),
+          child: Text(AppLocalizations.of(context).uiDone),
         ),
       ],
     ),

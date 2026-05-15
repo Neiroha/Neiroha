@@ -13,6 +13,7 @@ import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Compact Quick TTS surface embedded in Voice Bank above the character
 /// inspector. Uses the selected character (via [asset]) as the voice, so the
@@ -81,9 +82,9 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
             size: 40,
             color: Colors.white.withValues(alpha: 0.1),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Text(
-            'Select a character to quick-test',
+            AppLocalizations.of(context).uiSelectACharacterToQuickTest,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.4),
               fontSize: 12,
@@ -104,9 +105,9 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
       child: Row(
         children: [
           Icon(Icons.graphic_eq_rounded, size: 16, color: AppTheme.accentColor),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Text(
-            'QUICK TEST',
+            AppLocalizations.of(context).uiQUICKTEST,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -114,7 +115,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
               color: Colors.white.withValues(alpha: 0.5),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Flexible(
             child: Text(
               asset.name,
@@ -143,13 +144,15 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                       minimumSize: const Size(0, 28),
                     ),
                     icon: const Icon(Icons.delete_forever_rounded, size: 14),
-                    label: const Text(
-                      'Confirm',
+                    label: Text(
+                      AppLocalizations.of(context).uiConfirm,
                       style: TextStyle(fontSize: 11),
                     ),
                   )
                 : IconButton(
-                    tooltip: 'Clear history for this character',
+                    tooltip: AppLocalizations.of(
+                      context,
+                    ).uiClearHistoryForThisCharacter,
                     onPressed: () => setState(() => _deleteAllConfirm = true),
                     iconSize: 16,
                     padding: EdgeInsets.zero,
@@ -169,8 +172,9 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
 
   Widget _buildHistory(AsyncValue<List<db.QuickTtsHistory>> historyAsync) {
     return historyAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      loading: () => Center(child: CircularProgressIndicator()),
+      error: (e, _) =>
+          Center(child: Text(AppLocalizations.of(context).uiError2(e))),
       data: (history) {
         if (history.isEmpty) {
           return Center(
@@ -182,9 +186,9 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                   size: 36,
                   color: Colors.white.withValues(alpha: 0.1),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(
-                  'Type below to test this voice',
+                  AppLocalizations.of(context).uiTypeBelowToTestThisVoice,
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.3),
@@ -260,12 +264,12 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                             minWidth: 20,
                             minHeight: 20,
                           ),
-                          tooltip: 'Delete',
+                          tooltip: AppLocalizations.of(context).uiDelete,
                         ),
                       ],
                     ),
                     if (hasAudio) ...[
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6),
                       _buildAudioRow(entry, isPlaying),
                     ],
                     if (hasAudio) _buildAssetActionRow(entry),
@@ -321,7 +325,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
             ),
           ),
         ),
-        const SizedBox(width: 10),
+        SizedBox(width: 10),
         Text(
           isPlaying ? 'Playing…' : 'Tap to play',
           style: TextStyle(
@@ -361,7 +365,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
               textStyle: const TextStyle(fontSize: 11),
             ),
             icon: const Icon(Icons.library_add_rounded, size: 14),
-            label: const Text('Save as Voice Asset'),
+            label: Text(AppLocalizations.of(context).uiSaveAsVoiceAsset),
           ),
         ],
       ),
@@ -373,7 +377,11 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
     if (src == null || !File(src).existsSync()) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Audio file is missing — cannot save')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).uiAudioFileIsMissingCannotSave,
+            ),
+          ),
         );
       }
       return;
@@ -419,16 +427,20 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Saved "$assetName" to Voice Assets'),
+            content: Text(
+              AppLocalizations.of(context).uiSavedToVoiceAssets(assetName),
+            ),
             duration: const Duration(seconds: 2),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to save: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).uiFailedToSave(e)),
+          ),
+        );
       }
     }
   }
@@ -450,7 +462,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
               minLines: 1,
               style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(
-                hintText: 'Type something to test...',
+                hintText: AppLocalizations.of(context).uiTypeSomethingToTest,
                 hintStyle: TextStyle(
                   color: Colors.white.withValues(alpha: 0.3),
                   fontSize: 13,
@@ -464,7 +476,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
             ),
           ),
           if (_generating)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(right: 10),
               child: SizedBox(
                 width: 18,
@@ -502,8 +514,10 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
     if (provider == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Provider not found for this character'),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).uiProviderNotFoundForThisCharacter,
+            ),
           ),
         );
       }

@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
@@ -9,6 +10,7 @@ import 'package:neiroha/data/storage/novel_dialogue_rules_service.dart';
 import 'package:neiroha/data/storage/novel_import_service.dart';
 import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
+import 'package:neiroha/l10n/app_locale.dart';
 import 'package:neiroha/server/api_server.dart';
 
 /// Single database instance for the app.
@@ -16,6 +18,12 @@ final databaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
   ref.onDispose(() => db.close());
   return db;
+});
+
+/// Current app display locale. Persisted in AppSettings via
+/// [AppLocaleSettings.localeKey] and watched by MaterialApp.
+final appLocaleProvider = StateProvider<Locale>((ref) {
+  return AppLocaleSettings.defaultLocale;
 });
 
 /// Disk-backed storage orchestration (voice-asset root, sync, clear-all).

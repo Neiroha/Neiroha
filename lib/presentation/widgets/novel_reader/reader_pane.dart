@@ -153,7 +153,9 @@ class _ReaderPane extends ConsumerWidget {
                   child: chapter == null
                       ? Center(
                           child: Text(
-                            'Use Chapters below to import TXT, import a folder, or add a chapter.',
+                            AppLocalizations.of(
+                              context,
+                            ).uiUseChaptersBelowToImportTXTImportAFolderOrAddA,
                             style: TextStyle(
                               fontSize: 14,
                               color: colors.text.withValues(alpha: 0.55),

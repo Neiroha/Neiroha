@@ -140,6 +140,7 @@ TtsAdapter createAdapter(db.TtsProvider provider, {String? modelName}) {
       );
     default:
       throw UnimplementedError(
-          'Adapter not implemented for: ${provider.adapterType}');
+        'Adapter not implemented for: ${provider.adapterType}',
+      );
   }
 }

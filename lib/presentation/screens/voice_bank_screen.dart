@@ -14,6 +14,7 @@ import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/presentation/widgets/voice_bank/voice_bank_widgets.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Merged Voice Bank + Voice Characters screen.
 ///
@@ -110,15 +111,15 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
       child: Row(
         children: [
           Text(
-            'Voice Bank',
+            AppLocalizations.of(context).navVoiceBank,
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Banks, characters and inspector',
+              AppLocalizations.of(context).uiBanksCharactersAndInspector,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.5),
@@ -126,11 +127,11 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           FilledButton.icon(
             onPressed: _createBank,
             icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('New Bank'),
+            label: Text(AppLocalizations.of(context).uiNewBank),
           ),
         ],
       ),
@@ -147,7 +148,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Text(
-            'BANKS',
+            AppLocalizations.of(context).uiBANKS,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -158,13 +159,14 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         ),
         Expanded(
           child: banksAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            loading: () => Center(child: CircularProgressIndicator()),
+            error: (e, _) =>
+                Center(child: Text(AppLocalizations.of(context).uiError2(e))),
             data: (banks) {
               if (banks.isEmpty) {
                 return Center(
                   child: Text(
-                    'No banks yet',
+                    AppLocalizations.of(context).uiNoBanksYet,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.3),
                       fontSize: 13,
@@ -243,18 +245,19 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
               size: 64,
               color: Colors.white.withValues(alpha: 0.1),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
-              'Select or create a Voice Bank',
+              AppLocalizations.of(context).uiSelectOrCreateAVoiceBank,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.4),
                 fontSize: 15,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
-              'A Voice Bank groups characters for a project.\n'
-              'Only one bank can be active at a time.',
+              AppLocalizations.of(
+                context,
+              ).uiAVoiceBankGroupsCharactersForAProjectOnlyOneBankCan,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.25),
@@ -276,7 +279,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         ?.where((b) => b.id == bankId)
         .firstOrNull;
     if (bank == null) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: CircularProgressIndicator());
     }
 
     return Column(
@@ -292,11 +295,13 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         _buildCharacterSearchBar(),
         Expanded(
           child: membersAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            loading: () => Center(child: CircularProgressIndicator()),
+            error: (e, _) =>
+                Center(child: Text(AppLocalizations.of(context).uiError2(e))),
             data: (members) => assetsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              loading: () => Center(child: CircularProgressIndicator()),
+              error: (e, _) =>
+                  Center(child: Text(AppLocalizations.of(context).uiError2(e))),
               data: (allAssets) => _buildMemberList(bank, members, allAssets),
             ),
           ),
@@ -320,7 +325,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
             color: bank.isActive ? Colors.green : AppTheme.accentColor,
             size: 20,
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,7 +343,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                       ),
                     ),
                     if (bank.isActive) ...[
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -351,8 +356,8 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                             color: Colors.green.withValues(alpha: 0.3),
                           ),
                         ),
-                        child: const Text(
-                          'Active',
+                        child: Text(
+                          AppLocalizations.of(context).uiActive,
                           style: TextStyle(color: Colors.green, fontSize: 11),
                         ),
                       ),
@@ -360,7 +365,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                   ],
                 ),
                 Text(
-                  'CHARACTERS',
+                  AppLocalizations.of(context).uiCHARACTERS,
                   style: TextStyle(
                     fontSize: 10,
                     letterSpacing: 1.2,
@@ -371,7 +376,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
             ),
           ),
           IconButton(
-            tooltip: 'Health Check',
+            tooltip: AppLocalizations.of(context).uiHealthCheck,
             onPressed: () => _healthCheckBank(
               bank,
               membersAsync,
@@ -381,12 +386,12 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
             icon: const Icon(Icons.favorite_border_rounded, size: 18),
           ),
           IconButton(
-            tooltip: 'Import from another bank',
+            tooltip: AppLocalizations.of(context).uiImportFromAnotherBank,
             onPressed: () => _openImportDialog(bank),
             icon: const Icon(Icons.download_rounded, size: 18),
           ),
           IconButton(
-            tooltip: 'New Character (added to this bank)',
+            tooltip: AppLocalizations.of(context).uiNewCharacterAddedToThisBank,
             onPressed: () => _createCharacterForBank(bank),
             icon: const Icon(Icons.person_add_rounded, size: 18),
           ),
@@ -401,7 +406,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
       child: TextField(
         controller: _searchCtrl,
         decoration: InputDecoration(
-          hintText: 'Search characters...',
+          hintText: AppLocalizations.of(context).uiSearchCharacters,
           prefixIcon: const Icon(Icons.search_rounded, size: 18),
           suffixIcon: _characterFilter.isEmpty
               ? null
@@ -430,25 +435,25 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
               size: 48,
               color: Colors.white.withValues(alpha: 0.1),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
-              'No characters in this bank yet',
+              AppLocalizations.of(context).uiNoCharactersInThisBankYet,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.4),
                 fontSize: 13,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             FilledButton.icon(
               onPressed: () => _createCharacterForBank(bank),
               icon: const Icon(Icons.person_add_rounded, size: 16),
-              label: const Text('New Character'),
+              label: Text(AppLocalizations.of(context).uiNewCharacter),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: () => _openImportDialog(bank),
               icon: const Icon(Icons.download_rounded, size: 16),
-              label: const Text('Import from another bank'),
+              label: Text(AppLocalizations.of(context).uiImportFromAnotherBank),
             ),
           ],
         ),
@@ -522,9 +527,9 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
               size: 48,
               color: Colors.white.withValues(alpha: 0.1),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
-              'Select a bank and character to edit',
+              AppLocalizations.of(context).uiSelectABankAndCharacterToEdit,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.4),
                 fontSize: 13,
@@ -546,9 +551,9 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
               size: 48,
               color: Colors.white.withValues(alpha: 0.1),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
-              'Select a character to edit',
+              AppLocalizations.of(context).uiSelectACharacterToEdit,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.4),
                 fontSize: 13,
@@ -560,14 +565,15 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     }
     final assetsAsync = ref.watch(voiceAssetsStreamProvider);
     return assetsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      loading: () => Center(child: CircularProgressIndicator()),
+      error: (e, _) =>
+          Center(child: Text(AppLocalizations.of(context).uiError2(e))),
       data: (assets) {
         final asset = assets.where((a) => a.id == selectedId).firstOrNull;
         if (asset == null) {
           return Center(
             child: Text(
-              'Character not found',
+              AppLocalizations.of(context).uiCharacterNotFound,
               style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
             ),
           );
@@ -597,20 +603,22 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('New Voice Bank'),
+        title: Text(AppLocalizations.of(context).uiNewVoiceBank),
         content: TextField(
           controller: nameCtrl,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'Bank name'),
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).uiBankName,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).uiCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, nameCtrl.text),
-            child: const Text('Create'),
+            child: Text(AppLocalizations.of(context).uiCreate),
           ),
         ],
       ),
@@ -619,8 +627,10 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
       if (banks.any((b) => b.name == result)) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('A bank with this name already exists'),
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context).uiABankWithThisNameAlreadyExists,
+              ),
             ),
           );
         }
@@ -646,20 +656,22 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Rename Voice Bank'),
+        title: Text(AppLocalizations.of(context).uiRenameVoiceBank),
         content: TextField(
           controller: nameCtrl,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'Bank name'),
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).uiBankName,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).uiCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, nameCtrl.text),
-            child: const Text('Rename'),
+            child: Text(AppLocalizations.of(context).uiRename),
           ),
         ],
       ),
@@ -668,8 +680,10 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
       if (allBanks.any((b) => b.name == result && b.id != bank.id)) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('A bank with this name already exists'),
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context).uiABankWithThisNameAlreadyExists,
+              ),
             ),
           );
         }
@@ -719,9 +733,11 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     final allProviders = providersAsync.valueOrNull ?? [];
     if (members.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Bank has no characters')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).uiBankHasNoCharacters),
+          ),
+        );
       }
       return;
     }
@@ -750,7 +766,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Health Check Results'),
+        title: Text(AppLocalizations.of(context).uiHealthCheckResults),
         content: SizedBox(
           width: 320,
           child: Column(
@@ -776,7 +792,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
+            child: Text(AppLocalizations.of(context).uiOK),
           ),
         ],
       ),

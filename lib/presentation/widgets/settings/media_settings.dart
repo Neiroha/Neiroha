@@ -7,6 +7,7 @@ import 'package:neiroha/data/storage/ffmpeg_service.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
 import 'settings_shared.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 // ───────────────────────────── FFmpeg card ─────────────────────────────
 
@@ -65,12 +66,16 @@ class _FfmpegSettingsCardState extends ConsumerState<FfmpegSettingsCard> {
                   : Icons.error_outline_rounded,
               title: 'FFmpeg',
               subtitle: loading
-                  ? 'Probing…'
+                  ? AppLocalizations.of(context).uiProbing
                   : (isAvailable
-                        ? 'Detected. Used for waveform extraction and imported-media analysis.'
-                        : 'Not found. Install ffmpeg (or set a path below) — the app works without it, but waveforms and media probing will be skipped.'),
+                        ? AppLocalizations.of(
+                            context,
+                          ).uiDetectedUsedForWaveformExtractionAndImportedMediaAnalysis
+                        : AppLocalizations.of(
+                            context,
+                          ).uiNotFoundInstallFfmpegOrSetAPathBelowTheAppWorks),
               trailing: loading
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
@@ -80,7 +85,7 @@ class _FfmpegSettingsCardState extends ConsumerState<FfmpegSettingsCard> {
                         ref.read(ffmpegServiceProvider).invalidate();
                         ref.invalidate(ffmpegAvailabilityProvider);
                       },
-                      child: const Text('Re-check'),
+                      child: Text(AppLocalizations.of(context).uiReCheck),
                     ),
             ),
             const Divider(),
@@ -91,38 +96,42 @@ class _FfmpegSettingsCardState extends ConsumerState<FfmpegSettingsCard> {
                 children: [
                   SettingsRow(
                     icon: Icons.terminal_rounded,
-                    title: 'Executable Path',
+                    title: AppLocalizations.of(context).uiExecutablePath,
                     subtitle:
                         _loadedOverride == null || _loadedOverride!.isEmpty
-                        ? 'Auto-detect from PATH'
-                        : 'Using override',
+                        ? AppLocalizations.of(context).uiAutoDetectFromPATH
+                        : AppLocalizations.of(context).uiUsingOverride,
                     trailing: Wrap(
                       spacing: 8,
                       children: [
-                        TextButton(onPressed: _save, child: const Text('Save')),
+                        TextButton(
+                          onPressed: _save,
+                          child: Text(AppLocalizations.of(context).uiSave),
+                        ),
                         if (_loadedOverride != null &&
                             _loadedOverride!.isNotEmpty)
                           TextButton(
                             onPressed: _clear,
-                            child: const Text('Reset'),
+                            child: Text(AppLocalizations.of(context).uiReset),
                           ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   TextField(
                     controller: _pathCtrl,
                     decoration: InputDecoration(
                       isDense: true,
-                      hintText:
-                          'Leave blank to auto-detect (e.g. C:\\ffmpeg\\bin\\ffmpeg.exe)',
+                      hintText: AppLocalizations.of(
+                        context,
+                      ).uiLeaveBlankToAutoDetectEGCFfmpegBinFfmpegExe,
                       hintStyle: TextStyle(
                         color: Colors.white.withValues(alpha: 0.3),
                         fontSize: 12,
                       ),
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.folder_open_rounded, size: 18),
-                        tooltip: 'Browse…',
+                        tooltip: AppLocalizations.of(context).uiBrowse,
                         onPressed: _browse,
                       ),
                     ),
@@ -232,7 +241,7 @@ class _ExportPrefsSettingsCardState
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: prefs == null
-            ? const SizedBox(
+            ? SizedBox(
                 height: 40,
                 child: Center(
                   child: SizedBox(
@@ -246,17 +255,19 @@ class _ExportPrefsSettingsCardState
                 children: [
                   SettingsRow(
                     icon: Icons.tune_rounded,
-                    title: 'Export Defaults',
-                    subtitle:
-                        'Used by the Video Dub editor\'s Export Audio / Export Video buttons.',
+                    title: AppLocalizations.of(context).uiExportDefaults,
+                    subtitle: AppLocalizations.of(
+                      context,
+                    ).uiUsedByTheVideoDubEditorSExportAudioExportVideoButtons,
                     trailing: const SizedBox.shrink(),
                   ),
                   const Divider(),
                   _PrefRow(
                     icon: Icons.audiotrack_rounded,
-                    title: 'Audio format',
-                    subtitle:
-                        'Container + codec for "Export Audio". WAV/FLAC keep full quality; MP3 is smaller.',
+                    title: AppLocalizations.of(context).uiAudioFormat,
+                    subtitle: AppLocalizations.of(
+                      context,
+                    ).uiContainerCodecForExportAudioWAVFLACKeepFullQualityMP3Is,
                     value: prefs.audioFormat,
                     options: ExportPrefs.audioFormats,
                     onChanged: _setAudioFormat,
@@ -264,9 +275,10 @@ class _ExportPrefsSettingsCardState
                   const Divider(),
                   _PrefRow(
                     icon: Icons.movie_filter_rounded,
-                    title: 'Video codec',
-                    subtitle:
-                        '"copy" reuses the source stream (fast, lossless). h264 / h265 / av1 force a transcode (slower, ffmpeg build must support the chosen encoder).',
+                    title: AppLocalizations.of(context).uiVideoCodec,
+                    subtitle: AppLocalizations.of(
+                      context,
+                    ).uiCopyReusesTheSourceStreamFastLosslessH264H265Av1ForceA,
                     value: prefs.videoCodec,
                     options: ExportPrefs.videoCodecs,
                     onChanged: _setVideoCodec,
@@ -274,9 +286,10 @@ class _ExportPrefsSettingsCardState
                   const Divider(),
                   _PrefRow(
                     icon: Icons.graphic_eq_rounded,
-                    title: 'Video audio codec',
-                    subtitle:
-                        'Audio codec for the muxed MP4. AAC is the broadest-compatible default.',
+                    title: AppLocalizations.of(context).uiVideoAudioCodec,
+                    subtitle: AppLocalizations.of(
+                      context,
+                    ).uiAudioCodecForTheMuxedMP4AACIsTheBroadestCompatibleDefault,
                     value: prefs.videoAudioCodec,
                     options: ExportPrefs.videoAudioCodecs,
                     onChanged: _setVideoAudioCodec,

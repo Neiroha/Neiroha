@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 
 /// Uniform view model for a project card so Phase TTS, Video Dub, etc. can
@@ -29,14 +30,14 @@ class ProjectCardGrid extends StatefulWidget {
   final List<ProjectCardData> projects;
   final ValueChanged<String> onOpen;
   final ValueChanged<String>? onDelete;
-  final String emptyLabel;
+  final String? emptyLabel;
 
   const ProjectCardGrid({
     super.key,
     required this.projects,
     required this.onOpen,
     this.onDelete,
-    this.emptyLabel = 'No projects yet',
+    this.emptyLabel,
   });
 
   @override
@@ -61,8 +62,8 @@ class _ProjectCardGridState extends State<ProjectCardGrid> {
     final filtered = q.isEmpty
         ? sorted
         : sorted
-            .where((p) => p.name.toLowerCase().contains(q))
-            .toList(growable: false);
+              .where((p) => p.name.toLowerCase().contains(q))
+              .toList(growable: false);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -75,11 +76,15 @@ class _ProjectCardGridState extends State<ProjectCardGrid> {
               controller: _searchController,
               onChanged: (v) => setState(() => _query = v),
               decoration: InputDecoration(
-                hintText: 'Search projects',
-                hintStyle:
-                    TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                prefixIcon: Icon(Icons.search_rounded,
-                    size: 18, color: Colors.white.withValues(alpha: 0.4)),
+                hintText: AppLocalizations.of(context).uiSearchProjects,
+                hintStyle: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  size: 18,
+                  color: Colors.white.withValues(alpha: 0.4),
+                ),
                 suffixIcon: _query.isEmpty
                     ? null
                     : IconButton(
@@ -90,14 +95,21 @@ class _ProjectCardGridState extends State<ProjectCardGrid> {
                         },
                       ),
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 0),
+                  horizontal: 12,
+                  vertical: 0,
+                ),
               ),
             ),
           ),
         ),
         Expanded(
           child: filtered.isEmpty
-              ? _buildEmpty(q.isEmpty ? widget.emptyLabel : 'No matches')
+              ? _buildEmpty(
+                  q.isEmpty
+                      ? widget.emptyLabel ??
+                            AppLocalizations.of(context).uiNoProjectsYet
+                      : AppLocalizations.of(context).uiNoMatches,
+                )
               : _buildGrid(filtered),
         ),
       ],
@@ -173,9 +185,7 @@ class _ProjectCardState extends State<_ProjectCard> {
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
       child: Material(
-        color: _hovering
-            ? AppTheme.surfaceBright
-            : AppTheme.surfaceDim,
+        color: _hovering ? AppTheme.surfaceBright : AppTheme.surfaceDim,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
@@ -194,34 +204,43 @@ class _ProjectCardState extends State<_ProjectCard> {
                         color: AppTheme.accentColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(d.icon,
-                          size: 22, color: AppTheme.accentColor),
+                      child: Icon(
+                        d.icon,
+                        size: 22,
+                        color: AppTheme.accentColor,
+                      ),
                     ),
-                    const SizedBox(width: 14),
+                    SizedBox(width: 14),
                     Expanded(
                       child: Text(
                         d.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     if (widget.onDelete != null)
                       PopupMenuButton<String>(
                         padding: EdgeInsets.zero,
                         iconSize: 18,
-                        icon: Icon(Icons.more_vert_rounded,
-                            size: 18,
-                            color: Colors.white.withValues(alpha: 0.4)),
+                        icon: Icon(
+                          Icons.more_vert_rounded,
+                          size: 18,
+                          color: Colors.white.withValues(alpha: 0.4),
+                        ),
                         onSelected: (v) {
                           if (v == 'delete') widget.onDelete?.call();
                         },
-                        itemBuilder: (_) => const [
+                        itemBuilder: (_) => [
                           PopupMenuItem(
                             value: 'delete',
-                            child: Text('Delete',
-                                style: TextStyle(color: Colors.redAccent)),
+                            child: Text(
+                              AppLocalizations.of(context).uiDelete,
+                              style: TextStyle(color: Colors.redAccent),
+                            ),
                           ),
                         ],
                       ),

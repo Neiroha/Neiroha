@@ -21,6 +21,7 @@ import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 typedef PhaseTtsExitGuard = Future<bool> Function();
 
@@ -78,8 +79,9 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         const Divider(height: 1),
         Expanded(
           child: projectsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            loading: () => Center(child: CircularProgressIndicator()),
+            error: (e, _) =>
+                Center(child: Text(AppLocalizations.of(context).uiError2(e))),
             data: (projects) => ProjectCardGrid(
               projects: [
                 for (final p in projects)
@@ -127,7 +129,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         ?.where((p) => p.id == projectId)
         .firstOrNull;
     if (project == null) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: CircularProgressIndicator());
     }
 
     final membersAsync = ref.watch(bankMembersStreamProvider(project.bankId));
@@ -253,14 +255,16 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     final choice = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Unsaved changes'),
-        content: const Text(
-          'You have unsaved changes in this project. Save before leaving?',
+        title: Text(AppLocalizations.of(context).uiUnsavedChanges),
+        content: Text(
+          AppLocalizations.of(
+            context,
+          ).uiYouHaveUnsavedChangesInThisProjectSaveBeforeLeaving,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'cancel'),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).uiCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'discard'),
@@ -268,7 +272,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, 'save'),
-            child: const Text('Save & Leave'),
+            child: Text(AppLocalizations.of(context).uiSaveLeave),
           ),
         ],
       ),
@@ -334,7 +338,9 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     if (banks.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Create a Voice Bank first')),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).uiCreateAVoiceBankFirst),
+          ),
         );
       }
       return;

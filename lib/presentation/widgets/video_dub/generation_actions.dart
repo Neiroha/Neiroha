@@ -23,7 +23,7 @@ extension _VideoDubEditorGenerationActions on _VideoDubEditorState {
       final choice = await showDialog<String>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Generate all cues'),
+          title: Text(AppLocalizations.of(context).uiGenerateAllCues),
           content: Text(
             '$alreadyDone cue(s) already have audio. '
             '$pending pending. '
@@ -33,15 +33,15 @@ extension _VideoDubEditorGenerationActions on _VideoDubEditorState {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, 'cancel'),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context).uiCancel),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, 'skip'),
-              child: const Text('Only pending'),
+              child: Text(AppLocalizations.of(context).uiOnlyPending),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, 'regen'),
-              child: const Text('Regenerate all'),
+              child: Text(AppLocalizations.of(context).uiRegenerateAll),
             ),
           ],
         ),
@@ -100,7 +100,11 @@ extension _VideoDubEditorGenerationActions on _VideoDubEditorState {
     if (cue.voiceAssetId == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Assign a voice to this cue first')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).uiAssignAVoiceToThisCueFirst,
+            ),
+          ),
         );
       }
       return;
@@ -196,14 +200,16 @@ extension _VideoDubEditorGenerationActions on _VideoDubEditorState {
     final choice = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Unsaved changes'),
-        content: const Text(
-          'You have unsaved changes in this project. Save before leaving?',
+        title: Text(AppLocalizations.of(context).uiUnsavedChanges),
+        content: Text(
+          AppLocalizations.of(
+            context,
+          ).uiYouHaveUnsavedChangesInThisProjectSaveBeforeLeaving,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'cancel'),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).uiCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'discard'),
@@ -211,7 +217,7 @@ extension _VideoDubEditorGenerationActions on _VideoDubEditorState {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, 'save'),
-            child: const Text('Save & Exit'),
+            child: Text(AppLocalizations.of(context).uiSaveExit),
           ),
         ],
       ),

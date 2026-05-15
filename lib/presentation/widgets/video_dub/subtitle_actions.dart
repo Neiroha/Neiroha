@@ -20,17 +20,21 @@ extension _VideoDubEditorSubtitleActions on _VideoDubEditorState {
       parsed = await SubtitleParser.parseFile(file);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Parse failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).uiParseFailed(e)),
+          ),
+        );
       }
       return;
     }
     if (parsed.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('No cues found in file')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).uiNoCuesFoundInFile),
+          ),
+        );
       }
       return;
     }
@@ -88,9 +92,13 @@ extension _VideoDubEditorSubtitleActions on _VideoDubEditorState {
       project.copyWith(updatedAt: DateTime.now()),
     );
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Imported ${parsed.length} cues')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).uiImportedCues(parsed.length),
+          ),
+        ),
+      );
     }
 
     // Auto-flow: re-read cues from the database (the freshly-inserted
@@ -145,7 +153,7 @@ extension _VideoDubEditorSubtitleActions on _VideoDubEditorState {
       initialStartMs: _position.inMilliseconds,
       initialEndMs: _position.inMilliseconds + 3000,
       initialText: '',
-      title: 'Add cue',
+      title: AppLocalizations.of(context).uiAddCue,
       showAutoSwitches: true,
       initialAutoTts: _autoTtsAfterImport,
       initialAutoSync: _autoSyncAfterImport,
@@ -220,7 +228,7 @@ extension _VideoDubEditorSubtitleActions on _VideoDubEditorState {
       initialStartMs: cue.startMs,
       initialEndMs: cue.endMs,
       initialText: cue.cueText,
-      title: 'Edit cue',
+      title: AppLocalizations.of(context).uiEditCue,
     );
     if (result == null) return;
     _markDirty();

@@ -98,7 +98,7 @@ class _NovelReaderBottomBar extends ConsumerWidget {
             child: Row(
               children: [
                 Icon(Icons.cached_rounded, size: 16, color: colors.muted),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 SizedBox(
                   width: 86,
                   child: Text(
@@ -118,7 +118,7 @@ class _NovelReaderBottomBar extends ConsumerWidget {
                     minHeight: 4,
                   ),
                 ),
-                const SizedBox(width: 14),
+                SizedBox(width: 14),
                 Expanded(
                   child: SliderTheme(
                     data: SliderTheme.of(context).copyWith(
@@ -142,7 +142,7 @@ class _NovelReaderBottomBar extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   isNovelAudio
                       ? '${_fmt(playback.position)} / ${_fmt(playback.duration)}'
@@ -155,7 +155,7 @@ class _NovelReaderBottomBar extends ConsumerWidget {
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 IconButton(
                   tooltip: playback.isPlaying ? 'Pause' : 'Resume',
                   onPressed: isNovelAudio ? notifier.togglePlay : null,
@@ -168,17 +168,17 @@ class _NovelReaderBottomBar extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Expanded(
             child: Row(
               children: [
                 _ReaderControlButton(
-                  tooltip: 'Previous chapter',
+                  tooltip: AppLocalizations.of(context).uiPreviousChapter,
                   icon: Icons.skip_previous_rounded,
                   onPressed: onPreviousChapter,
                 ),
                 _ReaderControlButton(
-                  tooltip: 'Previous page',
+                  tooltip: AppLocalizations.of(context).uiPreviousPage,
                   icon: Icons.chevron_left_rounded,
                   onPressed: onPreviousPage,
                 ),
@@ -192,7 +192,7 @@ class _NovelReaderBottomBar extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 _ReaderToggleButton(
                   tooltip: project.overwriteCacheWhilePlaying
                       ? 'Overwrite cache while reading: on'
@@ -219,17 +219,17 @@ class _NovelReaderBottomBar extends ConsumerWidget {
                       : onPlaySelected,
                 ),
                 _ReaderControlButton(
-                  tooltip: 'Reader appearance',
+                  tooltip: AppLocalizations.of(context).uiReaderAppearance,
                   icon: _themeIcon(project.readerTheme),
                   onPressed: () => _openAppearance(context),
                 ),
                 _ReaderControlButton(
-                  tooltip: 'Next page',
+                  tooltip: AppLocalizations.of(context).uiNextPage,
                   icon: Icons.chevron_right_rounded,
                   onPressed: onNextPage,
                 ),
                 _ReaderControlButton(
-                  tooltip: 'Next chapter',
+                  tooltip: AppLocalizations.of(context).uiNextChapter,
                   icon: Icons.skip_next_rounded,
                   onPressed: onNextChapter,
                 ),
@@ -375,9 +375,9 @@ class _ReaderChapterPickerDialog extends StatelessWidget {
     return AlertDialog(
       title: Row(
         children: [
-          const Expanded(child: Text('Chapters')),
+          Expanded(child: Text(AppLocalizations.of(context).uiChapters)),
           IconButton(
-            tooltip: 'Import TXT files',
+            tooltip: AppLocalizations.of(context).uiImportTXTFiles,
             onPressed: importing
                 ? null
                 : () => Navigator.pop(
@@ -387,7 +387,7 @@ class _ReaderChapterPickerDialog extends StatelessWidget {
                     ),
                   ),
             icon: importing
-                ? const SizedBox(
+                ? SizedBox(
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
@@ -395,7 +395,7 @@ class _ReaderChapterPickerDialog extends StatelessWidget {
                 : const Icon(Icons.file_upload_rounded),
           ),
           IconButton(
-            tooltip: 'Import folder',
+            tooltip: AppLocalizations.of(context).uiImportFolder,
             onPressed: importing
                 ? null
                 : () => Navigator.pop(
@@ -407,7 +407,7 @@ class _ReaderChapterPickerDialog extends StatelessWidget {
             icon: const Icon(Icons.folder_open_rounded),
           ),
           IconButton.filledTonal(
-            tooltip: 'Add chapter',
+            tooltip: AppLocalizations.of(context).uiAddChapter,
             onPressed: () => Navigator.pop(
               context,
               const _ReaderChapterPickerResult(
@@ -424,7 +424,9 @@ class _ReaderChapterPickerDialog extends StatelessWidget {
         child: chapters.isEmpty
             ? Center(
                 child: Text(
-                  'Import TXT files, import a folder, or add a chapter.',
+                  AppLocalizations.of(
+                    context,
+                  ).uiImportTXTFilesImportAFolderOrAddAChapter,
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
                 ),
               )
@@ -450,12 +452,12 @@ class _ReaderChapterPickerDialog extends StatelessWidget {
                       spacing: 2,
                       children: [
                         if (selected)
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.only(top: 8, right: 2),
                             child: Icon(Icons.check_rounded),
                           ),
                         IconButton(
-                          tooltip: 'Edit chapter',
+                          tooltip: AppLocalizations.of(context).uiEditChapter,
                           onPressed: () => Navigator.pop(
                             context,
                             _ReaderChapterPickerResult(
@@ -466,7 +468,7 @@ class _ReaderChapterPickerDialog extends StatelessWidget {
                           icon: const Icon(Icons.edit_rounded, size: 18),
                         ),
                         IconButton(
-                          tooltip: 'Delete chapter',
+                          tooltip: AppLocalizations.of(context).uiDeleteChapter,
                           onPressed: () => Navigator.pop(
                             context,
                             _ReaderChapterPickerResult(
@@ -495,7 +497,7 @@ class _ReaderChapterPickerDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).uiCancel),
         ),
       ],
     );

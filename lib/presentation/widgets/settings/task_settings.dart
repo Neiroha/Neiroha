@@ -6,6 +6,7 @@ import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
 import 'settings_shared.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 // ───────────────────────────── Task monitor card ────────────────────────────
 
@@ -30,21 +31,24 @@ class TaskMonitorSettingsCard extends ConsumerWidget {
           children: [
             SettingsRow(
               icon: Icons.task_alt_rounded,
-              title: 'Current TTS Tasks',
+              title: AppLocalizations.of(context).uiCurrentTTSTasks,
               subtitle: snapshot.hasUnfinished
-                  ? '${snapshot.runningCount} running, ${snapshot.queuedCount} waiting'
-                  : 'No unfinished TTS tasks right now.',
+                  ? AppLocalizations.of(context).uiRunningWaiting(
+                      snapshot.runningCount,
+                      snapshot.queuedCount,
+                    )
+                  : AppLocalizations.of(context).uiNoUnfinishedTTSTasksRightNow,
               trailing: Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
                   _TaskCountChip(
-                    label: 'Running',
+                    label: AppLocalizations.of(context).uiRunning,
                     count: snapshot.runningCount,
                     color: Colors.lightGreenAccent,
                   ),
                   _TaskCountChip(
-                    label: 'Queued',
+                    label: AppLocalizations.of(context).uiQueued,
                     count: snapshot.queuedCount,
                     color: AppTheme.accentColor,
                   ),
@@ -55,12 +59,22 @@ class TaskMonitorSettingsCard extends ConsumerWidget {
             if (!snapshot.hasUnfinished)
               const _EmptyTaskState()
             else ...[
-              _TaskSection(title: 'Running', tasks: snapshot.running),
-              _TaskSection(title: 'Waiting', tasks: snapshot.queued),
+              _TaskSection(
+                title: AppLocalizations.of(context).uiRunning,
+                tasks: snapshot.running,
+              ),
+              _TaskSection(
+                title: AppLocalizations.of(context).uiWaiting,
+                tasks: snapshot.queued,
+              ),
             ],
             if (recent.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              _TaskSection(title: 'Recent', tasks: recent, compact: true),
+              SizedBox(height: 14),
+              _TaskSection(
+                title: AppLocalizations.of(context).uiRecent,
+                tasks: recent,
+                compact: true,
+              ),
             ],
           ],
         ),
@@ -88,9 +102,9 @@ class _EmptyTaskState extends StatelessWidget {
             size: 32,
             color: Colors.white.withValues(alpha: 0.28),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
-            'TTS queue is idle',
+            AppLocalizations.of(context).uiTTSQueueIsIdle,
             style: TextStyle(color: Colors.white.withValues(alpha: 0.62)),
           ),
         ],
@@ -157,7 +171,7 @@ class _TaskSection extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           for (final task in tasks) _TaskRow(task: task, compact: compact),
         ],
       ),
@@ -189,7 +203,7 @@ class _TaskRow extends StatelessWidget {
             padding: const EdgeInsets.only(top: 2),
             child: Icon(_taskStatusIcon(task.status), size: 18, color: color),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,7 +217,7 @@ class _TaskRow extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 5),
+                SizedBox(height: 5),
                 Wrap(
                   spacing: 6,
                   runSpacing: 4,
@@ -228,7 +242,7 @@ class _TaskRow extends StatelessWidget {
                 ),
                 if (task.errorMessage != null &&
                     task.errorMessage!.isNotEmpty) ...[
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Text(
                     task.errorMessage!,
                     maxLines: 2,
@@ -242,7 +256,7 @@ class _TaskRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           _TaskStatusPill(status: task.status),
         ],
       ),
@@ -268,7 +282,7 @@ class _TaskMetaChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 12, color: Colors.white.withValues(alpha: 0.45)),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 180),
             child: Text(
@@ -303,7 +317,7 @@ class _TaskStatusPill extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.22)),
       ),
       child: Text(
-        _taskStatusLabel(status),
+        _taskStatusLabel(context, status),
         style: TextStyle(
           color: color.withValues(alpha: 0.9),
           fontSize: 11,
@@ -332,12 +346,12 @@ IconData _taskStatusIcon(TtsQueueTaskStatus status) {
   };
 }
 
-String _taskStatusLabel(TtsQueueTaskStatus status) {
+String _taskStatusLabel(BuildContext context, TtsQueueTaskStatus status) {
   return switch (status) {
-    TtsQueueTaskStatus.queued => 'Queued',
-    TtsQueueTaskStatus.running => 'Running',
-    TtsQueueTaskStatus.completed => 'Done',
-    TtsQueueTaskStatus.failed => 'Failed',
+    TtsQueueTaskStatus.queued => AppLocalizations.of(context).uiQueued,
+    TtsQueueTaskStatus.running => AppLocalizations.of(context).uiRunning,
+    TtsQueueTaskStatus.completed => AppLocalizations.of(context).uiDone,
+    TtsQueueTaskStatus.failed => AppLocalizations.of(context).uiFailed,
   };
 }
 

@@ -6,6 +6,7 @@ import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/server/api_server.dart';
 
 import 'settings_shared.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 // ───────────────────────────── API server card ─────────────────────────────
 
@@ -77,9 +78,9 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
       await server.restart(config: cfg);
     }
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('API config saved.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context).uiAPIConfigSaved)),
+    );
   }
 
   Future<void> _setApiLogEnabled(bool enabled) async {
@@ -89,7 +90,9 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          enabled ? 'API log output enabled.' : 'API log output disabled.',
+          enabled
+              ? AppLocalizations.of(context).uiAPILogOutputEnabled
+              : AppLocalizations.of(context).uiAPILogOutputDisabled,
         ),
       ),
     );
@@ -119,10 +122,12 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
           children: [
             SettingsRow(
               icon: Icons.power_settings_new_rounded,
-              title: 'API Server',
+              title: AppLocalizations.of(context).settingsApi,
               subtitle: running
-                  ? 'Running on ${server.bindHost}:${server.port}'
-                  : 'Stopped',
+                  ? AppLocalizations.of(
+                      context,
+                    ).uiRunningOn('${server.bindHost}:${server.port}')
+                  : AppLocalizations.of(context).uiStopped,
               trailing: Switch(
                 value: running,
                 onChanged: (value) async {
@@ -147,7 +152,7 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
                     color: Colors.orange.withValues(alpha: 0.4),
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(
                       Icons.warning_amber_rounded,
@@ -157,9 +162,9 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Bound to 0.0.0.0 with no API key — anyone on the LAN '
-                        'can call your providers. Set an API key or rebind to '
-                        '127.0.0.1.',
+                        AppLocalizations.of(
+                          context,
+                        ).uiBoundTo0000WithNoAPIKeyAnyoneOn,
                         style: TextStyle(fontSize: 12),
                       ),
                     ),
@@ -171,8 +176,8 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
                 final compact = constraints.maxWidth < 520;
                 final hostField = TextField(
                   controller: _hostCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Bind host',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).uiBindHost,
                     hintText: '127.0.0.1',
                     isDense: true,
                   ),
@@ -180,8 +185,8 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
                 );
                 final portField = TextField(
                   controller: _portCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Port',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).uiPort,
                     isDense: true,
                   ),
                   keyboardType: TextInputType.number,
@@ -189,30 +194,26 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
 
                 if (compact) {
                   return Column(
-                    children: [
-                      hostField,
-                      const SizedBox(height: 12),
-                      portField,
-                    ],
+                    children: [hostField, SizedBox(height: 12), portField],
                   );
                 }
 
                 return Row(
                   children: [
                     Expanded(child: hostField),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     SizedBox(width: 110, child: portField),
                   ],
                 );
               },
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             TextField(
               controller: _keyCtrl,
               obscureText: !_showKey,
               decoration: InputDecoration(
-                labelText: 'API key (optional)',
-                hintText: 'Bearer token / X-API-Key',
+                labelText: AppLocalizations.of(context).uiAPIKeyOptional,
+                hintText: AppLocalizations.of(context).uiBearerTokenXAPIKey,
                 isDense: true,
                 suffixIcon: IconButton(
                   icon: Icon(
@@ -224,23 +225,29 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
               ),
               onChanged: (_) => setState(() {}),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             TextField(
               controller: _corsCtrl,
-              decoration: const InputDecoration(
-                labelText: 'CORS origin allowlist (CSV, empty = deny all)',
-                hintText: 'https://example.com, http://localhost:3000',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(
+                  context,
+                ).uiCORSOriginAllowlistCSVEmptyDenyAll,
+                hintText: AppLocalizations.of(
+                  context,
+                ).uiHttpsExampleComHttpLocalhost3000,
                 isDense: true,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             LayoutBuilder(
               builder: (context, constraints) {
                 final compact = constraints.maxWidth < 520;
                 final rateField = TextField(
                   controller: _rateCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Rate limit (req/min/IP, 0 = off)',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(
+                      context,
+                    ).uiRateLimitReqMinIP0Off,
                     isDense: true,
                   ),
                   keyboardType: TextInputType.number,
@@ -256,7 +263,7 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       rateField,
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Align(
                         alignment: Alignment.centerRight,
                         child: saveButton,
@@ -277,16 +284,17 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
             const Divider(),
             SettingsRow(
               icon: Icons.receipt_long_rounded,
-              title: 'API Log Output',
-              subtitle:
-                  'Record external API request metadata in this panel. Request bodies and auth headers are not stored.',
+              title: AppLocalizations.of(context).uiAPILogOutput,
+              subtitle: AppLocalizations.of(
+                context,
+              ).uiRecordExternalAPIRequestMetadataInThisPanelRequestBodiesAndAuth,
               trailing: Switch(
                 value: _apiLogEnabled,
                 onChanged: _hydrated ? _setApiLogEnabled : null,
               ),
             ),
             if (_apiLogEnabled) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               _ApiLogPanel(
                 logs: apiLogs,
                 onClear: () => ref.read(apiServerProvider).clearLogs(),
@@ -320,7 +328,7 @@ class _ApiLogPanel extends StatelessWidget {
             child: Row(
               children: [
                 Text(
-                  '${logs.length} request(s)',
+                  AppLocalizations.of(context).uiRequestS(logs.length),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.58),
@@ -331,7 +339,7 @@ class _ApiLogPanel extends StatelessWidget {
                 TextButton.icon(
                   onPressed: logs.isEmpty ? null : onClear,
                   icon: const Icon(Icons.delete_sweep_rounded, size: 16),
-                  label: const Text('Clear'),
+                  label: Text(AppLocalizations.of(context).uiClear),
                 ),
               ],
             ),
@@ -342,7 +350,7 @@ class _ApiLogPanel extends StatelessWidget {
             child: logs.isEmpty
                 ? Center(
                     child: Text(
-                      'No API requests logged yet.',
+                      AppLocalizations.of(context).uiNoAPIRequestsLoggedYet,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.42),
                         fontSize: 12,
@@ -397,7 +405,7 @@ class _ApiLogRow extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,7 +419,7 @@ class _ApiLogRow extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 3),
+                SizedBox(height: 3),
                 Text(
                   '${_formatClock(entry.startedAt)}  ${entry.remoteAddress}  ${entry.durationMs} ms',
                   maxLines: 1,
@@ -422,7 +430,7 @@ class _ApiLogRow extends StatelessWidget {
                   ),
                 ),
                 if (entry.errorMessage != null) ...[
-                  const SizedBox(height: 3),
+                  SizedBox(height: 3),
                   Text(
                     entry.errorMessage!,
                     maxLines: 2,

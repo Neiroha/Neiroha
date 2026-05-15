@@ -16,6 +16,7 @@ import 'package:neiroha/presentation/widgets/voice_asset/record_dialog.dart';
 import 'package:neiroha/presentation/widgets/voice_asset/trim_dialog.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Voice Asset library — a collection of single audio tracks that the user
 /// has uploaded, recorded, or imported from generated TTS output. These can
@@ -36,27 +37,32 @@ class VoiceAssetScreen extends ConsumerWidget {
         const Divider(height: 1),
         Expanded(
           child: tracksAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            loading: () => Center(child: CircularProgressIndicator()),
+            error: (e, _) =>
+                Center(child: Text(AppLocalizations.of(context).uiError2(e))),
             data: (tracks) {
               if (tracks.isEmpty) return _buildEmpty(context, ref);
-              final selected =
-                  tracks.where((t) => t.id == selectedId).firstOrNull;
+              final selected = tracks
+                  .where((t) => t.id == selectedId)
+                  .firstOrNull;
               return ResizableSplitPane(
                 initialLeftFraction: 0.6,
                 left: _TrackList(
                   tracks: tracks,
                   selectedId: selectedId,
-                  onSelect: (id) => ref
-                      .read(_selectedTrackIdProvider.notifier)
-                      .state = id,
+                  onSelect: (id) =>
+                      ref.read(_selectedTrackIdProvider.notifier).state = id,
                 ),
                 rightBuilder: (_) => selected != null
                     ? _TrackInspector(track: selected)
                     : Center(
-                        child: Text('Select a track',
-                            style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.4)))),
+                        child: Text(
+                          AppLocalizations.of(context).uiSelectATrack,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ),
               );
             },
           ),
@@ -70,31 +76,34 @@ class VoiceAssetScreen extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
       child: Row(
         children: [
-          Text('Voice Assets',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(width: 8),
+          Text(
+            AppLocalizations.of(context).navVoiceAssets,
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Single audio tracks for voice cloning',
+              AppLocalizations.of(context).uiSingleAudioTracksForVoiceCloning,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 14,
+              ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           OutlinedButton.icon(
             onPressed: () => _recordTrack(context, ref),
             icon: const Icon(Icons.mic_rounded, size: 18),
-            label: const Text('Record'),
+            label: Text(AppLocalizations.of(context).uiRecord),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           FilledButton.icon(
             onPressed: () => _uploadTrack(context, ref),
             icon: const Icon(Icons.upload_file_rounded, size: 18),
-            label: const Text('Upload Audio'),
+            label: Text(AppLocalizations.of(context).uiUploadAudio),
           ),
         ],
       ),
@@ -106,23 +115,34 @@ class VoiceAssetScreen extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.library_music_outlined,
-              size: 64, color: Colors.white.withValues(alpha: 0.1)),
-          const SizedBox(height: 16),
-          Text('No audio tracks yet',
-              style: TextStyle(
-                  fontSize: 16, color: Colors.white.withValues(alpha: 0.4))),
-          const SizedBox(height: 8),
-          Text(
-            'Upload an audio file or record a new sample to get started.',
-            style: TextStyle(
-                fontSize: 13, color: Colors.white.withValues(alpha: 0.25)),
+          Icon(
+            Icons.library_music_outlined,
+            size: 64,
+            color: Colors.white.withValues(alpha: 0.1),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 16),
+          Text(
+            AppLocalizations.of(context).uiNoAudioTracksYet,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white.withValues(alpha: 0.4),
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            AppLocalizations.of(
+              context,
+            ).uiUploadAnAudioFileOrRecordANewSampleToGetStarted,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.white.withValues(alpha: 0.25),
+            ),
+          ),
+          SizedBox(height: 20),
           FilledButton.icon(
             onPressed: () => _uploadTrack(context, ref),
             icon: const Icon(Icons.upload_file_rounded, size: 18),
-            label: const Text('Upload Audio'),
+            label: Text(AppLocalizations.of(context).uiUploadAudio),
           ),
         ],
       ),
@@ -162,14 +182,18 @@ class VoiceAssetScreen extends ConsumerWidget {
     } catch (_) {}
 
     final name = p.basenameWithoutExtension(src.path);
-    await ref.read(databaseProvider).insertAudioTrack(db.AudioTracksCompanion(
-          id: Value(id),
-          name: Value(name),
-          audioPath: Value(dstPath),
-          durationSec: Value(duration),
-          sourceType: const Value('upload'),
-          createdAt: Value(DateTime.now()),
-        ));
+    await ref
+        .read(databaseProvider)
+        .insertAudioTrack(
+          db.AudioTracksCompanion(
+            id: Value(id),
+            name: Value(name),
+            audioPath: Value(dstPath),
+            durationSec: Value(duration),
+            sourceType: const Value('upload'),
+            createdAt: Value(DateTime.now()),
+          ),
+        );
     ref.read(_selectedTrackIdProvider.notifier).state = id;
   }
 
@@ -196,14 +220,18 @@ class VoiceAssetScreen extends ConsumerWidget {
 
     final id = const Uuid().v4();
     final name = 'Recording ${PathService.formatTimestamp()}';
-    await ref.read(databaseProvider).insertAudioTrack(db.AudioTracksCompanion(
-          id: Value(id),
-          name: Value(name),
-          audioPath: Value(recordedPath),
-          durationSec: Value(duration),
-          sourceType: const Value('record'),
-          createdAt: Value(DateTime.now()),
-        ));
+    await ref
+        .read(databaseProvider)
+        .insertAudioTrack(
+          db.AudioTracksCompanion(
+            id: Value(id),
+            name: Value(name),
+            audioPath: Value(recordedPath),
+            durationSec: Value(duration),
+            sourceType: const Value('record'),
+            createdAt: Value(DateTime.now()),
+          ),
+        );
     ref.read(_selectedTrackIdProvider.notifier).state = id;
   }
 }
@@ -240,33 +268,40 @@ class _TrackList extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
               onTap: () => onSelect(t.id),
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 child: Row(
                   children: [
                     _Avatar(
-                        name: t.name,
-                        avatarPath: t.avatarPath,
-                        selected: isSelected),
-                    const SizedBox(width: 12),
+                      name: t.name,
+                      avatarPath: t.avatarPath,
+                      selected: isSelected,
+                    ),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(t.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500)),
-                          const SizedBox(height: 2),
+                          Text(
+                            t.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: 2),
                           Text(
                             _subtitle(t),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.white.withValues(alpha: 0.4)),
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.4),
+                            ),
                           ),
                         ],
                       ),
@@ -274,16 +309,19 @@ class _TrackList extends StatelessWidget {
                     if (t.refText != null && t.refText!.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(right: 8),
-                        child: Icon(Icons.subtitles_rounded,
-                            size: 14,
-                            color: Colors.white.withValues(alpha: 0.25)),
+                        child: Icon(
+                          Icons.subtitles_rounded,
+                          size: 14,
+                          color: Colors.white.withValues(alpha: 0.25),
+                        ),
                       ),
                     Text(
                       _formatDuration(t.durationSec),
                       style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.white.withValues(alpha: 0.4),
-                          fontFeatures: const [FontFeature.tabularFigures()]),
+                        fontSize: 11,
+                        color: Colors.white.withValues(alpha: 0.4),
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                     ),
                   ],
                 ),
@@ -372,7 +410,12 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
     if (!await File(widget.track.audioPath).exists()) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Audio file missing on disk')));
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).uiAudioFileMissingOnDisk,
+            ),
+          ),
+        );
       }
       return;
     }
@@ -391,27 +434,41 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
     final ext = p.extension(src.path).isEmpty ? '.png' : p.extension(src.path);
     final dst = p.join(avatarDir.path, '${widget.track.id}$ext');
     await src.copy(dst);
-    await ref.read(databaseProvider).updateAudioTrack(
-        widget.track.copyWith(avatarPath: Value(dst)));
+    await ref
+        .read(databaseProvider)
+        .updateAudioTrack(widget.track.copyWith(avatarPath: Value(dst)));
   }
 
   Future<void> _save() async {
-    await ref.read(databaseProvider).updateAudioTrack(widget.track.copyWith(
-          name: _nameCtrl.text.trim().isEmpty
-              ? widget.track.name
-              : _nameCtrl.text.trim(),
-          description: Value(
-              _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim()),
-          refText: Value(_refTextCtrl.text.trim().isEmpty
-              ? null
-              : _refTextCtrl.text.trim()),
-          refLang: Value(_refLangCtrl.text.trim().isEmpty
-              ? null
-              : _refLangCtrl.text.trim()),
-        ));
+    await ref
+        .read(databaseProvider)
+        .updateAudioTrack(
+          widget.track.copyWith(
+            name: _nameCtrl.text.trim().isEmpty
+                ? widget.track.name
+                : _nameCtrl.text.trim(),
+            description: Value(
+              _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
+            ),
+            refText: Value(
+              _refTextCtrl.text.trim().isEmpty
+                  ? null
+                  : _refTextCtrl.text.trim(),
+            ),
+            refLang: Value(
+              _refLangCtrl.text.trim().isEmpty
+                  ? null
+                  : _refLangCtrl.text.trim(),
+            ),
+          ),
+        );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Saved'), duration: Duration(seconds: 1)));
+        SnackBar(
+          content: Text(AppLocalizations.of(context).uiSaved),
+          duration: Duration(seconds: 1),
+        ),
+      );
     }
   }
 
@@ -419,14 +476,22 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
     final track = widget.track;
     final duration = track.durationSec;
     if (duration == null || duration <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Audio duration unknown — cannot trim.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).uiAudioDurationUnknownCannotTrim,
+          ),
+        ),
+      );
       return;
     }
     if (!await File(track.audioPath).exists()) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Audio file missing on disk')));
+        SnackBar(
+          content: Text(AppLocalizations.of(context).uiAudioFileMissingOnDisk),
+        ),
+      );
       return;
     }
     // Stop any inline preview so the trim dialog's player has exclusive
@@ -439,38 +504,46 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
       ref: ref,
       audioPath: track.audioPath,
       currentDurationSec: duration,
-      onSaved: ({
-        required String trimmedPath,
-        required double newDurationSec,
-        required bool replaceOriginal,
-      }) async {
-        final database = ref.read(databaseProvider);
-        if (replaceOriginal) {
-          await database.updateAudioTrack(track.copyWith(
-            audioPath: trimmedPath,
-            durationSec: Value(newDurationSec),
-          ));
-        } else {
-          final id = const Uuid().v4();
-          await database.insertAudioTrack(db.AudioTracksCompanion(
-            id: Value(id),
-            name: Value('${track.name} (trim)'),
-            audioPath: Value(trimmedPath),
-            durationSec: Value(newDurationSec),
-            sourceType: Value(track.sourceType),
-            description: Value(track.description),
-            refText: Value(track.refText),
-            refLang: Value(track.refLang),
-            createdAt: Value(DateTime.now()),
-          ));
-          ref.read(_selectedTrackIdProvider.notifier).state = id;
-        }
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('Trim applied'),
-              duration: Duration(seconds: 1)));
-        }
-      },
+      onSaved:
+          ({
+            required String trimmedPath,
+            required double newDurationSec,
+            required bool replaceOriginal,
+          }) async {
+            final database = ref.read(databaseProvider);
+            if (replaceOriginal) {
+              await database.updateAudioTrack(
+                track.copyWith(
+                  audioPath: trimmedPath,
+                  durationSec: Value(newDurationSec),
+                ),
+              );
+            } else {
+              final id = const Uuid().v4();
+              await database.insertAudioTrack(
+                db.AudioTracksCompanion(
+                  id: Value(id),
+                  name: Value('${track.name} (trim)'),
+                  audioPath: Value(trimmedPath),
+                  durationSec: Value(newDurationSec),
+                  sourceType: Value(track.sourceType),
+                  description: Value(track.description),
+                  refText: Value(track.refText),
+                  refLang: Value(track.refLang),
+                  createdAt: Value(DateTime.now()),
+                ),
+              );
+              ref.read(_selectedTrackIdProvider.notifier).state = id;
+            }
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(AppLocalizations.of(context).uiTrimApplied),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            }
+          },
     );
   }
 
@@ -478,16 +551,19 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete audio track?'),
-        content: Text('"${widget.track.name}" will be removed.'),
+        title: Text(AppLocalizations.of(context).uiDeleteAudioTrack),
+        content: Text(
+          AppLocalizations.of(context).uiWillBeRemoved(widget.track.name),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(AppLocalizations.of(context).uiCancel),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context).uiDelete),
           ),
         ],
       ),
@@ -509,8 +585,8 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
     // Suppress "unused" lint when track refreshes mid-edit.
     assert(_loadedTrackId == widget.track.id);
     final playback = ref.watch(playbackNotifierProvider);
-    final isPlayingThis = playback.audioPath == widget.track.audioPath &&
-        playback.isPlaying;
+    final isPlayingThis =
+        playback.audioPath == widget.track.audioPath && playback.isPlaying;
     return Container(
       color: AppTheme.surfaceDim,
       child: ListView(
@@ -522,10 +598,11 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
               child: Stack(
                 children: [
                   _Avatar(
-                      name: widget.track.name,
-                      avatarPath: widget.track.avatarPath,
-                      selected: true,
-                      size: 84),
+                    name: widget.track.name,
+                    avatarPath: widget.track.avatarPath,
+                    selected: true,
+                    size: 84,
+                  ),
                   Positioned(
                     right: 0,
                     bottom: 0,
@@ -535,17 +612,22 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
                         color: AppTheme.accentColor,
                         shape: BoxShape.circle,
                         border: Border.all(
-                            color: AppTheme.surfaceDim, width: 2),
+                          color: AppTheme.surfaceDim,
+                          width: 2,
+                        ),
                       ),
-                      child: const Icon(Icons.camera_alt_rounded,
-                          size: 14, color: Colors.white),
+                      child: const Icon(
+                        Icons.camera_alt_rounded,
+                        size: 14,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           // Player row
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -557,13 +639,15 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
               children: [
                 IconButton(
                   onPressed: _togglePlay,
-                  icon: Icon(isPlayingThis
-                      ? Icons.stop_circle_rounded
-                      : Icons.play_circle_rounded),
+                  icon: Icon(
+                    isPlayingThis
+                        ? Icons.stop_circle_rounded
+                        : Icons.play_circle_rounded,
+                  ),
                   color: AppTheme.accentColor,
                   iconSize: 32,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -573,13 +657,16 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            fontSize: 12, fontFamily: 'monospace'),
+                          fontSize: 12,
+                          fontFamily: 'monospace',
+                        ),
                       ),
                       Text(
                         _formatDuration(widget.track.durationSec),
                         style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.4)),
+                          fontSize: 11,
+                          color: Colors.white.withValues(alpha: 0.4),
+                        ),
                       ),
                     ],
                   ),
@@ -587,57 +674,62 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           TextField(
             controller: _nameCtrl,
-            decoration: const InputDecoration(labelText: 'Name'),
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).uiName,
+            ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           TextField(
             controller: _descCtrl,
-            decoration: const InputDecoration(labelText: 'Description'),
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).uiDescription,
+            ),
             maxLines: 2,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           TextField(
             controller: _refTextCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Reference Text',
-              helperText:
-                  'Transcript of the audio (used by voice cloning models that need it)',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).uiReferenceText,
+              helperText: AppLocalizations.of(
+                context,
+              ).uiTranscriptOfTheAudioUsedByVoiceCloningModelsThatNeedIt,
             ),
             maxLines: 3,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           TextField(
             controller: _refLangCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Reference Language',
-              hintText: 'e.g. zh, en, ja',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).uiReferenceLanguage,
+              hintText: AppLocalizations.of(context).uiEGZhEnJa,
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           Row(
             children: [
               Expanded(
                 child: FilledButton.icon(
                   onPressed: _save,
                   icon: const Icon(Icons.save_rounded, size: 18),
-                  label: const Text('Save'),
+                  label: Text(AppLocalizations.of(context).uiSave),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               OutlinedButton.icon(
                 onPressed: _trim,
                 icon: const Icon(Icons.content_cut_rounded, size: 18),
-                label: const Text('Trim'),
+                label: Text(AppLocalizations.of(context).uiTrim),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               IconButton(
                 onPressed: _delete,
                 icon: const Icon(Icons.delete_outline_rounded),
                 color: Colors.redAccent,
-                tooltip: 'Delete',
+                tooltip: AppLocalizations.of(context).uiDelete,
               ),
             ],
           ),
@@ -682,7 +774,9 @@ class _Avatar extends StatelessWidget {
         ),
         image: hasAvatar
             ? DecorationImage(
-                image: FileImage(File(avatarPath!)), fit: BoxFit.cover)
+                image: FileImage(File(avatarPath!)),
+                fit: BoxFit.cover,
+              )
             : null,
       ),
       child: hasAvatar

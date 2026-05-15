@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// A two-pane layout with a draggable divider.
 ///
@@ -185,12 +186,13 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
     const dividerWidth = 6.0;
     // Clamp fraction so both panes keep at least minPaneWidth.
     final minFraction = widget.minPaneWidth / totalWidth;
-    final maxFraction =
-        1.0 - (widget.minPaneWidth + dividerWidth) / totalWidth;
+    final maxFraction = 1.0 - (widget.minPaneWidth + dividerWidth) / totalWidth;
     final clampedFraction = _leftFraction.clamp(minFraction, maxFraction);
     final leftWidth = (totalWidth * clampedFraction).clamp(0.0, totalWidth);
-    final rightWidth =
-        (totalWidth - leftWidth - dividerWidth).clamp(0.0, totalWidth);
+    final rightWidth = (totalWidth - leftWidth - dividerWidth).clamp(
+      0.0,
+      totalWidth,
+    );
 
     return Row(
       children: [
@@ -198,9 +200,8 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
         _DragDivider(
           onDrag: (dx) {
             setState(() {
-              _leftFraction =
-                  ((_leftFraction * totalWidth + dx) / totalWidth)
-                      .clamp(minFraction, maxFraction);
+              _leftFraction = ((_leftFraction * totalWidth + dx) / totalWidth)
+                  .clamp(minFraction, maxFraction);
             });
           },
           onDragEnd: () {
@@ -366,8 +367,10 @@ class _VerticalResizableSplitPaneState
             1.0 - (widget.minPaneHeight + dividerHeight) / totalHeight;
         final clamped = _topFraction.clamp(minFraction, maxFraction);
         final topHeight = (totalHeight * clamped).clamp(0.0, totalHeight);
-        final bottomHeight =
-            (totalHeight - topHeight - dividerHeight).clamp(0.0, totalHeight);
+        final bottomHeight = (totalHeight - topHeight - dividerHeight).clamp(
+          0.0,
+          totalHeight,
+        );
 
         return Column(
           children: [
@@ -376,8 +379,10 @@ class _VerticalResizableSplitPaneState
               onDrag: (dy) {
                 setState(() {
                   _topFraction =
-                      ((_topFraction * totalHeight + dy) / totalHeight)
-                          .clamp(minFraction, maxFraction);
+                      ((_topFraction * totalHeight + dy) / totalHeight).clamp(
+                        minFraction,
+                        maxFraction,
+                      );
                 });
               },
             ),
@@ -436,8 +441,10 @@ class _HorizontalResizableSplitPaneState
             1.0 - (widget.minPaneWidth + dividerWidth) / totalWidth;
         final clamped = _leftFraction.clamp(minFraction, maxFraction);
         final leftWidth = (totalWidth * clamped).clamp(0.0, totalWidth);
-        final rightWidth =
-            (totalWidth - leftWidth - dividerWidth).clamp(0.0, totalWidth);
+        final rightWidth = (totalWidth - leftWidth - dividerWidth).clamp(
+          0.0,
+          totalWidth,
+        );
 
         return Row(
           children: [
@@ -446,8 +453,10 @@ class _HorizontalResizableSplitPaneState
               onDrag: (dx) {
                 setState(() {
                   _leftFraction =
-                      ((_leftFraction * totalWidth + dx) / totalWidth)
-                          .clamp(minFraction, maxFraction);
+                      ((_leftFraction * totalWidth + dx) / totalWidth).clamp(
+                        minFraction,
+                        maxFraction,
+                      );
                 });
               },
               onDragEnd: () {},
@@ -525,14 +534,20 @@ class _BackButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.arrow_back_rounded,
-                  size: 20, color: Colors.white),
-              const SizedBox(width: 8),
-              Text('Back',
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white.withValues(alpha: 0.85))),
+              const Icon(
+                Icons.arrow_back_rounded,
+                size: 20,
+                color: Colors.white,
+              ),
+              SizedBox(width: 8),
+              Text(
+                AppLocalizations.of(context).uiBack,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.85),
+                ),
+              ),
             ],
           ),
         ),

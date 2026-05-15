@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 import 'settings_shared.dart';
 
@@ -7,13 +8,14 @@ class AboutSettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Card(
+    final l10n = AppLocalizations.of(context);
+    return Card(
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: SettingsRow(
           icon: Icons.info_outline_rounded,
           title: 'Neiroha',
-          subtitle: 'v0.1.0 - AI Audio Middleware & Dubbing Workstation',
+          subtitle: l10n.aboutSubtitle,
         ),
       ),
     );

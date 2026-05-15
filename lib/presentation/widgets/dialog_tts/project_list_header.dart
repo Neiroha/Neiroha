@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Top strip of the Dialog TTS list view: title, subtitle, and the
 /// `New Project` action.
@@ -13,20 +14,25 @@ class ProjectListHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
       child: Row(
         children: [
-          Text('Dialog TTS',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(width: 8),
-          Text('Multi-character conversations',
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5), fontSize: 14)),
+          Text(
+            AppLocalizations.of(context).navDialogTts,
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(width: 8),
+          Text(
+            AppLocalizations.of(context).uiMultiCharacterConversations,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
+              fontSize: 14,
+            ),
+          ),
           const Spacer(),
           FilledButton.icon(
             onPressed: onCreate,
             icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('New Project'),
+            label: Text(AppLocalizations.of(context).uiNewProject),
           ),
         ],
       ),

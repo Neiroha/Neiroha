@@ -20,6 +20,7 @@ import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Dialog TTS — multi-character conversation with project management.
 ///
@@ -57,10 +58,11 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
         const Divider(height: 1),
         Expanded(
           child: projectsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            loading: () => Center(child: CircularProgressIndicator()),
+            error: (e, _) =>
+                Center(child: Text(AppLocalizations.of(context).uiError2(e))),
             data: (projects) => ProjectCardGrid(
-              emptyLabel: 'No dialog projects yet',
+              emptyLabel: AppLocalizations.of(context).uiNoDialogProjectsYet,
               projects: [
                 for (final p in projects)
                   ProjectCardData(
@@ -86,7 +88,9 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
     if (banks.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Create a Voice Bank first')),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).uiCreateAVoiceBankFirst),
+          ),
         );
       }
       return;
@@ -145,7 +149,7 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
         ?.where((p) => p.id == widget.projectId)
         .firstOrNull;
     if (project == null) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: CircularProgressIndicator());
     }
 
     final linesAsync = ref.watch(
@@ -293,9 +297,11 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Auto-generate failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).uiAutoGenerateFailed(e)),
+        ),
+      );
     }
   }
 

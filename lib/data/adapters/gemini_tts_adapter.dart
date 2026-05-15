@@ -50,11 +50,36 @@ class GeminiTtsAdapter extends TtsAdapter {
   /// 30 prebuilt voices. AI Studio does not expose a list endpoint, so this
   /// list is hard-coded against the official docs.
   static const List<String> kPrebuiltVoices = [
-    'Zephyr', 'Puck', 'Charon', 'Kore', 'Fenrir', 'Leda', 'Orus',
-    'Aoede', 'Callirrhoe', 'Autonoe', 'Enceladus', 'Iapetus', 'Umbriel',
-    'Algieba', 'Despina', 'Erinome', 'Algenib', 'Rasalgethi', 'Laomedeia',
-    'Achernar', 'Alnilam', 'Schedar', 'Gacrux', 'Pulcherrima', 'Achird',
-    'Zubenelgenubi', 'Vindemiatrix', 'Sadachbia', 'Sadaltager', 'Sulafat',
+    'Zephyr',
+    'Puck',
+    'Charon',
+    'Kore',
+    'Fenrir',
+    'Leda',
+    'Orus',
+    'Aoede',
+    'Callirrhoe',
+    'Autonoe',
+    'Enceladus',
+    'Iapetus',
+    'Umbriel',
+    'Algieba',
+    'Despina',
+    'Erinome',
+    'Algenib',
+    'Rasalgethi',
+    'Laomedeia',
+    'Achernar',
+    'Alnilam',
+    'Schedar',
+    'Gacrux',
+    'Pulcherrima',
+    'Achird',
+    'Zubenelgenubi',
+    'Vindemiatrix',
+    'Sadachbia',
+    'Sadaltager',
+    'Sulafat',
   ];
 
   GeminiTtsAdapter({
@@ -64,25 +89,28 @@ class GeminiTtsAdapter extends TtsAdapter {
   }) {
     final raw = baseUrl.trim().isEmpty ? defaultBaseUrl : baseUrl.trim();
     final normalized = raw.endsWith('/') ? raw : '$raw/';
-    _dio = Dio(BaseOptions(
-      baseUrl: normalized,
-      headers: {
-        if (apiKey.isNotEmpty) 'x-goog-api-key': apiKey,
-        'Content-Type': 'application/json',
-      },
-      responseType: ResponseType.json,
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: normalized,
+        headers: {
+          if (apiKey.isNotEmpty) 'x-goog-api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+        responseType: ResponseType.json,
+      ),
+    );
   }
 
   @override
   Future<TtsResult> synthesize(TtsRequest request) async {
     if (request.refAudioPath != null && request.refAudioPath!.isNotEmpty) {
       throw Exception(
-          'Gemini TTS does not support voice cloning from reference audio.');
+        'Gemini TTS does not support voice cloning from reference audio.',
+      );
     }
 
-    final voice = (request.presetVoiceName != null &&
-            request.presetVoiceName!.isNotEmpty)
+    final voice =
+        (request.presetVoiceName != null && request.presetVoiceName!.isNotEmpty)
         ? request.presetVoiceName!
         : 'Kore';
     final model = modelName.isNotEmpty ? modelName : defaultModel;
@@ -106,18 +134,18 @@ class GeminiTtsAdapter extends TtsAdapter {
       'contents': [
         {
           'parts': [
-            {'text': prompt}
-          ]
-        }
+            {'text': prompt},
+          ],
+        },
       ],
       'generationConfig': {
         'responseModalities': ['AUDIO'],
         'speechConfig': {
           'voiceConfig': {
-            'prebuiltVoiceConfig': {'voiceName': voice}
-          }
-        }
-      }
+            'prebuiltVoiceConfig': {'voiceName': voice},
+          },
+        },
+      },
     };
 
     try {
@@ -185,11 +213,11 @@ class GeminiTtsAdapter extends TtsAdapter {
     final dataLen = pcm.length;
     final buf = BytesBuilder();
     void w32(int v) => buf.add([
-          v & 0xff,
-          (v >> 8) & 0xff,
-          (v >> 16) & 0xff,
-          (v >> 24) & 0xff,
-        ]);
+      v & 0xff,
+      (v >> 8) & 0xff,
+      (v >> 16) & 0xff,
+      (v >> 24) & 0xff,
+    ]);
     void w16(int v) => buf.add([v & 0xff, (v >> 8) & 0xff]);
     buf.add(ascii.encode('RIFF'));
     w32(36 + dataLen);

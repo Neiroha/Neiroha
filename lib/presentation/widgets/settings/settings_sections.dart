@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/l10n/localized_labels.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/app_providers.dart';
@@ -26,6 +28,7 @@ class SettingsSectionRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       color: const Color(0xFF12121A),
       child: Column(
@@ -33,7 +36,7 @@ class SettingsSectionRail extends StatelessWidget {
           const SizedBox(height: 28),
           Center(
             child: Text(
-              'Settings',
+              l10n.settingsTitle,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.2,
@@ -50,6 +53,7 @@ class SettingsSectionRail extends StatelessWidget {
                 return _SettingsSectionTile(
                   section: section,
                   selected: section == selected,
+                  label: section.localizedLabel(l10n),
                   onTap: () => onSelected(section),
                 );
               },
@@ -64,11 +68,13 @@ class SettingsSectionRail extends StatelessWidget {
 class _SettingsSectionTile extends StatefulWidget {
   final SettingsSection section;
   final bool selected;
+  final String label;
   final VoidCallback onTap;
 
   const _SettingsSectionTile({
     required this.section,
     required this.selected,
+    required this.label,
     required this.onTap,
   });
 
@@ -118,7 +124,7 @@ class _SettingsSectionTileState extends State<_SettingsSectionTile> {
               const SizedBox(width: 18),
               Expanded(
                 child: Text(
-                  widget.section.label,
+                  widget.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -149,6 +155,7 @@ class SettingsCompactPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       color: AppTheme.surfaceDim,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
@@ -156,7 +163,7 @@ class SettingsCompactPicker extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Settings',
+            l10n.settingsTitle,
             style: Theme.of(
               context,
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -170,7 +177,7 @@ class SettingsCompactPicker extends StatelessWidget {
                   ChoiceChip(
                     selected: selected == section,
                     avatar: Icon(section.icon, size: 16),
-                    label: Text(section.label),
+                    label: Text(section.localizedLabel(l10n)),
                     onSelected: (_) => onSelected(section),
                   ),
                   const SizedBox(width: 8),
@@ -193,6 +200,8 @@ class SettingsSectionContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final children = switch (section) {
       SettingsSection.general => const <Widget>[
+        LanguageSettingsCard(),
+        SizedBox(height: 12),
         StartupSettingsCard(),
         SizedBox(height: 12),
         TaskBehaviorSettingsCard(),
@@ -234,11 +243,12 @@ class _SettingsPageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          section.label,
+          section.localizedLabel(l10n),
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w700,
@@ -247,7 +257,7 @@ class _SettingsPageHeader extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          section.description,
+          section.localizedDescription(l10n),
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.48),

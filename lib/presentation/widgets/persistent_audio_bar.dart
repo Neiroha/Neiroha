@@ -5,14 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/playback_provider.dart';
 import '../theme/app_theme.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 class PersistentAudioBar extends ConsumerWidget {
   final String? onlyForSourceTag;
 
-  const PersistentAudioBar({
-    super.key,
-    this.onlyForSourceTag,
-  });
+  const PersistentAudioBar({super.key, this.onlyForSourceTag});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,7 +22,10 @@ class PersistentAudioBar extends ConsumerWidget {
 
     final notifier = ref.read(playbackNotifierProvider.notifier);
     final durMs = state.duration.inMilliseconds;
-    final posMs = state.position.inMilliseconds.clamp(0, durMs == 0 ? 1 : durMs);
+    final posMs = state.position.inMilliseconds.clamp(
+      0,
+      durMs == 0 ? 1 : durMs,
+    );
 
     return Container(
       height: 72,
@@ -56,7 +57,7 @@ class PersistentAudioBar extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               SizedBox(
                 width: metadataWidth,
                 child: Column(
@@ -83,15 +84,17 @@ class PersistentAudioBar extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: SliderTheme(
                   data: SliderTheme.of(context).copyWith(
                     trackHeight: 3,
-                    thumbShape:
-                        const RoundSliderThumbShape(enabledThumbRadius: 6),
-                    overlayShape:
-                        const RoundSliderOverlayShape(overlayRadius: 12),
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 6,
+                    ),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 12,
+                    ),
                   ),
                   child: Slider(
                     min: 0,
@@ -100,12 +103,12 @@ class PersistentAudioBar extends ConsumerWidget {
                     onChanged: durMs == 0
                         ? null
                         : (v) =>
-                            notifier.seek(Duration(milliseconds: v.toInt())),
+                              notifier.seek(Duration(milliseconds: v.toInt())),
                   ),
                 ),
               ),
               if (showTime) ...[
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   '${_fmt(state.position)} / ${_fmt(state.duration)}',
                   style: const TextStyle(
@@ -115,7 +118,7 @@ class PersistentAudioBar extends ConsumerWidget {
                   ),
                 ),
               ],
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               IconButton(
                 icon: Icon(
                   state.isPlaying
@@ -129,7 +132,7 @@ class PersistentAudioBar extends ConsumerWidget {
               IconButton(
                 icon: const Icon(Icons.close, size: 18),
                 color: Colors.white38,
-                tooltip: 'Close player',
+                tooltip: AppLocalizations.of(context).uiClosePlayer,
                 onPressed: notifier.stop,
               ),
             ],

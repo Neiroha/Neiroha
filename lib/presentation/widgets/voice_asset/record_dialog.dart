@@ -9,6 +9,7 @@ import 'package:record_platform_interface/record_platform_interface.dart';
 
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Mic-recording modal. Uses the Windows record plugin directly through its
 /// platform interface (MediaFoundation), avoiding the federated `record`
@@ -196,9 +197,11 @@ class _RecordDialogState extends State<RecordDialog>
     } catch (e) {
       await _cleanupPartialRecording();
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Recording failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).uiRecordingFailed(e)),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -257,9 +260,11 @@ class _RecordDialogState extends State<RecordDialog>
           _recordedPath = null;
           _levelNorm = 0;
         });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Recording failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).uiRecordingFailed(e)),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -390,8 +395,8 @@ class _RecordDialogState extends State<RecordDialog>
       title: Row(
         children: [
           Icon(Icons.mic_rounded, color: AppTheme.accentColor),
-          const SizedBox(width: 10),
-          const Text('Record Audio'),
+          SizedBox(width: 10),
+          Text(AppLocalizations.of(context).uiRecordAudio),
         ],
       ),
       content: SizedBox(
@@ -401,7 +406,7 @@ class _RecordDialogState extends State<RecordDialog>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (_initializing)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(vertical: 20),
                 child: Center(
                   child: SizedBox(
@@ -421,11 +426,11 @@ class _RecordDialogState extends State<RecordDialog>
               )
             else ...[
               _buildDeviceRow(),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _buildRecordingIndicator(),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               _buildTimerRow(),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               if (_phase == _Phase.preview) _buildPreviewRow(),
             ],
           ],
@@ -434,17 +439,17 @@ class _RecordDialogState extends State<RecordDialog>
       actions: [
         TextButton(
           onPressed: _busy ? null : _cancel,
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).uiCancel),
         ),
         if (_phase == _Phase.preview) ...[
           TextButton(
             onPressed: _busy ? null : _discardAndRetry,
-            child: const Text('Re-record'),
+            child: Text(AppLocalizations.of(context).uiReRecord),
           ),
           FilledButton.icon(
             onPressed: _busy ? null : _confirm,
             icon: const Icon(Icons.check_rounded, size: 18),
-            label: const Text('Save'),
+            label: Text(AppLocalizations.of(context).uiSave),
           ),
         ] else
           FilledButton.icon(
@@ -473,7 +478,7 @@ class _RecordDialogState extends State<RecordDialog>
   Widget _buildDeviceRow() {
     if (_devices.isEmpty) {
       return Text(
-        'Default microphone',
+        AppLocalizations.of(context).uiDefaultMicrophone,
         style: TextStyle(
           fontSize: 12,
           color: Colors.white.withValues(alpha: 0.5),
@@ -481,15 +486,15 @@ class _RecordDialogState extends State<RecordDialog>
       );
     }
     return DropdownButtonFormField<InputDevice?>(
-      decoration: const InputDecoration(
-        labelText: 'Input device',
+      decoration: InputDecoration(
+        labelText: AppLocalizations.of(context).uiInputDevice,
         isDense: true,
       ),
       initialValue: _selectedDevice,
       items: [
-        const DropdownMenuItem<InputDevice?>(
+        DropdownMenuItem<InputDevice?>(
           value: null,
-          child: Text('Default'),
+          child: Text(AppLocalizations.of(context).uiDefault),
         ),
         for (final d in _devices)
           DropdownMenuItem<InputDevice?>(
@@ -562,7 +567,7 @@ class _RecordDialogState extends State<RecordDialog>
               );
             },
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -579,7 +584,7 @@ class _RecordDialogState extends State<RecordDialog>
                         : Colors.white.withValues(alpha: 0.58),
                   ),
                 ),
-                const SizedBox(height: 5),
+                SizedBox(height: 5),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(3),
                   child: SizedBox(

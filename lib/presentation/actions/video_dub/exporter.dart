@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/widgets/export_progress.dart';
 import 'package:neiroha/presentation/widgets/video_dub/tracks.dart';
 import 'package:neiroha/providers/app_providers.dart';
@@ -27,13 +28,25 @@ Future<void> exportVideoDubVideo({
   final src = project.videoPath;
   if (src == null) return;
   if (!File(src).existsSync()) {
-    _snack(context, 'Source video missing on disk');
+    _snack(context, AppLocalizations.of(context).uiSourceVideoMissingOnDisk);
     return;
   }
+  final exportDubbedVideoTitle = AppLocalizations.of(
+    context,
+  ).uiExportDubbedVideo;
+  final chooseExportFolderTitle = AppLocalizations.of(
+    context,
+  ).uiChooseExportFolder;
+  final exportingVideoTaskLabel = AppLocalizations.of(context).uiExportingVideo;
   final ffmpeg = ref.read(ffmpegServiceProvider);
   if (!await ffmpeg.isAvailable()) {
     if (!context.mounted) return;
-    _snack(context, 'FFmpeg is required for export — configure it in Settings');
+    _snack(
+      context,
+      AppLocalizations.of(
+        context,
+      ).uiFFmpegIsRequiredForExportConfigureItInSettings2,
+    );
     return;
   }
 
@@ -50,7 +63,7 @@ Future<void> exportVideoDubVideo({
   String? outPath;
   try {
     outPath = await FilePicker.platform.saveFile(
-      dialogTitle: 'Export dubbed video',
+      dialogTitle: exportDubbedVideoTitle,
       fileName: defaultName,
       type: FileType.video,
     );
@@ -58,7 +71,7 @@ Future<void> exportVideoDubVideo({
     // Some platforms don't implement saveFile — fall back to picking a
     // directory and synthesising the filename ourselves.
     final dir = await FilePicker.platform.getDirectoryPath(
-      dialogTitle: 'Choose export folder',
+      dialogTitle: chooseExportFolderTitle,
     );
     if (dir != null && dir.isNotEmpty) {
       outPath = p.join(dir, defaultName);
@@ -93,7 +106,7 @@ Future<void> exportVideoDubVideo({
       ffmpegPath: ffmpegPath,
       args: args,
       totalDurationMs: totalMs,
-      taskLabel: 'Exporting video…',
+      taskLabel: exportingVideoTaskLabel,
     );
     if (!context.mounted) return;
     if (result.success) {
@@ -114,16 +127,23 @@ Future<void> exportVideoDubVideo({
         context: context,
         filePath: outPath,
         extraNote: sidecarErr == null
-            ? 'SRT sidecar written to ${p.basename(srtPath)}.'
-            : 'Sidecar SRT failed: $sidecarErr',
+            ? AppLocalizations.of(
+                context,
+              ).uiSRTSidecarWrittenTo(p.basename(srtPath))
+            : AppLocalizations.of(context).uiSidecarSRTFailed(sidecarErr),
       );
     } else if (result.cancelled) {
-      _snack(context, 'Export cancelled');
+      _snack(context, AppLocalizations.of(context).uiExportCancelled);
     } else {
-      _snack(context, 'Export failed: ${result.stderrTail}');
+      _snack(
+        context,
+        AppLocalizations.of(context).uiExportFailed(result.stderrTail),
+      );
     }
   } catch (e) {
-    if (context.mounted) _snack(context, 'Export failed: $e');
+    if (context.mounted) {
+      _snack(context, AppLocalizations.of(context).uiExportFailed(e));
+    }
   }
 }
 
@@ -140,10 +160,25 @@ Future<void> exportVideoDubAudio({
   required bool muteVideoAudio,
   required Duration playerDuration,
 }) async {
+  final exportDubbedAudioTitle = AppLocalizations.of(
+    context,
+  ).uiExportDubbedAudio;
+  final chooseExportFolderTitle = AppLocalizations.of(
+    context,
+  ).uiChooseExportFolder;
+  final exportingAudioTaskLabel = AppLocalizations.of(context).uiExportingAudio;
+  final nothingToExportMessage = AppLocalizations.of(
+    context,
+  ).uiNothingToExportNoGeneratedTTSA3AudioOrUnmutedV1;
   final ffmpeg = ref.read(ffmpegServiceProvider);
   if (!await ffmpeg.isAvailable()) {
     if (!context.mounted) return;
-    _snack(context, 'FFmpeg is required for export — configure it in Settings');
+    _snack(
+      context,
+      AppLocalizations.of(
+        context,
+      ).uiFFmpegIsRequiredForExportConfigureItInSettings2,
+    );
     return;
   }
 
@@ -164,10 +199,7 @@ Future<void> exportVideoDubAudio({
 
   if (overlays.isEmpty && !includeOriginal) {
     if (!context.mounted) return;
-    _snack(
-      context,
-      'Nothing to export — no generated TTS, A3 audio, or unmuted V1',
-    );
+    _snack(context, nothingToExportMessage);
     return;
   }
 
@@ -177,13 +209,13 @@ Future<void> exportVideoDubAudio({
   String? outPath;
   try {
     outPath = await FilePicker.platform.saveFile(
-      dialogTitle: 'Export dubbed audio',
+      dialogTitle: exportDubbedAudioTitle,
       fileName: defaultName,
       type: FileType.audio,
     );
   } catch (_) {
     final dir = await FilePicker.platform.getDirectoryPath(
-      dialogTitle: 'Choose export folder',
+      dialogTitle: chooseExportFolderTitle,
     );
     if (dir != null && dir.isNotEmpty) outPath = p.join(dir, defaultName);
   }
@@ -213,18 +245,23 @@ Future<void> exportVideoDubAudio({
       ffmpegPath: ffmpegPath,
       args: args,
       totalDurationMs: totalMs,
-      taskLabel: 'Exporting audio…',
+      taskLabel: exportingAudioTaskLabel,
     );
     if (!context.mounted) return;
     if (result.success) {
       await showExportSuccessDialog(context: context, filePath: outPath);
     } else if (result.cancelled) {
-      _snack(context, 'Export cancelled');
+      _snack(context, AppLocalizations.of(context).uiExportCancelled);
     } else {
-      _snack(context, 'Audio export failed: ${result.stderrTail}');
+      _snack(
+        context,
+        AppLocalizations.of(context).uiAudioExportFailed(result.stderrTail),
+      );
     }
   } catch (e) {
-    if (context.mounted) _snack(context, 'Audio export failed: $e');
+    if (context.mounted) {
+      _snack(context, AppLocalizations.of(context).uiAudioExportFailed(e));
+    }
   }
 }
 
@@ -239,7 +276,9 @@ Future<void> exportVideoDubSubtitlesAndTts({
 }) async {
   if (cues.isEmpty) return;
   final dir = await FilePicker.platform.getDirectoryPath(
-    dialogTitle: 'Choose export folder for subtitles + TTS files',
+    dialogTitle: AppLocalizations.of(
+      context,
+    ).uiChooseExportFolderForSubtitlesTTSFiles,
   );
   if (dir == null || dir.isEmpty) return;
 
@@ -297,14 +336,23 @@ Future<void> exportVideoDubSubtitlesAndTts({
     ).writeAsString(manifest.toString());
 
     if (context.mounted) {
+      final l10n = AppLocalizations.of(context);
       _snack(
         context,
-        'Exported ${cues.length} cues + $copied audio files to ${outDir.path}'
-        '${missing > 0 ? ' ($missing missing)' : ''}',
+        missing > 0
+            ? l10n.uiExportedCuesAudioFilesToMissing(
+                cues.length,
+                copied,
+                outDir.path,
+                missing,
+              )
+            : l10n.uiExportedCuesAudioFilesTo(cues.length, copied, outDir.path),
       );
     }
   } catch (e) {
-    if (context.mounted) _snack(context, 'Export failed: $e');
+    if (context.mounted) {
+      _snack(context, AppLocalizations.of(context).uiExportFailed(e));
+    }
   }
 }
 

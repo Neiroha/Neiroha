@@ -30,13 +30,13 @@ class CosyVoiceAdapter extends TtsAdapter {
     required this.apiKey,
     this.modelName = '',
   }) {
-    _dio = Dio(BaseOptions(
-      baseUrl: baseUrl.endsWith('/') ? baseUrl : '$baseUrl/',
-      headers: {
-        if (apiKey.isNotEmpty) 'Authorization': 'Bearer $apiKey',
-      },
-      responseType: ResponseType.bytes,
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl.endsWith('/') ? baseUrl : '$baseUrl/',
+        headers: {if (apiKey.isNotEmpty) 'Authorization': 'Bearer $apiKey'},
+        responseType: ResponseType.bytes,
+      ),
+    );
   }
 
   // ─────────────────────────── synthesize ────────────────────────────────────
@@ -70,7 +70,10 @@ class CosyVoiceAdapter extends TtsAdapter {
   ///
   /// Used when there is no local reference audio to upload.
   /// Typical cases: preset-voice mode (profile only) and instruct with a preset.
-  Future<TtsResult> _synthesizeJson(TtsRequest request, {required String mode}) async {
+  Future<TtsResult> _synthesizeJson(
+    TtsRequest request, {
+    required String mode,
+  }) async {
     final body = <String, dynamic>{
       'text': request.text,
       'mode': mode,
@@ -78,10 +81,12 @@ class CosyVoiceAdapter extends TtsAdapter {
       'response_format': request.responseFormat ?? 'wav',
     };
 
-    if (request.presetVoiceName != null && request.presetVoiceName!.isNotEmpty) {
+    if (request.presetVoiceName != null &&
+        request.presetVoiceName!.isNotEmpty) {
       body['profile'] = request.presetVoiceName;
     }
-    if (request.voiceInstruction != null && request.voiceInstruction!.isNotEmpty) {
+    if (request.voiceInstruction != null &&
+        request.voiceInstruction!.isNotEmpty) {
       body['instruct_text'] = request.voiceInstruction;
     }
     if (request.promptText != null && request.promptText!.isNotEmpty) {
@@ -117,7 +122,10 @@ class CosyVoiceAdapter extends TtsAdapter {
   /// registered. When the user uploads their own prompt audio we have
   /// everything the server needs (prompt_audio + mode-specific text fields),
   /// so sending a speculative profile name would only introduce failures.
-  Future<TtsResult> _synthesizeWithUpload(TtsRequest request, {required String mode}) async {
+  Future<TtsResult> _synthesizeWithUpload(
+    TtsRequest request, {
+    required String mode,
+  }) async {
     final file = File(request.refAudioPath!);
     final fileName = file.path.split(Platform.pathSeparator).last;
 
@@ -134,12 +142,16 @@ class CosyVoiceAdapter extends TtsAdapter {
         'prompt_text': request.promptText,
       if (request.promptLang != null && request.promptLang!.isNotEmpty)
         'prompt_lang': request.promptLang,
-      if (request.voiceInstruction != null && request.voiceInstruction!.isNotEmpty)
+      if (request.voiceInstruction != null &&
+          request.voiceInstruction!.isNotEmpty)
         'instruct_text': request.voiceInstruction,
     });
 
     try {
-      final response = await _dio.post('cosyvoice/speech/upload', data: formData);
+      final response = await _dio.post(
+        'cosyvoice/speech/upload',
+        data: formData,
+      );
       return TtsResult(
         audioBytes: Uint8List.fromList(response.data as List<int>),
         contentType: response.headers.value('content-type') ?? 'audio/wav',
@@ -210,12 +222,14 @@ class CosyVoiceAdapter extends TtsAdapter {
         if (data is List) {
           return data
               .whereType<Map>()
-              .map((e) => CosyVoiceProfile(
-                    id: (e['id'] ?? e['name'] ?? '').toString(),
-                    name: (e['name'] ?? e['id'] ?? '').toString(),
-                    mode: (e['mode'] ?? '').toString(),
-                    modeLabel: (e['mode_label'] ?? '').toString(),
-                  ))
+              .map(
+                (e) => CosyVoiceProfile(
+                  id: (e['id'] ?? e['name'] ?? '').toString(),
+                  name: (e['name'] ?? e['id'] ?? '').toString(),
+                  mode: (e['mode'] ?? '').toString(),
+                  modeLabel: (e['mode_label'] ?? '').toString(),
+                ),
+              )
               .where((p) => p.id.isNotEmpty)
               .toList();
         }

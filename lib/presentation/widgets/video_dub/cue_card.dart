@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// One row of the subtitle panel in the Video Dub editor.
 ///
@@ -71,7 +72,7 @@ class CueCard extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.55),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       '${_ms(cue.startMs)} → ${_ms(cue.endMs)}',
@@ -83,7 +84,7 @@ class CueCard extends StatelessWidget {
                     ),
                   ),
                   if (isGenerating)
-                    const SizedBox(
+                    SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
@@ -110,7 +111,7 @@ class CueCard extends StatelessWidget {
                             : Icons.play_arrow_rounded,
                         size: 16,
                       ),
-                      tooltip: 'Preview',
+                      tooltip: AppLocalizations.of(context).uiPreview,
                       onPressed: onPreview,
                     )
                   else
@@ -134,7 +135,9 @@ class CueCard extends StatelessWidget {
                           ? AppTheme.accentColor
                           : Colors.white.withValues(alpha: 0.18),
                     ),
-                    tooltip: cue.audioPath != null ? 'Regenerate' : 'Generate',
+                    tooltip: cue.audioPath != null
+                        ? AppLocalizations.of(context).uiRegenerate
+                        : AppLocalizations.of(context).uiGenerate,
                     onPressed: canGenerate ? onGenerate : null,
                   ),
                   IconButton(
@@ -148,7 +151,7 @@ class CueCard extends StatelessWidget {
                       size: 14,
                       color: Colors.white.withValues(alpha: 0.4),
                     ),
-                    tooltip: 'Edit',
+                    tooltip: AppLocalizations.of(context).uiEdit,
                     onPressed: onEdit,
                   ),
                   IconButton(
@@ -166,19 +169,19 @@ class CueCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 cue.cueText,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 13),
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               SizedBox(
                 height: 30,
                 child: DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                    hintText: 'Voice',
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context).uiVoice,
                     isDense: true,
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 8,

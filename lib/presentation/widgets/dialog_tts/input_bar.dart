@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Bottom-anchored input bar for the Dialog TTS editor.
 ///
@@ -49,7 +50,7 @@ class _InputBarState extends State<InputBar> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Send failed: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context).uiSendFailed(e))),
       );
     }
   }
@@ -66,8 +67,11 @@ class _InputBarState extends State<InputBar> {
       final value = _controller.value;
       final selection = value.selection;
       if (!selection.isValid) return KeyEventResult.ignored;
-      final newText =
-          value.text.replaceRange(selection.start, selection.end, '\n');
+      final newText = value.text.replaceRange(
+        selection.start,
+        selection.end,
+        '\n',
+      );
       _controller.value = TextEditingValue(
         text: newText,
         selection: TextSelection.collapsed(offset: selection.start + 1),
@@ -81,10 +85,9 @@ class _InputBarState extends State<InputBar> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedVoiceId =
-        widget.bankAssets.any((a) => a.id == widget.voiceId)
-            ? widget.voiceId
-            : null;
+    final selectedVoiceId = widget.bankAssets.any((a) => a.id == widget.voiceId)
+        ? widget.voiceId
+        : null;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
@@ -101,25 +104,32 @@ class _InputBarState extends State<InputBar> {
             width: 140,
             child: DropdownButtonFormField<String>(
               key: ValueKey(selectedVoiceId),
-              decoration: const InputDecoration(
-                hintText: 'Voice',
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context).uiVoice,
                 isDense: true,
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
               ),
               isExpanded: true,
               initialValue: selectedVoiceId,
               items: widget.bankAssets
-                  .map((a) => DropdownMenuItem(
+                  .map(
+                    (a) => DropdownMenuItem(
                       value: a.id,
-                      child: Text(a.name,
-                          style: const TextStyle(fontSize: 12),
-                          overflow: TextOverflow.ellipsis)))
+                      child: Text(
+                        a.name,
+                        style: const TextStyle(fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  )
                   .toList(),
               onChanged: widget.onVoiceChanged,
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Expanded(
             child: ConstrainedBox(
               constraints: BoxConstraints(maxHeight: widget.maxHeight),
@@ -132,28 +142,34 @@ class _InputBarState extends State<InputBar> {
                   keyboardType: TextInputType.multiline,
                   textInputAction: TextInputAction.newline,
                   decoration: InputDecoration(
-                    hintText:
-                        'Type dialog line… (Enter to send, Ctrl+Enter for newline)',
+                    hintText: AppLocalizations.of(
+                      context,
+                    ).uiTypeDialogLineEnterToSendCtrlEnterForNewline,
                     hintStyle: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.3)),
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
                     isDense: true,
                     filled: true,
                     fillColor: AppTheme.surfaceDim,
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           IconButton.filled(
-            onPressed:
-                widget.voiceId == null ? null : () => unawaited(_submit()),
+            onPressed: widget.voiceId == null
+                ? null
+                : () => unawaited(_submit()),
             style: IconButton.styleFrom(
               backgroundColor: AppTheme.accentColor,
-              disabledBackgroundColor:
-                  AppTheme.accentColor.withValues(alpha: 0.3),
+              disabledBackgroundColor: AppTheme.accentColor.withValues(
+                alpha: 0.3,
+              ),
             ),
             icon: const Icon(Icons.send_rounded, size: 18),
           ),

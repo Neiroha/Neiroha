@@ -11,6 +11,7 @@ import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/data/storage/subtitle_parser.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/actions/video_dub/exporter.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';

@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:drift/drift.dart' show Value;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
@@ -27,14 +30,107 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_selectedProjectId == null) {
-      return _buildProjectListScreen();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (_isAndroidPhoneLayout(context, constraints)) {
+          return _buildUnsupportedPhoneScreen();
+        }
+        if (_selectedProjectId == null) {
+          return _buildProjectListScreen();
+        }
+        return VideoDubEditor(
+          key: ValueKey(_selectedProjectId),
+          projectId: _selectedProjectId!,
+          active: widget.active,
+          onClose: () => setState(() => _selectedProjectId = null),
+        );
+      },
+    );
+  }
+
+  bool _isAndroidPhoneLayout(BuildContext context, BoxConstraints constraints) {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return false;
     }
-    return VideoDubEditor(
-      key: ValueKey(_selectedProjectId),
-      projectId: _selectedProjectId!,
-      active: widget.active,
-      onClose: () => setState(() => _selectedProjectId = null),
+    final fallback = MediaQuery.sizeOf(context);
+    final width = constraints.maxWidth.isFinite
+        ? constraints.maxWidth
+        : fallback.width;
+    final height = constraints.maxHeight.isFinite
+        ? constraints.maxHeight
+        : fallback.height;
+    final shortest = math.min(width, height);
+    final longest = math.max(width, height);
+    final aspectRatio = shortest <= 0 ? 1.0 : longest / shortest;
+    return shortest < 600 && aspectRatio >= 1.75;
+  }
+
+  Widget _buildUnsupportedPhoneScreen() {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+          child: Row(
+            children: [
+              Icon(
+                Icons.movie_filter_rounded,
+                color: Colors.white.withValues(alpha: 0.42),
+                size: 22,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  l10n.navVideoDub,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.tablet_mac_rounded,
+                      size: 58,
+                      color: Colors.white.withValues(alpha: 0.18),
+                    ),
+                    SizedBox(height: 18),
+                    Text(
+                      l10n.uiVideoDubUnavailableOnAndroidPhone,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      l10n.uiVideoDubUnavailableOnAndroidPhoneDescription,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.55),
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

@@ -81,163 +81,423 @@ class _NovelReaderBottomBar extends ConsumerWidget {
         )
         .length;
     final cacheProgress = segments.isEmpty ? 0.0 : cached / segments.length;
+    final statusText = isNovelAudio
+        ? '${_fmt(playback.position)} / ${_fmt(playback.duration)}'
+        : generatingSegmentIds.isEmpty
+        ? 'Idle'
+        : 'Generating ${generatingSegmentIds.length}';
 
-    return Container(
-      height: 108,
-      padding: const EdgeInsets.fromLTRB(18, 8, 18, 10),
-      decoration: BoxDecoration(
-        color: colors.surface.withValues(alpha: 0.86),
-        border: Border(
-          top: BorderSide(color: colors.muted.withValues(alpha: 0.18)),
-        ),
-      ),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 36,
-            child: Row(
-              children: [
-                Icon(Icons.cached_rounded, size: 16, color: colors.muted),
-                SizedBox(width: 8),
-                SizedBox(
-                  width: 86,
-                  child: Text(
-                    '$cached/${segments.length}',
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: colors.muted,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 98,
-                  child: LinearProgressIndicator(
-                    value: segments.isEmpty ? 0 : cacheProgress,
-                    minHeight: 4,
-                  ),
-                ),
-                SizedBox(width: 14),
-                Expanded(
-                  child: SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: 3,
-                      thumbShape: const RoundSliderThumbShape(
-                        enabledThumbRadius: 5,
-                      ),
-                      overlayShape: const RoundSliderOverlayShape(
-                        overlayRadius: 11,
-                      ),
-                    ),
-                    child: Slider(
-                      min: 0,
-                      max: durMs == 0 ? 1 : durMs.toDouble(),
-                      value: posMs.toDouble(),
-                      onChanged: !isNovelAudio || durMs == 0
-                          ? null
-                          : (v) => notifier.seek(
-                              Duration(milliseconds: v.toInt()),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 520;
+        final ultraCompact = constraints.maxWidth < 360;
+        return Container(
+          height: compact ? 144 : 108,
+          padding: EdgeInsets.fromLTRB(
+            ultraCompact
+                ? 8
+                : compact
+                ? 10
+                : 18,
+            compact ? 6 : 8,
+            ultraCompact
+                ? 8
+                : compact
+                ? 10
+                : 18,
+            compact ? 8 : 10,
+          ),
+          decoration: BoxDecoration(
+            color: colors.surface.withValues(alpha: 0.86),
+            border: Border(
+              top: BorderSide(color: colors.muted.withValues(alpha: 0.18)),
+            ),
+          ),
+          child: compact
+              ? Column(
+                  children: [
+                    SizedBox(
+                      height: 26,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.cached_rounded,
+                            size: 15,
+                            color: colors.muted,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            '$cached/${segments.length}',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: colors.muted,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
                             ),
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: LinearProgressIndicator(
+                              value: segments.isEmpty ? 0 : cacheProgress,
+                              minHeight: 4,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              statusText,
+                              textAlign: TextAlign.end,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: colors.muted,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          SizedBox.square(
+                            dimension: 30,
+                            child: IconButton(
+                              tooltip: playback.isPlaying ? 'Pause' : 'Resume',
+                              onPressed: isNovelAudio
+                                  ? notifier.togglePlay
+                                  : null,
+                              padding: EdgeInsets.zero,
+                              iconSize: 22,
+                              icon: Icon(
+                                isNovelAudio && playback.isPlaying
+                                    ? Icons.pause_circle_filled_rounded
+                                    : Icons.play_circle_fill_rounded,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
-                SizedBox(width: 8),
-                Text(
-                  isNovelAudio
-                      ? '${_fmt(playback.position)} / ${_fmt(playback.duration)}'
-                      : generatingSegmentIds.isEmpty
-                      ? 'Idle'
-                      : 'Generating ${generatingSegmentIds.length}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: colors.muted,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-                SizedBox(width: 8),
-                IconButton(
-                  tooltip: playback.isPlaying ? 'Pause' : 'Resume',
-                  onPressed: isNovelAudio ? notifier.togglePlay : null,
-                  icon: Icon(
-                    isNovelAudio && playback.isPlaying
-                        ? Icons.pause_circle_filled_rounded
-                        : Icons.play_circle_fill_rounded,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 8),
-          Expanded(
-            child: Row(
-              children: [
-                _ReaderControlButton(
-                  tooltip: AppLocalizations.of(context).uiPreviousChapter,
-                  icon: Icons.skip_previous_rounded,
-                  onPressed: onPreviousChapter,
-                ),
-                _ReaderControlButton(
-                  tooltip: AppLocalizations.of(context).uiPreviousPage,
-                  icon: Icons.chevron_left_rounded,
-                  onPressed: onPreviousPage,
-                ),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _openChapterPicker(context),
-                    icon: const Icon(Icons.list_alt_rounded, size: 17),
-                    label: Text(
-                      chapter?.title ?? 'Chapters',
-                      overflow: TextOverflow.ellipsis,
+                    SizedBox(
+                      height: 28,
+                      child: SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          trackHeight: 3,
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 5,
+                          ),
+                          overlayShape: const RoundSliderOverlayShape(
+                            overlayRadius: 11,
+                          ),
+                        ),
+                        child: Slider(
+                          min: 0,
+                          max: durMs == 0 ? 1 : durMs.toDouble(),
+                          value: posMs.toDouble(),
+                          onChanged: !isNovelAudio || durMs == 0
+                              ? null
+                              : (v) => notifier.seek(
+                                  Duration(milliseconds: v.toInt()),
+                                ),
+                        ),
+                      ),
                     ),
-                  ),
+                    SizedBox(height: 6),
+                    SizedBox(
+                      height: 42,
+                      child: Row(
+                        children: [
+                          _ReaderControlButton(
+                            compact: true,
+                            ultraCompact: ultraCompact,
+                            tooltip: AppLocalizations.of(
+                              context,
+                            ).uiPreviousChapter,
+                            icon: Icons.skip_previous_rounded,
+                            onPressed: onPreviousChapter,
+                          ),
+                          _ReaderControlButton(
+                            compact: true,
+                            ultraCompact: ultraCompact,
+                            tooltip: AppLocalizations.of(
+                              context,
+                            ).uiPreviousPage,
+                            icon: Icons.chevron_left_rounded,
+                            onPressed: onPreviousPage,
+                          ),
+                          Expanded(
+                            child: ultraCompact
+                                ? Center(
+                                    child: SizedBox.square(
+                                      dimension: 32,
+                                      child: IconButton.outlined(
+                                        tooltip:
+                                            chapter?.title ??
+                                            AppLocalizations.of(
+                                              context,
+                                            ).uiChapters,
+                                        onPressed: () =>
+                                            _openChapterPicker(context),
+                                        padding: EdgeInsets.zero,
+                                        iconSize: 18,
+                                        style: IconButton.styleFrom(
+                                          minimumSize: const Size.square(32),
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        icon: const Icon(
+                                          Icons.list_alt_rounded,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : OutlinedButton.icon(
+                                    onPressed: () =>
+                                        _openChapterPicker(context),
+                                    style: OutlinedButton.styleFrom(
+                                      minimumSize: const Size(0, 36),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                      ),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    icon: const Icon(
+                                      Icons.list_alt_rounded,
+                                      size: 16,
+                                    ),
+                                    label: Text(
+                                      chapter?.title ??
+                                          AppLocalizations.of(
+                                            context,
+                                          ).uiChapters,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                          ),
+                          _ReaderToggleButton(
+                            compact: true,
+                            ultraCompact: ultraCompact,
+                            tooltip: project.overwriteCacheWhilePlaying
+                                ? 'Overwrite cache while reading: on'
+                                : 'Overwrite cache while reading: off',
+                            icon: Icons.sync_rounded,
+                            selected: project.overwriteCacheWhilePlaying,
+                            onPressed: () => onOverwriteWhilePlayingChanged(
+                              !project.overwriteCacheWhilePlaying,
+                            ),
+                          ),
+                          _ReaderControlButton(
+                            compact: true,
+                            ultraCompact: ultraCompact,
+                            tooltip: showStopForSelection
+                                ? 'Stop reading'
+                                : selectedIsActiveRead
+                                ? 'Resume reading'
+                                : 'Play selected segment',
+                            icon: showStopForSelection
+                                ? Icons.stop_rounded
+                                : Icons.play_arrow_rounded,
+                            onPressed: showStopForSelection
+                                ? onStop
+                                : selectedIsActiveRead
+                                ? notifier.togglePlay
+                                : onPlaySelected,
+                          ),
+                          _ReaderControlButton(
+                            compact: true,
+                            ultraCompact: ultraCompact,
+                            tooltip: AppLocalizations.of(
+                              context,
+                            ).uiReaderAppearance,
+                            icon: _themeIcon(project.readerTheme),
+                            onPressed: () => _openAppearance(context),
+                          ),
+                          _ReaderControlButton(
+                            compact: true,
+                            ultraCompact: ultraCompact,
+                            tooltip: AppLocalizations.of(context).uiNextPage,
+                            icon: Icons.chevron_right_rounded,
+                            onPressed: onNextPage,
+                          ),
+                          _ReaderControlButton(
+                            compact: true,
+                            ultraCompact: ultraCompact,
+                            tooltip: AppLocalizations.of(context).uiNextChapter,
+                            icon: Icons.skip_next_rounded,
+                            onPressed: onNextChapter,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    SizedBox(
+                      height: 36,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.cached_rounded,
+                            size: 16,
+                            color: colors.muted,
+                          ),
+                          SizedBox(width: 8),
+                          SizedBox(
+                            width: 86,
+                            child: Text(
+                              '$cached/${segments.length}',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: colors.muted,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 98,
+                            child: LinearProgressIndicator(
+                              value: segments.isEmpty ? 0 : cacheProgress,
+                              minHeight: 4,
+                            ),
+                          ),
+                          SizedBox(width: 14),
+                          Expanded(
+                            child: SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                trackHeight: 3,
+                                thumbShape: const RoundSliderThumbShape(
+                                  enabledThumbRadius: 5,
+                                ),
+                                overlayShape: const RoundSliderOverlayShape(
+                                  overlayRadius: 11,
+                                ),
+                              ),
+                              child: Slider(
+                                min: 0,
+                                max: durMs == 0 ? 1 : durMs.toDouble(),
+                                value: posMs.toDouble(),
+                                onChanged: !isNovelAudio || durMs == 0
+                                    ? null
+                                    : (v) => notifier.seek(
+                                        Duration(milliseconds: v.toInt()),
+                                      ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            statusText,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: colors.muted,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          IconButton(
+                            tooltip: playback.isPlaying ? 'Pause' : 'Resume',
+                            onPressed: isNovelAudio
+                                ? notifier.togglePlay
+                                : null,
+                            icon: Icon(
+                              isNovelAudio && playback.isPlaying
+                                  ? Icons.pause_circle_filled_rounded
+                                  : Icons.play_circle_fill_rounded,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          _ReaderControlButton(
+                            tooltip: AppLocalizations.of(
+                              context,
+                            ).uiPreviousChapter,
+                            icon: Icons.skip_previous_rounded,
+                            onPressed: onPreviousChapter,
+                          ),
+                          _ReaderControlButton(
+                            tooltip: AppLocalizations.of(
+                              context,
+                            ).uiPreviousPage,
+                            icon: Icons.chevron_left_rounded,
+                            onPressed: onPreviousPage,
+                          ),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openChapterPicker(context),
+                              icon: const Icon(
+                                Icons.list_alt_rounded,
+                                size: 17,
+                              ),
+                              label: Text(
+                                chapter?.title ??
+                                    AppLocalizations.of(context).uiChapters,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 6),
+                          _ReaderToggleButton(
+                            tooltip: project.overwriteCacheWhilePlaying
+                                ? 'Overwrite cache while reading: on'
+                                : 'Overwrite cache while reading: off',
+                            icon: Icons.sync_rounded,
+                            selected: project.overwriteCacheWhilePlaying,
+                            onPressed: () => onOverwriteWhilePlayingChanged(
+                              !project.overwriteCacheWhilePlaying,
+                            ),
+                          ),
+                          _ReaderControlButton(
+                            tooltip: showStopForSelection
+                                ? 'Stop reading'
+                                : selectedIsActiveRead
+                                ? 'Resume reading'
+                                : 'Play selected segment',
+                            icon: showStopForSelection
+                                ? Icons.stop_rounded
+                                : Icons.play_arrow_rounded,
+                            onPressed: showStopForSelection
+                                ? onStop
+                                : selectedIsActiveRead
+                                ? notifier.togglePlay
+                                : onPlaySelected,
+                          ),
+                          _ReaderControlButton(
+                            tooltip: AppLocalizations.of(
+                              context,
+                            ).uiReaderAppearance,
+                            icon: _themeIcon(project.readerTheme),
+                            onPressed: () => _openAppearance(context),
+                          ),
+                          _ReaderControlButton(
+                            tooltip: AppLocalizations.of(context).uiNextPage,
+                            icon: Icons.chevron_right_rounded,
+                            onPressed: onNextPage,
+                          ),
+                          _ReaderControlButton(
+                            tooltip: AppLocalizations.of(context).uiNextChapter,
+                            icon: Icons.skip_next_rounded,
+                            onPressed: onNextChapter,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(width: 6),
-                _ReaderToggleButton(
-                  tooltip: project.overwriteCacheWhilePlaying
-                      ? 'Overwrite cache while reading: on'
-                      : 'Overwrite cache while reading: off',
-                  icon: Icons.sync_rounded,
-                  selected: project.overwriteCacheWhilePlaying,
-                  onPressed: () => onOverwriteWhilePlayingChanged(
-                    !project.overwriteCacheWhilePlaying,
-                  ),
-                ),
-                _ReaderControlButton(
-                  tooltip: showStopForSelection
-                      ? 'Stop reading'
-                      : selectedIsActiveRead
-                      ? 'Resume reading'
-                      : 'Play selected segment',
-                  icon: showStopForSelection
-                      ? Icons.stop_rounded
-                      : Icons.play_arrow_rounded,
-                  onPressed: showStopForSelection
-                      ? onStop
-                      : selectedIsActiveRead
-                      ? notifier.togglePlay
-                      : onPlaySelected,
-                ),
-                _ReaderControlButton(
-                  tooltip: AppLocalizations.of(context).uiReaderAppearance,
-                  icon: _themeIcon(project.readerTheme),
-                  onPressed: () => _openAppearance(context),
-                ),
-                _ReaderControlButton(
-                  tooltip: AppLocalizations.of(context).uiNextPage,
-                  icon: Icons.chevron_right_rounded,
-                  onPressed: onNextPage,
-                ),
-                _ReaderControlButton(
-                  tooltip: AppLocalizations.of(context).uiNextChapter,
-                  icon: Icons.skip_next_rounded,
-                  onPressed: onNextChapter,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -299,21 +559,50 @@ class _ReaderControlButton extends StatelessWidget {
   final String tooltip;
   final IconData icon;
   final VoidCallback? onPressed;
+  final bool compact;
+  final bool ultraCompact;
 
   const _ReaderControlButton({
     required this.tooltip,
     required this.icon,
     required this.onPressed,
+    this.compact = false,
+    this.ultraCompact = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final dimension = ultraCompact
+        ? 32.0
+        : compact
+        ? 36.0
+        : 48.0;
+    final iconSize = ultraCompact
+        ? 19.0
+        : compact
+        ? 21.0
+        : 24.0;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
-      child: IconButton.filledTonal(
-        tooltip: tooltip,
-        onPressed: onPressed,
-        icon: Icon(icon),
+      padding: EdgeInsets.symmetric(
+        horizontal: ultraCompact
+            ? 0
+            : compact
+            ? 1
+            : 3,
+      ),
+      child: SizedBox.square(
+        dimension: dimension,
+        child: IconButton.filledTonal(
+          tooltip: tooltip,
+          onPressed: onPressed,
+          padding: EdgeInsets.zero,
+          iconSize: iconSize,
+          style: IconButton.styleFrom(
+            minimumSize: Size.square(dimension),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          icon: Icon(icon),
+        ),
       ),
     );
   }
@@ -324,29 +613,56 @@ class _ReaderToggleButton extends StatelessWidget {
   final IconData icon;
   final bool selected;
   final VoidCallback? onPressed;
+  final bool compact;
+  final bool ultraCompact;
 
   const _ReaderToggleButton({
     required this.tooltip,
     required this.icon,
     required this.selected,
     required this.onPressed,
+    this.compact = false,
+    this.ultraCompact = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final dimension = ultraCompact
+        ? 32.0
+        : compact
+        ? 36.0
+        : 48.0;
+    final iconSize = ultraCompact
+        ? 19.0
+        : compact
+        ? 21.0
+        : 24.0;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
-      child: IconButton(
-        tooltip: tooltip,
-        isSelected: selected,
-        onPressed: onPressed,
-        icon: Icon(icon),
-        selectedIcon: Icon(icon),
-        style: IconButton.styleFrom(
-          backgroundColor: selected
-              ? AppTheme.accentColor.withValues(alpha: 0.22)
-              : null,
-          foregroundColor: selected ? AppTheme.accentColor : null,
+      padding: EdgeInsets.symmetric(
+        horizontal: ultraCompact
+            ? 0
+            : compact
+            ? 1
+            : 3,
+      ),
+      child: SizedBox.square(
+        dimension: dimension,
+        child: IconButton(
+          tooltip: tooltip,
+          isSelected: selected,
+          onPressed: onPressed,
+          padding: EdgeInsets.zero,
+          iconSize: iconSize,
+          icon: Icon(icon),
+          selectedIcon: Icon(icon),
+          style: IconButton.styleFrom(
+            backgroundColor: selected
+                ? AppTheme.accentColor.withValues(alpha: 0.22)
+                : null,
+            foregroundColor: selected ? AppTheme.accentColor : null,
+            minimumSize: Size.square(dimension),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
         ),
       ),
     );

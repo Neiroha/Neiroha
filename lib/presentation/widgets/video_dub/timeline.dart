@@ -76,6 +76,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
   static const double _rulerHeight = 18.0;
   static const double _scrubberHeight = 38.0;
   static const double _headerWidth = 82.0;
+  final _verticalScrollController = ScrollController();
 
   // Visible window in ms — the range scrubber drives these.
   int _viewLeftMs = 0;
@@ -107,6 +108,12 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
   }
 
   @override
+  void dispose() {
+    _verticalScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final total = _contentTotalMs;
     _viewRightMs ??= total;
@@ -128,6 +135,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
         final pxPerMs = bodyWidth / _viewSpanMs;
 
         final tracks = _buildTrackList();
+        final trackContentHeight = _rulerHeight + tracks.length * _trackHeight;
 
         return Container(
           color: AppTheme.surfaceDim,
@@ -137,20 +145,40 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
               const Divider(height: 1),
               if (!widget.ffmpegAvailable) _buildFfmpegBanner(),
               Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(
-                      width: _headerWidth,
-                      child: _buildTrackHeaders(tracks),
-                    ),
-                    const VerticalDivider(width: 1, thickness: 1),
-                    Expanded(
-                      child: ExcludeSemantics(
-                        child: _buildTrackBody(tracks, pxPerMs),
+                child: LayoutBuilder(
+                  builder: (context, viewport) {
+                    final viewportHeight = viewport.maxHeight.isFinite
+                        ? viewport.maxHeight
+                        : trackContentHeight;
+                    final contentHeight = trackContentHeight > viewportHeight
+                        ? trackContentHeight
+                        : viewportHeight;
+                    return Scrollbar(
+                      controller: _verticalScrollController,
+                      thumbVisibility: trackContentHeight > viewportHeight,
+                      child: SingleChildScrollView(
+                        controller: _verticalScrollController,
+                        child: SizedBox(
+                          height: contentHeight,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              SizedBox(
+                                width: _headerWidth,
+                                child: _buildTrackHeaders(tracks),
+                              ),
+                              const VerticalDivider(width: 1, thickness: 1),
+                              Expanded(
+                                child: ExcludeSemantics(
+                                  child: _buildTrackBody(tracks, pxPerMs),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
               _buildRangeScrubber(total),
@@ -169,38 +197,54 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
         : 'Import a video onto V1 (its audio appears on A1)';
     return SizedBox(
       height: 44,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Row(
-          children: [
-            Text(
-              AppLocalizations.of(context).uiDubTimeline,
-              style: TextStyle(fontSize: 12, color: Colors.white54),
-            ),
-            SizedBox(width: 12),
-            Text(
-              '${widget.cues.length} cues · ${widget.clips.length} clips · ${_fmtMs(_contentTotalMs)}',
-              style: const TextStyle(fontSize: 11, color: Colors.white38),
-            ),
-            const Spacer(),
-            Tooltip(
-              message: v1Tooltip,
-              child: OutlinedButton.icon(
-                onPressed: widget.v1Occupied
-                    ? null
-                    : () => widget.onImport(DubImportKind.video),
-                icon: const Icon(Icons.movie_outlined, size: 16),
-                label: Text(AppLocalizations.of(context).uiImportVideo),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      AppLocalizations.of(context).uiDubTimeline,
+                      style: TextStyle(fontSize: 12, color: Colors.white54),
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      '${widget.cues.length} cues · ${widget.clips.length} clips · ${_fmtMs(_contentTotalMs)}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.white38,
+                      ),
+                    ),
+                    SizedBox(width: 24),
+                    Tooltip(
+                      message: v1Tooltip,
+                      child: OutlinedButton.icon(
+                        onPressed: widget.v1Occupied
+                            ? null
+                            : () => widget.onImport(DubImportKind.video),
+                        icon: const Icon(Icons.movie_outlined, size: 16),
+                        label: Text(AppLocalizations.of(context).uiImportVideo),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => widget.onImport(DubImportKind.audio),
+                      icon: const Icon(Icons.audiotrack_rounded, size: 16),
+                      label: Text(AppLocalizations.of(context).uiImportAudio),
+                    ),
+                  ],
+                ),
               ),
             ),
-            SizedBox(width: 8),
-            OutlinedButton.icon(
-              onPressed: () => widget.onImport(DubImportKind.audio),
-              icon: const Icon(Icons.audiotrack_rounded, size: 16),
-              label: Text(AppLocalizations.of(context).uiImportAudio),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

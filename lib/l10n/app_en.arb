@@ -175,6 +175,7 @@
   "uiCharacterName": "Character Name *",
   "uiCharacterNotFound": "Character not found",
   "uiCHARACTERS": "CHARACTERS",
+  "uiCharacters": "Characters",
   "uiCharactersAreSharedImportingJustAddsThemAsMembersOfThisBank": "Characters are shared — importing just adds them as members of this bank.",
   "uiChooseExportFolder": "Choose export folder",
   "uiChooseExportFolderForSubtitlesTTSFiles": "Choose export folder for subtitles + TTS files",
@@ -703,5 +704,7 @@
       }
     }
   },
+  "uiVideoDubUnavailableOnAndroidPhone": "Video Dub is disabled on Android phones",
+  "uiVideoDubUnavailableOnAndroidPhoneDescription": "Video editing needs more horizontal space than tall phone screens can provide. Use a tablet, foldable wide layout, desktop, or web window to edit video dubbing projects.",
   "uiDetails": "Details"
 }

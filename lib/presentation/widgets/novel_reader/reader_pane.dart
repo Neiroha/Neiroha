@@ -152,13 +152,17 @@ class _ReaderPane extends ConsumerWidget {
                 Expanded(
                   child: chapter == null
                       ? Center(
-                          child: Text(
-                            AppLocalizations.of(
-                              context,
-                            ).uiUseChaptersBelowToImportTXTImportAFolderOrAddA,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: colors.text.withValues(alpha: 0.55),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Text(
+                              AppLocalizations.of(
+                                context,
+                              ).uiUseChaptersBelowToImportTXTImportAFolderOrAddA,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: colors.text.withValues(alpha: 0.55),
+                              ),
                             ),
                           ),
                         )

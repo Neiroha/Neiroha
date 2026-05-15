@@ -848,6 +848,12 @@ abstract class AppLocalizations {
   /// **'CHARACTERS'**
   String get uiCHARACTERS;
 
+  /// No description provided for @uiCharacters.
+  ///
+  /// In en, this message translates to:
+  /// **'Characters'**
+  String get uiCharacters;
+
   /// No description provided for @uiCharactersAreSharedImportingJustAddsThemAsMembersOfThisBank.
   ///
   /// In en, this message translates to:
@@ -3166,6 +3172,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Font set to {font}.'**
   String fontModeSaved(String font);
+
+  /// No description provided for @uiVideoDubUnavailableOnAndroidPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Video Dub is disabled on Android phones'**
+  String get uiVideoDubUnavailableOnAndroidPhone;
+
+  /// No description provided for @uiVideoDubUnavailableOnAndroidPhoneDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Video editing needs more horizontal space than tall phone screens can provide. Use a tablet, foldable wide layout, desktop, or web window to edit video dubbing projects.'**
+  String get uiVideoDubUnavailableOnAndroidPhoneDescription;
 
   /// No description provided for @uiDetails.
   ///

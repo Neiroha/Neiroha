@@ -37,6 +37,8 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
   String? _selectedBankId;
   String _characterFilter = '';
   late final TextEditingController _searchCtrl;
+  final _bankSplitKey = GlobalKey<ResizableSplitPaneState>();
+  final _characterSplitKey = GlobalKey<ResizableSplitPaneState>();
 
   // Cached notifier references captured while the widget is still mounted.
   // Reading via `ref` inside [dispose] throws — the ConsumerStatefulElement
@@ -90,11 +92,13 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         const Divider(height: 1),
         Expanded(
           child: ResizableSplitPane(
+            key: _bankSplitKey,
             initialLeftFraction: 0.22,
             compactRightIcon: Icons.people_alt_rounded,
-            compactRightLabel: AppLocalizations.of(context).uiCHARACTERS,
+            compactRightLabel: AppLocalizations.of(context).uiCharacters,
             left: _buildBankList(),
             rightBuilder: (_) => ResizableSplitPane(
+              key: _characterSplitKey,
               initialLeftFraction: 0.45,
               compactRightIcon: Icons.tune_rounded,
               compactRightLabel: AppLocalizations.of(context).uiDetails,
@@ -110,35 +114,55 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
   // ───────────────── Header ─────────────────
 
   Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-      child: Row(
-        children: [
-          Text(
-            AppLocalizations.of(context).navVoiceBank,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 600;
+        return Container(
+          padding: EdgeInsets.fromLTRB(
+            compact ? 16 : 24,
+            compact ? 12 : 20,
+            compact ? 16 : 24,
+            compact ? 12 : 16,
           ),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              AppLocalizations.of(context).uiBanksCharactersAndInspector,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 14,
+          child: Row(
+            children: [
+              if (!compact) ...[
+                Text(
+                  AppLocalizations.of(context).navVoiceBank,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(width: 8),
+              ],
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context).uiBanksCharactersAndInspector,
+                  maxLines: compact ? 2 : 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: compact ? 13 : 14,
+                  ),
+                ),
               ),
-            ),
+              SizedBox(width: 8),
+              if (compact)
+                IconButton.filledTonal(
+                  tooltip: AppLocalizations.of(context).uiNewBank,
+                  onPressed: _createBank,
+                  icon: const Icon(Icons.add_rounded),
+                )
+              else
+                FilledButton.icon(
+                  onPressed: _createBank,
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: Text(AppLocalizations.of(context).uiNewBank),
+                ),
+            ],
           ),
-          SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: _createBank,
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: Text(AppLocalizations.of(context).uiNewBank),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -190,6 +214,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                     onTap: () {
                       _clearVoiceBankInspectorState();
                       setState(() => _selectedBankId = bank.id);
+                      _showBankCharactersPane();
                     },
                     onDelete: () async {
                       try {
@@ -197,6 +222,9 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                         if (_selectedBankId == bank.id) {
                           _clearVoiceBankInspectorState();
                           setState(() => _selectedBankId = null);
+                          _bankSplitKey.currentState?.showLeftPane(
+                            onlyWhenCompact: true,
+                          );
                         }
                       } catch (e) {
                         if (!mounted) return;
@@ -211,6 +239,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                           .duplicateBank(bank.id, '${bank.name} (copy)');
                       _clearVoiceBankInspectorState();
                       setState(() => _selectedBankId = newBank.id);
+                      _showBankCharactersPane();
                     },
                     onToggleActive: () async {
                       final database = ref.read(databaseProvider);
@@ -499,8 +528,10 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         return VoiceBankCharacterTile(
           asset: asset,
           isSelected: isSelected,
-          onTap: () =>
-              ref.read(selectedCharacterIdProvider.notifier).state = asset.id,
+          onTap: () {
+            ref.read(selectedCharacterIdProvider.notifier).state = asset.id;
+            _showCharacterInspectorPane();
+          },
           onRemove: () async {
             await ref
                 .read(databaseProvider)
@@ -652,6 +683,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
           );
       _clearVoiceBankInspectorState();
       setState(() => _selectedBankId = id);
+      _showBankCharactersPane();
     }
   }
 
@@ -715,8 +747,23 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
               ),
             );
         ref.read(selectedCharacterIdProvider.notifier).state = assetId;
+        _showCharacterInspectorPane();
       },
     );
+  }
+
+  void _showBankCharactersPane() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _bankSplitKey.currentState?.showRightPane(onlyWhenCompact: true);
+    });
+  }
+
+  void _showCharacterInspectorPane() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _characterSplitKey.currentState?.showRightPane(onlyWhenCompact: true);
+    });
   }
 
   void _openImportDialog(db.VoiceBank targetBank) {

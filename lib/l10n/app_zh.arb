@@ -125,6 +125,7 @@
   "uiCharacterName": "角色名称 *",
   "uiCharacterNotFound": "未找到角色",
   "uiCHARACTERS": "角色",
+  "uiCharacters": "角色",
   "uiCharactersAreSharedImportingJustAddsThemAsMembersOfThisBank": "角色是共享的，导入只会把它们加入当前语音库。",
   "uiChooseExportFolder": "选择导出文件夹",
   "uiChooseExportFolderForSubtitlesTTSFiles": "选择字幕和 TTS 文件导出文件夹",
@@ -510,5 +511,7 @@
   "fontModeAppDefault": "应用默认",
   "fontModeSystem": "系统字体",
   "fontModeSaved": "字体已设为 {font}。",
+  "uiVideoDubUnavailableOnAndroidPhone": "Android 手机端已禁用视频配音",
+  "uiVideoDubUnavailableOnAndroidPhoneDescription": "视频剪辑需要比长屏手机更多的横向空间。请使用平板、折叠屏宽屏布局、桌面端或 Web 窗口编辑视频配音项目。",
   "uiDetails": "详情"
 }

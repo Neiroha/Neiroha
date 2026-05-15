@@ -7,7 +7,7 @@ import 'package:neiroha/presentation/widgets/settings/settings_sections.dart';
 
 const double _settingsWideBreakpoint = 840;
 const double _settingsInitialRailFraction = 0.22;
-const double _settingsRailMinWidth = 220;
+const double _settingsRailMinWidth = 280;
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});

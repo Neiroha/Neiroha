@@ -24,7 +24,7 @@ import 'voice_bank_screen.dart';
 import 'provider_screen.dart';
 import 'settings_screen.dart';
 
-const double _compactShellBreakpoint = 600;
+const double _compactShellBreakpoint = 840;
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -122,18 +122,23 @@ class _AppShellState extends ConsumerState<AppShell> {
               Expanded(
                 child: compact
                     ? _buildPageStack(selectedTab)
-                    : Row(
-                        children: [
-                          Sidebar(
-                            selected: selectedTab,
-                            onTabChanged: (tab) => unawaited(_switchTab(tab)),
-                          ),
-                          const VerticalDivider(width: 1, thickness: 1),
-                          Expanded(child: _buildPageStack(selectedTab)),
-                        ],
+                    : SafeArea(
+                        child: Row(
+                          children: [
+                            Sidebar(
+                              selected: selectedTab,
+                              onTabChanged: (tab) => unawaited(_switchTab(tab)),
+                            ),
+                            const VerticalDivider(width: 1, thickness: 1),
+                            Expanded(child: _buildPageStack(selectedTab)),
+                          ],
+                        ),
                       ),
               ),
-              if (showGlobalPlayer) const PersistentAudioBar(),
+              if (showGlobalPlayer)
+                Platform.isWindows
+                    ? const PersistentAudioBar()
+                    : const SafeArea(top: false, child: PersistentAudioBar()),
             ],
           ),
         );

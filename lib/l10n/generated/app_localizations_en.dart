@@ -425,6 +425,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uiCHARACTERS => 'CHARACTERS';
 
   @override
+  String get uiCharacters => 'Characters';
+
+  @override
   String get uiCharactersAreSharedImportingJustAddsThemAsMembersOfThisBank =>
       'Characters are shared — importing just adds them as members of this bank.';
 
@@ -1718,6 +1721,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String fontModeSaved(String font) {
     return 'Font set to $font.';
   }
+
+  @override
+  String get uiVideoDubUnavailableOnAndroidPhone =>
+      'Video Dub is disabled on Android phones';
+
+  @override
+  String get uiVideoDubUnavailableOnAndroidPhoneDescription =>
+      'Video editing needs more horizontal space than tall phone screens can provide. Use a tablet, foldable wide layout, desktop, or web window to edit video dubbing projects.';
 
   @override
   String get uiDetails => 'Details';

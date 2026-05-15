@@ -102,6 +102,9 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
         Expanded(
           child: ResizableSplitPane(
             initialLeftFraction: 0.68,
+            compactRightIcon: Icons.tune_rounded,
+            compactRightLabel: AppLocalizations.of(context).navSettings,
+            compactHandleBottomInset: 158,
             left: _editing
                 ? _ChapterEditPane(
                     project: project,

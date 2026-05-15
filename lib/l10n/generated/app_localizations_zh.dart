@@ -411,6 +411,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get uiCHARACTERS => '角色';
 
   @override
+  String get uiCharacters => '角色';
+
+  @override
   String get uiCharactersAreSharedImportingJustAddsThemAsMembersOfThisBank =>
       '角色是共享的，导入只会把它们加入当前语音库。';
 
@@ -1672,6 +1675,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String fontModeSaved(String font) {
     return '字体已设为 $font。';
   }
+
+  @override
+  String get uiVideoDubUnavailableOnAndroidPhone => 'Android 手机端已禁用视频配音';
+
+  @override
+  String get uiVideoDubUnavailableOnAndroidPhoneDescription =>
+      '视频剪辑需要比长屏手机更多的横向空间。请使用平板、折叠屏宽屏布局、桌面端或 Web 窗口编辑视频配音项目。';
 
   @override
   String get uiDetails => '详情';

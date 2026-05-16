@@ -3,7 +3,7 @@
 Confirmed or likely defects are tracked here so review notes do not scatter
 across root-level docs.
 
-Last organized: 2026-05-14.
+Last organized: 2026-05-16.
 
 ## P0 / P1
 
@@ -65,7 +65,10 @@ nullable process plus cancelled flag.
 
 ### Video Dub Export Ignores A1 Coverage Gating
 
-File: `lib/presentation/screens/video_dub_screen.dart`
+Files:
+
+- `lib/presentation/widgets/video_dub/editor.dart`
+- `lib/presentation/actions/video_dub/exporter.dart`
 
 Preview mutes V1 audio outside A1 coverage, but export still bakes V1 audio as
 whole-or-nothing.
@@ -78,7 +81,8 @@ into the mix.
 Files:
 
 - `lib/data/storage/storage_service.dart`
-- `lib/presentation/screens/video_dub_screen.dart`
+- `lib/presentation/widgets/video_dub/editor.dart`
+- `lib/presentation/widgets/video_dub/timeline.dart`
 
 The global storage scan can mark timeline clips and archived audio rows, but
 Video Dub should also run a focused scan when a project opens so missing video,
@@ -90,27 +94,33 @@ Fix: scan Video Dub timeline rows and subtitle cue audio paths on project open.
 
 ### Edit Cue Does Not Auto-Regenerate
 
-File: `lib/presentation/screens/video_dub_screen.dart`
+Files:
+
+- `lib/presentation/widgets/video_dub/editor.dart`
+- `lib/presentation/widgets/video_dub/cue_dialogs.dart`
 
 Editing a cue clears old audio but does not offer the same auto-TTS / auto-sync
 flow as Add Cue.
 
 ### A3 Imported Audio Does Not Preview
 
-File: `lib/presentation/screens/video_dub_screen.dart`
+Files:
+
+- `lib/presentation/widgets/video_dub/editor.dart`
+- `lib/presentation/widgets/video_dub/timeline.dart`
 
 Imported A3 clips mix into export but do not play during preview/scrub.
 
 ### Cue Overlaps Are Easy To Create
 
-File: `lib/presentation/screens/video_dub_screen.dart`
+File: `lib/presentation/widgets/video_dub/timeline.dart`
 
 Import, drag, sync-length, and manual edits can create overlapping cues without
 a warning.
 
 ### TTS Audio Can Overrun Cue Windows
 
-File: `lib/presentation/screens/video_dub_screen.dart`
+File: `lib/presentation/widgets/video_dub/editor.dart`
 
 A cue whose generated audio is longer than its subtitle window keeps playing
 until the next cue stops it. Sync length is post-hoc only.
@@ -138,3 +148,5 @@ Fix: extract a shared model-kind utility or persist model capabilities.
   for dependent rows.
 - Unsupported SVG filters were removed from the logo asset, clearing the
   `flutter_svg` warning in widget tests.
+- Platform capability guards now hide or disable unsupported Windows SAPI and
+  FFmpeg CLI workflows on Android/Web and other unsupported targets.

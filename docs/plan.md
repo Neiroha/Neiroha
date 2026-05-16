@@ -4,21 +4,21 @@ This file is the single active backlog for Neiroha. Historical notes live in
 [`archive/`](archive/), research and long-form design notes live in
 [`research/`](research/), and confirmed defects live in [`bugs.md`](bugs.md).
 
-Last organized: 2026-05-14.
+Last organized: 2026-05-16.
 
 ## Current Focus
 
-### 1. Documentation And Release Readiness
+### 1. Platform Capability Boundaries
 
-Goal: keep the public docs aligned with the actual app before adding another
-large surface.
+Goal: keep unsupported platform features explicit instead of letting users reach
+dead paths.
 
-- README / README_zh should describe Novel Reader, Video Dub, Settings Tasks,
-  API log output, API security defaults and storage layout.
-- `docs/api.md` and `docs/api-zh.md` should mirror the local API server's
-  current host/auth/CORS/rate-limit/body-limit behavior.
-- `docs/bugs.md` should track only current risks. Fixed API-server security and
-  database-boundary issues should stay in the "Recently Fixed" section.
+- Windows keeps Windows SAPI and user-configured FFmpeg CLI support.
+- Android and Web should not expose local FFmpeg muxing, trimming, waveform
+  extraction or video export. Web remains a UI/path-selection surface until the
+  missing local file persistence and native media workflow are designed.
+- Non-Windows system TTS should stay hidden until native Android/Apple/Linux
+  adapters are implemented behind platform channels or a proven platform API.
 - Database migration compatibility is intentionally out of scope until the app
   has a stable public release.
 
@@ -54,7 +54,6 @@ starting large new UI work.
 ### 5. Phase TTS / Dialog TTS Export Follow-Ups
 
 - Phase TTS:
-  - merged audio export;
   - per-segment folder export;
   - manifest with segment order, speaker, voice and file path.
 - Dialog TTS:
@@ -98,11 +97,10 @@ References:
 
 Large files that should be split before heavy feature work:
 
-- `lib/presentation/screens/novel_reader_screen.dart`
-- `lib/presentation/screens/settings_screen.dart`
-- `lib/presentation/screens/video_dub_screen.dart`
 - `lib/presentation/screens/provider_screen.dart`
 - `lib/presentation/screens/voice_bank_screen.dart`
+- large widgets under `lib/presentation/widgets/novel_reader/` if they start
+  accumulating unrelated editor, playback or export logic again.
 
 Prefer extracting services/controllers and focused widgets instead of adding
 more screen-local state.
@@ -110,6 +108,7 @@ more screen-local state.
 ## Documentation Policy
 
 - Root `docs/` should stay small:
+  - `README.md` for the docs index and platform scope;
   - `plan.md` for active work;
   - `bugs.md` for defects;
   - `api.md` / `api-zh.md` for public API reference.

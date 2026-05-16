@@ -14,9 +14,11 @@
 .vscode/
 
 # temp files
+.codex-temp/
 captures/
 temp/
 migrate_working_dir/
+
 
 # IntelliJ related
 *.iml

@@ -1,9 +1,11 @@
 # Xiaomi MiMo 接入与 LLM/ASR 子系统架构设计
 
 > 调研日期：2026-04-28
+> 状态：历史研究参考。接口方向仍有用，但 schema/version 片段是当时快照，
+> 实现前请以当前源码为准。
 > 范围：小米 MiMo 开放平台（[platform.xiaomimimo.com](https://platform.xiaomimimo.com)）TTS / ASR / LLM 全套能力的接入方案，
 > 以及在 Neiroha 现有 TTS Adapter 体系上扩展 ASR + LLM 子系统的架构设计。
-> 平台原始文档已镜像保存在 [docs/research/mimo-llms-full.txt](research/mimo-llms-full.txt)（10151 行，469 KB）。
+> 平台原始文档已镜像保存在 [mimo-llms-full.txt](mimo-llms-full.txt)（10151 行，469 KB）。
 
 ---
 
@@ -271,11 +273,12 @@ POST https://api.xiaomimimo.com/v1/chat/completions
 └────────────────────────────────────────────────────────────────┘
 ```
 
-### 3.3 数据库 schema 变更（schema v16）
+### 3.3 数据库 schema 变更（历史设想）
 
-> **注意**：当前 `app_database.dart` 已是 `schemaVersion => 15`，且 onUpgrade 使用 drop-all 开发迁移。
-> 本次升级必须 bump 到 **v16**，并将 onUpgrade 改为增量 `addColumn` 迁移（替换掉开发期的 drop-all 逻辑），
-> 否则老用户升级时不会跑 `from < 15` 分支，且 drop-all 会丢失所有用户数据。
+> **注意**：这是 2026-04-28 的历史设计快照。当前仓库仍处于未发布开发期，
+> `schemaVersion` 已继续演进，且数据库迁移兼容暂不作为当前目标。真正实现
+> ASR/LLM 扩展时，请以当前 `app_database.dart` 和发布策略为准，不要直接套用
+> 下方版本号或迁移代码。
 
 #### 扩展 `TtsProviders`（加 `apiKeyHeader`），扩展 `ModelBindings`
 
@@ -371,12 +374,12 @@ class SubtitleCues extends Table {
 }
 ```
 
-#### 老数据迁移
+#### 历史迁移草案（不要直接套用）
 
 ```dart
 // app_database.dart
 @override
-int get schemaVersion => 16;  // ← 从 15 bump 到 16
+int get schemaVersion => /* current + 1 */;
 
 @override
 MigrationStrategy get migration => MigrationStrategy(
@@ -1416,7 +1419,7 @@ Pro 模型 $1/1M 输入 + $3/1M 输出，长视频（30 分钟，约 11k tokens 
 
 ## 附录 A：关键链接
 
-- 平台文档全文：[docs/research/mimo-llms-full.txt](research/mimo-llms-full.txt)
+- 平台文档全文：[mimo-llms-full.txt](mimo-llms-full.txt)
 - 平台主页：https://platform.xiaomimimo.com
 - TTS V2.5 文档：https://platform.xiaomimimo.com/docs/zh-CN/usage-guide/speech-synthesis-v2.5
 - Audio Understanding：https://platform.xiaomimimo.com/docs/zh-CN/usage-guide/multimodal-understanding/audio-understanding
@@ -1426,7 +1429,7 @@ Pro 模型 $1/1M 输入 + $3/1M 输出，长视频（30 分钟，约 11k tokens 
 - ASR HF 权重：https://huggingface.co/XiaomiMiMo/MiMo-V2.5-ASR
 - ASR 在线 Demo：https://mimo.xiaomi.com/mimo-v2-5-asr
 - TTS Skills（官方 Agent 工具）：https://github.com/XiaomiMiMo/MiMo-Skills
-- 现有 Adapter 文档：[add-llm-tts-adapter.md](add-llm-tts-adapter.md)
+- 现有 Adapter 文档：[llm-tts-adapter-guide.md](llm-tts-adapter-guide.md)
 - **OpenAI Whisper API 兼容生态**
   - OpenAI `audio/transcriptions`：https://platform.openai.com/docs/api-reference/audio/createTranscription
   - Groq Whisper：https://console.groq.com/docs/speech-to-text
@@ -1558,12 +1561,12 @@ final asrAvailableModelsProvider = Provider<List<AvailableModel>>((ref) =>
 final defaultAsrAdapterProvider = Provider<AsrAdapter?>((ref) { ... });
 ```
 
-数据库迁移（**必须替换掉当前 drop-all 开发迁移**）：
+历史迁移草案（正式发布后才需要类似策略）：
 
 ```dart
 // lib/data/database/app_database.dart
 @override
-int get schemaVersion => 16;  // ← 从 15 bump 到 16
+int get schemaVersion => /* current + 1 */;
 
 @override
 MigrationStrategy get migration => MigrationStrategy(

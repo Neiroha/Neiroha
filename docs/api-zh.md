@@ -160,6 +160,20 @@ abstract class TtsAdapter {
 }
 ```
 
+### 平台可用性
+
+Provider 与媒体能力会按当前运行平台过滤：
+
+| 能力 | Windows | Linux / macOS | Android | Web |
+|---|---|---|---|---|
+| 外部 FFmpeg CLI 路径 / PATH 检测 | 是 | 是 | 否 | 否 |
+| 本地波形提取、裁剪、混音导出 | 是 | 是 | 禁用 | 禁用 |
+| Windows SAPI 系统 TTS | 是 | 否 | 否 | 否 |
+| Web UI / 路径选择表面 | n/a | n/a | n/a | 仅展示 |
+
+新增 Provider 时不会列出当前平台不支持的适配器。若数据库中已有来自
+其他平台的记录，则会显示为“当前平台不可用”，不能启用或执行健康检查。
+
 ### 2.1 OpenAI 兼容适配器（`openaiCompatible`）
 
 适用于任何暴露标准 OpenAI TTS API 的服务器。
@@ -222,6 +236,7 @@ abstract class TtsAdapter {
 | 合成（上传） | `POST` | `/cosyvoice/speech/upload` | **已实现** |
 | 健康检查 | `GET` | `/health` | **已实现** |
 | 列出说话人 | `GET` | `/speakers` | **已实现** |
+| 列出服务端 profile | `GET` | `/cosyvoice/profiles` | **已实现** |
 
 **JSON 合成（`/cosyvoice/speech`）：**
 ```json
@@ -245,10 +260,15 @@ abstract class TtsAdapter {
 | `instruct` | 指令模式 | `prompt_audio_path`/`prompt_audio` + `instruct_text` |
 
 **Multipart 上传（`/cosyvoice/speech/upload`）：**
-用于 zero_shot 模式上传参考音频文件。字段以 `multipart/form-data` 发送：
-- `text`、`mode`（= `zero_shot`）、`speed`、`response_format`
+用于上传本地参考音频文件。字段以 `multipart/form-data` 发送：
+- `text`、`mode`、`speed`、`response_format`
 - `prompt_audio` — 参考音频文件
-- `prompt_text`、`prompt_lang`、`profile`、`instruct_text`（可选）
+- `prompt_text`（zero_shot 必填）、`prompt_lang`、`instruct_text`（instruct 必填）
+
+> **重要：** multipart 路径不会发送 `profile`。服务端
+> `build_runtime_char_config` 会把 `profile` 当成已注册角色名严格查找，
+> 未注册名称会导致 400 “未找到角色”。上传音频时，上传文件本身已经完整
+> 定义了参考声音；只有 JSON 路径在不上传音频时才使用 `profile`。
 
 ### 2.4 GPT-SoVITS 适配器（`gptSovits`）
 
@@ -299,6 +319,8 @@ Microsoft Azure 认知服务文本转语音 REST API。免费层每月 50 万字
 ### 2.6 Windows 系统 TTS 适配器（`systemTts`）
 
 通过 PowerShell 调用内置 Windows SAPI（System.Speech.Synthesis）。零配置 — 适用于任何 Windows 10/11。
+该 Provider 只会在 Windows 上 seed 和显示。Android、Apple、Linux 与 Web
+的系统 TTS 后端在真正实现原生平台适配器前保持隐藏。
 
 | 操作 | 方法 | 路径 | 状态 |
 |---|---|---|---|
@@ -328,11 +350,11 @@ Microsoft Azure 认知服务文本转语音 REST API。免费层每月 50 万字
 | `openaiCompatible` | 是 | 是 |
 | `chatCompletionsTts` | 是 | 是 |
 | `azureTts` | 通过语音列表返回 locale | 是 |
-| `systemTts` | 否 | 是 |
+| `systemTts` | 否 | 是，仅 Windows |
 | `cosyvoice` | profile | profile |
 | `gptSovits` | 原生模型列表 | 是 |
-| `geminiTts` | 否 | 手动配置预设/指令 |
-| `voxcpm2Native` | 否 | 手动配置参考音频/指令 |
+| `geminiTts` | 是，内置 TTS 模型列表 | 是，内置声音列表 |
+| `voxcpm2Native` | 是 | 是 |
 
 ---
 

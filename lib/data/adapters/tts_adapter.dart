@@ -9,6 +9,7 @@ import 'package:neiroha/data/adapters/gpt_sovits_adapter.dart';
 import 'package:neiroha/data/adapters/azure_tts_adapter.dart';
 import 'package:neiroha/data/adapters/system_tts_adapter.dart';
 import 'package:neiroha/data/adapters/gemini_tts_adapter.dart';
+import 'package:neiroha/domain/platform/platform_capabilities.dart';
 
 /// Request payload for TTS synthesis, unified across all adapters.
 class TtsRequest {
@@ -127,6 +128,12 @@ TtsAdapter createAdapter(db.TtsProvider provider, {String? modelName}) {
         modelName: model,
       );
     case 'systemTts':
+      final capabilities = PlatformCapabilities.current();
+      if (!capabilities.supportsSystemTtsAdapter) {
+        throw UnsupportedError(
+          'System TTS is not available on ${capabilities.platformLabel}.',
+        );
+      }
       return SystemTtsAdapter(
         baseUrl: provider.baseUrl,
         apiKey: provider.apiKey,

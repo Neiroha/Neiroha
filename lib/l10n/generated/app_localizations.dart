@@ -398,6 +398,12 @@ abstract class AppLocalizations {
   /// **'Active'**
   String get uiActive;
 
+  /// No description provided for @uiAdapterUnavailableOnThisPlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'This adapter is not available on the current platform. It cannot be enabled or used for health checks here.'**
+  String get uiAdapterUnavailableOnThisPlatform;
+
   /// No description provided for @uiAdapterType.
   ///
   /// In en, this message translates to:
@@ -1477,6 +1483,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'FFmpeg not detected — waveforms and media probing are skipped.'**
   String get uiFFmpegNotDetectedWaveformsAndMediaProbingAreSkipped;
+
+  /// No description provided for @uiFFmpegUnavailableOnPlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'FFmpeg CLI features are not available on {platform}. Local muxing, trimming, waveform extraction, and video export are disabled.'**
+  String uiFFmpegUnavailableOnPlatform(String platform);
+
+  /// No description provided for @uiFFmpegUnavailableWaveformsAndLocalExportsAreDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'FFmpeg CLI is not available on this platform — waveforms and local audio/video exports are disabled.'**
+  String get uiFFmpegUnavailableWaveformsAndLocalExportsAreDisabled;
 
   /// No description provided for @uiFFmpegRequiredForTrimming.
   ///
@@ -2917,6 +2935,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unsaved changes'**
   String get uiUnsavedChanges;
+
+  /// No description provided for @uiUnavailableOnThisPlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable on this platform'**
+  String get uiUnavailableOnThisPlatform;
 
   /// No description provided for @uiUploadAVoiceSampleTheModelWillCloneItsToneAndSpeak.
   ///

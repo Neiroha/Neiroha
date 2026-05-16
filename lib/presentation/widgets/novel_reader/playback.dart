@@ -528,6 +528,8 @@ extension _NovelReaderEditorGeneration on _NovelReaderEditorState {
   }
 
   Future<bool> _convertAudioToMp3(String inputPath, String outputPath) async {
+    final capabilities = ref.read(platformCapabilitiesProvider);
+    if (!capabilities.supportsLocalAudioMuxing) return false;
     final ffmpeg = ref.read(ffmpegServiceProvider);
     if (!await ffmpeg.isAvailable()) return false;
     final ffmpegPath = await ffmpeg.resolvePath();
@@ -619,6 +621,13 @@ extension _NovelReaderEditorSynthesis on _NovelReaderEditorState {
       return TtsResult(audioBytes: wavBytes, contentType: 'audio/wav');
     }
 
+    final capabilities = ref.read(platformCapabilitiesProvider);
+    if (!capabilities.supportsLocalAudioMuxing) {
+      throw StateError(
+        'Long segment slicing needs local audio muxing, which is not '
+        'available on ${capabilities.platformLabel}.',
+      );
+    }
     final ffmpeg = ref.read(ffmpegServiceProvider);
     if (!await ffmpeg.isAvailable()) {
       throw StateError(
@@ -825,6 +834,15 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
       ];
       if (inputs.length != ordered.length) {
         _snack('Generate the full book cache before exporting.');
+        return;
+      }
+      final capabilities = ref.read(platformCapabilitiesProvider);
+      if (!capabilities.supportsLocalAudioMuxing) {
+        _snack(
+          AppLocalizations.of(
+            context,
+          ).uiFFmpegUnavailableOnPlatform(capabilities.platformLabel),
+        );
         return;
       }
       final ffmpeg = ref.read(ffmpegServiceProvider);

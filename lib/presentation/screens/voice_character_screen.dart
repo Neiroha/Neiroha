@@ -20,7 +20,12 @@ void openCreateCharacterDialog(
 }) {
   final allProviders =
       ref.read(ttsProvidersStreamProvider).valueOrNull ?? const [];
-  final enabledProviders = allProviders.where((p) => p.enabled).toList();
+  final capabilities = ref.read(platformCapabilitiesProvider);
+  final enabledProviders = allProviders
+      .where(
+        (p) => p.enabled && capabilities.supportsAdapterName(p.adapterType),
+      )
+      .toList();
   if (enabledProviders.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

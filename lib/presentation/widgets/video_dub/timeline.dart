@@ -41,6 +41,7 @@ class VideoDubTimeline extends StatefulWidget {
   final bool a1Muted;
   final VoidCallback? onToggleA1Mute;
   final List<double>? waveformPeaks;
+  final bool ffmpegSupported;
   final bool ffmpegAvailable;
   final VoidCallback onConfigureFfmpeg;
 
@@ -59,6 +60,7 @@ class VideoDubTimeline extends StatefulWidget {
     required this.onDeleteClip,
     required this.onImport,
     required this.waveformPeaks,
+    required this.ffmpegSupported,
     required this.ffmpegAvailable,
     required this.onConfigureFfmpeg,
     this.onMoveCue,
@@ -261,24 +263,29 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
           SizedBox(width: 6),
           Expanded(
             child: Text(
-              AppLocalizations.of(
-                context,
-              ).uiFFmpegNotDetectedWaveformsAndMediaProbingAreSkipped,
+              widget.ffmpegSupported
+                  ? AppLocalizations.of(
+                      context,
+                    ).uiFFmpegNotDetectedWaveformsAndMediaProbingAreSkipped
+                  : AppLocalizations.of(
+                      context,
+                    ).uiFFmpegUnavailableWaveformsAndLocalExportsAreDisabled,
               style: TextStyle(fontSize: 11, color: Colors.white70),
             ),
           ),
-          TextButton(
-            onPressed: widget.onConfigureFfmpeg,
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-              minimumSize: const Size(0, 24),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          if (widget.ffmpegSupported)
+            TextButton(
+              onPressed: widget.onConfigureFfmpeg,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                minimumSize: const Size(0, 24),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                AppLocalizations.of(context).navSettings,
+                style: TextStyle(fontSize: 11),
+              ),
             ),
-            child: Text(
-              AppLocalizations.of(context).navSettings,
-              style: TextStyle(fontSize: 11),
-            ),
-          ),
         ],
       ),
     );

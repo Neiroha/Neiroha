@@ -177,6 +177,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get uiActive => '启用';
 
   @override
+  String get uiAdapterUnavailableOnThisPlatform =>
+      '当前平台不支持这个适配器，无法在这里启用或执行健康检查。';
+
+  @override
   String get uiAdapterType => '适配器类型';
 
   @override
@@ -753,6 +757,15 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get uiFFmpegNotDetectedWaveformsAndMediaProbingAreSkipped =>
       '未检测到 FFmpeg，波形和媒体探测会被跳过。';
+
+  @override
+  String uiFFmpegUnavailableOnPlatform(String platform) {
+    return '$platform 平台不支持 FFmpeg CLI 功能。本地混音、裁剪、波形提取和视频导出已禁用。';
+  }
+
+  @override
+  String get uiFFmpegUnavailableWaveformsAndLocalExportsAreDisabled =>
+      '当前平台不支持 FFmpeg CLI，波形和本地音频/视频导出已禁用。';
 
   @override
   String get uiFFmpegRequiredForTrimming => '裁剪需要 FFmpeg。';
@@ -1522,6 +1535,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get uiUnsavedChanges => '未保存的更改';
+
+  @override
+  String get uiUnavailableOnThisPlatform => '当前平台不可用';
 
   @override
   String get uiUploadAVoiceSampleTheModelWillCloneItsToneAndSpeak =>

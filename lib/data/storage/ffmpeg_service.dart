@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:neiroha/domain/platform/platform_capabilities.dart';
 import 'package:path/path.dart' as p;
 
 import '../database/app_database.dart';
@@ -17,11 +18,13 @@ import '../database/app_database.dart';
 ///  3. The literal string `ffmpeg` — the caller's Process.run can still
 ///     find it if the current process's PATH contains it.
 class FFmpegService {
-  FFmpegService(this._db);
+  FFmpegService(this._db, {PlatformCapabilities? capabilities})
+    : _capabilities = capabilities ?? PlatformCapabilities.current();
 
   static const String kFfmpegPathKey = 'ffmpegPath';
 
   final AppDatabase _db;
+  final PlatformCapabilities _capabilities;
 
   /// Cache the last successful probe so repeated callers don't spin up a
   /// `ffmpeg -version` child for every waveform extraction.
@@ -49,6 +52,11 @@ class FFmpegService {
   /// Resolve the ffmpeg executable path. Falls back to the literal
   /// `ffmpeg` if nothing more specific is found.
   Future<String> resolvePath() async {
+    if (!_capabilities.supportsFfmpegCli) {
+      throw UnsupportedError(
+        'FFmpeg CLI is not available on ${_capabilities.platformLabel}.',
+      );
+    }
     if (_cachedPath != null) return _cachedPath!;
     final override = await getOverride();
     if (override != null && override.isNotEmpty) {
@@ -62,6 +70,10 @@ class FFmpegService {
 
   /// Probe `ffmpeg -version`. `true` if exit 0. Cached per-run.
   Future<bool> isAvailable() async {
+    if (!_capabilities.supportsFfmpegCli) {
+      _cachedAvailable = false;
+      return false;
+    }
     if (_cachedAvailable != null) return _cachedAvailable!;
     final path = await resolvePath();
     try {
@@ -99,6 +111,7 @@ class FFmpegService {
   /// empty list as "fall back to default capture device" rather than a hard
   /// failure.
   Future<List<DshowAudioInput>> listDshowAudioInputs() async {
+    if (!_capabilities.supportsFfmpegCli) return const [];
     if (!Platform.isWindows) return const [];
     if (!await isAvailable()) return const [];
     final ffmpegPath = await resolvePath();
@@ -178,6 +191,7 @@ class FFmpegService {
     int bucketCount = 600,
     int sampleRate = 8000,
   }) async {
+    if (!_capabilities.supportsFfmpegCli) return null;
     if (!await isAvailable()) return null;
     final path = await resolvePath();
 
@@ -223,6 +237,7 @@ class FFmpegService {
   /// ffprobe is missing or the probe fails. Images report 0 — callers
   /// should substitute a sensible default (e.g. 3 s still frame).
   Future<double?> probeDurationSeconds(String mediaPath) async {
+    if (!_capabilities.supportsFfmpegCli) return null;
     final ffmpegPath = await resolvePath();
     final ffprobePath = _deriveFfprobePath(ffmpegPath);
     try {
@@ -259,6 +274,7 @@ class FFmpegService {
     required String outputPath,
     bool reEncode = false,
   }) async {
+    if (!_capabilities.supportsFfmpegCli) return false;
     if (inputPaths.isEmpty) return false;
     if (!await isAvailable()) return false;
     final ffmpegPath = await resolvePath();
@@ -337,6 +353,7 @@ class FFmpegService {
     required double startSec,
     required double endSec,
   }) async {
+    if (!_capabilities.supportsFfmpegCli) return false;
     if (endSec <= startSec || startSec < 0) return false;
     if (!await isAvailable()) return false;
     final ffmpegPath = await resolvePath();

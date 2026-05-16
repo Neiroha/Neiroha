@@ -41,8 +41,25 @@ class _FfmpegSettingsCardState extends ConsumerState<FfmpegSettingsCard> {
 
   @override
   Widget build(BuildContext context) {
+    final capabilities = ref.watch(platformCapabilitiesProvider);
     final svc = ref.watch(ffmpegServiceProvider);
     final availability = ref.watch(ffmpegAvailabilityProvider);
+
+    if (!capabilities.supportsFfmpegCli) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SettingsRow(
+            icon: Icons.block_rounded,
+            title: 'FFmpeg',
+            subtitle: AppLocalizations.of(
+              context,
+            ).uiFFmpegUnavailableOnPlatform(capabilities.platformLabel),
+            trailing: const SizedBox.shrink(),
+          ),
+        ),
+      );
+    }
 
     if (!_hydrated) {
       // Lazy one-shot load of the persisted override.
@@ -236,6 +253,9 @@ class _ExportPrefsSettingsCardState
 
   @override
   Widget build(BuildContext context) {
+    final capabilities = ref.watch(platformCapabilitiesProvider);
+    if (!capabilities.supportsFfmpegCli) return const SizedBox.shrink();
+
     final prefs = _prefs;
     return Card(
       child: Padding(

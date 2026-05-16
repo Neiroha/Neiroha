@@ -90,6 +90,7 @@
   "uiAVoiceProfileRegisteredOnTheServerLeaveAsNoneToSynthesise": "A voice profile registered on the server. Leave as \"None\" to synthesise purely from your uploaded reference audio — sending an unregistered id is rejected.",
   "uiAYoungWomanGentleAndSweetVoice": "A young woman, gentle and sweet voice",
   "uiActive": "Active",
+  "uiAdapterUnavailableOnThisPlatform": "This adapter is not available on the current platform. It cannot be enabled or used for health checks here.",
   "uiAdapterType": "Adapter Type",
   "uiAdd": "Add",
   "uiAddChapter": "Add chapter",
@@ -315,6 +316,16 @@
   "uiFFmpegIsRequiredForExportConfigureItInSettings": "FFmpeg is required for export - configure it in Settings",
   "uiFFmpegIsRequiredForExportConfigureItInSettings2": "FFmpeg is required for export — configure it in Settings",
   "uiFFmpegNotDetectedWaveformsAndMediaProbingAreSkipped": "FFmpeg not detected — waveforms and media probing are skipped.",
+  "uiFFmpegUnavailableOnPlatform": "FFmpeg CLI features are not available on {platform}. Local muxing, trimming, waveform extraction, and video export are disabled.",
+  "@uiFFmpegUnavailableOnPlatform": {
+    "placeholders": {
+      "platform": {
+        "type": "String",
+        "example": "Android"
+      }
+    }
+  },
+  "uiFFmpegUnavailableWaveformsAndLocalExportsAreDisabled": "FFmpeg CLI is not available on this platform — waveforms and local audio/video exports are disabled.",
   "uiFFmpegRequiredForTrimming": "FFmpeg required for trimming.",
   "uiFFmpegTrimFailed": "FFmpeg trim failed.",
   "uiFilledAutomaticallyWhenYouPickAboveOrTypeManually": "Filled automatically when you pick above, or type manually",
@@ -620,6 +631,7 @@
   "uiUltraCloneModeRequiresAPromptText": "Ultra Clone mode requires a Prompt Text",
   "uiUnknown": "Unknown",
   "uiUnsavedChanges": "Unsaved changes",
+  "uiUnavailableOnThisPlatform": "Unavailable on this platform",
   "uiUploadAVoiceSampleTheModelWillCloneItsToneAndSpeak": "Upload a voice sample — the model will clone its tone and speak the synthesis text in any language.",
   "uiUploadAVoiceSampleToUseAsTheBaseVoiceInsteadOf": "Upload a voice sample to use as the base voice instead of a preset profile.",
   "uiUploadAnAudioFileOrRecordANewSampleToGetStarted": "Upload an audio file or record a new sample to get started.",

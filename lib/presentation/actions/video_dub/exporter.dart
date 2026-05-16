@@ -38,6 +38,16 @@ Future<void> exportVideoDubVideo({
     context,
   ).uiChooseExportFolder;
   final exportingVideoTaskLabel = AppLocalizations.of(context).uiExportingVideo;
+  final capabilities = ref.read(platformCapabilitiesProvider);
+  if (!capabilities.supportsLocalVideoExport) {
+    _snack(
+      context,
+      AppLocalizations.of(
+        context,
+      ).uiFFmpegUnavailableOnPlatform(capabilities.platformLabel),
+    );
+    return;
+  }
   final ffmpeg = ref.read(ffmpegServiceProvider);
   if (!await ffmpeg.isAvailable()) {
     if (!context.mounted) return;
@@ -170,6 +180,16 @@ Future<void> exportVideoDubAudio({
   final nothingToExportMessage = AppLocalizations.of(
     context,
   ).uiNothingToExportNoGeneratedTTSA3AudioOrUnmutedV1;
+  final capabilities = ref.read(platformCapabilitiesProvider);
+  if (!capabilities.supportsLocalAudioMuxing) {
+    _snack(
+      context,
+      AppLocalizations.of(
+        context,
+      ).uiFFmpegUnavailableOnPlatform(capabilities.platformLabel),
+    );
+    return;
+  }
   final ffmpeg = ref.read(ffmpegServiceProvider);
   if (!await ffmpeg.isAvailable()) {
     if (!context.mounted) return;

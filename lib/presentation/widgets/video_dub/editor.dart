@@ -356,9 +356,11 @@ class _VideoDubEditorState extends ConsumerState<VideoDubEditor> {
       timelineClipsStreamProvider('videodub:${widget.projectId}'),
     );
     final clips = clipsAsync.valueOrNull ?? const <db.TimelineClip>[];
+    final capabilities = ref.watch(platformCapabilitiesProvider);
+    final ffmpegSupported = capabilities.supportsFfmpegCli;
     final ffmpegAvailable = ref
         .watch(ffmpegAvailabilityProvider)
-        .maybeWhen(data: (v) => v, orElse: () => false);
+        .maybeWhen(data: (v) => ffmpegSupported && v, orElse: () => false);
 
     return PopScope(
       canPop: false,
@@ -402,6 +404,7 @@ class _VideoDubEditorState extends ConsumerState<VideoDubEditor> {
                     selectedCueId: _selectedCueId,
                     selectedClipId: _selectedClipId,
                     waveformPeaks: _waveformPeaks,
+                    ffmpegSupported: ffmpegSupported,
                     ffmpegAvailable: ffmpegAvailable,
                     onConfigureFfmpeg: () {
                       ref.read(settingsSectionProvider.notifier).state =

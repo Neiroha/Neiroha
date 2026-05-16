@@ -73,6 +73,11 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
   }
 
   Future<void> _loadWaveform() async {
+    final capabilities = ref.read(platformCapabilitiesProvider);
+    if (!capabilities.supportsFfmpegCli) {
+      if (mounted) setState(() => _waveformLoading = false);
+      return;
+    }
     final svc = ref.read(ffmpegServiceProvider);
     final peaks = await svc.extractWaveformPeaks(
       widget.audioPath,
@@ -499,6 +504,22 @@ Future<bool> applyTrim({
     ),
   );
   if (result == null) return false;
+
+  final capabilities = ref.read(platformCapabilitiesProvider);
+  if (!capabilities.supportsFfmpegCli) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(
+              context,
+            ).uiFFmpegUnavailableOnPlatform(capabilities.platformLabel),
+          ),
+        ),
+      );
+    }
+    return false;
+  }
 
   final svc = ref.read(ffmpegServiceProvider);
   if (!await svc.isAvailable()) {

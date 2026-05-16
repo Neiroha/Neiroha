@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:neiroha/domain/platform/platform_capabilities.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
@@ -201,18 +202,22 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
 
-    const providerSystem = 'default-system-tts';
-    await into(ttsProviders).insert(
-      TtsProvidersCompanion(
-        id: const Value(providerSystem),
-        name: const Value('Windows SAPI'),
-        adapterType: const Value('systemTts'),
-        baseUrl: const Value(''),
-        defaultModelName: const Value(''),
-        enabled: const Value(false),
-        position: const Value(6),
-      ),
-    );
+    final platformCapabilities = PlatformCapabilities.current();
+    final systemTtsProviderName = platformCapabilities.systemTtsProviderName;
+    if (systemTtsProviderName != null) {
+      const providerSystem = 'default-system-tts';
+      await into(ttsProviders).insert(
+        TtsProvidersCompanion(
+          id: const Value(providerSystem),
+          name: Value(systemTtsProviderName),
+          adapterType: const Value('systemTts'),
+          baseUrl: const Value(''),
+          defaultModelName: const Value(''),
+          enabled: const Value(false),
+          position: const Value(6),
+        ),
+      );
+    }
 
     const providerGemini = 'default-gemini-tts';
     await into(ttsProviders).insert(

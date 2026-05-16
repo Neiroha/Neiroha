@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+import 'package:neiroha/domain/platform/platform_capabilities.dart';
+
 import 'tts_adapter.dart';
 
 /// Adapter for the built-in Windows SAPI (System.Speech) TTS engine.
@@ -20,6 +22,7 @@ class SystemTtsAdapter extends TtsAdapter {
 
   @override
   Future<TtsResult> synthesize(TtsRequest request) async {
+    _ensureSupported();
     final tempDir = await getTemporaryDirectory();
     final outFile = p.join(
       tempDir.path,
@@ -82,6 +85,7 @@ class SystemTtsAdapter extends TtsAdapter {
 
   @override
   Future<bool> healthCheck() async {
+    if (!PlatformCapabilities.current().supportsSystemTtsAdapter) return false;
     if (!Platform.isWindows) return false;
     try {
       final result = await Process.run('powershell', [
@@ -108,6 +112,7 @@ class SystemTtsAdapter extends TtsAdapter {
 
   @override
   Future<List<String>> getSpeakers() async {
+    if (!PlatformCapabilities.current().supportsSystemTtsAdapter) return [];
     if (!Platform.isWindows) return [];
     try {
       final result = await Process.run('powershell', [
@@ -130,5 +135,14 @@ class SystemTtsAdapter extends TtsAdapter {
       }
     } catch (_) {}
     return [];
+  }
+
+  void _ensureSupported() {
+    final capabilities = PlatformCapabilities.current();
+    if (!capabilities.supportsSystemTtsAdapter || !Platform.isWindows) {
+      throw UnsupportedError(
+        'Windows SAPI is not available on ${capabilities.platformLabel}.',
+      );
+    }
   }
 }

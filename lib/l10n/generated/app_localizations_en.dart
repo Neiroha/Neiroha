@@ -187,6 +187,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uiActive => 'Active';
 
   @override
+  String get uiAdapterUnavailableOnThisPlatform =>
+      'This adapter is not available on the current platform. It cannot be enabled or used for health checks here.';
+
+  @override
   String get uiAdapterType => 'Adapter Type';
 
   @override
@@ -775,6 +779,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get uiFFmpegNotDetectedWaveformsAndMediaProbingAreSkipped =>
       'FFmpeg not detected — waveforms and media probing are skipped.';
+
+  @override
+  String uiFFmpegUnavailableOnPlatform(String platform) {
+    return 'FFmpeg CLI features are not available on $platform. Local muxing, trimming, waveform extraction, and video export are disabled.';
+  }
+
+  @override
+  String get uiFFmpegUnavailableWaveformsAndLocalExportsAreDisabled =>
+      'FFmpeg CLI is not available on this platform — waveforms and local audio/video exports are disabled.';
 
   @override
   String get uiFFmpegRequiredForTrimming => 'FFmpeg required for trimming.';
@@ -1564,6 +1577,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get uiUnsavedChanges => 'Unsaved changes';
+
+  @override
+  String get uiUnavailableOnThisPlatform => 'Unavailable on this platform';
 
   @override
   String get uiUploadAVoiceSampleTheModelWillCloneItsToneAndSpeak =>

@@ -2,6 +2,7 @@ part of 'editor.dart';
 
 extension _VideoDubEditorLayout on _VideoDubEditorState {
   Widget _buildBar(db.VideoDubProject project, int voiceCount) {
+    final capabilities = ref.watch(platformCapabilitiesProvider);
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 20, 10),
       child: Row(
@@ -40,32 +41,36 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
             ),
           ),
           SizedBox(width: 12),
-          OutlinedButton.icon(
-            onPressed: _exporting ? null : () => _exportAudio(project),
-            icon: _exporting
-                ? SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.audiotrack_rounded, size: 16),
-            label: Text(AppLocalizations.of(context).uiExportAudio),
-          ),
-          SizedBox(width: 8),
-          OutlinedButton.icon(
-            onPressed: project.videoPath == null || _exporting
-                ? null
-                : () => _exportVideo(project),
-            icon: _exporting
-                ? SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.file_download_outlined, size: 16),
-            label: Text(_exporting ? 'Exporting…' : 'Export Video'),
-          ),
-          SizedBox(width: 8),
+          if (capabilities.supportsLocalAudioMuxing) ...[
+            OutlinedButton.icon(
+              onPressed: _exporting ? null : () => _exportAudio(project),
+              icon: _exporting
+                  ? SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.audiotrack_rounded, size: 16),
+              label: Text(AppLocalizations.of(context).uiExportAudio),
+            ),
+            SizedBox(width: 8),
+          ],
+          if (capabilities.supportsLocalVideoExport) ...[
+            OutlinedButton.icon(
+              onPressed: project.videoPath == null || _exporting
+                  ? null
+                  : () => _exportVideo(project),
+              icon: _exporting
+                  ? SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.file_download_outlined, size: 16),
+              label: Text(_exporting ? 'Exporting...' : 'Export Video'),
+            ),
+            SizedBox(width: 8),
+          ],
           FilledButton.icon(
             onPressed: () => _save(project),
             icon: const Icon(Icons.save_rounded, size: 16),

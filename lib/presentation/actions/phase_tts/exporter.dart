@@ -37,6 +37,16 @@ Future<void> exportPhaseTtsMergedAudio({
   ).uiChooseExportFolder;
   final mergingAudioTaskLabel = AppLocalizations.of(context).uiMergingAudio;
 
+  final capabilities = ref.read(platformCapabilitiesProvider);
+  if (!capabilities.supportsLocalAudioMuxing) {
+    _snack(
+      context,
+      AppLocalizations.of(
+        context,
+      ).uiFFmpegUnavailableOnPlatform(capabilities.platformLabel),
+    );
+    return;
+  }
   final ffmpeg = ref.read(ffmpegServiceProvider);
   if (!await ffmpeg.isAvailable()) {
     if (!context.mounted) return;

@@ -177,7 +177,12 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
     final allProviders =
         ref.watch(ttsProvidersStreamProvider).valueOrNull ??
         const <db.TtsProvider>[];
-    final enabledProviders = allProviders.where((p) => p.enabled).toList();
+    final capabilities = ref.watch(platformCapabilitiesProvider);
+    final enabledProviders = allProviders
+        .where(
+          (p) => p.enabled && capabilities.supportsAdapterName(p.adapterType),
+        )
+        .toList();
     // Always include the current provider even if disabled
     if (!enabledProviders.any((p) => p.id == _selectedProviderId)) {
       final current = allProviders

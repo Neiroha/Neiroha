@@ -10,6 +10,7 @@ import 'package:neiroha/data/storage/novel_dialogue_rules_service.dart';
 import 'package:neiroha/data/storage/novel_import_service.dart';
 import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
+import 'package:neiroha/domain/platform/platform_capabilities.dart';
 import 'package:neiroha/l10n/app_locale.dart';
 import 'package:neiroha/presentation/theme/app_font.dart';
 import 'package:neiroha/server/api_server.dart';
@@ -33,6 +34,11 @@ final appFontModeProvider = StateProvider<AppFontMode>((ref) {
   return AppFontSettings.defaultMode;
 });
 
+/// Current product capability matrix for the running platform.
+final platformCapabilitiesProvider = Provider<PlatformCapabilities>((ref) {
+  return PlatformCapabilities.current();
+});
+
 /// Disk-backed storage orchestration (voice-asset root, sync, clear-all).
 final storageServiceProvider = Provider<StorageService>((ref) {
   return StorageService(ref.watch(databaseProvider));
@@ -48,7 +54,10 @@ final novelImportServiceProvider = Provider<NovelImportService>((ref) {
 
 /// System `ffmpeg` resolver. Used by waveform extraction + media import.
 final ffmpegServiceProvider = Provider<FFmpegService>((ref) {
-  return FFmpegService(ref.watch(databaseProvider));
+  return FFmpegService(
+    ref.watch(databaseProvider),
+    capabilities: ref.watch(platformCapabilitiesProvider),
+  );
 });
 
 /// User-configurable export defaults (audio format / video + audio codecs)
@@ -103,6 +112,8 @@ final ttsQueueSnapshotProvider = StreamProvider<TtsQueueSnapshot>((ref) {
 /// the Video Dub editor (so the waveform banner toggles). Invalidate via
 /// `ref.invalidate(ffmpegAvailabilityProvider)` after the override changes.
 final ffmpegAvailabilityProvider = FutureProvider<bool>((ref) async {
+  final capabilities = ref.watch(platformCapabilitiesProvider);
+  if (!capabilities.supportsFfmpegCli) return false;
   final svc = ref.watch(ffmpegServiceProvider);
   return svc.isAvailable();
 });

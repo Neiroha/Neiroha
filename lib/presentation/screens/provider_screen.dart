@@ -7,6 +7,7 @@ import 'package:neiroha/data/adapters/chat_completions_tts_adapter.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/enums/adapter_type.dart';
+import 'package:neiroha/domain/platform/platform_capabilities.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
@@ -192,6 +193,12 @@ class _ProviderRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final capabilities = ref.watch(platformCapabilitiesProvider);
+    final adapterType = _adapterTypeFor(provider.adapterType);
+    final supported =
+        adapterType != null && capabilities.supportsTtsAdapter(adapterType);
+    final l10n = AppLocalizations.of(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       child: Material(
@@ -220,18 +227,20 @@ class _ProviderRow extends ConsumerWidget {
                   height: 32,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    color: provider.enabled
+                    color: provider.enabled && supported
                         ? AppTheme.accentColor.withValues(alpha: 0.2)
                         : AppTheme.surfaceBright,
                   ),
                   child: Icon(
-                    provider.enabled
+                    !supported
+                        ? Icons.block_rounded
+                        : provider.enabled
                         ? Icons.cloud_done_rounded
                         : Icons.cloud_off_rounded,
                     size: 16,
-                    color: provider.enabled
+                    color: provider.enabled && supported
                         ? AppTheme.accentColor
-                        : Colors.grey,
+                        : (!supported ? Colors.redAccent : Colors.grey),
                   ),
                 ),
                 SizedBox(width: 10),
@@ -249,7 +258,7 @@ class _ProviderRow extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        _adapterLabel(provider.adapterType),
+                        _adapterLabel(provider.adapterType, capabilities),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -257,16 +266,28 @@ class _ProviderRow extends ConsumerWidget {
                           color: Colors.white.withValues(alpha: 0.4),
                         ),
                       ),
+                      if (!supported)
+                        Text(
+                          l10n.uiUnavailableOnThisPlatform,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.redAccent,
+                          ),
+                        ),
                     ],
                   ),
                 ),
                 Switch(
-                  value: provider.enabled,
-                  onChanged: (v) async {
-                    await ref
-                        .read(databaseProvider)
-                        .updateProvider(provider.copyWith(enabled: v));
-                  },
+                  value: provider.enabled && supported,
+                  onChanged: supported
+                      ? (v) async {
+                          await ref
+                              .read(databaseProvider)
+                              .updateProvider(provider.copyWith(enabled: v));
+                        }
+                      : null,
                 ),
               ],
             ),
@@ -277,11 +298,17 @@ class _ProviderRow extends ConsumerWidget {
   }
 }
 
-String _adapterLabel(String type) {
+AdapterType? _adapterTypeFor(String type) {
   for (final t in AdapterType.values) {
-    if (t.name == type) return t.displayName;
+    if (t.name == type) return t;
   }
-  return type;
+  return null;
+}
+
+String _adapterLabel(String type, PlatformCapabilities capabilities) {
+  final adapterType = _adapterTypeFor(type);
+  if (adapterType == null) return type;
+  return capabilities.displayNameForAdapter(adapterType);
 }
 
 // ────────────────────────── Right Pane: Editor ───────────────────────────
@@ -678,6 +705,11 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final capabilities = ref.watch(platformCapabilitiesProvider);
+    final adapterSupported = capabilities.supportsTtsAdapter(_adapterType);
+    final adapterLabel = capabilities.displayNameForAdapter(_adapterType);
+    final l10n = AppLocalizations.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -695,10 +727,14 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      _adapterType.displayName,
+                      adapterSupported
+                          ? adapterLabel
+                          : '$adapterLabel · ${l10n.uiUnavailableOnThisPlatform}',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: adapterSupported
+                            ? Colors.white.withValues(alpha: 0.5)
+                            : Colors.redAccent,
                       ),
                     ),
                   ],
@@ -724,6 +760,38 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(28, 20, 28, 24),
             children: [
+              if (!adapterSupported) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.redAccent.withValues(alpha: 0.30),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.block_rounded,
+                        size: 18,
+                        color: Colors.redAccent,
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          l10n.uiAdapterUnavailableOnThisPlatform,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.redAccent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 14),
+              ],
               TextField(
                 controller: _nameCtrl,
                 decoration: InputDecoration(
@@ -736,14 +804,19 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                   labelText: AppLocalizations.of(context).uiAdapterType,
                 ),
                 initialValue: _adapterType,
-                items: AdapterType.values
-                    .map(
-                      (t) => DropdownMenuItem(
-                        value: t,
-                        child: Text(t.displayName),
-                      ),
-                    )
-                    .toList(),
+                items: capabilities.editableAdapterTypes(_adapterType).map((t) {
+                  final supported = capabilities.supportsTtsAdapter(t);
+                  final label = capabilities.displayNameForAdapter(t);
+                  return DropdownMenuItem(
+                    value: t,
+                    enabled: supported,
+                    child: Text(
+                      supported
+                          ? label
+                          : '$label (${l10n.uiUnavailableOnThisPlatform})',
+                    ),
+                  );
+                }).toList(),
                 onChanged: (v) {
                   if (v == null) return;
                   setState(() {
@@ -863,7 +936,9 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                       ),
                       const Spacer(),
                       TextButton.icon(
-                        onPressed: _fetchingModels ? null : _fetchModelsFromApi,
+                        onPressed: !adapterSupported || _fetchingModels
+                            ? null
+                            : _fetchModelsFromApi,
                         icon: _fetchingModels
                             ? SizedBox(
                                 width: 14,
@@ -884,13 +959,17 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                       ),
                       if (_adapterType.supportsModelQuery)
                         TextButton.icon(
-                          onPressed: () => _addEntryManually(isVoice: false),
+                          onPressed: adapterSupported
+                              ? () => _addEntryManually(isVoice: false)
+                              : null,
                           icon: const Icon(Icons.add_rounded, size: 16),
                           label: Text(AppLocalizations.of(context).uiAddModel),
                         ),
                       if (_adapterType.supportsVoiceQuery)
                         TextButton.icon(
-                          onPressed: () => _addEntryManually(isVoice: true),
+                          onPressed: adapterSupported
+                              ? () => _addEntryManually(isVoice: true)
+                              : null,
                           icon: const Icon(Icons.add_rounded, size: 16),
                           label: Text(AppLocalizations.of(context).uiAddVoice),
                         ),
@@ -996,7 +1075,9 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                   ),
                   SizedBox(width: 12),
                   OutlinedButton.icon(
-                    onPressed: _checking ? null : _healthCheck,
+                    onPressed: !adapterSupported || _checking
+                        ? null
+                        : _healthCheck,
                     icon: _checking
                         ? SizedBox(
                             width: 14,
@@ -1418,6 +1499,9 @@ class _AddProviderDialogState extends State<_AddProviderDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final capabilities = PlatformCapabilities.current();
+    final adapterTypes = capabilities.visibleAdapterTypes;
+
     return AlertDialog(
       title: Text(AppLocalizations.of(context).uiAddProvider),
       content: SizedBox(
@@ -1439,10 +1523,12 @@ class _AddProviderDialogState extends State<_AddProviderDialog> {
                 labelText: AppLocalizations.of(context).uiAdapterType,
               ),
               initialValue: _selectedType,
-              items: AdapterType.values
+              items: adapterTypes
                   .map(
-                    (t) =>
-                        DropdownMenuItem(value: t, child: Text(t.displayName)),
+                    (t) => DropdownMenuItem(
+                      value: t,
+                      child: Text(capabilities.displayNameForAdapter(t)),
+                    ),
                   )
                   .toList(),
               onChanged: (v) {

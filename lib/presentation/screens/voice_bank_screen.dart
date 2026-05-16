@@ -117,6 +117,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 600;
+        final iconOnlyCreate = constraints.maxWidth < 1100;
         return Container(
           padding: EdgeInsets.fromLTRB(
             compact ? 16 : 24,
@@ -147,7 +148,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
                 ),
               ),
               SizedBox(width: 8),
-              if (compact)
+              if (iconOnlyCreate)
                 IconButton.filledTonal(
                   tooltip: AppLocalizations.of(context).uiNewBank,
                   onPressed: _createBank,

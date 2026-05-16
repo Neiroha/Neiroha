@@ -12,6 +12,9 @@
 .svn/
 .swiftpm/
 .vscode/
+
+# temp files
+captures/
 temp/
 migrate_working_dir/
 

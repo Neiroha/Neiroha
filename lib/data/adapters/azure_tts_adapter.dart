@@ -25,13 +25,13 @@ class AzureTtsAdapter extends TtsAdapter {
   }) {
     final normalized = _normalizeTtsUrl(baseUrl);
     final base = normalized.endsWith('/') ? normalized : '$normalized/';
-    _dio = Dio(BaseOptions(
-      baseUrl: base,
-      headers: {
-        'Ocp-Apim-Subscription-Key': apiKey,
-      },
-      responseType: ResponseType.bytes,
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: base,
+        headers: {'Ocp-Apim-Subscription-Key': apiKey},
+        responseType: ResponseType.bytes,
+      ),
+    );
   }
 
   /// Normalizes any Azure endpoint variant to the TTS speech endpoint.
@@ -76,7 +76,8 @@ class AzureTtsAdapter extends TtsAdapter {
     final rate = request.speed != 1.0
         ? '${((request.speed - 1.0) * 100).round()}%'
         : '0%';
-    final ssml = '''
+    final ssml =
+        '''
 <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"
        xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="en-US">
   <voice name="$voice">
@@ -129,7 +130,9 @@ class AzureTtsAdapter extends TtsAdapter {
       );
       if (response.statusCode == 200 && response.data is List) {
         return (response.data as List)
-            .map((e) => e is Map ? (e['ShortName'] ?? e.toString()) : e.toString())
+            .map(
+              (e) => e is Map ? (e['ShortName'] ?? e.toString()) : e.toString(),
+            )
             .cast<String>()
             .toList();
       }
@@ -147,10 +150,13 @@ class AzureTtsAdapter extends TtsAdapter {
       if (response.statusCode == 200 && response.data is List) {
         return (response.data as List)
             .where((v) => v is Map && v['ShortName'] != null)
-            .map((v) => ModelInfo(
-                  id: v['ShortName'] as String,
-                  name: '${v['DisplayName'] ?? v['ShortName']} (${v['Locale'] ?? ''})',
-                ))
+            .map(
+              (v) => ModelInfo(
+                id: v['ShortName'] as String,
+                name:
+                    '${v['DisplayName'] ?? v['ShortName']} (${v['Locale'] ?? ''})',
+              ),
+            )
             .toList();
       }
     } catch (_) {}

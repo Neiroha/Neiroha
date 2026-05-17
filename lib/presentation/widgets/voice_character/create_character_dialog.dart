@@ -16,10 +16,10 @@ import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/domain/enums/task_mode.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/voice_character/components.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 class CreateCharacterDialog extends StatefulWidget {
   final List<db.TtsProvider> providers;
-  final List<db.VoiceAsset> existingAssets;
   final List<db.AudioTrack> audioTracks;
   final Future<void> Function(db.VoiceAssetsCompanion) onSave;
   final Future<void> Function(db.AudioTracksCompanion) onSaveAudioTrack;
@@ -31,7 +31,6 @@ class CreateCharacterDialog extends StatefulWidget {
     required this.onSave,
     required this.onSaveAudioTrack,
     required this.database,
-    this.existingAssets = const [],
     this.audioTracks = const [],
   });
 
@@ -69,6 +68,10 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
   // CosyVoice mode
   String? _cosyVoiceMode;
+
+  // GPT-SoVITS mode: 'trained' uses saved server speaker profiles; 'clone'
+  // uses reference audio and matching prompt text.
+  String _gptSovitsMode = 'trained';
 
   // CosyVoice server-side profiles (from `/cosyvoice/profiles`). These are the
   // ONLY values that can safely be sent as `profile` — typing a name that
@@ -141,6 +144,8 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   static bool _isTtsModel(String modelKey) {
     final k = modelKey.toLowerCase();
     return k.contains('tts') ||
+        k.contains('gpt-sovits') ||
+        k.contains('sovits') ||
         k.contains('speech-synthesis') ||
         k.contains('voiceclone') ||
         k.contains('voicedesign') ||
@@ -170,8 +175,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     List<String> voiceList = [];
 
     // MiMo TTS preset models have built-in voices
-    final mimoVoices =
-        ChatCompletionsTtsAdapter.builtInVoicesForMimoModel(modelKey);
+    final mimoVoices = ChatCompletionsTtsAdapter.builtInVoicesForMimoModel(
+      modelKey,
+    );
     if (mimoVoices.isNotEmpty && _ttsModelType == 'preset') {
       voiceList = mimoVoices;
     } else {
@@ -210,16 +216,54 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
         )
         .hasSeparateModelAndVoice;
 
+    if (_isGptSovits) {
+      final cachedVoices = await widget.database.getVoiceEntriesForProvider(
+        _selectedProviderId,
+      );
+      if (cachedVoices.isNotEmpty) {
+        final voices = cachedVoices.map((b) => b.modelKey).toList()..sort();
+        if (mounted) {
+          setState(() {
+            _speakers = voices;
+            _loadingSpeakers = false;
+            _loadingModels = false;
+          });
+        }
+        return;
+      }
+
+      try {
+        final adapter = createAdapter(_selectedProvider);
+        final speakers = await adapter.getSpeakers();
+        if (mounted) {
+          setState(() {
+            _speakers = speakers;
+            _loadingSpeakers = false;
+            _loadingModels = false;
+          });
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _loadingSpeakers = false;
+            _loadingModels = false;
+          });
+        }
+      }
+      return;
+    }
+
     if (hasSeparate) {
       // Models from cache — filter to TTS-only models
       final cachedModels = await widget.database.getModelEntriesForProvider(
         _selectedProviderId,
       );
-      final modelList = cachedModels
-          .map((b) => b.modelKey)
-          .where((k) => _isTtsModel(k))
-          .toList()
-        ..sort();
+      final modelList =
+          cachedModels
+              .map((b) => b.modelKey)
+              .where((k) => _isTtsModel(k))
+              .toList()
+            ..sort();
 
       if (mounted) {
         setState(() {
@@ -350,7 +394,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   List<Widget> _buildSpeakerPicker({String label = 'Select Voice'}) {
     if (_loadingSpeakers) {
       return [
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
@@ -360,7 +404,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               SizedBox(width: 10),
-              Text('Loading voices...'),
+              Text(AppLocalizations.of(context).uiLoadingVoices),
             ],
           ),
         ),
@@ -375,9 +419,10 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
           onSelected: (v) => setState(() {
             _selectedSpeaker = v;
             _voiceNameCtrl.text = v;
+            _autoFillName();
           }),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
       ];
     }
     return [];
@@ -387,20 +432,20 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   List<Widget> _buildRefAudioPicker() {
     return [
       VoiceCharacterSectionLabel('REFERENCE AUDIO'),
-      const SizedBox(height: 8),
+      SizedBox(height: 8),
       // Pick from voice assets library
       if (widget.audioTracks.isNotEmpty) ...[
         DropdownButtonFormField<String>(
-          decoration: const InputDecoration(
-            labelText: 'Select from Voice Assets',
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).uiSelectFromVoiceAssets,
             prefixIcon: Icon(Icons.library_music_rounded, size: 18),
           ),
           isExpanded: true,
           items: [
-            const DropdownMenuItem(
+            DropdownMenuItem(
               value: null,
               child: Text(
-                'None (upload manually)',
+                AppLocalizations.of(context).uiNoneUploadManually,
                 style: TextStyle(fontStyle: FontStyle.italic),
               ),
             ),
@@ -437,17 +482,17 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
             });
           },
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         if (_selectedAudioTrackId == null) ...[
           Text(
-            '— or upload a new file —',
+            AppLocalizations.of(context).uiOrUploadANewFile,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12,
               color: Colors.white.withValues(alpha: 0.3),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
         ],
       ],
       // Manual upload (shown when no track selected or no tracks exist)
@@ -456,7 +501,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
           path: _uploadedRefAudioPath,
           onPick: (path) => setState(() => _uploadedRefAudioPath = path),
         ),
-      const SizedBox(height: 12),
+      SizedBox(height: 12),
     ];
   }
 
@@ -498,8 +543,8 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
               padding: const EdgeInsets.fromLTRB(24, 20, 12, 0),
               child: Row(
                 children: [
-                  const Text(
-                    'New Voice Character',
+                  Text(
+                    AppLocalizations.of(context).uiNewVoiceCharacter,
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const Spacer(),
@@ -519,7 +564,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                 children: [
                   // ── CHARACTER INFO (at top) ──
                   VoiceCharacterSectionLabel('CHARACTER INFO'),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Center(
                     child: GestureDetector(
                       onTap: _pickAvatarForCreate,
@@ -565,18 +610,20 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _nameCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Character Name *',
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(
+                              context,
+                            ).uiCharacterName,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Tooltip(
                         message: 'Auto-fill: Provider + Speaker',
                         child: IconButton(
@@ -594,21 +641,25 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   TextField(
                     controller: _descCtrl,
                     maxLines: 2,
-                    decoration: const InputDecoration(
-                      labelText: 'Description (optional)',
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(
+                        context,
+                      ).uiDescriptionOptional,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
 
                   // ── PROVIDER ──
                   VoiceCharacterSectionLabel('PROVIDER'),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(labelText: 'Provider'),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).uiProvider,
+                    ),
                     items: widget.providers
                         .map(
                           (p) => DropdownMenuItem(
@@ -616,7 +667,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                             child: Row(
                               children: [
                                 Text(p.name),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 Text(
                                   '(${AdapterType.values.where((t) => t.name == p.adapterType).firstOrNull?.displayName ?? p.adapterType})',
                                   style: TextStyle(
@@ -635,6 +686,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                       setState(() {
                         _selectedProviderId = v;
                         _cosyVoiceMode = null;
+                        _gptSovitsMode = 'trained';
                         _voxcpmMode = null;
                         _selectedVoxcpmVoiceId = null;
                         _selectedAudioTrackId = null;
@@ -645,7 +697,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                       _fetchModelsAndSpeakers();
                     },
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
 
                   // ── ADAPTER-SPECIFIC OPTIONS ──
                   if (_isPresetVoiceProvider) ...[
@@ -654,9 +706,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         _isGeminiTts) ...[
                       // ── Step 1: Select Model ──
                       VoiceCharacterSectionLabel('MODEL'),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       if (_loadingModels)
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.symmetric(vertical: 8),
                           child: Row(
                             children: [
@@ -668,13 +720,15 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                                 ),
                               ),
                               SizedBox(width: 10),
-                              Text('Loading models...'),
+                              Text(
+                                AppLocalizations.of(context).uiLoadingModels,
+                              ),
                             ],
                           ),
                         )
                       else if (_models.isNotEmpty) ...[
                         VoiceCharacterVoiceSearchPicker(
-                          label: 'Select Model',
+                          label: AppLocalizations.of(context).uiSelectModel,
                           voices: _models,
                           selected: _selectedModel,
                           onSelected: (v) {
@@ -698,7 +752,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 6),
                           child: Text(
-                            'No TTS models found. Go to Providers → Fetch All to cache available models.',
+                            AppLocalizations.of(
+                              context,
+                            ).uiNoTTSModelsFoundGoToProvidersFetchAllToCacheAvailable,
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.white.withValues(alpha: 0.4),
@@ -709,14 +765,14 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
                       // ── Step 2: Contextual UI based on selected model type ──
                       if (_selectedModel != null && _ttsModelType != null) ...[
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
 
                         // ── Preset Voice: voice picker ──
                         if (_ttsModelType == 'preset') ...[
                           VoiceCharacterSectionLabel('VOICE'),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           if (_loadingSpeakers)
-                            const Padding(
+                            Padding(
                               padding: EdgeInsets.symmetric(vertical: 8),
                               child: Row(
                                 children: [
@@ -728,13 +784,17 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                                     ),
                                   ),
                                   SizedBox(width: 10),
-                                  Text('Loading voices...'),
+                                  Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    ).uiLoadingVoices,
+                                  ),
                                 ],
                               ),
                             )
                           else if (_speakers.isNotEmpty)
                             VoiceCharacterVoiceSearchPicker(
-                              label: 'Select Voice',
+                              label: AppLocalizations.of(context).uiSelectVoice,
                               voices: _speakers,
                               selected: _selectedSpeaker,
                               onSelected: (v) => setState(() {
@@ -743,19 +803,35 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                                 _autoFillName();
                               }),
                             ),
+                          SizedBox(height: 8),
+                          TextField(
+                            controller: _voiceNameCtrl,
+                            decoration: InputDecoration(
+                              labelText: AppLocalizations.of(
+                                context,
+                              ).uiVoiceSpeakerID,
+                              hintText: AppLocalizations.of(
+                                context,
+                              ).uiEGAlloyOrGenshinPaimon,
+                            ),
+                            onChanged: (_) => _autoFillName(),
+                          ),
                           if (_isGeminiTts) ...[
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             VoiceCharacterSectionLabel(
                               'STYLE INSTRUCTION (optional)',
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             TextField(
                               controller: _instructionCtrl,
                               maxLines: 3,
-                              decoration: const InputDecoration(
-                                labelText: 'Style Instruction',
-                                hintText:
-                                    'e.g. "Speak softly and slowly" — prepended to the text',
+                              decoration: InputDecoration(
+                                labelText: AppLocalizations.of(
+                                  context,
+                                ).uiStyleInstruction,
+                                hintText: AppLocalizations.of(
+                                  context,
+                                ).uiEGSpeakSoftlyAndSlowlyPrependedToTheText,
                               ),
                             ),
                           ],
@@ -765,20 +841,26 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         if (_ttsModelType == 'clone') ...[
                           ..._buildRefAudioPicker(),
                           VoiceCharacterSectionLabel('VOICE NAME (optional)'),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Text(
-                            'A label for this cloned voice. The actual voice is derived from the reference audio.',
+                            AppLocalizations.of(
+                              context,
+                            ).uiALabelForThisClonedVoiceTheActualVoiceIsDerivedFrom,
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.white.withValues(alpha: 0.4),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           TextField(
                             controller: _voiceNameCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Voice Name',
-                              hintText: 'e.g. My Cloned Voice',
+                            decoration: InputDecoration(
+                              labelText: AppLocalizations.of(
+                                context,
+                              ).uiVoiceName,
+                              hintText: AppLocalizations.of(
+                                context,
+                              ).uiEGMyClonedVoice,
                             ),
                           ),
                         ],
@@ -786,22 +868,27 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         // ── Voice Design: text description ──
                         if (_ttsModelType == 'design') ...[
                           VoiceCharacterSectionLabel('VOICE DESCRIPTION'),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Text(
-                            'Describe the voice you want to create. This will be used to generate a new voice.',
+                            AppLocalizations.of(
+                              context,
+                            ).uiDescribeTheVoiceYouWantToCreateThisWillBeUsedTo,
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.white.withValues(alpha: 0.4),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           TextField(
                             controller: _instructionCtrl,
                             maxLines: 3,
-                            decoration: const InputDecoration(
-                              labelText: 'Voice Description *',
-                              hintText:
-                                  'e.g. "Heavy Russian accent, gruff middle-aged male"',
+                            decoration: InputDecoration(
+                              labelText: AppLocalizations.of(
+                                context,
+                              ).uiVoiceDescription,
+                              hintText: AppLocalizations.of(
+                                context,
+                              ).uiEGHeavyRussianAccentGruffMiddleAgedMale,
                             ),
                           ),
                         ],
@@ -811,7 +898,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                       VoiceCharacterSectionLabel(
                         _adapterType == 'azureTts' ? 'VOICE' : 'PRESET VOICE',
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       ..._buildSpeakerPicker(
                         label: _adapterType == 'azureTts'
                             ? 'Select Voice'
@@ -832,7 +919,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                   ] else if (_isCosyVoice) ...[
                     // ── CosyVoice: 3 modes ──
                     VoiceCharacterSectionLabel('COSYVOICE MODE'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     VoiceCharacterCosyVoiceModeSelector(
                       selected: _cosyVoiceMode,
                       onChanged: (mode) {
@@ -849,23 +936,22 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         });
                       },
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     if (_cosyVoiceMode != null) ...[
                       VoiceCharacterSectionLabel('SERVER PROFILE (optional)'),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
-                        'A profile registered on the CosyVoice server. '
-                        'Leave as "None" to synthesise purely from your uploaded '
-                        'reference audio — typing a name that the server '
-                        'doesn\'t know causes 400 "未找到角色".',
+                        AppLocalizations.of(
+                          context,
+                        ).uiAProfileRegisteredOnTheCosyVoiceServerLeaveAsNoneToSynthesise,
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withValues(alpha: 0.4),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       if (_loadingCosyProfiles)
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.symmetric(vertical: 8),
                           child: Row(
                             children: [
@@ -877,14 +963,20 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                                 ),
                               ),
                               SizedBox(width: 10),
-                              Text('Loading server profiles...'),
+                              Text(
+                                AppLocalizations.of(
+                                  context,
+                                ).uiLoadingServerProfiles,
+                              ),
                             ],
                           ),
                         )
                       else
                         DropdownButtonFormField<String?>(
-                          decoration: const InputDecoration(
-                            labelText: 'Server Profile',
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(
+                              context,
+                            ).uiServerProfile,
                             prefixIcon: Icon(
                               Icons.folder_shared_rounded,
                               size: 18,
@@ -893,10 +985,12 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                           isExpanded: true,
                           initialValue: _selectedCosyProfileId,
                           items: [
-                            const DropdownMenuItem<String?>(
+                            DropdownMenuItem<String?>(
                               value: null,
                               child: Text(
-                                'None (use uploaded audio only)',
+                                AppLocalizations.of(
+                                  context,
+                                ).uiNoneUseUploadedAudioOnly,
                                 style: TextStyle(fontStyle: FontStyle.italic),
                               ),
                             ),
@@ -917,7 +1011,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                             _voiceNameCtrl.text = v ?? '';
                           }),
                         ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
 
                       // ── Zero Shot ──────────────────────────────────────────
                       if (_cosyVoiceMode == 'zero_shot') ...[
@@ -925,17 +1019,23 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         TextField(
                           controller: _promptTextCtrl,
                           maxLines: 3,
-                          decoration: const InputDecoration(
-                            labelText: 'Prompt Text (spoken in ref audio)',
-                            hintText: 'Transcript of the reference audio',
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(
+                              context,
+                            ).uiPromptTextSpokenInRefAudio,
+                            hintText: AppLocalizations.of(
+                              context,
+                            ).uiTranscriptOfTheReferenceAudio,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        SizedBox(height: 10),
                         TextField(
                           controller: _promptLangCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Language Code',
-                            hintText: 'zh / en / ja / ko ...',
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(
+                              context,
+                            ).uiLanguageCode,
+                            hintText: AppLocalizations.of(context).uiZhEnJaKo,
                           ),
                         ),
                       ],
@@ -943,51 +1043,58 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                       // ── Cross Lingual ──────────────────────────────────────
                       if (_cosyVoiceMode == 'cross_lingual') ...[
                         VoiceCharacterSectionLabel('REFERENCE AUDIO'),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
-                          'Upload a voice sample — the model will clone its tone and speak the synthesis text in any language.',
+                          AppLocalizations.of(
+                            context,
+                          ).uiUploadAVoiceSampleTheModelWillCloneItsToneAndSpeak,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withValues(alpha: 0.4),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         ..._buildRefAudioPicker(),
                       ],
 
                       // ── Instruct ───────────────────────────────────────────
                       if (_cosyVoiceMode == 'instruct') ...[
                         VoiceCharacterSectionLabel('INSTRUCT'),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         TextField(
                           controller: _instructionCtrl,
                           maxLines: 4,
-                          decoration: const InputDecoration(
-                            labelText: 'Instruct Text *',
-                            hintText:
-                                'e.g. "用轻柔的声音说话" or "speak with excitement"',
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(
+                              context,
+                            ).uiInstructText,
+                            hintText: AppLocalizations.of(
+                              context,
+                            ).uiEGOrSpeakWithExcitement,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         VoiceCharacterSectionLabel(
                           'REFERENCE AUDIO (optional)',
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
-                          'Upload a voice sample to use as the base voice instead of a preset profile.',
+                          AppLocalizations.of(
+                            context,
+                          ).uiUploadAVoiceSampleToUseAsTheBaseVoiceInsteadOf,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withValues(alpha: 0.4),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         ..._buildRefAudioPicker(),
                       ],
                     ],
                   ] else if (_isVoxCpm2) ...[
                     // ── VoxCPM2 Native: 3 modes ──
                     VoiceCharacterSectionLabel('VOXCPM2 MODE'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     VoiceCharacterVoxCpm2ModeSelector(
                       selected: _voxcpmMode,
                       onChanged: (mode) {
@@ -1003,7 +1110,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         });
                       },
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     if (_voxcpmMode != null) ...[
                       // Registered voice picker (optional — only meaningful in
                       // clone / ultimate_clone; for design we still show it
@@ -1012,20 +1119,19 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         VoiceCharacterSectionLabel(
                           'REGISTERED VOICE (optional)',
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
-                          'A voice profile registered on the server. Leave '
-                          'as "None" to synthesise purely from your uploaded '
-                          'reference audio — sending an unregistered id is '
-                          'rejected.',
+                          AppLocalizations.of(
+                            context,
+                          ).uiAVoiceProfileRegisteredOnTheServerLeaveAsNoneToSynthesise,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withValues(alpha: 0.4),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         if (_loadingVoxcpmVoices)
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.symmetric(vertical: 8),
                             child: Row(
                               children: [
@@ -1037,14 +1143,20 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                                   ),
                                 ),
                                 SizedBox(width: 10),
-                                Text('Loading registered voices...'),
+                                Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  ).uiLoadingRegisteredVoices,
+                                ),
                               ],
                             ),
                           )
                         else
                           DropdownButtonFormField<String?>(
-                            decoration: const InputDecoration(
-                              labelText: 'Registered Voice',
+                            decoration: InputDecoration(
+                              labelText: AppLocalizations.of(
+                                context,
+                              ).uiRegisteredVoice,
                               prefixIcon: Icon(
                                 Icons.folder_shared_rounded,
                                 size: 18,
@@ -1053,10 +1165,12 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                             isExpanded: true,
                             initialValue: _selectedVoxcpmVoiceId,
                             items: [
-                              const DropdownMenuItem<String?>(
+                              DropdownMenuItem<String?>(
                                 value: null,
                                 child: Text(
-                                  'None (use uploaded audio only)',
+                                  AppLocalizations.of(
+                                    context,
+                                  ).uiNoneUseUploadedAudioOnly,
                                   style: TextStyle(fontStyle: FontStyle.italic),
                                 ),
                               ),
@@ -1077,29 +1191,33 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                               _voiceNameCtrl.text = v ?? '';
                             }),
                           ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: 12),
                       ],
 
                       // ── Design ─────────────────────────────────────────────
                       if (_voxcpmMode == 'design') ...[
                         VoiceCharacterSectionLabel('VOICE DESCRIPTION'),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
-                          'Natural-language voice description. At synthesis '
-                          'time, prepend it to the text in parentheses — e.g.\n'
-                          '(A young woman, gentle and sweet voice)',
+                          AppLocalizations.of(
+                            context,
+                          ).uiNaturalLanguageVoiceDescriptionAtSynthesisTimePrependItToTheText,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withValues(alpha: 0.4),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         TextField(
                           controller: _instructionCtrl,
                           maxLines: 3,
-                          decoration: const InputDecoration(
-                            labelText: 'Voice Description *',
-                            hintText: 'A young woman, gentle and sweet voice',
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(
+                              context,
+                            ).uiVoiceDescription,
+                            hintText: AppLocalizations.of(
+                              context,
+                            ).uiAYoungWomanGentleAndSweetVoice,
                           ),
                         ),
                       ],
@@ -1115,53 +1233,124 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         TextField(
                           controller: _promptTextCtrl,
                           maxLines: 3,
-                          decoration: const InputDecoration(
-                            labelText: 'Prompt Text (spoken in ref audio) *',
-                            hintText: 'Transcript of the reference audio',
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(
+                              context,
+                            ).uiPromptTextSpokenInRefAudio2,
+                            hintText: AppLocalizations.of(
+                              context,
+                            ).uiTranscriptOfTheReferenceAudio,
                           ),
                         ),
                       ],
                     ],
                   ] else if (_isGptSovits) ...[
-                    // ── GPT-SoVITS: always ref audio mode ──
-                    ..._buildRefAudioPicker(),
-                    TextField(
-                      controller: _promptTextCtrl,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: 'Prompt Text (spoken in ref audio)',
-                        hintText: 'Transcript of the reference audio',
-                      ),
+                    VoiceCharacterSectionLabel('GPT-SOVITS MODE'),
+                    SizedBox(height: 8),
+                    VoiceCharacterGptSovitsModeSelector(
+                      selected: _gptSovitsMode,
+                      onChanged: (mode) {
+                        setState(() {
+                          _gptSovitsMode = mode;
+                          _taskMode = mode == 'clone'
+                              ? TaskMode.cloneWithPrompt
+                              : TaskMode.presetVoice;
+                          _selectedAudioTrackId = null;
+                          _uploadedRefAudioPath = null;
+                          if (mode == 'trained') {
+                            _promptTextCtrl.clear();
+                          }
+                        });
+                      },
                     ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: _promptLangCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Prompt Language',
-                        hintText: 'zh / en / ja / ko ...',
+                    SizedBox(height: 20),
+                    if (_gptSovitsMode == 'trained') ...[
+                      VoiceCharacterSectionLabel('TRAINED SPEAKER'),
+                      SizedBox(height: 8),
+                      ..._buildSpeakerPicker(
+                        label: AppLocalizations.of(context).uiSelectSpeaker,
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: _textLangCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Text Language (synthesis output)',
-                        hintText: 'zh / en / ja / ko ...',
+                      TextField(
+                        controller: _voiceNameCtrl,
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(
+                            context,
+                          ).uiSpeakerVoiceID,
+                          hintText: AppLocalizations.of(
+                            context,
+                          ).uiEGGenshinPaimon,
+                        ),
                       ),
-                    ),
+                      SizedBox(height: 10),
+                      TextField(
+                        controller: _textLangCtrl,
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(
+                            context,
+                          ).uiTextLanguageOptional,
+                          hintText: AppLocalizations.of(context).uiZhEnJaKo,
+                        ),
+                      ),
+                    ] else ...[
+                      ..._buildRefAudioPicker(),
+                      TextField(
+                        controller: _promptTextCtrl,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(
+                            context,
+                          ).uiPromptTextSpokenInRefAudio2,
+                          hintText: AppLocalizations.of(
+                            context,
+                          ).uiTranscriptOfTheReferenceAudio,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      TextField(
+                        controller: _promptLangCtrl,
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(
+                            context,
+                          ).uiPromptLanguage,
+                          hintText: AppLocalizations.of(context).uiZhEnJaKo,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      TextField(
+                        controller: _textLangCtrl,
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(
+                            context,
+                          ).uiTextLanguageSynthesisOutput,
+                          hintText: AppLocalizations.of(context).uiZhEnJaKo,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      TextField(
+                        controller: _voiceNameCtrl,
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(
+                            context,
+                          ).uiOutputSpeakerNameOptional,
+                          hintText: AppLocalizations.of(context).uiEGClone,
+                        ),
+                      ),
+                    ],
                   ] else ...[
                     // ── Fallback for other adapters (qwen3, etc.) ──
                     VoiceCharacterSectionLabel('VOICE'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     ..._buildSpeakerPicker(),
                     TextField(
                       controller: _voiceNameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Voice / Speaker Name',
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(
+                          context,
+                        ).uiVoiceSpeakerName,
                       ),
                     ),
                   ],
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                 ],
               ),
             ),
@@ -1174,13 +1363,13 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                 children: [
                   TextButton(
                     onPressed: _saving ? null : () => Navigator.pop(context),
-                    child: const Text('Cancel'),
+                    child: Text(AppLocalizations.of(context).uiCancel),
                   ),
                   const Spacer(),
                   FilledButton.icon(
                     onPressed: _saving ? null : _save,
                     icon: _saving
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
@@ -1189,7 +1378,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                             ),
                           )
                         : const Icon(Icons.check_rounded, size: 18),
-                    label: const Text('Create Character'),
+                    label: Text(AppLocalizations.of(context).uiCreateCharacter),
                   ),
                 ],
               ),
@@ -1203,16 +1392,8 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   Future<void> _save() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Name is required')));
-      return;
-    }
-    if (widget.existingAssets.any((a) => a.name == name)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('A character with this name already exists'),
-        ),
+        SnackBar(content: Text(AppLocalizations.of(context).uiNameIsRequired)),
       );
       return;
     }
@@ -1230,7 +1411,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     final chatCloneNeedsAudio =
         _isPresetVoiceProvider && _ttsModelType == 'clone';
     final needsRefAudio =
-        _isGptSovits ||
+        (_isGptSovits && _gptSovitsMode == 'clone') ||
         (_isCosyVoice && _cosyVoiceMode == 'zero_shot') ||
         (_isCosyVoice &&
             _cosyVoiceMode == 'cross_lingual' &&
@@ -1251,18 +1432,46 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       );
       return;
     }
+    if (_isGptSovits &&
+        _gptSovitsMode == 'trained' &&
+        _voiceNameCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).uiSelectOrEnterAGPTSoVITSSpeaker,
+          ),
+        ),
+      );
+      return;
+    }
+    if (_isGptSovits &&
+        _gptSovitsMode == 'clone' &&
+        _promptTextCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).uiGPTSoVITSCloneModeNeedsPromptText,
+          ),
+        ),
+      );
+      return;
+    }
     if (_isVoxCpm2 && _voxcpmMode == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Select a VoxCPM2 mode')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).uiSelectAVoxCPM2Mode),
+        ),
+      );
       return;
     }
     if (_isVoxCpm2 &&
         _voxcpmMode == 'design' &&
         _instructionCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Design mode requires a Voice Description'),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).uiDesignModeRequiresAVoiceDescription,
+          ),
         ),
       );
       return;
@@ -1271,8 +1480,10 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
         _ttsModelType == 'design' &&
         _instructionCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Voice Design requires a Voice Description'),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).uiVoiceDesignRequiresAVoiceDescription,
+          ),
         ),
       );
       return;
@@ -1281,8 +1492,10 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
         _voxcpmMode == 'ultimate_clone' &&
         _promptTextCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ultra Clone mode requires a Prompt Text'),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).uiUltraCloneModeRequiresAPromptText,
+          ),
         ),
       );
       return;
@@ -1301,7 +1514,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
         effectiveMode = TaskMode.presetVoice;
       }
     } else if (_isGptSovits) {
-      effectiveMode = TaskMode.cloneWithPrompt;
+      effectiveMode = _gptSovitsMode == 'clone'
+          ? TaskMode.cloneWithPrompt
+          : TaskMode.presetVoice;
     } else {
       effectiveMode = _taskMode;
     }

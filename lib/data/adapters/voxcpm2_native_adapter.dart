@@ -37,22 +37,25 @@ class VoxCpm2NativeAdapter extends TtsAdapter {
     required this.apiKey,
     this.modelName = '',
   }) {
-    _dio = Dio(BaseOptions(
-      baseUrl: baseUrl.endsWith('/') ? baseUrl : '$baseUrl/',
-      headers: {
-        if (apiKey.isNotEmpty) 'Authorization': 'Bearer $apiKey',
-      },
-      responseType: ResponseType.bytes,
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl.endsWith('/') ? baseUrl : '$baseUrl/',
+        headers: {if (apiKey.isNotEmpty) 'Authorization': 'Bearer $apiKey'},
+        responseType: ResponseType.bytes,
+      ),
+    );
   }
 
   // ─────────────────────────── synthesize ────────────────────────────────────
 
   @override
   Future<TtsResult> synthesize(TtsRequest request) async {
-    final mode = _knownModes.contains(modelName) ? modelName : _inferMode(request);
+    final mode = _knownModes.contains(modelName)
+        ? modelName
+        : _inferMode(request);
 
-    final hasLocalRef = request.refAudioPath != null &&
+    final hasLocalRef =
+        request.refAudioPath != null &&
         request.refAudioPath!.isNotEmpty &&
         File(request.refAudioPath!).existsSync();
 
@@ -73,8 +76,8 @@ class VoxCpm2NativeAdapter extends TtsAdapter {
 
   String get _modelIdForRequest =>
       _knownModes.contains(modelName) || modelName.isEmpty
-          ? _modelIdFallback
-          : modelName;
+      ? _modelIdFallback
+      : modelName;
 
   // ─────────────────────────── JSON endpoint ─────────────────────────────────
 
@@ -85,8 +88,10 @@ class VoxCpm2NativeAdapter extends TtsAdapter {
   ///   • clone           — with a registered `voice_id` (no local file)
   ///   • ultimate_clone  — if the ref audio is a remote URI the server can
   ///                       fetch itself (http/file/data URI)
-  Future<TtsResult> _synthesizeJson(TtsRequest request,
-      {required String mode}) async {
+  Future<TtsResult> _synthesizeJson(
+    TtsRequest request, {
+    required String mode,
+  }) async {
     final body = <String, dynamic>{
       'model': _modelIdForRequest,
       'text': request.text,
@@ -135,12 +140,16 @@ class VoxCpm2NativeAdapter extends TtsAdapter {
   /// For `clone` we send `reference_audio`. For `ultimate_clone` we send the
   /// same file under `prompt_audio` alongside the required `prompt_text`,
   /// matching the upstream field names.
-  Future<TtsResult> _synthesizeWithUpload(TtsRequest request,
-      {required String mode}) async {
+  Future<TtsResult> _synthesizeWithUpload(
+    TtsRequest request, {
+    required String mode,
+  }) async {
     final file = File(request.refAudioPath!);
     final fileName = file.path.split(Platform.pathSeparator).last;
-    final multipart =
-        await MultipartFile.fromFile(file.path, filename: fileName);
+    final multipart = await MultipartFile.fromFile(
+      file.path,
+      filename: fileName,
+    );
 
     final fields = <String, dynamic>{
       'text': request.text,
@@ -266,13 +275,14 @@ class VoxCpm2NativeAdapter extends TtsAdapter {
         if (list == null) return const [];
         return list
             .whereType<Map>()
-            .map((e) => VoxCpm2Voice(
-                  id: (e['id'] ?? e['voice_id'] ?? e['name'] ?? '').toString(),
-                  displayName:
-                      (e['display_name'] ?? e['name'] ?? e['id'] ?? '')
-                          .toString(),
-                  modeHint: (e['mode_hint'] ?? e['mode'] ?? '').toString(),
-                ))
+            .map(
+              (e) => VoxCpm2Voice(
+                id: (e['id'] ?? e['voice_id'] ?? e['name'] ?? '').toString(),
+                displayName: (e['display_name'] ?? e['name'] ?? e['id'] ?? '')
+                    .toString(),
+                modeHint: (e['mode_hint'] ?? e['mode'] ?? '').toString(),
+              ),
+            )
             .where((v) => v.id.isNotEmpty)
             .toList();
       }

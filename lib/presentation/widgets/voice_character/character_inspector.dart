@@ -16,12 +16,15 @@ import 'package:neiroha/presentation/widgets/voice_character/components.dart';
 import 'package:neiroha/presentation/widgets/voice_character/selection.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 // ─────────────────────────── Inspector Panel (inline editor) ────────────────
 
 class CharacterInspector extends ConsumerStatefulWidget {
   final db.VoiceAsset asset;
-  const CharacterInspector({super.key, required this.asset});
+  final String? bankId;
+
+  const CharacterInspector({super.key, required this.asset, this.bankId});
 
   @override
   ConsumerState<CharacterInspector> createState() => _CharacterInspectorState();
@@ -112,6 +115,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         t == 'systemTts' ||
         t == 'openaiCompatible' ||
         t == 'chatCompletionsTts' ||
+        t == 'gptSovits' ||
         t == 'geminiTts';
   }
 
@@ -131,7 +135,13 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
       _speakers = [];
     });
     final database = ref.read(databaseProvider);
-    final cached = await database.getBindingsForProvider(_selectedProviderId);
+    final adapterType = AdapterType.values.firstWhere(
+      (t) => t.name == (_selectedProvider?.adapterType ?? ''),
+      orElse: () => AdapterType.openaiCompatible,
+    );
+    final cached = adapterType.hasSeparateModelAndVoice
+        ? await database.getVoiceEntriesForProvider(_selectedProviderId)
+        : await database.getBindingsForProvider(_selectedProviderId);
     if (cached.isNotEmpty) {
       final voices = cached.map((b) => b.modelKey).toList()..sort();
       if (mounted) {
@@ -167,7 +177,12 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
     final allProviders =
         ref.watch(ttsProvidersStreamProvider).valueOrNull ??
         const <db.TtsProvider>[];
-    final enabledProviders = allProviders.where((p) => p.enabled).toList();
+    final capabilities = ref.watch(platformCapabilitiesProvider);
+    final enabledProviders = allProviders
+        .where(
+          (p) => p.enabled && capabilities.supportsAdapterName(p.adapterType),
+        )
+        .toList();
     // Always include the current provider even if disabled
     if (!enabledProviders.any((p) => p.id == _selectedProviderId)) {
       final current = allProviders
@@ -212,41 +227,45 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // ── Name ─────────────────────────────────────────────────────────────
         TextField(
           controller: _nameCtrl,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          decoration: const InputDecoration(labelText: 'Character Name *'),
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).uiCharacterName,
+          ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Center(child: VoiceCharacterModeBadge(mode: a.taskMode)),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
 
         // ── Description ──────────────────────────────────────────────────────
         TextField(
           controller: _descCtrl,
           maxLines: 2,
-          decoration: const InputDecoration(
-            labelText: 'Description (optional)',
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).uiDescriptionOptional,
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         const Divider(),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
 
         // ── Provider ─────────────────────────────────────────────────────────
         VoiceCharacterSectionLabel('PROVIDER'),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         if (enabledProviders.isEmpty)
           Text(
-            'No providers available',
+            AppLocalizations.of(context).uiNoProvidersAvailable,
             style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
           )
         else
           DropdownButtonFormField<String>(
-            decoration: const InputDecoration(labelText: 'Provider'),
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).uiProvider,
+            ),
             initialValue:
                 enabledProviders.any((p) => p.id == _selectedProviderId)
                 ? _selectedProviderId
@@ -258,7 +277,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
                     child: Row(
                       children: [
                         Text(p.name),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Text(
                           '(${AdapterType.values.where((t) => t.name == p.adapterType).firstOrNull?.displayName ?? p.adapterType})',
                           style: TextStyle(
@@ -282,22 +301,24 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
               }
             },
           ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // ── Speed ────────────────────────────────────────────────────────────
         TextField(
           controller: _speedCtrl,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Speed (1.0 = normal)'),
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).uiSpeed10Normal,
+          ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
 
         // ── Mode-specific fields ─────────────────────────────────────────────
         if (a.taskMode == 'presetVoice') ...[
           VoiceCharacterSectionLabel('VOICE'),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           if (_loadingSpeakers)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Row(
                 children: [
@@ -307,13 +328,13 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                   SizedBox(width: 10),
-                  Text('Loading voices...'),
+                  Text(AppLocalizations.of(context).uiLoadingVoices),
                 ],
               ),
             )
           else if (_speakers.isNotEmpty) ...[
             VoiceCharacterVoiceSearchPicker(
-              label: 'Select Voice',
+              label: AppLocalizations.of(context).uiSelectVoice,
               voices: _speakers,
               selected: _selectedSpeaker,
               onSelected: (v) => setState(() {
@@ -321,37 +342,51 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
                 _voiceNameCtrl.text = v;
               }),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
           ],
           TextField(
             controller: _voiceNameCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Voice Name',
-              helperText:
-                  'Filled automatically when you pick above, or type manually',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).uiVoiceName,
+              helperText: AppLocalizations.of(
+                context,
+              ).uiFilledAutomaticallyWhenYouPickAboveOrTypeManually,
             ),
           ),
           if (_hasModelField) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             TextField(
               controller: _modelNameCtrl,
               decoration: InputDecoration(
-                labelText: 'Model Name',
+                labelText: AppLocalizations.of(context).uiModelName,
                 hintText: _selectedProvider?.adapterType == 'geminiTts'
                     ? 'e.g. gemini-2.5-flash-preview-tts'
                     : 'e.g. tts-1',
               ),
             ),
           ],
+          if (_isGptSovits) ...[
+            SizedBox(height: 12),
+            TextField(
+              controller: _textLangCtrl,
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).uiTextLanguageOptional,
+                hintText: AppLocalizations.of(context).uiZhEnJaKo,
+              ),
+            ),
+          ],
           if (_selectedProvider?.adapterType == 'geminiTts') ...[
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             TextField(
               controller: _instructionCtrl,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Style Instruction (optional)',
-                hintText:
-                    'e.g. "Speak softly and slowly" — prepended to the text',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(
+                  context,
+                ).uiStyleInstructionOptional,
+                hintText: AppLocalizations.of(
+                  context,
+                ).uiEGSpeakSoftlyAndSlowlyPrependedToTheText,
               ),
             ),
           ],
@@ -359,10 +394,10 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
 
         if (a.taskMode == 'cloneWithPrompt') ...[
           VoiceCharacterSectionLabel('VOICE CLONE'),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           if (a.refAudioPath != null) ...[
             Text(
-              'REFERENCE AUDIO',
+              AppLocalizations.of(context).uiREFERENCEAUDIO,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
@@ -370,7 +405,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
                 color: Colors.white.withValues(alpha: 0.4),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -411,7 +446,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
                       );
                     },
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -440,58 +475,66 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
           ],
           TextField(
             controller: _promptTextCtrl,
             maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Reference Transcript',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).uiReferenceTranscript,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           TextField(
             controller: _promptLangCtrl,
-            decoration: const InputDecoration(labelText: 'Language Code'),
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).uiLanguageCode,
+            ),
           ),
           if (_isGptSovits) ...[
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             TextField(
               controller: _textLangCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Text Language (synthesis output)',
-                hintText: 'zh / en / ja / ko ...',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(
+                  context,
+                ).uiTextLanguageSynthesisOutput,
+                hintText: AppLocalizations.of(context).uiZhEnJaKo,
               ),
             ),
           ],
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           TextField(
             controller: _instructionCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Style Instruction (optional)',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(
+                context,
+              ).uiStyleInstructionOptional,
             ),
           ),
         ],
 
         if (a.taskMode == 'voiceDesign') ...[
           VoiceCharacterSectionLabel('VOICE DESIGN'),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           TextField(
             controller: _instructionCtrl,
             maxLines: 4,
-            decoration: const InputDecoration(labelText: 'Voice Instruction'),
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).uiVoiceInstruction,
+            ),
           ),
         ],
 
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         const Divider(),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
 
         // ── Enabled toggle ───────────────────────────────────────────────────
         Row(
           children: [
             Text(
-              'Enabled',
+              AppLocalizations.of(context).uiEnabled,
               style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
             ),
             const Spacer(),
@@ -503,13 +546,13 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
 
         // ── Save ─────────────────────────────────────────────────────────────
         FilledButton.icon(
           onPressed: _saving ? null : _save,
           icon: _saving
-              ? const SizedBox(
+              ? SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
@@ -518,9 +561,9 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
                   ),
                 )
               : const Icon(Icons.check_rounded, size: 18),
-          label: const Text('Save Changes'),
+          label: Text(AppLocalizations.of(context).uiSaveChanges),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
 
         // ── Duplicate / Delete ───────────────────────────────────────────────
         Row(
@@ -529,10 +572,10 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
               child: OutlinedButton.icon(
                 onPressed: () => _duplicateCharacter(a),
                 icon: const Icon(Icons.copy_rounded, size: 18),
-                label: const Text('Duplicate'),
+                label: Text(AppLocalizations.of(context).uiDuplicate),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: () async {
@@ -546,14 +589,18 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Failed to delete character: $e'),
+                          content: Text(
+                            AppLocalizations.of(
+                              context,
+                            ).uiFailedToDeleteCharacter(e),
+                          ),
                         ),
                       );
                     }
                   }
                 },
                 icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                label: const Text('Delete'),
+                label: Text(AppLocalizations.of(context).uiDelete),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.redAccent,
                 ),
@@ -586,22 +633,11 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
   Future<void> _save() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Name is required')));
-      return;
-    }
-    final existingAssets =
-        ref.read(voiceAssetsStreamProvider).valueOrNull ?? [];
-    if (existingAssets.any((x) => x.name == name && x.id != widget.asset.id)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('A character with this name already exists'),
-        ),
+        SnackBar(content: Text(AppLocalizations.of(context).uiNameIsRequired)),
       );
       return;
     }
-
     setState(() => _saving = true);
 
     final speed = double.tryParse(_speedCtrl.text) ?? 1.0;
@@ -651,36 +687,48 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
     if (mounted) {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Saved'), duration: Duration(seconds: 1)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).uiSaved),
+          duration: Duration(seconds: 1),
+        ),
       );
     }
   }
 
   Future<void> _duplicateCharacter(db.VoiceAsset asset) async {
     final newId = const Uuid().v4();
-    await ref
-        .read(databaseProvider)
-        .insertVoiceAsset(
-          db.VoiceAssetsCompanion(
-            id: Value(newId),
-            name: Value('${asset.name} (copy)'),
-            description: Value(asset.description),
-            providerId: Value(asset.providerId),
-            modelBindingId: Value(asset.modelBindingId),
-            modelName: Value(asset.modelName),
-            taskMode: Value(asset.taskMode),
-            refAudioPath: Value(asset.refAudioPath),
-            refAudioTrimStart: Value(asset.refAudioTrimStart),
-            refAudioTrimEnd: Value(asset.refAudioTrimEnd),
-            promptText: Value(asset.promptText),
-            promptLang: Value(asset.promptLang),
-            voiceInstruction: Value(asset.voiceInstruction),
-            presetVoiceName: Value(asset.presetVoiceName),
-            avatarPath: Value(asset.avatarPath),
-            speed: Value(asset.speed),
-            enabled: Value(asset.enabled),
-          ),
-        );
+    final database = ref.read(databaseProvider);
+    await database.insertVoiceAsset(
+      db.VoiceAssetsCompanion(
+        id: Value(newId),
+        name: Value('${asset.name} (copy)'),
+        description: Value(asset.description),
+        providerId: Value(asset.providerId),
+        modelBindingId: Value(asset.modelBindingId),
+        modelName: Value(asset.modelName),
+        taskMode: Value(asset.taskMode),
+        refAudioPath: Value(asset.refAudioPath),
+        refAudioTrimStart: Value(asset.refAudioTrimStart),
+        refAudioTrimEnd: Value(asset.refAudioTrimEnd),
+        promptText: Value(asset.promptText),
+        promptLang: Value(asset.promptLang),
+        voiceInstruction: Value(asset.voiceInstruction),
+        presetVoiceName: Value(asset.presetVoiceName),
+        avatarPath: Value(asset.avatarPath),
+        speed: Value(asset.speed),
+        enabled: Value(asset.enabled),
+      ),
+    );
+    final bankId = widget.bankId;
+    if (bankId != null) {
+      await database.addMemberToBank(
+        db.VoiceBankMembersCompanion(
+          id: Value(const Uuid().v4()),
+          bankId: Value(bankId),
+          voiceAssetId: Value(newId),
+        ),
+      );
+    }
     ref.read(selectedCharacterIdProvider.notifier).state = newId;
   }
 }

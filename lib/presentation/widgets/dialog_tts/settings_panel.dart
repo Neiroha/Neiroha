@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/voice_picker.dart';
 
 /// Right-pane settings panel for the Dialog TTS editor.
@@ -61,51 +62,57 @@ class SettingsPanel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _section('STATS'),
+                _section(AppLocalizations.of(context).uiSTATS),
                 const SizedBox(height: 8),
                 _statTile(
-                    icon: Icons.format_list_bulleted_rounded,
-                    label: 'Lines',
-                    value: '${lines.length}'),
+                  icon: Icons.format_list_bulleted_rounded,
+                  label: AppLocalizations.of(context).uiLines,
+                  value: '${lines.length}',
+                ),
                 _statTile(
-                    icon: Icons.task_alt_rounded,
-                    label: 'Generated',
-                    value: '$ready / ${lines.length}'),
+                  icon: Icons.task_alt_rounded,
+                  label: AppLocalizations.of(context).uiGenerated,
+                  value: '$ready / ${lines.length}',
+                ),
                 _statTile(
-                    icon: Icons.pending_actions_rounded,
-                    label: 'Pending',
-                    value: '$pending'),
+                  icon: Icons.pending_actions_rounded,
+                  label: AppLocalizations.of(context).uiPending,
+                  value: '$pending',
+                ),
                 _statTile(
-                    icon: Icons.timer_rounded,
-                    label: 'Total length',
-                    value: _formatDuration(totalSec)),
+                  icon: Icons.timer_rounded,
+                  label: AppLocalizations.of(context).uiTotalLength,
+                  value: _formatDuration(totalSec),
+                ),
                 const SizedBox(height: 20),
-                _section('SETTINGS'),
+                _section(AppLocalizations.of(context).uiSETTINGS),
                 const SizedBox(height: 4),
                 _ToggleRow(
                   icon: Icons.bolt_rounded,
-                  label: 'Auto-generate on send',
-                  sublabel: 'Synthesize TTS right after sending',
+                  label: AppLocalizations.of(context).uiAutoGenerateOnSend,
+                  sublabel: AppLocalizations.of(
+                    context,
+                  ).uiSynthesizeTTSRightAfterSending,
                   value: autoGenerateOnSend,
                   onChanged: onToggleAutoGenerate,
                 ),
                 _ToggleRow(
                   icon: Icons.play_circle_outline_rounded,
-                  label: 'Auto-play after generate',
-                  sublabel: 'Plays the new line once it finishes',
+                  label: AppLocalizations.of(context).uiAutoPlayAfterGenerate,
+                  sublabel: AppLocalizations.of(
+                    context,
+                  ).uiPlaysTheNewLineOnceItFinishes,
                   value: autoPlayAfterGenerate,
-                  onChanged:
-                      autoGenerateOnSend ? onToggleAutoPlay : null,
+                  onChanged: autoGenerateOnSend ? onToggleAutoPlay : null,
                 ),
                 const SizedBox(height: 20),
-                _section('GENERATION'),
+                _section(AppLocalizations.of(context).uiGENERATION),
                 const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
-                    onPressed: lines.isEmpty ||
-                            generatingAll ||
-                            bankAssets.isEmpty
+                    onPressed:
+                        lines.isEmpty || generatingAll || bankAssets.isEmpty
                         ? null
                         : onGenerateAll,
                     icon: generatingAll
@@ -113,14 +120,17 @@ class SettingsPanel extends StatelessWidget {
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
                         : const Icon(Icons.auto_awesome_rounded, size: 16),
                     label: Text(
                       generatingAll
-                          ? 'Generating…'
+                          ? AppLocalizations.of(context).uiGenerating
                           : pending > 0
-                              ? 'Generate All ($pending)'
-                              : 'Generate All',
+                          ? AppLocalizations.of(context).uiGenerateAll2(pending)
+                          : AppLocalizations.of(context).uiGenerateAll,
                     ),
                   ),
                 ),
@@ -153,10 +163,11 @@ class SettingsPanel extends StatelessWidget {
     );
   }
 
-  Widget _statTile(
-      {required IconData icon,
-      required String label,
-      required String value}) {
+  Widget _statTile({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -164,14 +175,18 @@ class SettingsPanel extends StatelessWidget {
           Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.4)),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(label,
-                style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.55))),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white.withValues(alpha: 0.55),
+              ),
+            ),
           ),
-          Text(value,
-              style: const TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );
@@ -213,33 +228,39 @@ class _ToggleRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
           child: Row(
             children: [
-              Icon(icon,
-                  size: 16,
-                  color: Colors.white
-                      .withValues(alpha: disabled ? 0.2 : 0.55)),
+              Icon(
+                icon,
+                size: 16,
+                color: Colors.white.withValues(alpha: disabled ? 0.2 : 0.55),
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(label,
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(
-                                alpha: disabled ? 0.3 : 0.85))),
-                    Text(sublabel,
-                        style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white.withValues(
-                                alpha: disabled ? 0.2 : 0.4))),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withValues(
+                          alpha: disabled ? 0.3 : 0.85,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      sublabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.withValues(
+                          alpha: disabled ? 0.2 : 0.4,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              Switch(
-                value: value,
-                onChanged: onChanged,
-              ),
+              Switch(value: value, onChanged: onChanged),
             ],
           ),
         ),

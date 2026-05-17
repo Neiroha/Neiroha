@@ -1,6 +1,1 @@
-enum JobStatus {
-  pending,
-  running,
-  completed,
-  failed,
-}
+enum JobStatus { pending, running, completed, failed }

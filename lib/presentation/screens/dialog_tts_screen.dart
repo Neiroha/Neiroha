@@ -20,6 +20,7 @@ import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Dialog TTS — multi-character conversation with project management.
 ///
@@ -40,10 +41,16 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
     if (_selectedProjectId == null) {
       return _buildProjectListScreen();
     }
-    return _DialogTtsEditor(
-      key: ValueKey(_selectedProjectId),
-      projectId: _selectedProjectId!,
-      onClose: () => setState(() => _selectedProjectId = null),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) setState(() => _selectedProjectId = null);
+      },
+      child: _DialogTtsEditor(
+        key: ValueKey(_selectedProjectId),
+        projectId: _selectedProjectId!,
+        onClose: () => setState(() => _selectedProjectId = null),
+      ),
     );
   }
 
@@ -57,10 +64,11 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
         const Divider(height: 1),
         Expanded(
           child: projectsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            loading: () => Center(child: CircularProgressIndicator()),
+            error: (e, _) =>
+                Center(child: Text(AppLocalizations.of(context).uiError2(e))),
             data: (projects) => ProjectCardGrid(
-              emptyLabel: 'No dialog projects yet',
+              emptyLabel: AppLocalizations.of(context).uiNoDialogProjectsYet,
               projects: [
                 for (final p in projects)
                   ProjectCardData(
@@ -86,7 +94,10 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
     if (banks.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Create a Voice Bank first')));
+          SnackBar(
+            content: Text(AppLocalizations.of(context).uiCreateAVoiceBankFirst),
+          ),
+        );
       }
       return;
     }
@@ -99,7 +110,9 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
 
     final id = const Uuid().v4();
     final now = DateTime.now();
-    await ref.read(databaseProvider).insertDialogTtsProject(
+    await ref
+        .read(databaseProvider)
+        .insertDialogTtsProject(
           db.DialogTtsProjectsCompanion(
             id: Value(id),
             name: Value(result.name),
@@ -142,14 +155,14 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
         ?.where((p) => p.id == widget.projectId)
         .firstOrNull;
     if (project == null) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: CircularProgressIndicator());
     }
 
-    final linesAsync =
-        ref.watch(dialogTtsLinesStreamProvider(widget.projectId));
+    final linesAsync = ref.watch(
+      dialogTtsLinesStreamProvider(widget.projectId),
+    );
     final assetsAsync = ref.watch(voiceAssetsStreamProvider);
-    final membersAsync =
-        ref.watch(bankMembersStreamProvider(project.bankId));
+    final membersAsync = ref.watch(bankMembersStreamProvider(project.bankId));
     final bankMembers = membersAsync.valueOrNull ?? [];
     final allAssets = assetsAsync.valueOrNull ?? [];
     final assetMap = {for (final a in allAssets) a.id: a};
@@ -169,6 +182,8 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
         Expanded(
           child: ResizableSplitPane(
             initialLeftFraction: 0.68,
+            compactRightIcon: Icons.tune_rounded,
+            compactRightLabel: AppLocalizations.of(context).navSettings,
             left: LayoutBuilder(
               builder: (ctx, leftConstraints) {
                 final inputMaxHeight = leftConstraints.maxHeight * 0.3;
@@ -181,29 +196,30 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
                         generatingLineIds: _generatingLineIds,
                         onPlay: _playLine,
                         onPlayFrom: (startIndex) => _playFrom(
-                            linesAsync.valueOrNull ?? const [],
-                            startIndex,
-                            assetMap),
+                          linesAsync.valueOrNull ?? const [],
+                          startIndex,
+                          assetMap,
+                        ),
                         onGenerate: bankAssets.isEmpty
                             ? null
                             : (line) => _generateOne(project, line, bankAssets),
-                        onDelete: (id) => ref
-                            .read(databaseProvider)
-                            .deleteDialogTtsLine(id),
+                        onDelete: (id) =>
+                            ref.read(databaseProvider).deleteDialogTtsLine(id),
                         onReorder: (oldIndex, newIndex) => ref
                             .read(databaseProvider)
                             .reorderDialogLine(
-                                widget.projectId, oldIndex, newIndex),
+                              widget.projectId,
+                              oldIndex,
+                              newIndex,
+                            ),
                       ),
                     ),
                     const PersistentAudioBar(),
                     InputBar(
                       bankAssets: bankAssets,
                       voiceId: _inputVoiceId,
-                      onVoiceChanged: (v) =>
-                          setState(() => _inputVoiceId = v),
-                      onSend: (text) =>
-                          _addLine(project, bankAssets, text),
+                      onVoiceChanged: (v) => setState(() => _inputVoiceId = v),
+                      onSend: (text) => _addLine(project, bankAssets, text),
                       maxHeight: inputMaxHeight,
                     ),
                   ],
@@ -223,7 +239,10 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
               onToggleAutoPlay: (v) =>
                   setState(() => _autoPlayAfterGenerate = v),
               onGenerateAll: () => _generateAll(
-                  project, linesAsync.valueOrNull ?? const [], bankAssets),
+                project,
+                linesAsync.valueOrNull ?? const [],
+                bankAssets,
+              ),
             ),
           ),
         ),
@@ -272,20 +291,24 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
   ) async {
     try {
       final database = ref.read(databaseProvider);
-      final inserted = (await database.getDialogTtsLines(project.id))
-          .firstWhere((l) => l.id == lineId);
+      final inserted = (await database.getDialogTtsLines(
+        project.id,
+      )).firstWhere((l) => l.id == lineId);
       await _generateOne(project, inserted, bankAssets);
 
       if (!mounted || !_autoPlayAfterGenerate) return;
-      final updated = (await database.getDialogTtsLines(project.id))
-          .firstWhere((l) => l.id == lineId);
+      final updated = (await database.getDialogTtsLines(
+        project.id,
+      )).firstWhere((l) => l.id == lineId);
       if (updated.audioPath != null) {
         await _playLine(updated);
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Auto-generate failed: $e')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).uiAutoGenerateFailed(e)),
+        ),
       );
     }
   }
@@ -299,8 +322,9 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
     for (int i = startIndex; i < lines.length; i++) {
       final l = lines[i];
       if (l.audioPath == null) continue;
-      final voiceName =
-          l.voiceAssetId != null ? assetMap[l.voiceAssetId]?.name : null;
+      final voiceName = l.voiceAssetId != null
+          ? assetMap[l.voiceAssetId]?.name
+          : null;
       items.add((
         audioPath: l.audioPath!,
         title: l.lineText,
@@ -322,23 +346,22 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
       return;
     }
     final assets = ref.read(voiceAssetsStreamProvider).valueOrNull ?? const [];
-    final voiceName = assets
-            .where((a) => a.id == line.voiceAssetId)
-            .firstOrNull
-            ?.name ??
+    final voiceName =
+        assets.where((a) => a.id == line.voiceAssetId).firstOrNull?.name ??
         'Line';
-    await notifier.load(
-      line.audioPath!,
-      line.lineText,
-      subtitle: voiceName,
-    );
+    await notifier.load(line.audioPath!, line.lineText, subtitle: voiceName);
     if (line.audioDuration == null) {
-      ref.read(audioPlayerProvider).onDurationChanged.first.then((d) async {
-        final secs = d.inMilliseconds / 1000.0;
-        await ref.read(databaseProvider).updateDialogTtsLine(
-              line.copyWith(audioDuration: Value(secs)),
-            );
-      }).catchError((_) {});
+      ref
+          .read(audioPlayerProvider)
+          .onDurationChanged
+          .first
+          .then((d) async {
+            final secs = d.inMilliseconds / 1000.0;
+            await ref
+                .read(databaseProvider)
+                .updateDialogTtsLine(line.copyWith(audioDuration: Value(secs)));
+          })
+          .catchError((_) {});
     }
   }
 
@@ -350,11 +373,11 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
     if (lines.isEmpty || bankAssets.isEmpty || _generatingAll) return;
     setState(() => _generatingAll = true);
     try {
-      for (final line in lines) {
-        if (line.audioPath != null) continue;
-        if (line.voiceAssetId == null) continue;
-        await _generateOne(project, line, bankAssets);
-      }
+      await Future.wait([
+        for (final line in lines)
+          if (line.audioPath == null && line.voiceAssetId != null)
+            _generateOne(project, line, bankAssets),
+      ]);
     } finally {
       if (mounted) setState(() => _generatingAll = false);
     }
@@ -383,19 +406,27 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
           .ensureDialogProjectSlug(project.id);
       final outDir = await PathService.instance.dialogTtsDir(slug);
 
-      final adapter = createAdapter(provider, modelName: asset.modelName);
-      final result = await adapter.synthesize(TtsRequest(
-        text: line.lineText,
-        voice: asset.presetVoiceName ?? asset.name,
-        speed: asset.speed,
-        textLang:
-            provider.adapterType == 'gptSovits' ? asset.modelName : null,
-        presetVoiceName: asset.presetVoiceName,
-        voiceInstruction: asset.voiceInstruction,
-        refAudioPath: asset.refAudioPath,
-        promptText: asset.promptText,
-        promptLang: asset.promptLang,
-      ));
+      final result = await ref
+          .read(ttsQueueServiceProvider)
+          .synthesize(
+            provider: provider,
+            modelName: asset.modelName,
+            source: 'Dialog TTS',
+            label: 'Line ${line.orderIndex + 1}: ${line.lineText}',
+            request: TtsRequest(
+              text: line.lineText,
+              voice: asset.presetVoiceName ?? asset.name,
+              speed: asset.speed,
+              textLang: provider.adapterType == 'gptSovits'
+                  ? asset.modelName
+                  : null,
+              presetVoiceName: asset.presetVoiceName,
+              voiceInstruction: asset.voiceInstruction,
+              refAudioPath: asset.refAudioPath,
+              promptText: asset.promptText,
+              promptLang: asset.promptLang,
+            ),
+          );
       final ext = result.contentType.contains('wav') ? '.wav' : '.mp3';
       final filePath = PathService.dedupeFilename(
         outDir,

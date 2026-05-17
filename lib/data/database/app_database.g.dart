@@ -307,6 +307,62 @@ class $TtsProvidersTable extends TtsProviders
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _maxConcurrencyMeta = const VerificationMeta(
+    'maxConcurrency',
+  );
+  @override
+  late final GeneratedColumn<int> maxConcurrency = GeneratedColumn<int>(
+    'max_concurrency',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _requestsPerMinuteMeta = const VerificationMeta(
+    'requestsPerMinute',
+  );
+  @override
+  late final GeneratedColumn<int> requestsPerMinute = GeneratedColumn<int>(
+    'requests_per_minute',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _requestsPerDayMeta = const VerificationMeta(
+    'requestsPerDay',
+  );
+  @override
+  late final GeneratedColumn<int> requestsPerDay = GeneratedColumn<int>(
+    'requests_per_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tokensPerMinuteMeta = const VerificationMeta(
+    'tokensPerMinute',
+  );
+  @override
+  late final GeneratedColumn<int> tokensPerMinute = GeneratedColumn<int>(
+    'tokens_per_minute',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tokensPerDayMeta = const VerificationMeta(
+    'tokensPerDay',
+  );
+  @override
+  late final GeneratedColumn<int> tokensPerDay = GeneratedColumn<int>(
+    'tokens_per_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -317,6 +373,11 @@ class $TtsProvidersTable extends TtsProviders
     defaultModelName,
     enabled,
     position,
+    maxConcurrency,
+    requestsPerMinute,
+    requestsPerDay,
+    tokensPerMinute,
+    tokensPerDay,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -389,6 +450,51 @@ class $TtsProvidersTable extends TtsProviders
         position.isAcceptableOrUnknown(data['position']!, _positionMeta),
       );
     }
+    if (data.containsKey('max_concurrency')) {
+      context.handle(
+        _maxConcurrencyMeta,
+        maxConcurrency.isAcceptableOrUnknown(
+          data['max_concurrency']!,
+          _maxConcurrencyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('requests_per_minute')) {
+      context.handle(
+        _requestsPerMinuteMeta,
+        requestsPerMinute.isAcceptableOrUnknown(
+          data['requests_per_minute']!,
+          _requestsPerMinuteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('requests_per_day')) {
+      context.handle(
+        _requestsPerDayMeta,
+        requestsPerDay.isAcceptableOrUnknown(
+          data['requests_per_day']!,
+          _requestsPerDayMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tokens_per_minute')) {
+      context.handle(
+        _tokensPerMinuteMeta,
+        tokensPerMinute.isAcceptableOrUnknown(
+          data['tokens_per_minute']!,
+          _tokensPerMinuteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tokens_per_day')) {
+      context.handle(
+        _tokensPerDayMeta,
+        tokensPerDay.isAcceptableOrUnknown(
+          data['tokens_per_day']!,
+          _tokensPerDayMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -430,6 +536,26 @@ class $TtsProvidersTable extends TtsProviders
         DriftSqlType.int,
         data['${effectivePrefix}position'],
       )!,
+      maxConcurrency: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}max_concurrency'],
+      )!,
+      requestsPerMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}requests_per_minute'],
+      ),
+      requestsPerDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}requests_per_day'],
+      ),
+      tokensPerMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_per_minute'],
+      ),
+      tokensPerDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_per_day'],
+      ),
     );
   }
 
@@ -448,6 +574,11 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
   final String defaultModelName;
   final bool enabled;
   final int position;
+  final int maxConcurrency;
+  final int? requestsPerMinute;
+  final int? requestsPerDay;
+  final int? tokensPerMinute;
+  final int? tokensPerDay;
   const TtsProvider({
     required this.id,
     required this.name,
@@ -457,6 +588,11 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     required this.defaultModelName,
     required this.enabled,
     required this.position,
+    required this.maxConcurrency,
+    this.requestsPerMinute,
+    this.requestsPerDay,
+    this.tokensPerMinute,
+    this.tokensPerDay,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -469,6 +605,19 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     map['default_model_name'] = Variable<String>(defaultModelName);
     map['enabled'] = Variable<bool>(enabled);
     map['position'] = Variable<int>(position);
+    map['max_concurrency'] = Variable<int>(maxConcurrency);
+    if (!nullToAbsent || requestsPerMinute != null) {
+      map['requests_per_minute'] = Variable<int>(requestsPerMinute);
+    }
+    if (!nullToAbsent || requestsPerDay != null) {
+      map['requests_per_day'] = Variable<int>(requestsPerDay);
+    }
+    if (!nullToAbsent || tokensPerMinute != null) {
+      map['tokens_per_minute'] = Variable<int>(tokensPerMinute);
+    }
+    if (!nullToAbsent || tokensPerDay != null) {
+      map['tokens_per_day'] = Variable<int>(tokensPerDay);
+    }
     return map;
   }
 
@@ -482,6 +631,19 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
       defaultModelName: Value(defaultModelName),
       enabled: Value(enabled),
       position: Value(position),
+      maxConcurrency: Value(maxConcurrency),
+      requestsPerMinute: requestsPerMinute == null && nullToAbsent
+          ? const Value.absent()
+          : Value(requestsPerMinute),
+      requestsPerDay: requestsPerDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(requestsPerDay),
+      tokensPerMinute: tokensPerMinute == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tokensPerMinute),
+      tokensPerDay: tokensPerDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tokensPerDay),
     );
   }
 
@@ -499,6 +661,11 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
       defaultModelName: serializer.fromJson<String>(json['defaultModelName']),
       enabled: serializer.fromJson<bool>(json['enabled']),
       position: serializer.fromJson<int>(json['position']),
+      maxConcurrency: serializer.fromJson<int>(json['maxConcurrency']),
+      requestsPerMinute: serializer.fromJson<int?>(json['requestsPerMinute']),
+      requestsPerDay: serializer.fromJson<int?>(json['requestsPerDay']),
+      tokensPerMinute: serializer.fromJson<int?>(json['tokensPerMinute']),
+      tokensPerDay: serializer.fromJson<int?>(json['tokensPerDay']),
     );
   }
   @override
@@ -513,6 +680,11 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
       'defaultModelName': serializer.toJson<String>(defaultModelName),
       'enabled': serializer.toJson<bool>(enabled),
       'position': serializer.toJson<int>(position),
+      'maxConcurrency': serializer.toJson<int>(maxConcurrency),
+      'requestsPerMinute': serializer.toJson<int?>(requestsPerMinute),
+      'requestsPerDay': serializer.toJson<int?>(requestsPerDay),
+      'tokensPerMinute': serializer.toJson<int?>(tokensPerMinute),
+      'tokensPerDay': serializer.toJson<int?>(tokensPerDay),
     };
   }
 
@@ -525,6 +697,11 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     String? defaultModelName,
     bool? enabled,
     int? position,
+    int? maxConcurrency,
+    Value<int?> requestsPerMinute = const Value.absent(),
+    Value<int?> requestsPerDay = const Value.absent(),
+    Value<int?> tokensPerMinute = const Value.absent(),
+    Value<int?> tokensPerDay = const Value.absent(),
   }) => TtsProvider(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -534,6 +711,17 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     defaultModelName: defaultModelName ?? this.defaultModelName,
     enabled: enabled ?? this.enabled,
     position: position ?? this.position,
+    maxConcurrency: maxConcurrency ?? this.maxConcurrency,
+    requestsPerMinute: requestsPerMinute.present
+        ? requestsPerMinute.value
+        : this.requestsPerMinute,
+    requestsPerDay: requestsPerDay.present
+        ? requestsPerDay.value
+        : this.requestsPerDay,
+    tokensPerMinute: tokensPerMinute.present
+        ? tokensPerMinute.value
+        : this.tokensPerMinute,
+    tokensPerDay: tokensPerDay.present ? tokensPerDay.value : this.tokensPerDay,
   );
   TtsProvider copyWithCompanion(TtsProvidersCompanion data) {
     return TtsProvider(
@@ -549,6 +737,21 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
           : this.defaultModelName,
       enabled: data.enabled.present ? data.enabled.value : this.enabled,
       position: data.position.present ? data.position.value : this.position,
+      maxConcurrency: data.maxConcurrency.present
+          ? data.maxConcurrency.value
+          : this.maxConcurrency,
+      requestsPerMinute: data.requestsPerMinute.present
+          ? data.requestsPerMinute.value
+          : this.requestsPerMinute,
+      requestsPerDay: data.requestsPerDay.present
+          ? data.requestsPerDay.value
+          : this.requestsPerDay,
+      tokensPerMinute: data.tokensPerMinute.present
+          ? data.tokensPerMinute.value
+          : this.tokensPerMinute,
+      tokensPerDay: data.tokensPerDay.present
+          ? data.tokensPerDay.value
+          : this.tokensPerDay,
     );
   }
 
@@ -562,7 +765,12 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
           ..write('apiKey: $apiKey, ')
           ..write('defaultModelName: $defaultModelName, ')
           ..write('enabled: $enabled, ')
-          ..write('position: $position')
+          ..write('position: $position, ')
+          ..write('maxConcurrency: $maxConcurrency, ')
+          ..write('requestsPerMinute: $requestsPerMinute, ')
+          ..write('requestsPerDay: $requestsPerDay, ')
+          ..write('tokensPerMinute: $tokensPerMinute, ')
+          ..write('tokensPerDay: $tokensPerDay')
           ..write(')'))
         .toString();
   }
@@ -577,6 +785,11 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
     defaultModelName,
     enabled,
     position,
+    maxConcurrency,
+    requestsPerMinute,
+    requestsPerDay,
+    tokensPerMinute,
+    tokensPerDay,
   );
   @override
   bool operator ==(Object other) =>
@@ -589,7 +802,12 @@ class TtsProvider extends DataClass implements Insertable<TtsProvider> {
           other.apiKey == this.apiKey &&
           other.defaultModelName == this.defaultModelName &&
           other.enabled == this.enabled &&
-          other.position == this.position);
+          other.position == this.position &&
+          other.maxConcurrency == this.maxConcurrency &&
+          other.requestsPerMinute == this.requestsPerMinute &&
+          other.requestsPerDay == this.requestsPerDay &&
+          other.tokensPerMinute == this.tokensPerMinute &&
+          other.tokensPerDay == this.tokensPerDay);
 }
 
 class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
@@ -601,6 +819,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
   final Value<String> defaultModelName;
   final Value<bool> enabled;
   final Value<int> position;
+  final Value<int> maxConcurrency;
+  final Value<int?> requestsPerMinute;
+  final Value<int?> requestsPerDay;
+  final Value<int?> tokensPerMinute;
+  final Value<int?> tokensPerDay;
   final Value<int> rowid;
   const TtsProvidersCompanion({
     this.id = const Value.absent(),
@@ -611,6 +834,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     this.defaultModelName = const Value.absent(),
     this.enabled = const Value.absent(),
     this.position = const Value.absent(),
+    this.maxConcurrency = const Value.absent(),
+    this.requestsPerMinute = const Value.absent(),
+    this.requestsPerDay = const Value.absent(),
+    this.tokensPerMinute = const Value.absent(),
+    this.tokensPerDay = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TtsProvidersCompanion.insert({
@@ -622,6 +850,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     this.defaultModelName = const Value.absent(),
     this.enabled = const Value.absent(),
     this.position = const Value.absent(),
+    this.maxConcurrency = const Value.absent(),
+    this.requestsPerMinute = const Value.absent(),
+    this.requestsPerDay = const Value.absent(),
+    this.tokensPerMinute = const Value.absent(),
+    this.tokensPerDay = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -636,6 +869,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     Expression<String>? defaultModelName,
     Expression<bool>? enabled,
     Expression<int>? position,
+    Expression<int>? maxConcurrency,
+    Expression<int>? requestsPerMinute,
+    Expression<int>? requestsPerDay,
+    Expression<int>? tokensPerMinute,
+    Expression<int>? tokensPerDay,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -647,6 +885,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
       if (defaultModelName != null) 'default_model_name': defaultModelName,
       if (enabled != null) 'enabled': enabled,
       if (position != null) 'position': position,
+      if (maxConcurrency != null) 'max_concurrency': maxConcurrency,
+      if (requestsPerMinute != null) 'requests_per_minute': requestsPerMinute,
+      if (requestsPerDay != null) 'requests_per_day': requestsPerDay,
+      if (tokensPerMinute != null) 'tokens_per_minute': tokensPerMinute,
+      if (tokensPerDay != null) 'tokens_per_day': tokensPerDay,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -660,6 +903,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     Value<String>? defaultModelName,
     Value<bool>? enabled,
     Value<int>? position,
+    Value<int>? maxConcurrency,
+    Value<int?>? requestsPerMinute,
+    Value<int?>? requestsPerDay,
+    Value<int?>? tokensPerMinute,
+    Value<int?>? tokensPerDay,
     Value<int>? rowid,
   }) {
     return TtsProvidersCompanion(
@@ -671,6 +919,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
       defaultModelName: defaultModelName ?? this.defaultModelName,
       enabled: enabled ?? this.enabled,
       position: position ?? this.position,
+      maxConcurrency: maxConcurrency ?? this.maxConcurrency,
+      requestsPerMinute: requestsPerMinute ?? this.requestsPerMinute,
+      requestsPerDay: requestsPerDay ?? this.requestsPerDay,
+      tokensPerMinute: tokensPerMinute ?? this.tokensPerMinute,
+      tokensPerDay: tokensPerDay ?? this.tokensPerDay,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -702,6 +955,21 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
     if (position.present) {
       map['position'] = Variable<int>(position.value);
     }
+    if (maxConcurrency.present) {
+      map['max_concurrency'] = Variable<int>(maxConcurrency.value);
+    }
+    if (requestsPerMinute.present) {
+      map['requests_per_minute'] = Variable<int>(requestsPerMinute.value);
+    }
+    if (requestsPerDay.present) {
+      map['requests_per_day'] = Variable<int>(requestsPerDay.value);
+    }
+    if (tokensPerMinute.present) {
+      map['tokens_per_minute'] = Variable<int>(tokensPerMinute.value);
+    }
+    if (tokensPerDay.present) {
+      map['tokens_per_day'] = Variable<int>(tokensPerDay.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -719,6 +987,11 @@ class TtsProvidersCompanion extends UpdateCompanion<TtsProvider> {
           ..write('defaultModelName: $defaultModelName, ')
           ..write('enabled: $enabled, ')
           ..write('position: $position, ')
+          ..write('maxConcurrency: $maxConcurrency, ')
+          ..write('requestsPerMinute: $requestsPerMinute, ')
+          ..write('requestsPerDay: $requestsPerDay, ')
+          ..write('tokensPerMinute: $tokensPerMinute, ')
+          ..write('tokensPerDay: $tokensPerDay, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4968,6 +5241,2524 @@ class PhaseTtsSegmentsCompanion extends UpdateCompanion<PhaseTtsSegment> {
   }
 }
 
+class $NovelProjectsTable extends NovelProjects
+    with TableInfo<$NovelProjectsTable, NovelProject> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NovelProjectsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(minTextLength: 1),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bankIdMeta = const VerificationMeta('bankId');
+  @override
+  late final GeneratedColumn<String> bankId = GeneratedColumn<String>(
+    'bank_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES voice_banks (id)',
+    ),
+  );
+  static const VerificationMeta _narratorVoiceAssetIdMeta =
+      const VerificationMeta('narratorVoiceAssetId');
+  @override
+  late final GeneratedColumn<String> narratorVoiceAssetId =
+      GeneratedColumn<String>(
+        'narrator_voice_asset_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _dialogueVoiceAssetIdMeta =
+      const VerificationMeta('dialogueVoiceAssetId');
+  @override
+  late final GeneratedColumn<String> dialogueVoiceAssetId =
+      GeneratedColumn<String>(
+        'dialogue_voice_asset_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _readerThemeMeta = const VerificationMeta(
+    'readerTheme',
+  );
+  @override
+  late final GeneratedColumn<String> readerTheme = GeneratedColumn<String>(
+    'reader_theme',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('dark'),
+  );
+  static const VerificationMeta _fontSizeMeta = const VerificationMeta(
+    'fontSize',
+  );
+  @override
+  late final GeneratedColumn<double> fontSize = GeneratedColumn<double>(
+    'font_size',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(20.0),
+  );
+  static const VerificationMeta _lineHeightMeta = const VerificationMeta(
+    'lineHeight',
+  );
+  @override
+  late final GeneratedColumn<double> lineHeight = GeneratedColumn<double>(
+    'line_height',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1.75),
+  );
+  static const VerificationMeta _autoTurnPageMeta = const VerificationMeta(
+    'autoTurnPage',
+  );
+  @override
+  late final GeneratedColumn<bool> autoTurnPage = GeneratedColumn<bool>(
+    'auto_turn_page',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("auto_turn_page" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _autoAdvanceChaptersMeta =
+      const VerificationMeta('autoAdvanceChapters');
+  @override
+  late final GeneratedColumn<bool> autoAdvanceChapters = GeneratedColumn<bool>(
+    'auto_advance_chapters',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("auto_advance_chapters" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _autoSliceLongSegmentsMeta =
+      const VerificationMeta('autoSliceLongSegments');
+  @override
+  late final GeneratedColumn<bool> autoSliceLongSegments =
+      GeneratedColumn<bool>(
+        'auto_slice_long_segments',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("auto_slice_long_segments" IN (0, 1))',
+        ),
+        defaultValue: const Constant(true),
+      );
+  static const VerificationMeta _sliceOnlyAtPunctuationMeta =
+      const VerificationMeta('sliceOnlyAtPunctuation');
+  @override
+  late final GeneratedColumn<bool> sliceOnlyAtPunctuation =
+      GeneratedColumn<bool>(
+        'slice_only_at_punctuation',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("slice_only_at_punctuation" IN (0, 1))',
+        ),
+        defaultValue: const Constant(true),
+      );
+  static const VerificationMeta _maxSliceCharsMeta = const VerificationMeta(
+    'maxSliceChars',
+  );
+  @override
+  late final GeneratedColumn<int> maxSliceChars = GeneratedColumn<int>(
+    'max_slice_chars',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(50),
+  );
+  static const VerificationMeta _prefetchSegmentsMeta = const VerificationMeta(
+    'prefetchSegments',
+  );
+  @override
+  late final GeneratedColumn<int> prefetchSegments = GeneratedColumn<int>(
+    'prefetch_segments',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(5),
+  );
+  static const VerificationMeta _overwriteCacheWhilePlayingMeta =
+      const VerificationMeta('overwriteCacheWhilePlaying');
+  @override
+  late final GeneratedColumn<bool> overwriteCacheWhilePlaying =
+      GeneratedColumn<bool>(
+        'overwrite_cache_while_playing',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("overwrite_cache_while_playing" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _skipPunctuationOnlySegmentsMeta =
+      const VerificationMeta('skipPunctuationOnlySegments');
+  @override
+  late final GeneratedColumn<bool> skipPunctuationOnlySegments =
+      GeneratedColumn<bool>(
+        'skip_punctuation_only_segments',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("skip_punctuation_only_segments" IN (0, 1))',
+        ),
+        defaultValue: const Constant(true),
+      );
+  static const VerificationMeta _cacheCurrentColorMeta = const VerificationMeta(
+    'cacheCurrentColor',
+  );
+  @override
+  late final GeneratedColumn<String> cacheCurrentColor =
+      GeneratedColumn<String>(
+        'cache_current_color',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('#2F6B54'),
+      );
+  static const VerificationMeta _cacheStaleColorMeta = const VerificationMeta(
+    'cacheStaleColor',
+  );
+  @override
+  late final GeneratedColumn<String> cacheStaleColor = GeneratedColumn<String>(
+    'cache_stale_color',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('#7A5A2A'),
+  );
+  static const VerificationMeta _cacheHighlightOpacityMeta =
+      const VerificationMeta('cacheHighlightOpacity');
+  @override
+  late final GeneratedColumn<double> cacheHighlightOpacity =
+      GeneratedColumn<double>(
+        'cache_highlight_opacity',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0.12),
+      );
+  static const VerificationMeta _currentGlobalIndexMeta =
+      const VerificationMeta('currentGlobalIndex');
+  @override
+  late final GeneratedColumn<int> currentGlobalIndex = GeneratedColumn<int>(
+    'current_global_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _folderSlugMeta = const VerificationMeta(
+    'folderSlug',
+  );
+  @override
+  late final GeneratedColumn<String> folderSlug = GeneratedColumn<String>(
+    'folder_slug',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    bankId,
+    narratorVoiceAssetId,
+    dialogueVoiceAssetId,
+    readerTheme,
+    fontSize,
+    lineHeight,
+    autoTurnPage,
+    autoAdvanceChapters,
+    autoSliceLongSegments,
+    sliceOnlyAtPunctuation,
+    maxSliceChars,
+    prefetchSegments,
+    overwriteCacheWhilePlaying,
+    skipPunctuationOnlySegments,
+    cacheCurrentColor,
+    cacheStaleColor,
+    cacheHighlightOpacity,
+    currentGlobalIndex,
+    createdAt,
+    updatedAt,
+    folderSlug,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'novel_projects';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NovelProject> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('bank_id')) {
+      context.handle(
+        _bankIdMeta,
+        bankId.isAcceptableOrUnknown(data['bank_id']!, _bankIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bankIdMeta);
+    }
+    if (data.containsKey('narrator_voice_asset_id')) {
+      context.handle(
+        _narratorVoiceAssetIdMeta,
+        narratorVoiceAssetId.isAcceptableOrUnknown(
+          data['narrator_voice_asset_id']!,
+          _narratorVoiceAssetIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('dialogue_voice_asset_id')) {
+      context.handle(
+        _dialogueVoiceAssetIdMeta,
+        dialogueVoiceAssetId.isAcceptableOrUnknown(
+          data['dialogue_voice_asset_id']!,
+          _dialogueVoiceAssetIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reader_theme')) {
+      context.handle(
+        _readerThemeMeta,
+        readerTheme.isAcceptableOrUnknown(
+          data['reader_theme']!,
+          _readerThemeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('font_size')) {
+      context.handle(
+        _fontSizeMeta,
+        fontSize.isAcceptableOrUnknown(data['font_size']!, _fontSizeMeta),
+      );
+    }
+    if (data.containsKey('line_height')) {
+      context.handle(
+        _lineHeightMeta,
+        lineHeight.isAcceptableOrUnknown(data['line_height']!, _lineHeightMeta),
+      );
+    }
+    if (data.containsKey('auto_turn_page')) {
+      context.handle(
+        _autoTurnPageMeta,
+        autoTurnPage.isAcceptableOrUnknown(
+          data['auto_turn_page']!,
+          _autoTurnPageMeta,
+        ),
+      );
+    }
+    if (data.containsKey('auto_advance_chapters')) {
+      context.handle(
+        _autoAdvanceChaptersMeta,
+        autoAdvanceChapters.isAcceptableOrUnknown(
+          data['auto_advance_chapters']!,
+          _autoAdvanceChaptersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('auto_slice_long_segments')) {
+      context.handle(
+        _autoSliceLongSegmentsMeta,
+        autoSliceLongSegments.isAcceptableOrUnknown(
+          data['auto_slice_long_segments']!,
+          _autoSliceLongSegmentsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('slice_only_at_punctuation')) {
+      context.handle(
+        _sliceOnlyAtPunctuationMeta,
+        sliceOnlyAtPunctuation.isAcceptableOrUnknown(
+          data['slice_only_at_punctuation']!,
+          _sliceOnlyAtPunctuationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('max_slice_chars')) {
+      context.handle(
+        _maxSliceCharsMeta,
+        maxSliceChars.isAcceptableOrUnknown(
+          data['max_slice_chars']!,
+          _maxSliceCharsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('prefetch_segments')) {
+      context.handle(
+        _prefetchSegmentsMeta,
+        prefetchSegments.isAcceptableOrUnknown(
+          data['prefetch_segments']!,
+          _prefetchSegmentsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('overwrite_cache_while_playing')) {
+      context.handle(
+        _overwriteCacheWhilePlayingMeta,
+        overwriteCacheWhilePlaying.isAcceptableOrUnknown(
+          data['overwrite_cache_while_playing']!,
+          _overwriteCacheWhilePlayingMeta,
+        ),
+      );
+    }
+    if (data.containsKey('skip_punctuation_only_segments')) {
+      context.handle(
+        _skipPunctuationOnlySegmentsMeta,
+        skipPunctuationOnlySegments.isAcceptableOrUnknown(
+          data['skip_punctuation_only_segments']!,
+          _skipPunctuationOnlySegmentsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cache_current_color')) {
+      context.handle(
+        _cacheCurrentColorMeta,
+        cacheCurrentColor.isAcceptableOrUnknown(
+          data['cache_current_color']!,
+          _cacheCurrentColorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cache_stale_color')) {
+      context.handle(
+        _cacheStaleColorMeta,
+        cacheStaleColor.isAcceptableOrUnknown(
+          data['cache_stale_color']!,
+          _cacheStaleColorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cache_highlight_opacity')) {
+      context.handle(
+        _cacheHighlightOpacityMeta,
+        cacheHighlightOpacity.isAcceptableOrUnknown(
+          data['cache_highlight_opacity']!,
+          _cacheHighlightOpacityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('current_global_index')) {
+      context.handle(
+        _currentGlobalIndexMeta,
+        currentGlobalIndex.isAcceptableOrUnknown(
+          data['current_global_index']!,
+          _currentGlobalIndexMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('folder_slug')) {
+      context.handle(
+        _folderSlugMeta,
+        folderSlug.isAcceptableOrUnknown(data['folder_slug']!, _folderSlugMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NovelProject map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NovelProject(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      bankId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank_id'],
+      )!,
+      narratorVoiceAssetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}narrator_voice_asset_id'],
+      ),
+      dialogueVoiceAssetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dialogue_voice_asset_id'],
+      ),
+      readerTheme: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reader_theme'],
+      )!,
+      fontSize: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}font_size'],
+      )!,
+      lineHeight: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}line_height'],
+      )!,
+      autoTurnPage: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}auto_turn_page'],
+      )!,
+      autoAdvanceChapters: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}auto_advance_chapters'],
+      )!,
+      autoSliceLongSegments: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}auto_slice_long_segments'],
+      )!,
+      sliceOnlyAtPunctuation: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}slice_only_at_punctuation'],
+      )!,
+      maxSliceChars: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}max_slice_chars'],
+      )!,
+      prefetchSegments: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}prefetch_segments'],
+      )!,
+      overwriteCacheWhilePlaying: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}overwrite_cache_while_playing'],
+      )!,
+      skipPunctuationOnlySegments: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}skip_punctuation_only_segments'],
+      )!,
+      cacheCurrentColor: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cache_current_color'],
+      )!,
+      cacheStaleColor: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cache_stale_color'],
+      )!,
+      cacheHighlightOpacity: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cache_highlight_opacity'],
+      )!,
+      currentGlobalIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}current_global_index'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      folderSlug: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}folder_slug'],
+      ),
+    );
+  }
+
+  @override
+  $NovelProjectsTable createAlias(String alias) {
+    return $NovelProjectsTable(attachedDatabase, alias);
+  }
+}
+
+class NovelProject extends DataClass implements Insertable<NovelProject> {
+  final String id;
+  final String name;
+  final String bankId;
+  final String? narratorVoiceAssetId;
+  final String? dialogueVoiceAssetId;
+  final String readerTheme;
+  final double fontSize;
+  final double lineHeight;
+  final bool autoTurnPage;
+  final bool autoAdvanceChapters;
+  final bool autoSliceLongSegments;
+  final bool sliceOnlyAtPunctuation;
+  final int maxSliceChars;
+  final int prefetchSegments;
+  final bool overwriteCacheWhilePlaying;
+  final bool skipPunctuationOnlySegments;
+  final String cacheCurrentColor;
+  final String cacheStaleColor;
+  final double cacheHighlightOpacity;
+  final int currentGlobalIndex;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? folderSlug;
+  const NovelProject({
+    required this.id,
+    required this.name,
+    required this.bankId,
+    this.narratorVoiceAssetId,
+    this.dialogueVoiceAssetId,
+    required this.readerTheme,
+    required this.fontSize,
+    required this.lineHeight,
+    required this.autoTurnPage,
+    required this.autoAdvanceChapters,
+    required this.autoSliceLongSegments,
+    required this.sliceOnlyAtPunctuation,
+    required this.maxSliceChars,
+    required this.prefetchSegments,
+    required this.overwriteCacheWhilePlaying,
+    required this.skipPunctuationOnlySegments,
+    required this.cacheCurrentColor,
+    required this.cacheStaleColor,
+    required this.cacheHighlightOpacity,
+    required this.currentGlobalIndex,
+    required this.createdAt,
+    required this.updatedAt,
+    this.folderSlug,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['bank_id'] = Variable<String>(bankId);
+    if (!nullToAbsent || narratorVoiceAssetId != null) {
+      map['narrator_voice_asset_id'] = Variable<String>(narratorVoiceAssetId);
+    }
+    if (!nullToAbsent || dialogueVoiceAssetId != null) {
+      map['dialogue_voice_asset_id'] = Variable<String>(dialogueVoiceAssetId);
+    }
+    map['reader_theme'] = Variable<String>(readerTheme);
+    map['font_size'] = Variable<double>(fontSize);
+    map['line_height'] = Variable<double>(lineHeight);
+    map['auto_turn_page'] = Variable<bool>(autoTurnPage);
+    map['auto_advance_chapters'] = Variable<bool>(autoAdvanceChapters);
+    map['auto_slice_long_segments'] = Variable<bool>(autoSliceLongSegments);
+    map['slice_only_at_punctuation'] = Variable<bool>(sliceOnlyAtPunctuation);
+    map['max_slice_chars'] = Variable<int>(maxSliceChars);
+    map['prefetch_segments'] = Variable<int>(prefetchSegments);
+    map['overwrite_cache_while_playing'] = Variable<bool>(
+      overwriteCacheWhilePlaying,
+    );
+    map['skip_punctuation_only_segments'] = Variable<bool>(
+      skipPunctuationOnlySegments,
+    );
+    map['cache_current_color'] = Variable<String>(cacheCurrentColor);
+    map['cache_stale_color'] = Variable<String>(cacheStaleColor);
+    map['cache_highlight_opacity'] = Variable<double>(cacheHighlightOpacity);
+    map['current_global_index'] = Variable<int>(currentGlobalIndex);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || folderSlug != null) {
+      map['folder_slug'] = Variable<String>(folderSlug);
+    }
+    return map;
+  }
+
+  NovelProjectsCompanion toCompanion(bool nullToAbsent) {
+    return NovelProjectsCompanion(
+      id: Value(id),
+      name: Value(name),
+      bankId: Value(bankId),
+      narratorVoiceAssetId: narratorVoiceAssetId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(narratorVoiceAssetId),
+      dialogueVoiceAssetId: dialogueVoiceAssetId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dialogueVoiceAssetId),
+      readerTheme: Value(readerTheme),
+      fontSize: Value(fontSize),
+      lineHeight: Value(lineHeight),
+      autoTurnPage: Value(autoTurnPage),
+      autoAdvanceChapters: Value(autoAdvanceChapters),
+      autoSliceLongSegments: Value(autoSliceLongSegments),
+      sliceOnlyAtPunctuation: Value(sliceOnlyAtPunctuation),
+      maxSliceChars: Value(maxSliceChars),
+      prefetchSegments: Value(prefetchSegments),
+      overwriteCacheWhilePlaying: Value(overwriteCacheWhilePlaying),
+      skipPunctuationOnlySegments: Value(skipPunctuationOnlySegments),
+      cacheCurrentColor: Value(cacheCurrentColor),
+      cacheStaleColor: Value(cacheStaleColor),
+      cacheHighlightOpacity: Value(cacheHighlightOpacity),
+      currentGlobalIndex: Value(currentGlobalIndex),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      folderSlug: folderSlug == null && nullToAbsent
+          ? const Value.absent()
+          : Value(folderSlug),
+    );
+  }
+
+  factory NovelProject.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NovelProject(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      bankId: serializer.fromJson<String>(json['bankId']),
+      narratorVoiceAssetId: serializer.fromJson<String?>(
+        json['narratorVoiceAssetId'],
+      ),
+      dialogueVoiceAssetId: serializer.fromJson<String?>(
+        json['dialogueVoiceAssetId'],
+      ),
+      readerTheme: serializer.fromJson<String>(json['readerTheme']),
+      fontSize: serializer.fromJson<double>(json['fontSize']),
+      lineHeight: serializer.fromJson<double>(json['lineHeight']),
+      autoTurnPage: serializer.fromJson<bool>(json['autoTurnPage']),
+      autoAdvanceChapters: serializer.fromJson<bool>(
+        json['autoAdvanceChapters'],
+      ),
+      autoSliceLongSegments: serializer.fromJson<bool>(
+        json['autoSliceLongSegments'],
+      ),
+      sliceOnlyAtPunctuation: serializer.fromJson<bool>(
+        json['sliceOnlyAtPunctuation'],
+      ),
+      maxSliceChars: serializer.fromJson<int>(json['maxSliceChars']),
+      prefetchSegments: serializer.fromJson<int>(json['prefetchSegments']),
+      overwriteCacheWhilePlaying: serializer.fromJson<bool>(
+        json['overwriteCacheWhilePlaying'],
+      ),
+      skipPunctuationOnlySegments: serializer.fromJson<bool>(
+        json['skipPunctuationOnlySegments'],
+      ),
+      cacheCurrentColor: serializer.fromJson<String>(json['cacheCurrentColor']),
+      cacheStaleColor: serializer.fromJson<String>(json['cacheStaleColor']),
+      cacheHighlightOpacity: serializer.fromJson<double>(
+        json['cacheHighlightOpacity'],
+      ),
+      currentGlobalIndex: serializer.fromJson<int>(json['currentGlobalIndex']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      folderSlug: serializer.fromJson<String?>(json['folderSlug']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'bankId': serializer.toJson<String>(bankId),
+      'narratorVoiceAssetId': serializer.toJson<String?>(narratorVoiceAssetId),
+      'dialogueVoiceAssetId': serializer.toJson<String?>(dialogueVoiceAssetId),
+      'readerTheme': serializer.toJson<String>(readerTheme),
+      'fontSize': serializer.toJson<double>(fontSize),
+      'lineHeight': serializer.toJson<double>(lineHeight),
+      'autoTurnPage': serializer.toJson<bool>(autoTurnPage),
+      'autoAdvanceChapters': serializer.toJson<bool>(autoAdvanceChapters),
+      'autoSliceLongSegments': serializer.toJson<bool>(autoSliceLongSegments),
+      'sliceOnlyAtPunctuation': serializer.toJson<bool>(sliceOnlyAtPunctuation),
+      'maxSliceChars': serializer.toJson<int>(maxSliceChars),
+      'prefetchSegments': serializer.toJson<int>(prefetchSegments),
+      'overwriteCacheWhilePlaying': serializer.toJson<bool>(
+        overwriteCacheWhilePlaying,
+      ),
+      'skipPunctuationOnlySegments': serializer.toJson<bool>(
+        skipPunctuationOnlySegments,
+      ),
+      'cacheCurrentColor': serializer.toJson<String>(cacheCurrentColor),
+      'cacheStaleColor': serializer.toJson<String>(cacheStaleColor),
+      'cacheHighlightOpacity': serializer.toJson<double>(cacheHighlightOpacity),
+      'currentGlobalIndex': serializer.toJson<int>(currentGlobalIndex),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'folderSlug': serializer.toJson<String?>(folderSlug),
+    };
+  }
+
+  NovelProject copyWith({
+    String? id,
+    String? name,
+    String? bankId,
+    Value<String?> narratorVoiceAssetId = const Value.absent(),
+    Value<String?> dialogueVoiceAssetId = const Value.absent(),
+    String? readerTheme,
+    double? fontSize,
+    double? lineHeight,
+    bool? autoTurnPage,
+    bool? autoAdvanceChapters,
+    bool? autoSliceLongSegments,
+    bool? sliceOnlyAtPunctuation,
+    int? maxSliceChars,
+    int? prefetchSegments,
+    bool? overwriteCacheWhilePlaying,
+    bool? skipPunctuationOnlySegments,
+    String? cacheCurrentColor,
+    String? cacheStaleColor,
+    double? cacheHighlightOpacity,
+    int? currentGlobalIndex,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<String?> folderSlug = const Value.absent(),
+  }) => NovelProject(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    bankId: bankId ?? this.bankId,
+    narratorVoiceAssetId: narratorVoiceAssetId.present
+        ? narratorVoiceAssetId.value
+        : this.narratorVoiceAssetId,
+    dialogueVoiceAssetId: dialogueVoiceAssetId.present
+        ? dialogueVoiceAssetId.value
+        : this.dialogueVoiceAssetId,
+    readerTheme: readerTheme ?? this.readerTheme,
+    fontSize: fontSize ?? this.fontSize,
+    lineHeight: lineHeight ?? this.lineHeight,
+    autoTurnPage: autoTurnPage ?? this.autoTurnPage,
+    autoAdvanceChapters: autoAdvanceChapters ?? this.autoAdvanceChapters,
+    autoSliceLongSegments: autoSliceLongSegments ?? this.autoSliceLongSegments,
+    sliceOnlyAtPunctuation:
+        sliceOnlyAtPunctuation ?? this.sliceOnlyAtPunctuation,
+    maxSliceChars: maxSliceChars ?? this.maxSliceChars,
+    prefetchSegments: prefetchSegments ?? this.prefetchSegments,
+    overwriteCacheWhilePlaying:
+        overwriteCacheWhilePlaying ?? this.overwriteCacheWhilePlaying,
+    skipPunctuationOnlySegments:
+        skipPunctuationOnlySegments ?? this.skipPunctuationOnlySegments,
+    cacheCurrentColor: cacheCurrentColor ?? this.cacheCurrentColor,
+    cacheStaleColor: cacheStaleColor ?? this.cacheStaleColor,
+    cacheHighlightOpacity: cacheHighlightOpacity ?? this.cacheHighlightOpacity,
+    currentGlobalIndex: currentGlobalIndex ?? this.currentGlobalIndex,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    folderSlug: folderSlug.present ? folderSlug.value : this.folderSlug,
+  );
+  NovelProject copyWithCompanion(NovelProjectsCompanion data) {
+    return NovelProject(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      bankId: data.bankId.present ? data.bankId.value : this.bankId,
+      narratorVoiceAssetId: data.narratorVoiceAssetId.present
+          ? data.narratorVoiceAssetId.value
+          : this.narratorVoiceAssetId,
+      dialogueVoiceAssetId: data.dialogueVoiceAssetId.present
+          ? data.dialogueVoiceAssetId.value
+          : this.dialogueVoiceAssetId,
+      readerTheme: data.readerTheme.present
+          ? data.readerTheme.value
+          : this.readerTheme,
+      fontSize: data.fontSize.present ? data.fontSize.value : this.fontSize,
+      lineHeight: data.lineHeight.present
+          ? data.lineHeight.value
+          : this.lineHeight,
+      autoTurnPage: data.autoTurnPage.present
+          ? data.autoTurnPage.value
+          : this.autoTurnPage,
+      autoAdvanceChapters: data.autoAdvanceChapters.present
+          ? data.autoAdvanceChapters.value
+          : this.autoAdvanceChapters,
+      autoSliceLongSegments: data.autoSliceLongSegments.present
+          ? data.autoSliceLongSegments.value
+          : this.autoSliceLongSegments,
+      sliceOnlyAtPunctuation: data.sliceOnlyAtPunctuation.present
+          ? data.sliceOnlyAtPunctuation.value
+          : this.sliceOnlyAtPunctuation,
+      maxSliceChars: data.maxSliceChars.present
+          ? data.maxSliceChars.value
+          : this.maxSliceChars,
+      prefetchSegments: data.prefetchSegments.present
+          ? data.prefetchSegments.value
+          : this.prefetchSegments,
+      overwriteCacheWhilePlaying: data.overwriteCacheWhilePlaying.present
+          ? data.overwriteCacheWhilePlaying.value
+          : this.overwriteCacheWhilePlaying,
+      skipPunctuationOnlySegments: data.skipPunctuationOnlySegments.present
+          ? data.skipPunctuationOnlySegments.value
+          : this.skipPunctuationOnlySegments,
+      cacheCurrentColor: data.cacheCurrentColor.present
+          ? data.cacheCurrentColor.value
+          : this.cacheCurrentColor,
+      cacheStaleColor: data.cacheStaleColor.present
+          ? data.cacheStaleColor.value
+          : this.cacheStaleColor,
+      cacheHighlightOpacity: data.cacheHighlightOpacity.present
+          ? data.cacheHighlightOpacity.value
+          : this.cacheHighlightOpacity,
+      currentGlobalIndex: data.currentGlobalIndex.present
+          ? data.currentGlobalIndex.value
+          : this.currentGlobalIndex,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      folderSlug: data.folderSlug.present
+          ? data.folderSlug.value
+          : this.folderSlug,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NovelProject(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('bankId: $bankId, ')
+          ..write('narratorVoiceAssetId: $narratorVoiceAssetId, ')
+          ..write('dialogueVoiceAssetId: $dialogueVoiceAssetId, ')
+          ..write('readerTheme: $readerTheme, ')
+          ..write('fontSize: $fontSize, ')
+          ..write('lineHeight: $lineHeight, ')
+          ..write('autoTurnPage: $autoTurnPage, ')
+          ..write('autoAdvanceChapters: $autoAdvanceChapters, ')
+          ..write('autoSliceLongSegments: $autoSliceLongSegments, ')
+          ..write('sliceOnlyAtPunctuation: $sliceOnlyAtPunctuation, ')
+          ..write('maxSliceChars: $maxSliceChars, ')
+          ..write('prefetchSegments: $prefetchSegments, ')
+          ..write('overwriteCacheWhilePlaying: $overwriteCacheWhilePlaying, ')
+          ..write('skipPunctuationOnlySegments: $skipPunctuationOnlySegments, ')
+          ..write('cacheCurrentColor: $cacheCurrentColor, ')
+          ..write('cacheStaleColor: $cacheStaleColor, ')
+          ..write('cacheHighlightOpacity: $cacheHighlightOpacity, ')
+          ..write('currentGlobalIndex: $currentGlobalIndex, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('folderSlug: $folderSlug')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    name,
+    bankId,
+    narratorVoiceAssetId,
+    dialogueVoiceAssetId,
+    readerTheme,
+    fontSize,
+    lineHeight,
+    autoTurnPage,
+    autoAdvanceChapters,
+    autoSliceLongSegments,
+    sliceOnlyAtPunctuation,
+    maxSliceChars,
+    prefetchSegments,
+    overwriteCacheWhilePlaying,
+    skipPunctuationOnlySegments,
+    cacheCurrentColor,
+    cacheStaleColor,
+    cacheHighlightOpacity,
+    currentGlobalIndex,
+    createdAt,
+    updatedAt,
+    folderSlug,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NovelProject &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.bankId == this.bankId &&
+          other.narratorVoiceAssetId == this.narratorVoiceAssetId &&
+          other.dialogueVoiceAssetId == this.dialogueVoiceAssetId &&
+          other.readerTheme == this.readerTheme &&
+          other.fontSize == this.fontSize &&
+          other.lineHeight == this.lineHeight &&
+          other.autoTurnPage == this.autoTurnPage &&
+          other.autoAdvanceChapters == this.autoAdvanceChapters &&
+          other.autoSliceLongSegments == this.autoSliceLongSegments &&
+          other.sliceOnlyAtPunctuation == this.sliceOnlyAtPunctuation &&
+          other.maxSliceChars == this.maxSliceChars &&
+          other.prefetchSegments == this.prefetchSegments &&
+          other.overwriteCacheWhilePlaying == this.overwriteCacheWhilePlaying &&
+          other.skipPunctuationOnlySegments ==
+              this.skipPunctuationOnlySegments &&
+          other.cacheCurrentColor == this.cacheCurrentColor &&
+          other.cacheStaleColor == this.cacheStaleColor &&
+          other.cacheHighlightOpacity == this.cacheHighlightOpacity &&
+          other.currentGlobalIndex == this.currentGlobalIndex &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.folderSlug == this.folderSlug);
+}
+
+class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> bankId;
+  final Value<String?> narratorVoiceAssetId;
+  final Value<String?> dialogueVoiceAssetId;
+  final Value<String> readerTheme;
+  final Value<double> fontSize;
+  final Value<double> lineHeight;
+  final Value<bool> autoTurnPage;
+  final Value<bool> autoAdvanceChapters;
+  final Value<bool> autoSliceLongSegments;
+  final Value<bool> sliceOnlyAtPunctuation;
+  final Value<int> maxSliceChars;
+  final Value<int> prefetchSegments;
+  final Value<bool> overwriteCacheWhilePlaying;
+  final Value<bool> skipPunctuationOnlySegments;
+  final Value<String> cacheCurrentColor;
+  final Value<String> cacheStaleColor;
+  final Value<double> cacheHighlightOpacity;
+  final Value<int> currentGlobalIndex;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> folderSlug;
+  final Value<int> rowid;
+  const NovelProjectsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.bankId = const Value.absent(),
+    this.narratorVoiceAssetId = const Value.absent(),
+    this.dialogueVoiceAssetId = const Value.absent(),
+    this.readerTheme = const Value.absent(),
+    this.fontSize = const Value.absent(),
+    this.lineHeight = const Value.absent(),
+    this.autoTurnPage = const Value.absent(),
+    this.autoAdvanceChapters = const Value.absent(),
+    this.autoSliceLongSegments = const Value.absent(),
+    this.sliceOnlyAtPunctuation = const Value.absent(),
+    this.maxSliceChars = const Value.absent(),
+    this.prefetchSegments = const Value.absent(),
+    this.overwriteCacheWhilePlaying = const Value.absent(),
+    this.skipPunctuationOnlySegments = const Value.absent(),
+    this.cacheCurrentColor = const Value.absent(),
+    this.cacheStaleColor = const Value.absent(),
+    this.cacheHighlightOpacity = const Value.absent(),
+    this.currentGlobalIndex = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.folderSlug = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NovelProjectsCompanion.insert({
+    required String id,
+    required String name,
+    required String bankId,
+    this.narratorVoiceAssetId = const Value.absent(),
+    this.dialogueVoiceAssetId = const Value.absent(),
+    this.readerTheme = const Value.absent(),
+    this.fontSize = const Value.absent(),
+    this.lineHeight = const Value.absent(),
+    this.autoTurnPage = const Value.absent(),
+    this.autoAdvanceChapters = const Value.absent(),
+    this.autoSliceLongSegments = const Value.absent(),
+    this.sliceOnlyAtPunctuation = const Value.absent(),
+    this.maxSliceChars = const Value.absent(),
+    this.prefetchSegments = const Value.absent(),
+    this.overwriteCacheWhilePlaying = const Value.absent(),
+    this.skipPunctuationOnlySegments = const Value.absent(),
+    this.cacheCurrentColor = const Value.absent(),
+    this.cacheStaleColor = const Value.absent(),
+    this.cacheHighlightOpacity = const Value.absent(),
+    this.currentGlobalIndex = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.folderSlug = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       bankId = Value(bankId),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<NovelProject> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? bankId,
+    Expression<String>? narratorVoiceAssetId,
+    Expression<String>? dialogueVoiceAssetId,
+    Expression<String>? readerTheme,
+    Expression<double>? fontSize,
+    Expression<double>? lineHeight,
+    Expression<bool>? autoTurnPage,
+    Expression<bool>? autoAdvanceChapters,
+    Expression<bool>? autoSliceLongSegments,
+    Expression<bool>? sliceOnlyAtPunctuation,
+    Expression<int>? maxSliceChars,
+    Expression<int>? prefetchSegments,
+    Expression<bool>? overwriteCacheWhilePlaying,
+    Expression<bool>? skipPunctuationOnlySegments,
+    Expression<String>? cacheCurrentColor,
+    Expression<String>? cacheStaleColor,
+    Expression<double>? cacheHighlightOpacity,
+    Expression<int>? currentGlobalIndex,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? folderSlug,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (bankId != null) 'bank_id': bankId,
+      if (narratorVoiceAssetId != null)
+        'narrator_voice_asset_id': narratorVoiceAssetId,
+      if (dialogueVoiceAssetId != null)
+        'dialogue_voice_asset_id': dialogueVoiceAssetId,
+      if (readerTheme != null) 'reader_theme': readerTheme,
+      if (fontSize != null) 'font_size': fontSize,
+      if (lineHeight != null) 'line_height': lineHeight,
+      if (autoTurnPage != null) 'auto_turn_page': autoTurnPage,
+      if (autoAdvanceChapters != null)
+        'auto_advance_chapters': autoAdvanceChapters,
+      if (autoSliceLongSegments != null)
+        'auto_slice_long_segments': autoSliceLongSegments,
+      if (sliceOnlyAtPunctuation != null)
+        'slice_only_at_punctuation': sliceOnlyAtPunctuation,
+      if (maxSliceChars != null) 'max_slice_chars': maxSliceChars,
+      if (prefetchSegments != null) 'prefetch_segments': prefetchSegments,
+      if (overwriteCacheWhilePlaying != null)
+        'overwrite_cache_while_playing': overwriteCacheWhilePlaying,
+      if (skipPunctuationOnlySegments != null)
+        'skip_punctuation_only_segments': skipPunctuationOnlySegments,
+      if (cacheCurrentColor != null) 'cache_current_color': cacheCurrentColor,
+      if (cacheStaleColor != null) 'cache_stale_color': cacheStaleColor,
+      if (cacheHighlightOpacity != null)
+        'cache_highlight_opacity': cacheHighlightOpacity,
+      if (currentGlobalIndex != null)
+        'current_global_index': currentGlobalIndex,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (folderSlug != null) 'folder_slug': folderSlug,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NovelProjectsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? bankId,
+    Value<String?>? narratorVoiceAssetId,
+    Value<String?>? dialogueVoiceAssetId,
+    Value<String>? readerTheme,
+    Value<double>? fontSize,
+    Value<double>? lineHeight,
+    Value<bool>? autoTurnPage,
+    Value<bool>? autoAdvanceChapters,
+    Value<bool>? autoSliceLongSegments,
+    Value<bool>? sliceOnlyAtPunctuation,
+    Value<int>? maxSliceChars,
+    Value<int>? prefetchSegments,
+    Value<bool>? overwriteCacheWhilePlaying,
+    Value<bool>? skipPunctuationOnlySegments,
+    Value<String>? cacheCurrentColor,
+    Value<String>? cacheStaleColor,
+    Value<double>? cacheHighlightOpacity,
+    Value<int>? currentGlobalIndex,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String?>? folderSlug,
+    Value<int>? rowid,
+  }) {
+    return NovelProjectsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      bankId: bankId ?? this.bankId,
+      narratorVoiceAssetId: narratorVoiceAssetId ?? this.narratorVoiceAssetId,
+      dialogueVoiceAssetId: dialogueVoiceAssetId ?? this.dialogueVoiceAssetId,
+      readerTheme: readerTheme ?? this.readerTheme,
+      fontSize: fontSize ?? this.fontSize,
+      lineHeight: lineHeight ?? this.lineHeight,
+      autoTurnPage: autoTurnPage ?? this.autoTurnPage,
+      autoAdvanceChapters: autoAdvanceChapters ?? this.autoAdvanceChapters,
+      autoSliceLongSegments:
+          autoSliceLongSegments ?? this.autoSliceLongSegments,
+      sliceOnlyAtPunctuation:
+          sliceOnlyAtPunctuation ?? this.sliceOnlyAtPunctuation,
+      maxSliceChars: maxSliceChars ?? this.maxSliceChars,
+      prefetchSegments: prefetchSegments ?? this.prefetchSegments,
+      overwriteCacheWhilePlaying:
+          overwriteCacheWhilePlaying ?? this.overwriteCacheWhilePlaying,
+      skipPunctuationOnlySegments:
+          skipPunctuationOnlySegments ?? this.skipPunctuationOnlySegments,
+      cacheCurrentColor: cacheCurrentColor ?? this.cacheCurrentColor,
+      cacheStaleColor: cacheStaleColor ?? this.cacheStaleColor,
+      cacheHighlightOpacity:
+          cacheHighlightOpacity ?? this.cacheHighlightOpacity,
+      currentGlobalIndex: currentGlobalIndex ?? this.currentGlobalIndex,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      folderSlug: folderSlug ?? this.folderSlug,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (bankId.present) {
+      map['bank_id'] = Variable<String>(bankId.value);
+    }
+    if (narratorVoiceAssetId.present) {
+      map['narrator_voice_asset_id'] = Variable<String>(
+        narratorVoiceAssetId.value,
+      );
+    }
+    if (dialogueVoiceAssetId.present) {
+      map['dialogue_voice_asset_id'] = Variable<String>(
+        dialogueVoiceAssetId.value,
+      );
+    }
+    if (readerTheme.present) {
+      map['reader_theme'] = Variable<String>(readerTheme.value);
+    }
+    if (fontSize.present) {
+      map['font_size'] = Variable<double>(fontSize.value);
+    }
+    if (lineHeight.present) {
+      map['line_height'] = Variable<double>(lineHeight.value);
+    }
+    if (autoTurnPage.present) {
+      map['auto_turn_page'] = Variable<bool>(autoTurnPage.value);
+    }
+    if (autoAdvanceChapters.present) {
+      map['auto_advance_chapters'] = Variable<bool>(autoAdvanceChapters.value);
+    }
+    if (autoSliceLongSegments.present) {
+      map['auto_slice_long_segments'] = Variable<bool>(
+        autoSliceLongSegments.value,
+      );
+    }
+    if (sliceOnlyAtPunctuation.present) {
+      map['slice_only_at_punctuation'] = Variable<bool>(
+        sliceOnlyAtPunctuation.value,
+      );
+    }
+    if (maxSliceChars.present) {
+      map['max_slice_chars'] = Variable<int>(maxSliceChars.value);
+    }
+    if (prefetchSegments.present) {
+      map['prefetch_segments'] = Variable<int>(prefetchSegments.value);
+    }
+    if (overwriteCacheWhilePlaying.present) {
+      map['overwrite_cache_while_playing'] = Variable<bool>(
+        overwriteCacheWhilePlaying.value,
+      );
+    }
+    if (skipPunctuationOnlySegments.present) {
+      map['skip_punctuation_only_segments'] = Variable<bool>(
+        skipPunctuationOnlySegments.value,
+      );
+    }
+    if (cacheCurrentColor.present) {
+      map['cache_current_color'] = Variable<String>(cacheCurrentColor.value);
+    }
+    if (cacheStaleColor.present) {
+      map['cache_stale_color'] = Variable<String>(cacheStaleColor.value);
+    }
+    if (cacheHighlightOpacity.present) {
+      map['cache_highlight_opacity'] = Variable<double>(
+        cacheHighlightOpacity.value,
+      );
+    }
+    if (currentGlobalIndex.present) {
+      map['current_global_index'] = Variable<int>(currentGlobalIndex.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (folderSlug.present) {
+      map['folder_slug'] = Variable<String>(folderSlug.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NovelProjectsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('bankId: $bankId, ')
+          ..write('narratorVoiceAssetId: $narratorVoiceAssetId, ')
+          ..write('dialogueVoiceAssetId: $dialogueVoiceAssetId, ')
+          ..write('readerTheme: $readerTheme, ')
+          ..write('fontSize: $fontSize, ')
+          ..write('lineHeight: $lineHeight, ')
+          ..write('autoTurnPage: $autoTurnPage, ')
+          ..write('autoAdvanceChapters: $autoAdvanceChapters, ')
+          ..write('autoSliceLongSegments: $autoSliceLongSegments, ')
+          ..write('sliceOnlyAtPunctuation: $sliceOnlyAtPunctuation, ')
+          ..write('maxSliceChars: $maxSliceChars, ')
+          ..write('prefetchSegments: $prefetchSegments, ')
+          ..write('overwriteCacheWhilePlaying: $overwriteCacheWhilePlaying, ')
+          ..write('skipPunctuationOnlySegments: $skipPunctuationOnlySegments, ')
+          ..write('cacheCurrentColor: $cacheCurrentColor, ')
+          ..write('cacheStaleColor: $cacheStaleColor, ')
+          ..write('cacheHighlightOpacity: $cacheHighlightOpacity, ')
+          ..write('currentGlobalIndex: $currentGlobalIndex, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('folderSlug: $folderSlug, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $NovelChaptersTable extends NovelChapters
+    with TableInfo<$NovelChaptersTable, NovelChapter> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NovelChaptersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES novel_projects (id)',
+    ),
+  );
+  static const VerificationMeta _orderIndexMeta = const VerificationMeta(
+    'orderIndex',
+  );
+  @override
+  late final GeneratedColumn<int> orderIndex = GeneratedColumn<int>(
+    'order_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(minTextLength: 1),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourcePathMeta = const VerificationMeta(
+    'sourcePath',
+  );
+  @override
+  late final GeneratedColumn<String> sourcePath = GeneratedColumn<String>(
+    'source_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rawTextMeta = const VerificationMeta(
+    'rawText',
+  );
+  @override
+  late final GeneratedColumn<String> rawText = GeneratedColumn<String>(
+    'raw_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    orderIndex,
+    title,
+    sourcePath,
+    rawText,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'novel_chapters';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NovelChapter> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('order_index')) {
+      context.handle(
+        _orderIndexMeta,
+        orderIndex.isAcceptableOrUnknown(data['order_index']!, _orderIndexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_orderIndexMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('source_path')) {
+      context.handle(
+        _sourcePathMeta,
+        sourcePath.isAcceptableOrUnknown(data['source_path']!, _sourcePathMeta),
+      );
+    }
+    if (data.containsKey('raw_text')) {
+      context.handle(
+        _rawTextMeta,
+        rawText.isAcceptableOrUnknown(data['raw_text']!, _rawTextMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NovelChapter map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NovelChapter(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      orderIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}order_index'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      sourcePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_path'],
+      ),
+      rawText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}raw_text'],
+      )!,
+    );
+  }
+
+  @override
+  $NovelChaptersTable createAlias(String alias) {
+    return $NovelChaptersTable(attachedDatabase, alias);
+  }
+}
+
+class NovelChapter extends DataClass implements Insertable<NovelChapter> {
+  final String id;
+  final String projectId;
+  final int orderIndex;
+  final String title;
+  final String? sourcePath;
+  final String rawText;
+  const NovelChapter({
+    required this.id,
+    required this.projectId,
+    required this.orderIndex,
+    required this.title,
+    this.sourcePath,
+    required this.rawText,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['order_index'] = Variable<int>(orderIndex);
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || sourcePath != null) {
+      map['source_path'] = Variable<String>(sourcePath);
+    }
+    map['raw_text'] = Variable<String>(rawText);
+    return map;
+  }
+
+  NovelChaptersCompanion toCompanion(bool nullToAbsent) {
+    return NovelChaptersCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      orderIndex: Value(orderIndex),
+      title: Value(title),
+      sourcePath: sourcePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourcePath),
+      rawText: Value(rawText),
+    );
+  }
+
+  factory NovelChapter.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NovelChapter(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      orderIndex: serializer.fromJson<int>(json['orderIndex']),
+      title: serializer.fromJson<String>(json['title']),
+      sourcePath: serializer.fromJson<String?>(json['sourcePath']),
+      rawText: serializer.fromJson<String>(json['rawText']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'orderIndex': serializer.toJson<int>(orderIndex),
+      'title': serializer.toJson<String>(title),
+      'sourcePath': serializer.toJson<String?>(sourcePath),
+      'rawText': serializer.toJson<String>(rawText),
+    };
+  }
+
+  NovelChapter copyWith({
+    String? id,
+    String? projectId,
+    int? orderIndex,
+    String? title,
+    Value<String?> sourcePath = const Value.absent(),
+    String? rawText,
+  }) => NovelChapter(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    orderIndex: orderIndex ?? this.orderIndex,
+    title: title ?? this.title,
+    sourcePath: sourcePath.present ? sourcePath.value : this.sourcePath,
+    rawText: rawText ?? this.rawText,
+  );
+  NovelChapter copyWithCompanion(NovelChaptersCompanion data) {
+    return NovelChapter(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      orderIndex: data.orderIndex.present
+          ? data.orderIndex.value
+          : this.orderIndex,
+      title: data.title.present ? data.title.value : this.title,
+      sourcePath: data.sourcePath.present
+          ? data.sourcePath.value
+          : this.sourcePath,
+      rawText: data.rawText.present ? data.rawText.value : this.rawText,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NovelChapter(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('orderIndex: $orderIndex, ')
+          ..write('title: $title, ')
+          ..write('sourcePath: $sourcePath, ')
+          ..write('rawText: $rawText')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, projectId, orderIndex, title, sourcePath, rawText);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NovelChapter &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.orderIndex == this.orderIndex &&
+          other.title == this.title &&
+          other.sourcePath == this.sourcePath &&
+          other.rawText == this.rawText);
+}
+
+class NovelChaptersCompanion extends UpdateCompanion<NovelChapter> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<int> orderIndex;
+  final Value<String> title;
+  final Value<String?> sourcePath;
+  final Value<String> rawText;
+  final Value<int> rowid;
+  const NovelChaptersCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.orderIndex = const Value.absent(),
+    this.title = const Value.absent(),
+    this.sourcePath = const Value.absent(),
+    this.rawText = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NovelChaptersCompanion.insert({
+    required String id,
+    required String projectId,
+    required int orderIndex,
+    required String title,
+    this.sourcePath = const Value.absent(),
+    this.rawText = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       orderIndex = Value(orderIndex),
+       title = Value(title);
+  static Insertable<NovelChapter> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<int>? orderIndex,
+    Expression<String>? title,
+    Expression<String>? sourcePath,
+    Expression<String>? rawText,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (orderIndex != null) 'order_index': orderIndex,
+      if (title != null) 'title': title,
+      if (sourcePath != null) 'source_path': sourcePath,
+      if (rawText != null) 'raw_text': rawText,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NovelChaptersCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<int>? orderIndex,
+    Value<String>? title,
+    Value<String?>? sourcePath,
+    Value<String>? rawText,
+    Value<int>? rowid,
+  }) {
+    return NovelChaptersCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      orderIndex: orderIndex ?? this.orderIndex,
+      title: title ?? this.title,
+      sourcePath: sourcePath ?? this.sourcePath,
+      rawText: rawText ?? this.rawText,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (orderIndex.present) {
+      map['order_index'] = Variable<int>(orderIndex.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (sourcePath.present) {
+      map['source_path'] = Variable<String>(sourcePath.value);
+    }
+    if (rawText.present) {
+      map['raw_text'] = Variable<String>(rawText.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NovelChaptersCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('orderIndex: $orderIndex, ')
+          ..write('title: $title, ')
+          ..write('sourcePath: $sourcePath, ')
+          ..write('rawText: $rawText, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $NovelSegmentsTable extends NovelSegments
+    with TableInfo<$NovelSegmentsTable, NovelSegment> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NovelSegmentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES novel_projects (id)',
+    ),
+  );
+  static const VerificationMeta _chapterIdMeta = const VerificationMeta(
+    'chapterId',
+  );
+  @override
+  late final GeneratedColumn<String> chapterId = GeneratedColumn<String>(
+    'chapter_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES novel_chapters (id)',
+    ),
+  );
+  static const VerificationMeta _globalIndexMeta = const VerificationMeta(
+    'globalIndex',
+  );
+  @override
+  late final GeneratedColumn<int> globalIndex = GeneratedColumn<int>(
+    'global_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _orderIndexMeta = const VerificationMeta(
+    'orderIndex',
+  );
+  @override
+  late final GeneratedColumn<int> orderIndex = GeneratedColumn<int>(
+    'order_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _segmentTextMeta = const VerificationMeta(
+    'segmentText',
+  );
+  @override
+  late final GeneratedColumn<String> segmentText = GeneratedColumn<String>(
+    'segment_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _segmentTypeMeta = const VerificationMeta(
+    'segmentType',
+  );
+  @override
+  late final GeneratedColumn<String> segmentType = GeneratedColumn<String>(
+    'segment_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('narrator'),
+  );
+  static const VerificationMeta _audioPathMeta = const VerificationMeta(
+    'audioPath',
+  );
+  @override
+  late final GeneratedColumn<String> audioPath = GeneratedColumn<String>(
+    'audio_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _audioDurationMeta = const VerificationMeta(
+    'audioDuration',
+  );
+  @override
+  late final GeneratedColumn<double> audioDuration = GeneratedColumn<double>(
+    'audio_duration',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _audioCacheKeyMeta = const VerificationMeta(
+    'audioCacheKey',
+  );
+  @override
+  late final GeneratedColumn<String> audioCacheKey = GeneratedColumn<String>(
+    'audio_cache_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _errorMeta = const VerificationMeta('error');
+  @override
+  late final GeneratedColumn<String> error = GeneratedColumn<String>(
+    'error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _missingMeta = const VerificationMeta(
+    'missing',
+  );
+  @override
+  late final GeneratedColumn<bool> missing = GeneratedColumn<bool>(
+    'missing',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("missing" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    chapterId,
+    globalIndex,
+    orderIndex,
+    segmentText,
+    segmentType,
+    audioPath,
+    audioDuration,
+    audioCacheKey,
+    error,
+    missing,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'novel_segments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NovelSegment> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('chapter_id')) {
+      context.handle(
+        _chapterIdMeta,
+        chapterId.isAcceptableOrUnknown(data['chapter_id']!, _chapterIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chapterIdMeta);
+    }
+    if (data.containsKey('global_index')) {
+      context.handle(
+        _globalIndexMeta,
+        globalIndex.isAcceptableOrUnknown(
+          data['global_index']!,
+          _globalIndexMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_globalIndexMeta);
+    }
+    if (data.containsKey('order_index')) {
+      context.handle(
+        _orderIndexMeta,
+        orderIndex.isAcceptableOrUnknown(data['order_index']!, _orderIndexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_orderIndexMeta);
+    }
+    if (data.containsKey('segment_text')) {
+      context.handle(
+        _segmentTextMeta,
+        segmentText.isAcceptableOrUnknown(
+          data['segment_text']!,
+          _segmentTextMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_segmentTextMeta);
+    }
+    if (data.containsKey('segment_type')) {
+      context.handle(
+        _segmentTypeMeta,
+        segmentType.isAcceptableOrUnknown(
+          data['segment_type']!,
+          _segmentTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('audio_path')) {
+      context.handle(
+        _audioPathMeta,
+        audioPath.isAcceptableOrUnknown(data['audio_path']!, _audioPathMeta),
+      );
+    }
+    if (data.containsKey('audio_duration')) {
+      context.handle(
+        _audioDurationMeta,
+        audioDuration.isAcceptableOrUnknown(
+          data['audio_duration']!,
+          _audioDurationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('audio_cache_key')) {
+      context.handle(
+        _audioCacheKeyMeta,
+        audioCacheKey.isAcceptableOrUnknown(
+          data['audio_cache_key']!,
+          _audioCacheKeyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('error')) {
+      context.handle(
+        _errorMeta,
+        error.isAcceptableOrUnknown(data['error']!, _errorMeta),
+      );
+    }
+    if (data.containsKey('missing')) {
+      context.handle(
+        _missingMeta,
+        missing.isAcceptableOrUnknown(data['missing']!, _missingMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NovelSegment map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NovelSegment(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      chapterId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chapter_id'],
+      )!,
+      globalIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}global_index'],
+      )!,
+      orderIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}order_index'],
+      )!,
+      segmentText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}segment_text'],
+      )!,
+      segmentType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}segment_type'],
+      )!,
+      audioPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}audio_path'],
+      ),
+      audioDuration: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}audio_duration'],
+      ),
+      audioCacheKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}audio_cache_key'],
+      ),
+      error: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error'],
+      ),
+      missing: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}missing'],
+      )!,
+    );
+  }
+
+  @override
+  $NovelSegmentsTable createAlias(String alias) {
+    return $NovelSegmentsTable(attachedDatabase, alias);
+  }
+}
+
+class NovelSegment extends DataClass implements Insertable<NovelSegment> {
+  final String id;
+  final String projectId;
+  final String chapterId;
+  final int globalIndex;
+  final int orderIndex;
+  final String segmentText;
+  final String segmentType;
+  final String? audioPath;
+  final double? audioDuration;
+  final String? audioCacheKey;
+  final String? error;
+  final bool missing;
+  const NovelSegment({
+    required this.id,
+    required this.projectId,
+    required this.chapterId,
+    required this.globalIndex,
+    required this.orderIndex,
+    required this.segmentText,
+    required this.segmentType,
+    this.audioPath,
+    this.audioDuration,
+    this.audioCacheKey,
+    this.error,
+    required this.missing,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['chapter_id'] = Variable<String>(chapterId);
+    map['global_index'] = Variable<int>(globalIndex);
+    map['order_index'] = Variable<int>(orderIndex);
+    map['segment_text'] = Variable<String>(segmentText);
+    map['segment_type'] = Variable<String>(segmentType);
+    if (!nullToAbsent || audioPath != null) {
+      map['audio_path'] = Variable<String>(audioPath);
+    }
+    if (!nullToAbsent || audioDuration != null) {
+      map['audio_duration'] = Variable<double>(audioDuration);
+    }
+    if (!nullToAbsent || audioCacheKey != null) {
+      map['audio_cache_key'] = Variable<String>(audioCacheKey);
+    }
+    if (!nullToAbsent || error != null) {
+      map['error'] = Variable<String>(error);
+    }
+    map['missing'] = Variable<bool>(missing);
+    return map;
+  }
+
+  NovelSegmentsCompanion toCompanion(bool nullToAbsent) {
+    return NovelSegmentsCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      chapterId: Value(chapterId),
+      globalIndex: Value(globalIndex),
+      orderIndex: Value(orderIndex),
+      segmentText: Value(segmentText),
+      segmentType: Value(segmentType),
+      audioPath: audioPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(audioPath),
+      audioDuration: audioDuration == null && nullToAbsent
+          ? const Value.absent()
+          : Value(audioDuration),
+      audioCacheKey: audioCacheKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(audioCacheKey),
+      error: error == null && nullToAbsent
+          ? const Value.absent()
+          : Value(error),
+      missing: Value(missing),
+    );
+  }
+
+  factory NovelSegment.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NovelSegment(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      chapterId: serializer.fromJson<String>(json['chapterId']),
+      globalIndex: serializer.fromJson<int>(json['globalIndex']),
+      orderIndex: serializer.fromJson<int>(json['orderIndex']),
+      segmentText: serializer.fromJson<String>(json['segmentText']),
+      segmentType: serializer.fromJson<String>(json['segmentType']),
+      audioPath: serializer.fromJson<String?>(json['audioPath']),
+      audioDuration: serializer.fromJson<double?>(json['audioDuration']),
+      audioCacheKey: serializer.fromJson<String?>(json['audioCacheKey']),
+      error: serializer.fromJson<String?>(json['error']),
+      missing: serializer.fromJson<bool>(json['missing']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'chapterId': serializer.toJson<String>(chapterId),
+      'globalIndex': serializer.toJson<int>(globalIndex),
+      'orderIndex': serializer.toJson<int>(orderIndex),
+      'segmentText': serializer.toJson<String>(segmentText),
+      'segmentType': serializer.toJson<String>(segmentType),
+      'audioPath': serializer.toJson<String?>(audioPath),
+      'audioDuration': serializer.toJson<double?>(audioDuration),
+      'audioCacheKey': serializer.toJson<String?>(audioCacheKey),
+      'error': serializer.toJson<String?>(error),
+      'missing': serializer.toJson<bool>(missing),
+    };
+  }
+
+  NovelSegment copyWith({
+    String? id,
+    String? projectId,
+    String? chapterId,
+    int? globalIndex,
+    int? orderIndex,
+    String? segmentText,
+    String? segmentType,
+    Value<String?> audioPath = const Value.absent(),
+    Value<double?> audioDuration = const Value.absent(),
+    Value<String?> audioCacheKey = const Value.absent(),
+    Value<String?> error = const Value.absent(),
+    bool? missing,
+  }) => NovelSegment(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    chapterId: chapterId ?? this.chapterId,
+    globalIndex: globalIndex ?? this.globalIndex,
+    orderIndex: orderIndex ?? this.orderIndex,
+    segmentText: segmentText ?? this.segmentText,
+    segmentType: segmentType ?? this.segmentType,
+    audioPath: audioPath.present ? audioPath.value : this.audioPath,
+    audioDuration: audioDuration.present
+        ? audioDuration.value
+        : this.audioDuration,
+    audioCacheKey: audioCacheKey.present
+        ? audioCacheKey.value
+        : this.audioCacheKey,
+    error: error.present ? error.value : this.error,
+    missing: missing ?? this.missing,
+  );
+  NovelSegment copyWithCompanion(NovelSegmentsCompanion data) {
+    return NovelSegment(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      chapterId: data.chapterId.present ? data.chapterId.value : this.chapterId,
+      globalIndex: data.globalIndex.present
+          ? data.globalIndex.value
+          : this.globalIndex,
+      orderIndex: data.orderIndex.present
+          ? data.orderIndex.value
+          : this.orderIndex,
+      segmentText: data.segmentText.present
+          ? data.segmentText.value
+          : this.segmentText,
+      segmentType: data.segmentType.present
+          ? data.segmentType.value
+          : this.segmentType,
+      audioPath: data.audioPath.present ? data.audioPath.value : this.audioPath,
+      audioDuration: data.audioDuration.present
+          ? data.audioDuration.value
+          : this.audioDuration,
+      audioCacheKey: data.audioCacheKey.present
+          ? data.audioCacheKey.value
+          : this.audioCacheKey,
+      error: data.error.present ? data.error.value : this.error,
+      missing: data.missing.present ? data.missing.value : this.missing,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NovelSegment(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('chapterId: $chapterId, ')
+          ..write('globalIndex: $globalIndex, ')
+          ..write('orderIndex: $orderIndex, ')
+          ..write('segmentText: $segmentText, ')
+          ..write('segmentType: $segmentType, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('audioDuration: $audioDuration, ')
+          ..write('audioCacheKey: $audioCacheKey, ')
+          ..write('error: $error, ')
+          ..write('missing: $missing')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    chapterId,
+    globalIndex,
+    orderIndex,
+    segmentText,
+    segmentType,
+    audioPath,
+    audioDuration,
+    audioCacheKey,
+    error,
+    missing,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NovelSegment &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.chapterId == this.chapterId &&
+          other.globalIndex == this.globalIndex &&
+          other.orderIndex == this.orderIndex &&
+          other.segmentText == this.segmentText &&
+          other.segmentType == this.segmentType &&
+          other.audioPath == this.audioPath &&
+          other.audioDuration == this.audioDuration &&
+          other.audioCacheKey == this.audioCacheKey &&
+          other.error == this.error &&
+          other.missing == this.missing);
+}
+
+class NovelSegmentsCompanion extends UpdateCompanion<NovelSegment> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> chapterId;
+  final Value<int> globalIndex;
+  final Value<int> orderIndex;
+  final Value<String> segmentText;
+  final Value<String> segmentType;
+  final Value<String?> audioPath;
+  final Value<double?> audioDuration;
+  final Value<String?> audioCacheKey;
+  final Value<String?> error;
+  final Value<bool> missing;
+  final Value<int> rowid;
+  const NovelSegmentsCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.chapterId = const Value.absent(),
+    this.globalIndex = const Value.absent(),
+    this.orderIndex = const Value.absent(),
+    this.segmentText = const Value.absent(),
+    this.segmentType = const Value.absent(),
+    this.audioPath = const Value.absent(),
+    this.audioDuration = const Value.absent(),
+    this.audioCacheKey = const Value.absent(),
+    this.error = const Value.absent(),
+    this.missing = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NovelSegmentsCompanion.insert({
+    required String id,
+    required String projectId,
+    required String chapterId,
+    required int globalIndex,
+    required int orderIndex,
+    required String segmentText,
+    this.segmentType = const Value.absent(),
+    this.audioPath = const Value.absent(),
+    this.audioDuration = const Value.absent(),
+    this.audioCacheKey = const Value.absent(),
+    this.error = const Value.absent(),
+    this.missing = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       chapterId = Value(chapterId),
+       globalIndex = Value(globalIndex),
+       orderIndex = Value(orderIndex),
+       segmentText = Value(segmentText);
+  static Insertable<NovelSegment> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? chapterId,
+    Expression<int>? globalIndex,
+    Expression<int>? orderIndex,
+    Expression<String>? segmentText,
+    Expression<String>? segmentType,
+    Expression<String>? audioPath,
+    Expression<double>? audioDuration,
+    Expression<String>? audioCacheKey,
+    Expression<String>? error,
+    Expression<bool>? missing,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (chapterId != null) 'chapter_id': chapterId,
+      if (globalIndex != null) 'global_index': globalIndex,
+      if (orderIndex != null) 'order_index': orderIndex,
+      if (segmentText != null) 'segment_text': segmentText,
+      if (segmentType != null) 'segment_type': segmentType,
+      if (audioPath != null) 'audio_path': audioPath,
+      if (audioDuration != null) 'audio_duration': audioDuration,
+      if (audioCacheKey != null) 'audio_cache_key': audioCacheKey,
+      if (error != null) 'error': error,
+      if (missing != null) 'missing': missing,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NovelSegmentsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? chapterId,
+    Value<int>? globalIndex,
+    Value<int>? orderIndex,
+    Value<String>? segmentText,
+    Value<String>? segmentType,
+    Value<String?>? audioPath,
+    Value<double?>? audioDuration,
+    Value<String?>? audioCacheKey,
+    Value<String?>? error,
+    Value<bool>? missing,
+    Value<int>? rowid,
+  }) {
+    return NovelSegmentsCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      chapterId: chapterId ?? this.chapterId,
+      globalIndex: globalIndex ?? this.globalIndex,
+      orderIndex: orderIndex ?? this.orderIndex,
+      segmentText: segmentText ?? this.segmentText,
+      segmentType: segmentType ?? this.segmentType,
+      audioPath: audioPath ?? this.audioPath,
+      audioDuration: audioDuration ?? this.audioDuration,
+      audioCacheKey: audioCacheKey ?? this.audioCacheKey,
+      error: error ?? this.error,
+      missing: missing ?? this.missing,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (chapterId.present) {
+      map['chapter_id'] = Variable<String>(chapterId.value);
+    }
+    if (globalIndex.present) {
+      map['global_index'] = Variable<int>(globalIndex.value);
+    }
+    if (orderIndex.present) {
+      map['order_index'] = Variable<int>(orderIndex.value);
+    }
+    if (segmentText.present) {
+      map['segment_text'] = Variable<String>(segmentText.value);
+    }
+    if (segmentType.present) {
+      map['segment_type'] = Variable<String>(segmentType.value);
+    }
+    if (audioPath.present) {
+      map['audio_path'] = Variable<String>(audioPath.value);
+    }
+    if (audioDuration.present) {
+      map['audio_duration'] = Variable<double>(audioDuration.value);
+    }
+    if (audioCacheKey.present) {
+      map['audio_cache_key'] = Variable<String>(audioCacheKey.value);
+    }
+    if (error.present) {
+      map['error'] = Variable<String>(error.value);
+    }
+    if (missing.present) {
+      map['missing'] = Variable<bool>(missing.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NovelSegmentsCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('chapterId: $chapterId, ')
+          ..write('globalIndex: $globalIndex, ')
+          ..write('orderIndex: $orderIndex, ')
+          ..write('segmentText: $segmentText, ')
+          ..write('segmentType: $segmentType, ')
+          ..write('audioPath: $audioPath, ')
+          ..write('audioDuration: $audioDuration, ')
+          ..write('audioCacheKey: $audioCacheKey, ')
+          ..write('error: $error, ')
+          ..write('missing: $missing, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $DialogTtsProjectsTable extends DialogTtsProjects
     with TableInfo<$DialogTtsProjectsTable, DialogTtsProject> {
   @override
@@ -8578,6 +11369,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PhaseTtsSegmentsTable phaseTtsSegments = $PhaseTtsSegmentsTable(
     this,
   );
+  late final $NovelProjectsTable novelProjects = $NovelProjectsTable(this);
+  late final $NovelChaptersTable novelChapters = $NovelChaptersTable(this);
+  late final $NovelSegmentsTable novelSegments = $NovelSegmentsTable(this);
   late final $DialogTtsProjectsTable dialogTtsProjects =
       $DialogTtsProjectsTable(this);
   late final $DialogTtsLinesTable dialogTtsLines = $DialogTtsLinesTable(this);
@@ -8602,6 +11396,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     quickTtsHistories,
     phaseTtsProjects,
     phaseTtsSegments,
+    novelProjects,
+    novelChapters,
+    novelSegments,
     dialogTtsProjects,
     dialogTtsLines,
     videoDubProjects,
@@ -8760,6 +11557,11 @@ typedef $$TtsProvidersTableCreateCompanionBuilder =
       Value<String> defaultModelName,
       Value<bool> enabled,
       Value<int> position,
+      Value<int> maxConcurrency,
+      Value<int?> requestsPerMinute,
+      Value<int?> requestsPerDay,
+      Value<int?> tokensPerMinute,
+      Value<int?> tokensPerDay,
       Value<int> rowid,
     });
 typedef $$TtsProvidersTableUpdateCompanionBuilder =
@@ -8772,6 +11574,11 @@ typedef $$TtsProvidersTableUpdateCompanionBuilder =
       Value<String> defaultModelName,
       Value<bool> enabled,
       Value<int> position,
+      Value<int> maxConcurrency,
+      Value<int?> requestsPerMinute,
+      Value<int?> requestsPerDay,
+      Value<int?> tokensPerMinute,
+      Value<int?> tokensPerDay,
       Value<int> rowid,
     });
 
@@ -8868,6 +11675,31 @@ class $$TtsProvidersTableFilterComposer
 
   ColumnFilters<int> get position => $composableBuilder(
     column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get maxConcurrency => $composableBuilder(
+    column: $table.maxConcurrency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get requestsPerMinute => $composableBuilder(
+    column: $table.requestsPerMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get requestsPerDay => $composableBuilder(
+    column: $table.requestsPerDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensPerMinute => $composableBuilder(
+    column: $table.tokensPerMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensPerDay => $composableBuilder(
+    column: $table.tokensPerDay,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8970,6 +11802,31 @@ class $$TtsProvidersTableOrderingComposer
     column: $table.position,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get maxConcurrency => $composableBuilder(
+    column: $table.maxConcurrency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get requestsPerMinute => $composableBuilder(
+    column: $table.requestsPerMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get requestsPerDay => $composableBuilder(
+    column: $table.requestsPerDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tokensPerMinute => $composableBuilder(
+    column: $table.tokensPerMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tokensPerDay => $composableBuilder(
+    column: $table.tokensPerDay,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TtsProvidersTableAnnotationComposer
@@ -9008,6 +11865,31 @@ class $$TtsProvidersTableAnnotationComposer
 
   GeneratedColumn<int> get position =>
       $composableBuilder(column: $table.position, builder: (column) => column);
+
+  GeneratedColumn<int> get maxConcurrency => $composableBuilder(
+    column: $table.maxConcurrency,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get requestsPerMinute => $composableBuilder(
+    column: $table.requestsPerMinute,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get requestsPerDay => $composableBuilder(
+    column: $table.requestsPerDay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tokensPerMinute => $composableBuilder(
+    column: $table.tokensPerMinute,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tokensPerDay => $composableBuilder(
+    column: $table.tokensPerDay,
+    builder: (column) => column,
+  );
 
   Expression<T> modelBindingsRefs<T extends Object>(
     Expression<T> Function($$ModelBindingsTableAnnotationComposer a) f,
@@ -9096,6 +11978,11 @@ class $$TtsProvidersTableTableManager
                 Value<String> defaultModelName = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
                 Value<int> position = const Value.absent(),
+                Value<int> maxConcurrency = const Value.absent(),
+                Value<int?> requestsPerMinute = const Value.absent(),
+                Value<int?> requestsPerDay = const Value.absent(),
+                Value<int?> tokensPerMinute = const Value.absent(),
+                Value<int?> tokensPerDay = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TtsProvidersCompanion(
                 id: id,
@@ -9106,6 +11993,11 @@ class $$TtsProvidersTableTableManager
                 defaultModelName: defaultModelName,
                 enabled: enabled,
                 position: position,
+                maxConcurrency: maxConcurrency,
+                requestsPerMinute: requestsPerMinute,
+                requestsPerDay: requestsPerDay,
+                tokensPerMinute: tokensPerMinute,
+                tokensPerDay: tokensPerDay,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -9118,6 +12010,11 @@ class $$TtsProvidersTableTableManager
                 Value<String> defaultModelName = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
                 Value<int> position = const Value.absent(),
+                Value<int> maxConcurrency = const Value.absent(),
+                Value<int?> requestsPerMinute = const Value.absent(),
+                Value<int?> requestsPerDay = const Value.absent(),
+                Value<int?> tokensPerMinute = const Value.absent(),
+                Value<int?> tokensPerDay = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TtsProvidersCompanion.insert(
                 id: id,
@@ -9128,6 +12025,11 @@ class $$TtsProvidersTableTableManager
                 defaultModelName: defaultModelName,
                 enabled: enabled,
                 position: position,
+                maxConcurrency: maxConcurrency,
+                requestsPerMinute: requestsPerMinute,
+                requestsPerDay: requestsPerDay,
+                tokensPerMinute: tokensPerMinute,
+                tokensPerDay: tokensPerDay,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -10479,6 +13381,24 @@ final class $$VoiceBanksTableReferences
     );
   }
 
+  static MultiTypedResultKey<$NovelProjectsTable, List<NovelProject>>
+  _novelProjectsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.novelProjects,
+    aliasName: $_aliasNameGenerator(db.voiceBanks.id, db.novelProjects.bankId),
+  );
+
+  $$NovelProjectsTableProcessedTableManager get novelProjectsRefs {
+    final manager = $$NovelProjectsTableTableManager(
+      $_db,
+      $_db.novelProjects,
+    ).filter((f) => f.bankId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_novelProjectsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$DialogTtsProjectsTable, List<DialogTtsProject>>
   _dialogTtsProjectsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
@@ -10602,6 +13522,31 @@ class $$VoiceBanksTableFilterComposer
           }) => $$PhaseTtsProjectsTableFilterComposer(
             $db: $db,
             $table: $db.phaseTtsProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> novelProjectsRefs(
+    Expression<bool> Function($$NovelProjectsTableFilterComposer f) f,
+  ) {
+    final $$NovelProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.bankId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.novelProjects,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -10773,6 +13718,31 @@ class $$VoiceBanksTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> novelProjectsRefs<T extends Object>(
+    Expression<T> Function($$NovelProjectsTableAnnotationComposer a) f,
+  ) {
+    final $$NovelProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.bankId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> dialogTtsProjectsRefs<T extends Object>(
     Expression<T> Function($$DialogTtsProjectsTableAnnotationComposer a) f,
   ) {
@@ -10841,6 +13811,7 @@ class $$VoiceBanksTableTableManager
           PrefetchHooks Function({
             bool voiceBankMembersRefs,
             bool phaseTtsProjectsRefs,
+            bool novelProjectsRefs,
             bool dialogTtsProjectsRefs,
             bool videoDubProjectsRefs,
           })
@@ -10900,6 +13871,7 @@ class $$VoiceBanksTableTableManager
               ({
                 voiceBankMembersRefs = false,
                 phaseTtsProjectsRefs = false,
+                novelProjectsRefs = false,
                 dialogTtsProjectsRefs = false,
                 videoDubProjectsRefs = false,
               }) {
@@ -10908,6 +13880,7 @@ class $$VoiceBanksTableTableManager
                   explicitlyWatchedTables: [
                     if (voiceBankMembersRefs) db.voiceBankMembers,
                     if (phaseTtsProjectsRefs) db.phaseTtsProjects,
+                    if (novelProjectsRefs) db.novelProjects,
                     if (dialogTtsProjectsRefs) db.dialogTtsProjects,
                     if (videoDubProjectsRefs) db.videoDubProjects,
                   ],
@@ -10950,6 +13923,27 @@ class $$VoiceBanksTableTableManager
                                 table,
                                 p0,
                               ).phaseTtsProjectsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.bankId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (novelProjectsRefs)
+                        await $_getPrefetchedData<
+                          VoiceBank,
+                          $VoiceBanksTable,
+                          NovelProject
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VoiceBanksTableReferences
+                              ._novelProjectsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VoiceBanksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).novelProjectsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.bankId == item.id,
@@ -11021,6 +14015,7 @@ typedef $$VoiceBanksTableProcessedTableManager =
       PrefetchHooks Function({
         bool voiceBankMembersRefs,
         bool phaseTtsProjectsRefs,
+        bool novelProjectsRefs,
         bool dialogTtsProjectsRefs,
         bool videoDubProjectsRefs,
       })
@@ -13109,6 +16104,1908 @@ typedef $$PhaseTtsSegmentsTableProcessedTableManager =
       (PhaseTtsSegment, $$PhaseTtsSegmentsTableReferences),
       PhaseTtsSegment,
       PrefetchHooks Function({bool projectId})
+    >;
+typedef $$NovelProjectsTableCreateCompanionBuilder =
+    NovelProjectsCompanion Function({
+      required String id,
+      required String name,
+      required String bankId,
+      Value<String?> narratorVoiceAssetId,
+      Value<String?> dialogueVoiceAssetId,
+      Value<String> readerTheme,
+      Value<double> fontSize,
+      Value<double> lineHeight,
+      Value<bool> autoTurnPage,
+      Value<bool> autoAdvanceChapters,
+      Value<bool> autoSliceLongSegments,
+      Value<bool> sliceOnlyAtPunctuation,
+      Value<int> maxSliceChars,
+      Value<int> prefetchSegments,
+      Value<bool> overwriteCacheWhilePlaying,
+      Value<bool> skipPunctuationOnlySegments,
+      Value<String> cacheCurrentColor,
+      Value<String> cacheStaleColor,
+      Value<double> cacheHighlightOpacity,
+      Value<int> currentGlobalIndex,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<String?> folderSlug,
+      Value<int> rowid,
+    });
+typedef $$NovelProjectsTableUpdateCompanionBuilder =
+    NovelProjectsCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> bankId,
+      Value<String?> narratorVoiceAssetId,
+      Value<String?> dialogueVoiceAssetId,
+      Value<String> readerTheme,
+      Value<double> fontSize,
+      Value<double> lineHeight,
+      Value<bool> autoTurnPage,
+      Value<bool> autoAdvanceChapters,
+      Value<bool> autoSliceLongSegments,
+      Value<bool> sliceOnlyAtPunctuation,
+      Value<int> maxSliceChars,
+      Value<int> prefetchSegments,
+      Value<bool> overwriteCacheWhilePlaying,
+      Value<bool> skipPunctuationOnlySegments,
+      Value<String> cacheCurrentColor,
+      Value<String> cacheStaleColor,
+      Value<double> cacheHighlightOpacity,
+      Value<int> currentGlobalIndex,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String?> folderSlug,
+      Value<int> rowid,
+    });
+
+final class $$NovelProjectsTableReferences
+    extends BaseReferences<_$AppDatabase, $NovelProjectsTable, NovelProject> {
+  $$NovelProjectsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $VoiceBanksTable _bankIdTable(_$AppDatabase db) =>
+      db.voiceBanks.createAlias(
+        $_aliasNameGenerator(db.novelProjects.bankId, db.voiceBanks.id),
+      );
+
+  $$VoiceBanksTableProcessedTableManager get bankId {
+    final $_column = $_itemColumn<String>('bank_id')!;
+
+    final manager = $$VoiceBanksTableTableManager(
+      $_db,
+      $_db.voiceBanks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bankIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$NovelChaptersTable, List<NovelChapter>>
+  _novelChaptersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.novelChapters,
+    aliasName: $_aliasNameGenerator(
+      db.novelProjects.id,
+      db.novelChapters.projectId,
+    ),
+  );
+
+  $$NovelChaptersTableProcessedTableManager get novelChaptersRefs {
+    final manager = $$NovelChaptersTableTableManager(
+      $_db,
+      $_db.novelChapters,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_novelChaptersRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$NovelSegmentsTable, List<NovelSegment>>
+  _novelSegmentsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.novelSegments,
+    aliasName: $_aliasNameGenerator(
+      db.novelProjects.id,
+      db.novelSegments.projectId,
+    ),
+  );
+
+  $$NovelSegmentsTableProcessedTableManager get novelSegmentsRefs {
+    final manager = $$NovelSegmentsTableTableManager(
+      $_db,
+      $_db.novelSegments,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_novelSegmentsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$NovelProjectsTableFilterComposer
+    extends Composer<_$AppDatabase, $NovelProjectsTable> {
+  $$NovelProjectsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get narratorVoiceAssetId => $composableBuilder(
+    column: $table.narratorVoiceAssetId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dialogueVoiceAssetId => $composableBuilder(
+    column: $table.dialogueVoiceAssetId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get readerTheme => $composableBuilder(
+    column: $table.readerTheme,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fontSize => $composableBuilder(
+    column: $table.fontSize,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lineHeight => $composableBuilder(
+    column: $table.lineHeight,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get autoTurnPage => $composableBuilder(
+    column: $table.autoTurnPage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get autoAdvanceChapters => $composableBuilder(
+    column: $table.autoAdvanceChapters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get autoSliceLongSegments => $composableBuilder(
+    column: $table.autoSliceLongSegments,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get sliceOnlyAtPunctuation => $composableBuilder(
+    column: $table.sliceOnlyAtPunctuation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get maxSliceChars => $composableBuilder(
+    column: $table.maxSliceChars,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get prefetchSegments => $composableBuilder(
+    column: $table.prefetchSegments,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get overwriteCacheWhilePlaying => $composableBuilder(
+    column: $table.overwriteCacheWhilePlaying,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get skipPunctuationOnlySegments => $composableBuilder(
+    column: $table.skipPunctuationOnlySegments,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cacheCurrentColor => $composableBuilder(
+    column: $table.cacheCurrentColor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cacheStaleColor => $composableBuilder(
+    column: $table.cacheStaleColor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cacheHighlightOpacity => $composableBuilder(
+    column: $table.cacheHighlightOpacity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get currentGlobalIndex => $composableBuilder(
+    column: $table.currentGlobalIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get folderSlug => $composableBuilder(
+    column: $table.folderSlug,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VoiceBanksTableFilterComposer get bankId {
+    final $$VoiceBanksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bankId,
+      referencedTable: $db.voiceBanks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBanksTableFilterComposer(
+            $db: $db,
+            $table: $db.voiceBanks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> novelChaptersRefs(
+    Expression<bool> Function($$NovelChaptersTableFilterComposer f) f,
+  ) {
+    final $$NovelChaptersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelChapters,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelChaptersTableFilterComposer(
+            $db: $db,
+            $table: $db.novelChapters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> novelSegmentsRefs(
+    Expression<bool> Function($$NovelSegmentsTableFilterComposer f) f,
+  ) {
+    final $$NovelSegmentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelSegments,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelSegmentsTableFilterComposer(
+            $db: $db,
+            $table: $db.novelSegments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$NovelProjectsTableOrderingComposer
+    extends Composer<_$AppDatabase, $NovelProjectsTable> {
+  $$NovelProjectsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get narratorVoiceAssetId => $composableBuilder(
+    column: $table.narratorVoiceAssetId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dialogueVoiceAssetId => $composableBuilder(
+    column: $table.dialogueVoiceAssetId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get readerTheme => $composableBuilder(
+    column: $table.readerTheme,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fontSize => $composableBuilder(
+    column: $table.fontSize,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lineHeight => $composableBuilder(
+    column: $table.lineHeight,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get autoTurnPage => $composableBuilder(
+    column: $table.autoTurnPage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get autoAdvanceChapters => $composableBuilder(
+    column: $table.autoAdvanceChapters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get autoSliceLongSegments => $composableBuilder(
+    column: $table.autoSliceLongSegments,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get sliceOnlyAtPunctuation => $composableBuilder(
+    column: $table.sliceOnlyAtPunctuation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get maxSliceChars => $composableBuilder(
+    column: $table.maxSliceChars,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get prefetchSegments => $composableBuilder(
+    column: $table.prefetchSegments,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get overwriteCacheWhilePlaying => $composableBuilder(
+    column: $table.overwriteCacheWhilePlaying,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get skipPunctuationOnlySegments => $composableBuilder(
+    column: $table.skipPunctuationOnlySegments,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cacheCurrentColor => $composableBuilder(
+    column: $table.cacheCurrentColor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cacheStaleColor => $composableBuilder(
+    column: $table.cacheStaleColor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get cacheHighlightOpacity => $composableBuilder(
+    column: $table.cacheHighlightOpacity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get currentGlobalIndex => $composableBuilder(
+    column: $table.currentGlobalIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get folderSlug => $composableBuilder(
+    column: $table.folderSlug,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VoiceBanksTableOrderingComposer get bankId {
+    final $$VoiceBanksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bankId,
+      referencedTable: $db.voiceBanks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBanksTableOrderingComposer(
+            $db: $db,
+            $table: $db.voiceBanks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NovelProjectsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NovelProjectsTable> {
+  $$NovelProjectsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get narratorVoiceAssetId => $composableBuilder(
+    column: $table.narratorVoiceAssetId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get dialogueVoiceAssetId => $composableBuilder(
+    column: $table.dialogueVoiceAssetId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get readerTheme => $composableBuilder(
+    column: $table.readerTheme,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get fontSize =>
+      $composableBuilder(column: $table.fontSize, builder: (column) => column);
+
+  GeneratedColumn<double> get lineHeight => $composableBuilder(
+    column: $table.lineHeight,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get autoTurnPage => $composableBuilder(
+    column: $table.autoTurnPage,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get autoAdvanceChapters => $composableBuilder(
+    column: $table.autoAdvanceChapters,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get autoSliceLongSegments => $composableBuilder(
+    column: $table.autoSliceLongSegments,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get sliceOnlyAtPunctuation => $composableBuilder(
+    column: $table.sliceOnlyAtPunctuation,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get maxSliceChars => $composableBuilder(
+    column: $table.maxSliceChars,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get prefetchSegments => $composableBuilder(
+    column: $table.prefetchSegments,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get overwriteCacheWhilePlaying => $composableBuilder(
+    column: $table.overwriteCacheWhilePlaying,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get skipPunctuationOnlySegments => $composableBuilder(
+    column: $table.skipPunctuationOnlySegments,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cacheCurrentColor => $composableBuilder(
+    column: $table.cacheCurrentColor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cacheStaleColor => $composableBuilder(
+    column: $table.cacheStaleColor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get cacheHighlightOpacity => $composableBuilder(
+    column: $table.cacheHighlightOpacity,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get currentGlobalIndex => $composableBuilder(
+    column: $table.currentGlobalIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get folderSlug => $composableBuilder(
+    column: $table.folderSlug,
+    builder: (column) => column,
+  );
+
+  $$VoiceBanksTableAnnotationComposer get bankId {
+    final $$VoiceBanksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bankId,
+      referencedTable: $db.voiceBanks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceBanksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.voiceBanks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> novelChaptersRefs<T extends Object>(
+    Expression<T> Function($$NovelChaptersTableAnnotationComposer a) f,
+  ) {
+    final $$NovelChaptersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelChapters,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelChaptersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelChapters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> novelSegmentsRefs<T extends Object>(
+    Expression<T> Function($$NovelSegmentsTableAnnotationComposer a) f,
+  ) {
+    final $$NovelSegmentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelSegments,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelSegmentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelSegments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$NovelProjectsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NovelProjectsTable,
+          NovelProject,
+          $$NovelProjectsTableFilterComposer,
+          $$NovelProjectsTableOrderingComposer,
+          $$NovelProjectsTableAnnotationComposer,
+          $$NovelProjectsTableCreateCompanionBuilder,
+          $$NovelProjectsTableUpdateCompanionBuilder,
+          (NovelProject, $$NovelProjectsTableReferences),
+          NovelProject,
+          PrefetchHooks Function({
+            bool bankId,
+            bool novelChaptersRefs,
+            bool novelSegmentsRefs,
+          })
+        > {
+  $$NovelProjectsTableTableManager(_$AppDatabase db, $NovelProjectsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NovelProjectsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NovelProjectsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NovelProjectsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> bankId = const Value.absent(),
+                Value<String?> narratorVoiceAssetId = const Value.absent(),
+                Value<String?> dialogueVoiceAssetId = const Value.absent(),
+                Value<String> readerTheme = const Value.absent(),
+                Value<double> fontSize = const Value.absent(),
+                Value<double> lineHeight = const Value.absent(),
+                Value<bool> autoTurnPage = const Value.absent(),
+                Value<bool> autoAdvanceChapters = const Value.absent(),
+                Value<bool> autoSliceLongSegments = const Value.absent(),
+                Value<bool> sliceOnlyAtPunctuation = const Value.absent(),
+                Value<int> maxSliceChars = const Value.absent(),
+                Value<int> prefetchSegments = const Value.absent(),
+                Value<bool> overwriteCacheWhilePlaying = const Value.absent(),
+                Value<bool> skipPunctuationOnlySegments = const Value.absent(),
+                Value<String> cacheCurrentColor = const Value.absent(),
+                Value<String> cacheStaleColor = const Value.absent(),
+                Value<double> cacheHighlightOpacity = const Value.absent(),
+                Value<int> currentGlobalIndex = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> folderSlug = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NovelProjectsCompanion(
+                id: id,
+                name: name,
+                bankId: bankId,
+                narratorVoiceAssetId: narratorVoiceAssetId,
+                dialogueVoiceAssetId: dialogueVoiceAssetId,
+                readerTheme: readerTheme,
+                fontSize: fontSize,
+                lineHeight: lineHeight,
+                autoTurnPage: autoTurnPage,
+                autoAdvanceChapters: autoAdvanceChapters,
+                autoSliceLongSegments: autoSliceLongSegments,
+                sliceOnlyAtPunctuation: sliceOnlyAtPunctuation,
+                maxSliceChars: maxSliceChars,
+                prefetchSegments: prefetchSegments,
+                overwriteCacheWhilePlaying: overwriteCacheWhilePlaying,
+                skipPunctuationOnlySegments: skipPunctuationOnlySegments,
+                cacheCurrentColor: cacheCurrentColor,
+                cacheStaleColor: cacheStaleColor,
+                cacheHighlightOpacity: cacheHighlightOpacity,
+                currentGlobalIndex: currentGlobalIndex,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                folderSlug: folderSlug,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String bankId,
+                Value<String?> narratorVoiceAssetId = const Value.absent(),
+                Value<String?> dialogueVoiceAssetId = const Value.absent(),
+                Value<String> readerTheme = const Value.absent(),
+                Value<double> fontSize = const Value.absent(),
+                Value<double> lineHeight = const Value.absent(),
+                Value<bool> autoTurnPage = const Value.absent(),
+                Value<bool> autoAdvanceChapters = const Value.absent(),
+                Value<bool> autoSliceLongSegments = const Value.absent(),
+                Value<bool> sliceOnlyAtPunctuation = const Value.absent(),
+                Value<int> maxSliceChars = const Value.absent(),
+                Value<int> prefetchSegments = const Value.absent(),
+                Value<bool> overwriteCacheWhilePlaying = const Value.absent(),
+                Value<bool> skipPunctuationOnlySegments = const Value.absent(),
+                Value<String> cacheCurrentColor = const Value.absent(),
+                Value<String> cacheStaleColor = const Value.absent(),
+                Value<double> cacheHighlightOpacity = const Value.absent(),
+                Value<int> currentGlobalIndex = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<String?> folderSlug = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NovelProjectsCompanion.insert(
+                id: id,
+                name: name,
+                bankId: bankId,
+                narratorVoiceAssetId: narratorVoiceAssetId,
+                dialogueVoiceAssetId: dialogueVoiceAssetId,
+                readerTheme: readerTheme,
+                fontSize: fontSize,
+                lineHeight: lineHeight,
+                autoTurnPage: autoTurnPage,
+                autoAdvanceChapters: autoAdvanceChapters,
+                autoSliceLongSegments: autoSliceLongSegments,
+                sliceOnlyAtPunctuation: sliceOnlyAtPunctuation,
+                maxSliceChars: maxSliceChars,
+                prefetchSegments: prefetchSegments,
+                overwriteCacheWhilePlaying: overwriteCacheWhilePlaying,
+                skipPunctuationOnlySegments: skipPunctuationOnlySegments,
+                cacheCurrentColor: cacheCurrentColor,
+                cacheStaleColor: cacheStaleColor,
+                cacheHighlightOpacity: cacheHighlightOpacity,
+                currentGlobalIndex: currentGlobalIndex,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                folderSlug: folderSlug,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$NovelProjectsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                bankId = false,
+                novelChaptersRefs = false,
+                novelSegmentsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (novelChaptersRefs) db.novelChapters,
+                    if (novelSegmentsRefs) db.novelSegments,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (bankId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.bankId,
+                                    referencedTable:
+                                        $$NovelProjectsTableReferences
+                                            ._bankIdTable(db),
+                                    referencedColumn:
+                                        $$NovelProjectsTableReferences
+                                            ._bankIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (novelChaptersRefs)
+                        await $_getPrefetchedData<
+                          NovelProject,
+                          $NovelProjectsTable,
+                          NovelChapter
+                        >(
+                          currentTable: table,
+                          referencedTable: $$NovelProjectsTableReferences
+                              ._novelChaptersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$NovelProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).novelChaptersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (novelSegmentsRefs)
+                        await $_getPrefetchedData<
+                          NovelProject,
+                          $NovelProjectsTable,
+                          NovelSegment
+                        >(
+                          currentTable: table,
+                          referencedTable: $$NovelProjectsTableReferences
+                              ._novelSegmentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$NovelProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).novelSegmentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$NovelProjectsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NovelProjectsTable,
+      NovelProject,
+      $$NovelProjectsTableFilterComposer,
+      $$NovelProjectsTableOrderingComposer,
+      $$NovelProjectsTableAnnotationComposer,
+      $$NovelProjectsTableCreateCompanionBuilder,
+      $$NovelProjectsTableUpdateCompanionBuilder,
+      (NovelProject, $$NovelProjectsTableReferences),
+      NovelProject,
+      PrefetchHooks Function({
+        bool bankId,
+        bool novelChaptersRefs,
+        bool novelSegmentsRefs,
+      })
+    >;
+typedef $$NovelChaptersTableCreateCompanionBuilder =
+    NovelChaptersCompanion Function({
+      required String id,
+      required String projectId,
+      required int orderIndex,
+      required String title,
+      Value<String?> sourcePath,
+      Value<String> rawText,
+      Value<int> rowid,
+    });
+typedef $$NovelChaptersTableUpdateCompanionBuilder =
+    NovelChaptersCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<int> orderIndex,
+      Value<String> title,
+      Value<String?> sourcePath,
+      Value<String> rawText,
+      Value<int> rowid,
+    });
+
+final class $$NovelChaptersTableReferences
+    extends BaseReferences<_$AppDatabase, $NovelChaptersTable, NovelChapter> {
+  $$NovelChaptersTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $NovelProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.novelProjects.createAlias(
+        $_aliasNameGenerator(db.novelChapters.projectId, db.novelProjects.id),
+      );
+
+  $$NovelProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$NovelProjectsTableTableManager(
+      $_db,
+      $_db.novelProjects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$NovelSegmentsTable, List<NovelSegment>>
+  _novelSegmentsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.novelSegments,
+    aliasName: $_aliasNameGenerator(
+      db.novelChapters.id,
+      db.novelSegments.chapterId,
+    ),
+  );
+
+  $$NovelSegmentsTableProcessedTableManager get novelSegmentsRefs {
+    final manager = $$NovelSegmentsTableTableManager(
+      $_db,
+      $_db.novelSegments,
+    ).filter((f) => f.chapterId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_novelSegmentsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$NovelChaptersTableFilterComposer
+    extends Composer<_$AppDatabase, $NovelChaptersTable> {
+  $$NovelChaptersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourcePath => $composableBuilder(
+    column: $table.sourcePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rawText => $composableBuilder(
+    column: $table.rawText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$NovelProjectsTableFilterComposer get projectId {
+    final $$NovelProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> novelSegmentsRefs(
+    Expression<bool> Function($$NovelSegmentsTableFilterComposer f) f,
+  ) {
+    final $$NovelSegmentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelSegments,
+      getReferencedColumn: (t) => t.chapterId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelSegmentsTableFilterComposer(
+            $db: $db,
+            $table: $db.novelSegments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$NovelChaptersTableOrderingComposer
+    extends Composer<_$AppDatabase, $NovelChaptersTable> {
+  $$NovelChaptersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourcePath => $composableBuilder(
+    column: $table.sourcePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rawText => $composableBuilder(
+    column: $table.rawText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$NovelProjectsTableOrderingComposer get projectId {
+    final $$NovelProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NovelChaptersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NovelChaptersTable> {
+  $$NovelChaptersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get sourcePath => $composableBuilder(
+    column: $table.sourcePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rawText =>
+      $composableBuilder(column: $table.rawText, builder: (column) => column);
+
+  $$NovelProjectsTableAnnotationComposer get projectId {
+    final $$NovelProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> novelSegmentsRefs<T extends Object>(
+    Expression<T> Function($$NovelSegmentsTableAnnotationComposer a) f,
+  ) {
+    final $$NovelSegmentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelSegments,
+      getReferencedColumn: (t) => t.chapterId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelSegmentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelSegments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$NovelChaptersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NovelChaptersTable,
+          NovelChapter,
+          $$NovelChaptersTableFilterComposer,
+          $$NovelChaptersTableOrderingComposer,
+          $$NovelChaptersTableAnnotationComposer,
+          $$NovelChaptersTableCreateCompanionBuilder,
+          $$NovelChaptersTableUpdateCompanionBuilder,
+          (NovelChapter, $$NovelChaptersTableReferences),
+          NovelChapter,
+          PrefetchHooks Function({bool projectId, bool novelSegmentsRefs})
+        > {
+  $$NovelChaptersTableTableManager(_$AppDatabase db, $NovelChaptersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NovelChaptersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NovelChaptersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NovelChaptersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<int> orderIndex = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String?> sourcePath = const Value.absent(),
+                Value<String> rawText = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NovelChaptersCompanion(
+                id: id,
+                projectId: projectId,
+                orderIndex: orderIndex,
+                title: title,
+                sourcePath: sourcePath,
+                rawText: rawText,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required int orderIndex,
+                required String title,
+                Value<String?> sourcePath = const Value.absent(),
+                Value<String> rawText = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NovelChaptersCompanion.insert(
+                id: id,
+                projectId: projectId,
+                orderIndex: orderIndex,
+                title: title,
+                sourcePath: sourcePath,
+                rawText: rawText,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$NovelChaptersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({projectId = false, novelSegmentsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (novelSegmentsRefs) db.novelSegments,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (projectId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.projectId,
+                                    referencedTable:
+                                        $$NovelChaptersTableReferences
+                                            ._projectIdTable(db),
+                                    referencedColumn:
+                                        $$NovelChaptersTableReferences
+                                            ._projectIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (novelSegmentsRefs)
+                        await $_getPrefetchedData<
+                          NovelChapter,
+                          $NovelChaptersTable,
+                          NovelSegment
+                        >(
+                          currentTable: table,
+                          referencedTable: $$NovelChaptersTableReferences
+                              ._novelSegmentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$NovelChaptersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).novelSegmentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.chapterId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$NovelChaptersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NovelChaptersTable,
+      NovelChapter,
+      $$NovelChaptersTableFilterComposer,
+      $$NovelChaptersTableOrderingComposer,
+      $$NovelChaptersTableAnnotationComposer,
+      $$NovelChaptersTableCreateCompanionBuilder,
+      $$NovelChaptersTableUpdateCompanionBuilder,
+      (NovelChapter, $$NovelChaptersTableReferences),
+      NovelChapter,
+      PrefetchHooks Function({bool projectId, bool novelSegmentsRefs})
+    >;
+typedef $$NovelSegmentsTableCreateCompanionBuilder =
+    NovelSegmentsCompanion Function({
+      required String id,
+      required String projectId,
+      required String chapterId,
+      required int globalIndex,
+      required int orderIndex,
+      required String segmentText,
+      Value<String> segmentType,
+      Value<String?> audioPath,
+      Value<double?> audioDuration,
+      Value<String?> audioCacheKey,
+      Value<String?> error,
+      Value<bool> missing,
+      Value<int> rowid,
+    });
+typedef $$NovelSegmentsTableUpdateCompanionBuilder =
+    NovelSegmentsCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> chapterId,
+      Value<int> globalIndex,
+      Value<int> orderIndex,
+      Value<String> segmentText,
+      Value<String> segmentType,
+      Value<String?> audioPath,
+      Value<double?> audioDuration,
+      Value<String?> audioCacheKey,
+      Value<String?> error,
+      Value<bool> missing,
+      Value<int> rowid,
+    });
+
+final class $$NovelSegmentsTableReferences
+    extends BaseReferences<_$AppDatabase, $NovelSegmentsTable, NovelSegment> {
+  $$NovelSegmentsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $NovelProjectsTable _projectIdTable(_$AppDatabase db) =>
+      db.novelProjects.createAlias(
+        $_aliasNameGenerator(db.novelSegments.projectId, db.novelProjects.id),
+      );
+
+  $$NovelProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$NovelProjectsTableTableManager(
+      $_db,
+      $_db.novelProjects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $NovelChaptersTable _chapterIdTable(_$AppDatabase db) =>
+      db.novelChapters.createAlias(
+        $_aliasNameGenerator(db.novelSegments.chapterId, db.novelChapters.id),
+      );
+
+  $$NovelChaptersTableProcessedTableManager get chapterId {
+    final $_column = $_itemColumn<String>('chapter_id')!;
+
+    final manager = $$NovelChaptersTableTableManager(
+      $_db,
+      $_db.novelChapters,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_chapterIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$NovelSegmentsTableFilterComposer
+    extends Composer<_$AppDatabase, $NovelSegmentsTable> {
+  $$NovelSegmentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get globalIndex => $composableBuilder(
+    column: $table.globalIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get segmentText => $composableBuilder(
+    column: $table.segmentText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get segmentType => $composableBuilder(
+    column: $table.segmentType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get audioDuration => $composableBuilder(
+    column: $table.audioDuration,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get audioCacheKey => $composableBuilder(
+    column: $table.audioCacheKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get error => $composableBuilder(
+    column: $table.error,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get missing => $composableBuilder(
+    column: $table.missing,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$NovelProjectsTableFilterComposer get projectId {
+    final $$NovelProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$NovelChaptersTableFilterComposer get chapterId {
+    final $$NovelChaptersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.chapterId,
+      referencedTable: $db.novelChapters,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelChaptersTableFilterComposer(
+            $db: $db,
+            $table: $db.novelChapters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NovelSegmentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $NovelSegmentsTable> {
+  $$NovelSegmentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get globalIndex => $composableBuilder(
+    column: $table.globalIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get segmentText => $composableBuilder(
+    column: $table.segmentText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get segmentType => $composableBuilder(
+    column: $table.segmentType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get audioPath => $composableBuilder(
+    column: $table.audioPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get audioDuration => $composableBuilder(
+    column: $table.audioDuration,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get audioCacheKey => $composableBuilder(
+    column: $table.audioCacheKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get error => $composableBuilder(
+    column: $table.error,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get missing => $composableBuilder(
+    column: $table.missing,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$NovelProjectsTableOrderingComposer get projectId {
+    final $$NovelProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$NovelChaptersTableOrderingComposer get chapterId {
+    final $$NovelChaptersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.chapterId,
+      referencedTable: $db.novelChapters,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelChaptersTableOrderingComposer(
+            $db: $db,
+            $table: $db.novelChapters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NovelSegmentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NovelSegmentsTable> {
+  $$NovelSegmentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get globalIndex => $composableBuilder(
+    column: $table.globalIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get segmentText => $composableBuilder(
+    column: $table.segmentText,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get segmentType => $composableBuilder(
+    column: $table.segmentType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get audioPath =>
+      $composableBuilder(column: $table.audioPath, builder: (column) => column);
+
+  GeneratedColumn<double> get audioDuration => $composableBuilder(
+    column: $table.audioDuration,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get audioCacheKey => $composableBuilder(
+    column: $table.audioCacheKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get error =>
+      $composableBuilder(column: $table.error, builder: (column) => column);
+
+  GeneratedColumn<bool> get missing =>
+      $composableBuilder(column: $table.missing, builder: (column) => column);
+
+  $$NovelProjectsTableAnnotationComposer get projectId {
+    final $$NovelProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$NovelChaptersTableAnnotationComposer get chapterId {
+    final $$NovelChaptersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.chapterId,
+      referencedTable: $db.novelChapters,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelChaptersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelChapters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NovelSegmentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NovelSegmentsTable,
+          NovelSegment,
+          $$NovelSegmentsTableFilterComposer,
+          $$NovelSegmentsTableOrderingComposer,
+          $$NovelSegmentsTableAnnotationComposer,
+          $$NovelSegmentsTableCreateCompanionBuilder,
+          $$NovelSegmentsTableUpdateCompanionBuilder,
+          (NovelSegment, $$NovelSegmentsTableReferences),
+          NovelSegment,
+          PrefetchHooks Function({bool projectId, bool chapterId})
+        > {
+  $$NovelSegmentsTableTableManager(_$AppDatabase db, $NovelSegmentsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NovelSegmentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NovelSegmentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NovelSegmentsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> chapterId = const Value.absent(),
+                Value<int> globalIndex = const Value.absent(),
+                Value<int> orderIndex = const Value.absent(),
+                Value<String> segmentText = const Value.absent(),
+                Value<String> segmentType = const Value.absent(),
+                Value<String?> audioPath = const Value.absent(),
+                Value<double?> audioDuration = const Value.absent(),
+                Value<String?> audioCacheKey = const Value.absent(),
+                Value<String?> error = const Value.absent(),
+                Value<bool> missing = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NovelSegmentsCompanion(
+                id: id,
+                projectId: projectId,
+                chapterId: chapterId,
+                globalIndex: globalIndex,
+                orderIndex: orderIndex,
+                segmentText: segmentText,
+                segmentType: segmentType,
+                audioPath: audioPath,
+                audioDuration: audioDuration,
+                audioCacheKey: audioCacheKey,
+                error: error,
+                missing: missing,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String chapterId,
+                required int globalIndex,
+                required int orderIndex,
+                required String segmentText,
+                Value<String> segmentType = const Value.absent(),
+                Value<String?> audioPath = const Value.absent(),
+                Value<double?> audioDuration = const Value.absent(),
+                Value<String?> audioCacheKey = const Value.absent(),
+                Value<String?> error = const Value.absent(),
+                Value<bool> missing = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NovelSegmentsCompanion.insert(
+                id: id,
+                projectId: projectId,
+                chapterId: chapterId,
+                globalIndex: globalIndex,
+                orderIndex: orderIndex,
+                segmentText: segmentText,
+                segmentType: segmentType,
+                audioPath: audioPath,
+                audioDuration: audioDuration,
+                audioCacheKey: audioCacheKey,
+                error: error,
+                missing: missing,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$NovelSegmentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false, chapterId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (projectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.projectId,
+                                referencedTable: $$NovelSegmentsTableReferences
+                                    ._projectIdTable(db),
+                                referencedColumn: $$NovelSegmentsTableReferences
+                                    ._projectIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (chapterId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.chapterId,
+                                referencedTable: $$NovelSegmentsTableReferences
+                                    ._chapterIdTable(db),
+                                referencedColumn: $$NovelSegmentsTableReferences
+                                    ._chapterIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$NovelSegmentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NovelSegmentsTable,
+      NovelSegment,
+      $$NovelSegmentsTableFilterComposer,
+      $$NovelSegmentsTableOrderingComposer,
+      $$NovelSegmentsTableAnnotationComposer,
+      $$NovelSegmentsTableCreateCompanionBuilder,
+      $$NovelSegmentsTableUpdateCompanionBuilder,
+      (NovelSegment, $$NovelSegmentsTableReferences),
+      NovelSegment,
+      PrefetchHooks Function({bool projectId, bool chapterId})
     >;
 typedef $$DialogTtsProjectsTableCreateCompanionBuilder =
     DialogTtsProjectsCompanion Function({
@@ -15584,6 +20481,12 @@ class $AppDatabaseManager {
       $$PhaseTtsProjectsTableTableManager(_db, _db.phaseTtsProjects);
   $$PhaseTtsSegmentsTableTableManager get phaseTtsSegments =>
       $$PhaseTtsSegmentsTableTableManager(_db, _db.phaseTtsSegments);
+  $$NovelProjectsTableTableManager get novelProjects =>
+      $$NovelProjectsTableTableManager(_db, _db.novelProjects);
+  $$NovelChaptersTableTableManager get novelChapters =>
+      $$NovelChaptersTableTableManager(_db, _db.novelChapters);
+  $$NovelSegmentsTableTableManager get novelSegments =>
+      $$NovelSegmentsTableTableManager(_db, _db.novelSegments);
   $$DialogTtsProjectsTableTableManager get dialogTtsProjects =>
       $$DialogTtsProjectsTableTableManager(_db, _db.dialogTtsProjects);
   $$DialogTtsLinesTableTableManager get dialogTtsLines =>

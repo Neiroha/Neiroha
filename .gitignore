@@ -12,8 +12,14 @@
 .svn/
 .swiftpm/
 .vscode/
+
+# temp files
+.codex-temp/
+captures/
 temp/
 migrate_working_dir/
+AGENTS.md
+
 
 # IntelliJ related
 *.iml

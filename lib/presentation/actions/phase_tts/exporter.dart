@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/storage/path_service.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/widgets/export_progress.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:path/path.dart' as p;
@@ -25,14 +26,36 @@ Future<void> exportPhaseTtsMergedAudio({
         segment.audioPath!,
   ];
   if (inputs.isEmpty) {
-    _snack(context, 'No generated segments to merge.');
+    _snack(context, AppLocalizations.of(context).uiNoGeneratedSegmentsToMerge);
     return;
   }
+  final exportMergedAudioTitle = AppLocalizations.of(
+    context,
+  ).uiExportMergedAudio;
+  final chooseExportFolderTitle = AppLocalizations.of(
+    context,
+  ).uiChooseExportFolder;
+  final mergingAudioTaskLabel = AppLocalizations.of(context).uiMergingAudio;
 
+  final capabilities = ref.read(platformCapabilitiesProvider);
+  if (!capabilities.supportsLocalAudioMuxing) {
+    _snack(
+      context,
+      AppLocalizations.of(
+        context,
+      ).uiFFmpegUnavailableOnPlatform(capabilities.platformLabel),
+    );
+    return;
+  }
   final ffmpeg = ref.read(ffmpegServiceProvider);
   if (!await ffmpeg.isAvailable()) {
     if (!context.mounted) return;
-    _snack(context, 'FFmpeg is required for export - configure it in Settings');
+    _snack(
+      context,
+      AppLocalizations.of(
+        context,
+      ).uiFFmpegIsRequiredForExportConfigureItInSettings,
+    );
     return;
   }
 
@@ -42,13 +65,13 @@ Future<void> exportPhaseTtsMergedAudio({
   String? outPath;
   try {
     outPath = await FilePicker.platform.saveFile(
-      dialogTitle: 'Export merged audio',
+      dialogTitle: exportMergedAudioTitle,
       fileName: defaultName,
       type: FileType.audio,
     );
   } catch (_) {
     final dir = await FilePicker.platform.getDirectoryPath(
-      dialogTitle: 'Choose export folder',
+      dialogTitle: chooseExportFolderTitle,
     );
     if (dir != null && dir.isNotEmpty) outPath = p.join(dir, defaultName);
   }
@@ -89,18 +112,23 @@ Future<void> exportPhaseTtsMergedAudio({
       ffmpegPath: ffmpegPath,
       args: args,
       totalDurationMs: _totalDurationMs(ordered),
-      taskLabel: 'Merging audio...',
+      taskLabel: mergingAudioTaskLabel,
     );
     if (!context.mounted) return;
     if (result.success) {
       await showExportSuccessDialog(context: context, filePath: outPath);
     } else if (result.cancelled) {
-      _snack(context, 'Export cancelled');
+      _snack(context, AppLocalizations.of(context).uiExportCancelled);
     } else {
-      _snack(context, 'Audio export failed: ${result.stderrTail}');
+      _snack(
+        context,
+        AppLocalizations.of(context).uiAudioExportFailed(result.stderrTail),
+      );
     }
   } catch (e) {
-    if (context.mounted) _snack(context, 'Audio export failed: $e');
+    if (context.mounted) {
+      _snack(context, AppLocalizations.of(context).uiAudioExportFailed(e));
+    }
   } finally {
     try {
       if (await listFile.exists()) await listFile.delete();

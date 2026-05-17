@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Result of [showCueEditDialog]. `autoTts` / `autoSync` are only set
 /// when the dialog was rendered with `showAutoSwitches: true` (the
@@ -68,35 +69,37 @@ Future<CueEdit?> showCueEditDialog({
                     Expanded(
                       child: TextField(
                         controller: startCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Start (mm:ss.ms)',
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).uiStartMmSsMs,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: TextField(
                         controller: endCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'End (mm:ss.ms)',
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).uiEndMmSsMs,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
                 TextField(
                   controller: textCtrl,
                   autofocus: true,
                   maxLines: 4,
                   minLines: 2,
-                  decoration: const InputDecoration(labelText: 'Subtitle text'),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).uiSubtitleText,
+                  ),
                 ),
                 if (voiceAssets != null && voiceAssets.isNotEmpty) ...[
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14),
                   DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: 'Voice',
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).uiVoice,
                       isDense: true,
                     ),
                     isExpanded: true,
@@ -112,13 +115,15 @@ Future<CueEdit?> showCueEditDialog({
                   ),
                 ],
                 if (showAutoSwitches) ...[
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     dense: true,
-                    title: const Text('Auto-generate TTS'),
-                    subtitle: const Text(
-                      'Run TTS for this cue immediately after saving. Needs a voice in the bank.',
+                    title: Text(AppLocalizations.of(context).uiAutoGenerateTTS),
+                    subtitle: Text(
+                      AppLocalizations.of(
+                        context,
+                      ).uiRunTTSForThisCueImmediatelyAfterSavingNeedsAVoiceIn,
                       style: TextStyle(fontSize: 11),
                     ),
                     value: autoTts,
@@ -127,9 +132,13 @@ Future<CueEdit?> showCueEditDialog({
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     dense: true,
-                    title: const Text('Auto-sync length to audio'),
-                    subtitle: const Text(
-                      'After generating, snap the End time to the actual TTS length.',
+                    title: Text(
+                      AppLocalizations.of(context).uiAutoSyncLengthToAudio,
+                    ),
+                    subtitle: Text(
+                      AppLocalizations.of(
+                        context,
+                      ).uiAfterGeneratingSnapTheEndTimeToTheActualTTSLength,
                       style: TextStyle(fontSize: 11),
                     ),
                     value: autoSync,
@@ -153,7 +162,7 @@ Future<CueEdit?> showCueEditDialog({
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context).uiCancel),
             ),
             FilledButton(
               onPressed: () {
@@ -161,18 +170,26 @@ Future<CueEdit?> showCueEditDialog({
                 final endMs = parseTimestamp(endCtrl.text);
                 if (startMs == null || endMs == null) {
                   setDialogState(
-                    () => errorMsg = 'Use format mm:ss.ms or HH:mm:ss.ms',
+                    () => errorMsg = AppLocalizations.of(
+                      context,
+                    ).uiUseFormatMmSsMsOrHHMmSsMs,
                   );
                   return;
                 }
                 if (endMs <= startMs) {
                   setDialogState(
-                    () => errorMsg = 'End must be greater than start',
+                    () => errorMsg = AppLocalizations.of(
+                      context,
+                    ).uiEndMustBeGreaterThanStart,
                   );
                   return;
                 }
                 if (textCtrl.text.trim().isEmpty) {
-                  setDialogState(() => errorMsg = 'Text is required');
+                  setDialogState(
+                    () => errorMsg = AppLocalizations.of(
+                      context,
+                    ).uiTextIsRequired,
+                  );
                   return;
                 }
                 Navigator.pop(
@@ -187,7 +204,7 @@ Future<CueEdit?> showCueEditDialog({
                   ),
                 );
               },
-              child: const Text('Save'),
+              child: Text(AppLocalizations.of(context).uiSave),
             ),
           ],
         ),
@@ -218,24 +235,31 @@ Future<ImportSubtitlesChoice?> showImportSubtitlesDialog({
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setDialogState) => AlertDialog(
-        title: Text('Import $cueCount cues?'),
+        title: Text(AppLocalizations.of(context).uiImportCues(cueCount)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               existingCount == 0
-                  ? 'Cues will be added to this project.'
-                  : 'This project already has $existingCount cues. '
-                        'Replace them, or append the new cues after?',
+                  ? AppLocalizations.of(context).uiCuesWillBeAddedToThisProject
+                  : AppLocalizations.of(
+                      context,
+                    ).uiThisProjectAlreadyHasCuesReplaceThemOrAppendTheNewCues(
+                      existingCount,
+                    ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               dense: true,
-              title: const Text('Auto-generate TTS after import'),
-              subtitle: const Text(
-                'Run Generate All immediately. Cues without a voice are skipped.',
+              title: Text(
+                AppLocalizations.of(context).uiAutoGenerateTTSAfterImport,
+              ),
+              subtitle: Text(
+                AppLocalizations.of(
+                  context,
+                ).uiRunGenerateAllImmediatelyCuesWithoutAVoiceAreSkipped,
                 style: TextStyle(fontSize: 11),
               ),
               value: autoTts,
@@ -244,9 +268,13 @@ Future<ImportSubtitlesChoice?> showImportSubtitlesDialog({
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               dense: true,
-              title: const Text('Auto-sync cue lengths to audio'),
-              subtitle: const Text(
-                'After generating, snap each cue end to its TTS length.',
+              title: Text(
+                AppLocalizations.of(context).uiAutoSyncCueLengthsToAudio,
+              ),
+              subtitle: Text(
+                AppLocalizations.of(
+                  context,
+                ).uiAfterGeneratingSnapEachCueEndToItsTTSLength,
                 style: TextStyle(fontSize: 11),
               ),
               value: autoSync,
@@ -257,7 +285,7 @@ Future<ImportSubtitlesChoice?> showImportSubtitlesDialog({
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).uiCancel),
           ),
           if (existingCount > 0)
             TextButton(
@@ -266,7 +294,7 @@ Future<ImportSubtitlesChoice?> showImportSubtitlesDialog({
                 autoTts: autoTts,
                 autoSync: autoSync,
               )),
-              child: const Text('Append'),
+              child: Text(AppLocalizations.of(context).uiAppend),
             ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, (
@@ -274,7 +302,11 @@ Future<ImportSubtitlesChoice?> showImportSubtitlesDialog({
               autoTts: autoTts,
               autoSync: autoSync,
             )),
-            child: Text(existingCount == 0 ? 'Import' : 'Replace'),
+            child: Text(
+              existingCount == 0
+                  ? AppLocalizations.of(context).uiImport
+                  : AppLocalizations.of(context).uiReplace,
+            ),
           ),
         ],
       ),
@@ -288,20 +320,21 @@ Future<bool> showClearCuesConfirmDialog(BuildContext context) async {
   final confirm = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text('Clear all cues?'),
-      content: const Text(
-        'Cues will be removed. Generated audio files on disk are kept '
-        'but the references will be gone.',
+      title: Text(AppLocalizations.of(context).uiClearAllCues2),
+      content: Text(
+        AppLocalizations.of(
+          context,
+        ).uiCuesWillBeRemovedGeneratedAudioFilesOnDiskAreKeptBut,
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).uiCancel),
         ),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
           onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Clear'),
+          child: Text(AppLocalizations.of(context).uiClear),
         ),
       ],
     ),

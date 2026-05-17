@@ -1,0 +1,722 @@
+{
+  "@@locale": "en",
+  "appTitle": "Neiroha",
+  "@appTitle": {
+    "description": "Application title."
+  },
+  "navNovelReader": "Novel Reader",
+  "navDialogTts": "Dialog TTS",
+  "navPhaseTts": "Phase TTS",
+  "navVideoDub": "Video Dub",
+  "navVoiceAssets": "Voice Assets",
+  "navVoiceBank": "Voice Bank",
+  "navProviders": "Providers",
+  "navSettings": "Settings",
+  "settingsTitle": "Settings",
+  "settingsGeneral": "General",
+  "settingsGeneralDescription": "Startup and workspace behavior",
+  "settingsTasks": "Tasks",
+  "settingsTasksDescription": "Current TTS work, queue depth and recent results",
+  "settingsApi": "API Server",
+  "settingsApiDescription": "Local middleware endpoint and access controls",
+  "settingsStorage": "Storage",
+  "settingsStorageDescription": "Data roots, disk sync and archive cleanup",
+  "settingsMedia": "Media Tools",
+  "settingsMediaDescription": "FFmpeg detection and export defaults",
+  "settingsAbout": "About",
+  "settingsAboutDescription": "Version and app information",
+  "languageTitle": "Language",
+  "languageSubtitle": "Choose the app display language.",
+  "languageEnglish": "English",
+  "languageChinese": "中文",
+  "languageSaved": "Language set to {language}.",
+  "@languageSaved": {
+    "placeholders": {
+      "language": {
+        "type": "String",
+        "example": "English"
+      }
+    }
+  },
+  "startupScreenTitle": "Startup Screen",
+  "startupScreenSubtitle": "Choose the workspace Neiroha opens on launch, or restore the page used before closing.",
+  "startupScreenSaved": "Startup screen set to {tab}.",
+  "@startupScreenSaved": {
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "Voice Bank"
+      }
+    }
+  },
+  "keepTtsRunningTitle": "Keep TTS Running Across Screens",
+  "keepTtsRunningSubtitle": "Useful for reading with Novel Reader while checking task progress or settings.",
+  "keepTtsRunningEnabled": "TTS will continue when switching screens.",
+  "keepTtsRunningDisabled": "Novel playback will stop when leaving the reader.",
+  "aboutSubtitle": "v0.1.0 - AI Audio Middleware & Dubbing Workstation",
+  "uiUnassigned": "-- Unassigned --",
+  "uiOrUploadANewFile": "— or upload a new file —",
+  "uiWillBeRemoved": "\"{name}\" will be removed.",
+  "@uiWillBeRemoved": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "uiCopyReusesTheSourceStreamFastLosslessH264H265Av1ForceA": "\"copy\" reuses the source stream (fast, lossless). h264 / h265 / av1 force a transcode (slower, ffmpeg build must support the chosen encoder).",
+  "uiArchivedFileSAreMissingOnDiskRowsFlaggedNotDeleted": "{count} archived file(s) are missing on disk — rows flagged, not deleted.",
+  "@uiArchivedFileSAreMissingOnDiskRowsFlaggedNotDeleted": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "uiRequestS": "{count} request(s)",
+  "@uiRequestS": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "uiRunningWaiting": "{running} running, {queued} waiting",
+  "@uiRunningWaiting": {
+    "placeholders": {
+      "running": {},
+      "queued": {}
+    }
+  },
+  "uiABankWithThisNameAlreadyExists": "A bank with this name already exists",
+  "uiALabelForThisClonedVoiceTheActualVoiceIsDerivedFrom": "A label for this cloned voice. The actual voice is derived from the reference audio.",
+  "uiAProfileRegisteredOnTheCosyVoiceServerLeaveAsNoneToSynthesise": "A profile registered on the CosyVoice server. Leave as \"None\" to synthesise purely from your uploaded reference audio — typing a name that the server doesn''t know causes 400 \"未找到角色\".",
+  "uiAVoiceBankGroupsCharactersForAProject": "A Voice Bank groups characters for a project.\n",
+  "uiAVoiceBankGroupsCharactersForAProjectOnlyOneBankCan": "A Voice Bank groups characters for a project.\nOnly one bank can be active at a time.",
+  "uiAVoiceProfileRegisteredOnTheServerLeaveAsNoneToSynthesise": "A voice profile registered on the server. Leave as \"None\" to synthesise purely from your uploaded reference audio — sending an unregistered id is rejected.",
+  "uiAYoungWomanGentleAndSweetVoice": "A young woman, gentle and sweet voice",
+  "uiActive": "Active",
+  "uiAdapterUnavailableOnThisPlatform": "This adapter is not available on the current platform. It cannot be enabled or used for health checks here.",
+  "uiAdapterType": "Adapter Type",
+  "uiAdd": "Add",
+  "uiAddChapter": "Add chapter",
+  "uiAddCue": "Add cue",
+  "uiAddDialogLinesBelow": "Add dialog lines below",
+  "uiAddModel": "Add Model",
+  "uiAddProvider": "Add Provider",
+  "uiAddRule": "Add rule",
+  "uiAddSubtitlesImportSRTLRC": "Add subtitles (import SRT/LRC)",
+  "uiAddToTimelineDragToPlace": "Add to timeline (drag to place)",
+  "uiAddVoice": "Add Voice",
+  "uiAfterGeneratingSnapEachCueEndToItsTTSLength": "After generating, snap each cue end to its TTS length.",
+  "uiAfterGeneratingSnapTheEndTimeToTheActualTTSLength": "After generating, snap the End time to the actual TTS length.",
+  "uiAhead": "Ahead",
+  "uiAllArchivedFileSArePresent": "All {count} archived file(s) are present.",
+  "@uiAllArchivedFileSArePresent": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "uiAllCharactersFromThisBankAreAlreadyMembers": "All characters from this bank are already members",
+  "uiAlpha": "Alpha",
+  "uiAPIConfigSaved": "API config saved.",
+  "uiAPIKey": "API Key",
+  "uiAPIKeyOptional": "API key (optional)",
+  "uiAPILogOutput": "API Log Output",
+  "uiAPILogOutputDisabled": "API log output disabled.",
+  "uiAPILogOutputEnabled": "API log output enabled.",
+  "uiAPIOff": "API Off",
+  "uiAppSupportFallbackInstallDirIsReadOnly": "App-support fallback (install dir is read-only)",
+  "uiAppend": "Append",
+  "uiApply": "Apply",
+  "uiApplyAll": "Apply All",
+  "uiApproxTokensDay": "Approx tokens / day",
+  "uiApproxTokensMin": "Approx tokens / min",
+  "uiArchivedAudioCleared": "Archived audio cleared.",
+  "uiAssignAVoiceToThisCueFirst": "Assign a voice to this cue first",
+  "uiAudioCodecForTheMuxedMP4AACIsTheBroadestCompatibleDefault": "Audio codec for the muxed MP4. AAC is the broadest-compatible default.",
+  "uiAudioDurationUnknownCannotTrim": "Audio duration unknown — cannot trim.",
+  "uiAudioFileIsMissingCannotSave": "Audio file is missing — cannot save",
+  "uiAudioFileMissingOnDisk": "Audio file missing on disk",
+  "uiAudioFormat": "Audio format",
+  "uiAudioLibraryIsEmpty": "Audio library is empty",
+  "uiAudioTagPrefix": "Audio tag prefix",
+  "uiAutoSliceLongSegments": "Auto slice long segments",
+  "uiAutoSplit": "Auto Split",
+  "uiAutoSwitchChaptersWhilePlaying": "Auto switch chapters while playing",
+  "uiAutoTurnPageWhilePlaying": "Auto turn page while playing",
+  "uiAutoDetectFromPATH": "Auto-detect from PATH",
+  "uiAutoGenerateFailed": "Auto-generate failed: {error}",
+  "@uiAutoGenerateFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiAutoGenerateOnSend": "Auto-generate on send",
+  "uiAutoGenerateTTS": "Auto-generate TTS",
+  "uiAutoGenerateTTSAfterImport": "Auto-generate TTS after import",
+  "uiAutoPlayAfterGenerate": "Auto-play after generate",
+  "uiAutoSyncCueLengthsToAudio": "Auto-sync cue lengths to audio",
+  "uiAutoSyncLengthToAudio": "Auto-sync length to audio",
+  "uiBack": "Back",
+  "uiBackToNovels": "Back to novels",
+  "uiBackToProjects": "Back to projects",
+  "uiBankHasNoCharacters": "Bank has no characters",
+  "uiBankName": "Bank name",
+  "uiBANKS": "BANKS",
+  "uiBanksCharactersAndInspector": "Banks, characters and inspector",
+  "uiBaseURL": "Base URL",
+  "uiBearerTokenXAPIKey": "Bearer token / X-API-Key",
+  "uiBindHost": "Bind host",
+  "uiBoundTo0000WithNoAPIKeyAnyoneOn": "Bound to 0.0.0.0 with no API key — anyone on the LAN can call your providers. Set an API key or rebind to 127.0.0.1.",
+  "uiBrowse": "Browse…",
+  "uiBuiltIn": "built-in",
+  "uiCACHE": "CACHE",
+  "uiCacheHighlightColor": "Cache Highlight Color",
+  "uiCancel": "Cancel",
+  "uiChange": "Change",
+  "uiChanged": "Changed",
+  "uiChapterText": "Chapter text",
+  "uiChapterTitle": "Chapter title",
+  "uiChapters": "Chapters",
+  "uiCharacterName": "Character Name *",
+  "uiCharacterNotFound": "Character not found",
+  "uiCHARACTERS": "CHARACTERS",
+  "uiCharacters": "Characters",
+  "uiCharactersAreSharedImportingJustAddsThemAsMembersOfThisBank": "Characters are shared — importing just adds them as members of this bank.",
+  "uiChooseExportFolder": "Choose export folder",
+  "uiChooseExportFolderForSubtitlesTTSFiles": "Choose export folder for subtitles + TTS files",
+  "uiClear": "Clear",
+  "uiClearAllArchivedAudio": "Clear All Archived Audio",
+  "uiClearAllArchivedAudio2": "Clear all archived audio?",
+  "uiClearAllCues": "Clear all cues",
+  "uiClearAllCues2": "Clear all cues?",
+  "uiClearAudio": "Clear Audio",
+  "uiClearFailed": "Clear failed: {error}",
+  "@uiClearFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiClearHistoryForThisCharacter": "Clear history for this character",
+  "uiClear2": "Clear…",
+  "uiClickToSelectAudioFile": "Click to select audio file",
+  "uiClose": "Close",
+  "uiClosePlayer": "Close player",
+  "uiComfort": "Comfort",
+  "uiConcurrency": "Concurrency",
+  "uiConcurrency1IsSafestForLocalGPUTTSLeaveRateFieldsBlank": "Concurrency 1 is safest for local GPU TTS. Leave rate fields blank for unlimited.",
+  "uiConfirm": "Confirm",
+  "uiContainerCodecForExportAudioWAVFLACKeepFullQualityMP3Is": "Container + codec for \"Export Audio\". WAV/FLAC keep full quality; MP3 is smaller.",
+  "uiCopyPath": "Copy path",
+  "uiCORSOriginAllowlistCSVEmptyDenyAll": "CORS origin allowlist (CSV, empty = deny all)",
+  "uiCouldNotUseThatFolder": "Could not use that folder: {error}",
+  "@uiCouldNotUseThatFolder": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiCreate": "Create",
+  "uiCreateAVoiceBankFirst": "Create a Voice Bank first",
+  "uiCreateCharacter": "Create Character",
+  "uiCuesWillBeAddedToThisProject": "Cues will be added to this project.",
+  "uiCuesWillBeRemovedGeneratedAudioFilesOnDiskAreKeptBut": "Cues will be removed. Generated audio files on disk are kept but the references will be gone.",
+  "uiCuesWillBeRemovedGeneratedAudioFilesOnDiskAreKeptFor": "Cues will be removed. Generated audio files on disk are kept for now.",
+  "uiCurrent": "Current",
+  "uiCurrentTTSTasks": "Current TTS Tasks",
+  "uiCustomLocation": "Custom location",
+  "uiCustomVoices": "Custom Voices",
+  "uiDark": "Dark",
+  "uiDataDirectory": "Data Directory",
+  "uiDefault": "Default",
+  "uiDefaultLocation": "Default location",
+  "uiDefaultMicrophone": "Default microphone",
+  "uiDefaultModelName": "Default Model Name",
+  "uiDelete": "Delete",
+  "uiDeleteAudioTrack": "Delete audio track?",
+  "uiDeleteChapter": "Delete chapter",
+  "uiDeleteChapter2": "Delete chapter?",
+  "uiDeleteClip": "Delete clip",
+  "uiDeleteProvider": "Delete provider?",
+  "uiDeleteSegment": "Delete segment",
+  "uiText": "Deletes every generated take + imported reference audio. Projects, characters, banks are preserved.",
+  "uiDescribeTheVoiceYouWantToCreateThisWillBeUsedTo": "Describe the voice you want to create. This will be used to generate a new voice.",
+  "uiDescription": "Description",
+  "uiDescriptionOptional": "Description (optional)",
+  "uiDesignModeRequiresAVoiceDescription": "Design mode requires a Voice Description",
+  "uiDetectedUsedForWaveformExtractionAndImportedMediaAnalysis": "Detected. Used for waveform extraction and imported-media analysis.",
+  "uiDialogue": "Dialogue",
+  "uiDialogueRules": "Dialogue Rules",
+  "uiDone": "Done",
+  "uiDropAVoiceHereOrClickAddToTimelineOnASegment": "Drop a voice here or click \"Add to timeline\" on a segment",
+  "uiDubTimeline": "Dub Timeline",
+  "uiDubVideoWithTTSFromSubtitleCues": "Dub video with TTS from subtitle cues",
+  "uiDuplicate": "Duplicate",
+  "uiDuplicateAsTemplate": "Duplicate as Template",
+  "uiDuplicateProvider": "Duplicate Provider",
+  "uiEGHeavyRussianAccentGruffMiddleAgedMale": "e.g. \"Heavy Russian accent, gruff middle-aged male\"",
+  "uiEGSpeakSoftlyAndSlowlyPrependedToTheText": "e.g. \"Speak softly and slowly\" — prepended to the text",
+  "uiEGOrSpeakWithExcitement": "e.g. \"用轻柔的声音说话\" or \"speak with excitement\"",
+  "uiEGAlloyOrGenshinPaimon": "e.g. alloy or genshin-paimon",
+  "uiEGClone": "e.g. clone",
+  "uiEGGenshinPaimon": "e.g. genshin-paimon",
+  "uiEGMyClonedVoice": "e.g. My Cloned Voice",
+  "uiEGZhEnJa": "e.g. zh, en, ja",
+  "uiEdit": "Edit",
+  "uiEDIT": "EDIT",
+  "uiEditChapter": "Edit chapter",
+  "uiEditCue": "Edit cue",
+  "uiEditNovelText": "Edit novel text",
+  "uiEditSplitRule": "Edit Split Rule",
+  "uiEnableAtLeastOneProviderFirstProvidersTab": "Enable at least one Provider first (Providers tab)",
+  "uiEnabled": "Enabled",
+  "uiEncoding": "Encoding…",
+  "uiEnd": "End",
+  "uiEndMmSsMs": "End (mm:ss.ms)",
+  "uiEndMustBeGreaterThanStart": "End must be greater than start",
+  "uiError": "Error",
+  "uiError2": "Error: {error}",
+  "@uiError2": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiExecutablePath": "Executable Path",
+  "uiExportAudio": "Export Audio",
+  "uiExportBook": "Export Book",
+  "uiExportCancelled": "Export cancelled",
+  "uiExportDefaults": "Export Defaults",
+  "uiExportDubbedAudio": "Export dubbed audio",
+  "uiExportDubbedVideo": "Export dubbed video",
+  "uiExportFailed": "Export failed: {error}",
+  "@uiExportFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiExportMerged": "Export Merged",
+  "uiExportMergedAudio": "Export merged audio",
+  "uiExportSubtitlesSingleTTSAudio": "Export subtitles + Single TTS audio",
+  "uiExportSuccessful": "Export successful",
+  "uiExportingAudio": "Exporting audio…",
+  "uiExportingVideo": "Exporting video…",
+  "uiFailed": "Failed",
+  "uiFailedToDeleteCharacter": "Failed to delete character: {error}",
+  "@uiFailedToDeleteCharacter": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiFailedToFetch": "Failed to fetch: {error}",
+  "@uiFailedToFetch": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiFailedToSave": "Failed to save: {error}",
+  "@uiFailedToSave": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiFFmpegIsRequiredForExportConfigureItInSettings": "FFmpeg is required for export - configure it in Settings",
+  "uiFFmpegIsRequiredForExportConfigureItInSettings2": "FFmpeg is required for export — configure it in Settings",
+  "uiFFmpegNotDetectedWaveformsAndMediaProbingAreSkipped": "FFmpeg not detected — waveforms and media probing are skipped.",
+  "uiFFmpegUnavailableOnPlatform": "FFmpeg CLI features are not available on {platform}. Local muxing, trimming, waveform extraction, and video export are disabled.",
+  "@uiFFmpegUnavailableOnPlatform": {
+    "placeholders": {
+      "platform": {
+        "type": "String",
+        "example": "Android"
+      }
+    }
+  },
+  "uiFFmpegUnavailableWaveformsAndLocalExportsAreDisabled": "FFmpeg CLI is not available on this platform — waveforms and local audio/video exports are disabled.",
+  "uiFFmpegRequiredForTrimming": "FFmpeg required for trimming.",
+  "uiFFmpegTrimFailed": "FFmpeg trim failed.",
+  "uiFilledAutomaticallyWhenYouPickAboveOrTypeManually": "Filled automatically when you pick above, or type manually",
+  "uiFont": "Font",
+  "uiGenerate": "Generate",
+  "uiGenerateAll": "Generate All",
+  "uiGenerateAll2": "Generate All ({count})",
+  "@uiGenerateAll2": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "uiGenerateAllCues": "Generate all cues",
+  "uiGenerateBook": "Generate Book",
+  "uiGenerated": "Generated",
+  "uiGenerating": "Generating…",
+  "uiGENERATION": "GENERATION",
+  "uiGPTSoVITSCloneModeNeedsPromptText": "GPT-SoVITS clone mode needs Prompt Text",
+  "uiHealthCheck": "Health Check",
+  "uiHealthCheckResults": "Health Check Results",
+  "uiHexColor": "Hex color",
+  "uiHttpsExampleComHttpLocalhost3000": "https://example.com, http://localhost:3000",
+  "uiIUnderstandThisCannotBeUndone": "I understand this cannot be undone.",
+  "uiImport": "Import",
+  "uiImportCues": "Import {count} cues?",
+  "@uiImportCues": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "uiImportAVideoOntoTheV1TrackFromTheTimeline": "Import a video onto the V1 track from the timeline.",
+  "uiImportAll": "Import All",
+  "uiImportAudio": "Import Audio",
+  "uiImportFolder": "Import folder",
+  "uiImportFromAnotherBank": "Import from another bank",
+  "uiImportFromAudioLibrary": "Import from Audio Library",
+  "uiImportOrAddAChapterToEditNovelText": "Import or add a chapter to edit novel text.",
+  "uiImportSFXFromFile": "Import SFX from file",
+  "uiImportThisCharacter": "Import this character",
+  "uiImportTXTFiles": "Import TXT files",
+  "uiImportTXTFilesImportAFolderOrAddAChapter": "Import TXT files, import a folder, or add a chapter.",
+  "uiImportVideo": "Import Video",
+  "uiImported": "Imported \"{name}\"",
+  "@uiImported": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "uiImportedCharacterS": "Imported {count} character(s)",
+  "@uiImportedCharacterS": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "uiImportedCues": "Imported {count} cues",
+  "@uiImportedCues": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "uiInputDevice": "Input device",
+  "uiInstructText": "Instruct Text *",
+  "uiInvalidRegex": "Invalid regex: {error}",
+  "@uiInvalidRegex": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiLanguageCode": "Language Code",
+  "uiLeaveBlankToAutoDetectEGCFfmpegBinFfmpegExe": "Leave blank to auto-detect (e.g. C:\\ffmpeg\\bin\\ffmpeg.exe)",
+  "uiLine": "Line",
+  "uiLines": "Lines",
+  "uiLoadingModels": "Loading models...",
+  "uiLoadingRegisteredVoices": "Loading registered voices...",
+  "uiLoadingServerProfiles": "Loading server profiles...",
+  "uiLoadingVoices": "Loading voices...",
+  "uiManageRules": "Manage rules",
+  "uiMergingAudio": "Merging audio...",
+  "uiMode": "Mode",
+  "uiModelName": "Model Name",
+  "uiMultiCharacterConversations": "Multi-character conversations",
+  "uiName": "Name",
+  "uiNameIsRequired": "Name is required",
+  "uiNarrator": "Narrator",
+  "uiNaturalLanguageVoiceDescriptionAtSynthesisTimeThisIsSentToThe": "Natural-language voice description. At synthesis time this is sent to the provider.",
+  "uiNaturalLanguageVoiceDescriptionAtSynthesisTimePrependItToTheText": "Natural-language voice description. At synthesis time, prepend it to the text in parentheses — e.g.\n(A young woman, gentle and sweet voice)",
+  "uiNewBank": "New Bank",
+  "uiNewCharacter": "New Character",
+  "uiNewCharacterAddedToThisBank": "New Character (added to this bank)",
+  "uiNewDialogTTSProject": "New Dialog TTS Project",
+  "uiNewName": "New name",
+  "uiNewNovel": "New Novel",
+  "uiNewPhaseTTSProject": "New Phase TTS Project",
+  "uiNewProject": "New Project",
+  "uiNewSplitRule": "New Split Rule",
+  "uiNewVideoDubProject": "New Video Dub Project",
+  "uiNewVoiceBank": "New Voice Bank",
+  "uiNewVoiceCharacter": "New Voice Character",
+  "uiNextChapter": "Next chapter",
+  "uiNextPage": "Next page",
+  "uiNextVoice": "Next voice",
+  "uiNoAPIRequestsLoggedYet": "No API requests logged yet.",
+  "uiNoAudioTracksYet": "No audio tracks yet",
+  "uiNoBanksYet": "No banks yet",
+  "uiNoCharactersInThisBankYet": "No characters in this bank yet",
+  "uiNoCuesFoundInFile": "No cues found in file",
+  "uiNoCuesYetImportAnSRTLRCFileOrAddOneManually": "No cues yet.\nImport an SRT/LRC file or add one manually.",
+  "uiNoDialogProjectsYet": "No dialog projects yet",
+  "uiNoGeneratedSegmentsToMerge": "No generated segments to merge.",
+  "uiNoMatches": "No matches",
+  "uiNoModelsOrVoicesYetUseFetchAllOrAddManually": "No models or voices yet. Use \"Fetch All\" or add manually.",
+  "uiNoPerSentenceStyleControls": "No per-sentence style controls",
+  "uiNoProjectsYet": "No projects yet",
+  "uiNoProvidersAvailable": "No providers available",
+  "uiNoProvidersYet": "No providers yet",
+  "uiNoRule": "No rule",
+  "uiNoRules": "No rules",
+  "uiNoTTSModelsFoundGoToProvidersFetchAllToCacheAvailable": "No TTS models found. Go to Providers → Fetch All to cache available models.",
+  "uiNoUnfinishedTTSTasksRightNow": "No unfinished TTS tasks right now.",
+  "uiNoVideoDubProjectsYet": "No video dub projects yet",
+  "uiNoVideoLoaded": "No video loaded",
+  "uiNoVoicesInThisBankAddVoicesInVoiceBank": "No voices in this bank. Add voices in Voice Bank.",
+  "uiNoVoicesYetUseFetchToGetAvailableVoices": "No voices yet. Use \"Fetch\" to get available voices.",
+  "uiNoneUploadManually": "None (upload manually)",
+  "uiNoneUseUploadedAudioOnly": "None (use uploaded audio only)",
+  "uiNotFoundInstallFfmpegOrSetAPathBelowTheAppWorks": "Not found. Install ffmpeg (or set a path below) — the app works without it, but waveforms and media probing will be skipped.",
+  "uiNothingToExportNoGeneratedTTSA3AudioOrUnmutedV1": "Nothing to export — no generated TTS, A3 audio, or unmuted V1",
+  "uiNovelLongFormNarration": "Novel & long-form narration",
+  "uiOK": "OK",
+  "uiOnlyPending": "Only pending",
+  "uiOpenFolder": "Open folder",
+  "uiOutputSpeakerNameOptional": "Output Speaker Name (optional)",
+  "uiOverwriteWhileReading": "Overwrite while reading",
+  "uiPaper": "Paper",
+  "uiParseFailed": "Parse failed: {error}",
+  "@uiParseFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiPasteYourNovelTextHereEachParagraphBecomesATTSSegment": "Paste your novel text here...\n\nEach paragraph becomes a TTS segment.",
+  "uiPasteYourNovelTextHereUseAutoSplitToBreakItInto": "Paste your novel text here...\n\nUse Auto Split to break it into TTS segments.",
+  "uiPatternIsRequired": "Pattern is required",
+  "uiPending": "Pending",
+  "uiPickAClipCollectedInTheApp": "Pick a clip collected in the app",
+  "uiPickAnAudioFileFromDisk": "Pick an audio file from disk",
+  "uiPickAudio": "Pick audio",
+  "uiPlayAllGeneratedAudio": "Play all generated audio",
+  "uiPlayFromHere": "Play from here",
+  "uiPLAYBACK": "PLAYBACK",
+  "uiPlaysTheNewLineOnceItFinishes": "Plays the new line once it finishes",
+  "uiPort": "Port",
+  "uiPortableNextToExecutable": "Portable (next to executable)",
+  "uiPreview": "Preview",
+  "uiPreviousChapter": "Previous chapter",
+  "uiPreviousPage": "Previous page",
+  "uiPreviousVoice": "Previous voice",
+  "uiProbing": "Probing…",
+  "uiProjectName": "Project name",
+  "uiPromptLanguage": "Prompt Language",
+  "uiPromptTextSpokenInRefAudio": "Prompt Text (spoken in ref audio)",
+  "uiPromptTextSpokenInRefAudio2": "Prompt Text (spoken in ref audio) *",
+  "uiProvider": "Provider",
+  "uiProviderNotFoundForThisCharacter": "Provider not found for this character",
+  "uiQueueRateLimits": "Queue & Rate Limits",
+  "uiQueued": "Queued",
+  "uiQUICKTEST": "QUICK TEST",
+  "uiRateLimitReqMinIP0Off": "Rate limit (req/min/IP, 0 = off)",
+  "uiReCheck": "Re-check",
+  "uiReRecord": "Re-record",
+  "uiReaderAppearance": "Reader appearance",
+  "uiReaderAppearance2": "Reader Appearance",
+  "uiRecent": "Recent",
+  "uiRecord": "Record",
+  "uiRecordAudio": "Record Audio",
+  "uiRecordExternalAPIRequestMetadataInThisPanelRequestBodiesAndAuth": "Record external API request metadata in this panel. Request bodies and auth headers are not stored.",
+  "uiRecordingFailed": "Recording failed: {error}",
+  "@uiRecordingFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiREFERENCEAUDIO": "REFERENCE AUDIO",
+  "uiReferenceLanguage": "Reference Language",
+  "uiReferenceText": "Reference Text",
+  "uiReferenceTranscript": "Reference Transcript",
+  "uiRegenerate": "Regenerate",
+  "uiRegenerateAll": "Regenerate all",
+  "uiRegexPattern": "Regex pattern",
+  "uiRegisteredVoice": "Registered Voice",
+  "uiRemoveFromBank": "Remove from bank",
+  "uiRename": "Rename",
+  "uiRenameVoiceBank": "Rename Voice Bank",
+  "uiReplace": "Replace",
+  "uiReplaceOriginal": "Replace original",
+  "uiRequestsDay": "Requests / day",
+  "uiRequestsMin": "Requests / min",
+  "uiReset": "Reset",
+  "uiRunAutoSplitToCreateSegments": "Run Auto Split to create segments",
+  "uiRunGenerateAllImmediatelyCuesWithoutAVoiceAreSkipped": "Run Generate All immediately. Cues without a voice are skipped.",
+  "uiRunTTSForThisCueImmediatelyAfterSavingNeedsAVoiceIn": "Run TTS for this cue immediately after saving. Needs a voice in the bank.",
+  "uiRunning": "Running",
+  "uiRunningOn": "Running on {address}",
+  "@uiRunningOn": {
+    "placeholders": {
+      "address": {}
+    }
+  },
+  "uiSave": "Save",
+  "uiSaveExit": "Save & Exit",
+  "uiSaveLeave": "Save & Leave",
+  "uiSaveRestart": "Save & restart",
+  "uiSaveAsNew": "Save as new",
+  "uiSaveAsVoiceAsset": "Save as Voice Asset",
+  "uiSaveChanges": "Save Changes",
+  "uiSaveSegment": "Save segment",
+  "uiSaved": "Saved",
+  "uiSavedToVoiceAssets": "Saved \"{name}\" to Voice Assets",
+  "@uiSavedToVoiceAssets": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "uiScanFailed": "Scan failed: {error}",
+  "@uiScanFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiScanNow": "Scan Now",
+  "uiScanning": "Scanning…",
+  "uiSCRIPT": "SCRIPT",
+  "uiSearchCharacters": "Search characters...",
+  "uiSearchProjects": "Search projects",
+  "uiSearchVoices": "Search voices",
+  "uiSearch": "Search…",
+  "uiSEGMENTS": "SEGMENTS",
+  "uiSelectABankAndCharacterToEdit": "Select a bank and character to edit",
+  "uiSelectACharacterToEdit": "Select a character to edit",
+  "uiSelectACharacterToQuickTest": "Select a character to quick-test",
+  "uiSelectATrack": "Select a track",
+  "uiSelectAVoxCPM2Mode": "Select a VoxCPM2 mode",
+  "uiSelectFromVoiceAssets": "Select from Voice Assets",
+  "uiSelectModel": "Select Model",
+  "uiSelectOrAddAProvider": "Select or add a provider",
+  "uiSelectOrCreateAVoiceBank": "Select or create a Voice Bank",
+  "uiSelectOrEnterAGPTSoVITSSpeaker": "Select or enter a GPT-SoVITS speaker",
+  "uiSelectSpeaker": "Select Speaker",
+  "uiSelectVoice": "Select Voice",
+  "uiSendFailed": "Send failed: {error}",
+  "@uiSendFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiSentenceVoice": "Sentence Voice",
+  "uiServerProfile": "Server Profile",
+  "uiSETTINGS": "SETTINGS",
+  "uiSingleAudioTracksForVoiceCloning": "Single audio tracks for voice cloning",
+  "uiSkipPunctuationOnlyText": "Skip punctuation-only text",
+  "uiSlice": "Slice",
+  "uiSliceAfterPunctuation": "Slice after punctuation",
+  "uiSourceBank": "Source Bank",
+  "uiSourceVideoMissingOnDisk": "Source video missing on disk",
+  "uiSpaceEnterPToPlayOrStop": "Space / Enter / P to play or stop",
+  "uiSpeakerVoiceID": "Speaker / Voice ID *",
+  "uiSpeed10Normal": "Speed (1.0 = normal)",
+  "uiSplitAtBlankLines": "Split at blank lines",
+  "uiSplitAtRegexMatch": "Split at regex match",
+  "uiSplitRules": "Split Rules",
+  "uiStart": "Start",
+  "uiStartMmSsMs": "Start (mm:ss.ms)",
+  "uiSTATS": "STATS",
+  "uiStopped": "Stopped",
+  "uiStyleDirection": "Style / direction",
+  "uiStyleInstruction": "Style Instruction",
+  "uiStyleInstructionOptional": "Style Instruction (optional)",
+  "uiSubtitleText": "Subtitle text",
+  "uiSubtitles": "Subtitles",
+  "uiSyncCueLengthsToTTS": "Sync cue lengths to TTS",
+  "uiSyncWithDisk": "Sync with Disk",
+  "uiSynthesizeTTSRightAfterSending": "Synthesize TTS right after sending",
+  "uiTapToChange": "Tap to change",
+  "uiTextIsRequired": "Text is required",
+  "uiTextLanguageOptional": "Text Language (optional)",
+  "uiTextLanguageSynthesisOutput": "Text Language (synthesis output)",
+  "uiThisProjectAlreadyHasCuesReplaceThemOrAppendTheNewCues": "This project already has {count} cues. Replace them, or append the new cues after?",
+  "@uiThisProjectAlreadyHasCuesReplaceThemOrAppendTheNewCues": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "uiTimeline": "Timeline",
+  "uiTotalLength": "Total length",
+  "uiTranscriptOfTheAudioUsedByVoiceCloningModelsThatNeedIt": "Transcript of the audio (used by voice cloning models that need it)",
+  "uiTranscriptOfTheReferenceAudio": "Transcript of the reference audio",
+  "uiTrim": "Trim",
+  "uiTrimApplied": "Trim applied",
+  "uiTTSQueueIsIdle": "TTS queue is idle",
+  "uiTypeBelowToTestThisVoice": "Type below to test this voice",
+  "uiTypeDialogLineEnterToSendCtrlEnterForNewline": "Type dialog line… (Enter to send, Ctrl+Enter for newline)",
+  "uiTypeSomethingToTest": "Type something to test...",
+  "uiUltraCloneModeRequiresAPromptText": "Ultra Clone mode requires a Prompt Text",
+  "uiUnknown": "Unknown",
+  "uiUnsavedChanges": "Unsaved changes",
+  "uiUnavailableOnThisPlatform": "Unavailable on this platform",
+  "uiUploadAVoiceSampleTheModelWillCloneItsToneAndSpeak": "Upload a voice sample — the model will clone its tone and speak the synthesis text in any language.",
+  "uiUploadAVoiceSampleToUseAsTheBaseVoiceInsteadOf": "Upload a voice sample to use as the base voice instead of a preset profile.",
+  "uiUploadAnAudioFileOrRecordANewSampleToGetStarted": "Upload an audio file or record a new sample to get started.",
+  "uiUploadAudio": "Upload Audio",
+  "uiUseChaptersBelowToImportTXTImportAFolderOrAddA": "Use Chapters below to import TXT, import a folder, or add a chapter.",
+  "uiUseFormatMmSsMsOrHHMmSsMs": "Use format mm:ss.ms or HH:mm:ss.ms",
+  "uiUsedByTheVideoDubEditorSExportAudioExportVideoButtons": "Used by the Video Dub editor''s Export Audio / Export Video buttons.",
+  "uiUsingOverride": "Using override",
+  "uiVideoAudioCodec": "Video audio codec",
+  "uiVideoCodec": "Video codec",
+  "uiVoice": "Voice",
+  "uiVoiceSpeakerID": "Voice / Speaker ID",
+  "uiVoiceSpeakerName": "Voice / Speaker Name",
+  "uiVoiceAssetDirectory": "Voice Asset Directory",
+  "uiVoiceAssetDirectoryResetToDefault": "Voice asset directory reset to default",
+  "uiVoiceAssetDirectorySetTo": "Voice asset directory set to {path}",
+  "@uiVoiceAssetDirectorySetTo": {
+    "placeholders": {
+      "path": {}
+    }
+  },
+  "uiVoiceBank": "Voice bank",
+  "uiVoiceDescription": "Voice Description *",
+  "uiVoiceDesignRequiresAVoiceDescription": "Voice Design requires a Voice Description",
+  "uiVoiceForAll": "Voice for all",
+  "uiVoiceInstruction": "Voice Instruction",
+  "uiVoiceName": "Voice Name",
+  "uiVoiceSettings": "Voice settings",
+  "uiVOICES": "VOICES",
+  "uiVOICESINBANK": "VOICES IN BANK",
+  "uiWaiting": "Waiting",
+  "uiYouCanConfigureTheURLAPIKeyAndModelAfterCreation": "You can configure the URL, API key, and model after creation.",
+  "uiYouHaveUnsavedChangesInThisProjectSaveBeforeLeaving": "You have unsaved changes in this project. Save before leaving?",
+  "uiZhEnJaKo": "zh / en / ja / ko ...",
+  "uiAudioExportFailed": "Audio export failed: {error}",
+  "@uiAudioExportFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiExportedCuesAudioFilesTo": "Exported {cueCount} cues + {audioCount} audio files to {path}",
+  "@uiExportedCuesAudioFilesTo": {
+    "placeholders": {
+      "cueCount": {},
+      "audioCount": {},
+      "path": {}
+    }
+  },
+  "uiExportedCuesAudioFilesToMissing": "Exported {cueCount} cues + {audioCount} audio files to {path} ({missingCount} missing)",
+  "@uiExportedCuesAudioFilesToMissing": {
+    "placeholders": {
+      "cueCount": {},
+      "audioCount": {},
+      "path": {},
+      "missingCount": {}
+    }
+  },
+  "uiNoNovelProjectsYet": "No novel projects yet",
+  "uiSidecarSRTFailed": "Sidecar SRT failed: {error}",
+  "@uiSidecarSRTFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiSRTSidecarWrittenTo": "SRT sidecar written to {name}.",
+  "@uiSRTSidecarWrittenTo": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "startupLastPage": "Last page before close",
+  "fontSettingsTitle": "Interface Font",
+  "fontSettingsSubtitle": "Use the app default font or your operating system UI font.",
+  "fontModeAppDefault": "App default",
+  "fontModeSystem": "System font",
+  "fontModeSaved": "Font set to {font}.",
+  "@fontModeSaved": {
+    "placeholders": {
+      "font": {
+        "type": "String",
+        "example": "System font"
+      }
+    }
+  },
+  "uiVideoDubUnavailableOnAndroidPhone": "Video Dub is disabled on Android phones",
+  "uiVideoDubUnavailableOnAndroidPhoneDescription": "Video editing needs more horizontal space than tall phone screens can provide. Use a tablet, foldable wide layout, or desktop to edit video dubbing projects.",
+  "uiDetails": "Details"
+}

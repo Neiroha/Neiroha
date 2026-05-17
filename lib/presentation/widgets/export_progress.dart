@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/material.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:path/path.dart' as p;
 
 import 'package:neiroha/presentation/theme/app_theme.dart';
@@ -17,20 +19,20 @@ class FfmpegRunResult {
   final String stderrTail;
 
   const FfmpegRunResult.ok(this.outputPath)
-      : success = true,
-        cancelled = false,
-        stderrTail = '';
+    : success = true,
+      cancelled = false,
+      stderrTail = '';
 
   const FfmpegRunResult.cancelled()
-      : success = false,
-        cancelled = true,
-        outputPath = null,
-        stderrTail = '';
+    : success = false,
+      cancelled = true,
+      outputPath = null,
+      stderrTail = '';
 
   const FfmpegRunResult.failed(this.stderrTail)
-      : success = false,
-        cancelled = false,
-        outputPath = null;
+    : success = false,
+      cancelled = false,
+      outputPath = null;
 }
 
 /// Run [ffmpegPath] [args] while displaying a modal progress dialog.
@@ -49,8 +51,11 @@ Future<FfmpegRunResult> runFfmpegWithProgress({
   required int totalDurationMs,
   required String taskLabel,
 }) async {
+  if (args.isEmpty) {
+    return const FfmpegRunResult.failed('No ffmpeg arguments supplied');
+  }
+
   final progressNotifier = ValueNotifier<double>(0.0);
-  final cancelCompleter = Completer<void>();
   final outputPath = args.isNotEmpty ? args.last : '';
 
   // Inject -progress pipe:1 -nostats just before the output path.
@@ -62,85 +67,212 @@ Future<FfmpegRunResult> runFfmpegWithProgress({
     args.last,
   ];
 
-  late Process process;
-  var cancelled = false;
-  final stderrBuf = StringBuffer();
+  final messages = ReceivePort();
+  final errors = ReceivePort();
+  final exits = ReceivePort();
+  final resultCompleter = Completer<FfmpegRunResult>();
+  StreamSubscription<dynamic>? messageSub;
+  StreamSubscription<dynamic>? errorSub;
+  StreamSubscription<dynamic>? exitSub;
+  Isolate? worker;
+  SendPort? workerControlPort;
+  var cancelRequested = false;
+
+  void requestCancel() {
+    cancelRequested = true;
+    workerControlPort?.send('cancel');
+  }
 
   // Start the dialog before the process — gives the user immediate
-  // feedback even if `Process.start` is slow on cold cache.
-  unawaited(showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (ctx) => _ProgressDialog(
-      label: taskLabel,
-      indeterminate: totalDurationMs <= 0,
-      progress: progressNotifier,
-      onCancel: () {
-        cancelled = true;
-        if (!cancelCompleter.isCompleted) cancelCompleter.complete();
-      },
+  // feedback even if isolate/process startup is slow on cold cache.
+  unawaited(
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _ProgressDialog(
+        label: taskLabel,
+        indeterminate: totalDurationMs <= 0,
+        progress: progressNotifier,
+        onCancel: requestCancel,
+      ),
     ),
-  ));
+  );
 
   try {
-    process = await Process.start(ffmpegPath, ffmpegArgs);
+    messageSub = messages.listen((message) {
+      if (message is! List || message.isEmpty) return;
+      final type = message.first;
+      switch (type) {
+        case 'ready':
+          workerControlPort = message[1] as SendPort;
+          if (cancelRequested) workerControlPort?.send('cancel');
+          break;
+        case 'progress':
+          final value = message[1];
+          if (value is num) {
+            progressNotifier.value = value.toDouble().clamp(0.0, 1.0);
+          }
+          break;
+        case 'done':
+          if (resultCompleter.isCompleted) return;
+          final success = message[1] == true;
+          final cancelled = message[2] == true;
+          final stderrTail = (message[3] as String?) ?? '';
+          if (cancelled) {
+            resultCompleter.complete(const FfmpegRunResult.cancelled());
+          } else if (success) {
+            resultCompleter.complete(FfmpegRunResult.ok(outputPath));
+          } else {
+            resultCompleter.complete(FfmpegRunResult.failed(stderrTail));
+          }
+          break;
+      }
+    });
+    errorSub = errors.listen((message) {
+      if (resultCompleter.isCompleted) return;
+      resultCompleter.complete(
+        FfmpegRunResult.failed('FFmpeg worker crashed: $message'),
+      );
+    });
+    exitSub = exits.listen((_) {
+      unawaited(
+        Future<void>.delayed(const Duration(seconds: 1), () {
+          if (resultCompleter.isCompleted) return;
+          resultCompleter.complete(
+            const FfmpegRunResult.failed('FFmpeg worker exited unexpectedly'),
+          );
+        }),
+      );
+    });
+
+    worker = await Isolate.spawn<Map<String, Object?>>(
+      _ffmpegProgressWorker,
+      <String, Object?>{
+        'sendPort': messages.sendPort,
+        'ffmpegPath': ffmpegPath,
+        'args': ffmpegArgs,
+        'totalDurationMs': totalDurationMs,
+      },
+      debugName: 'ffmpeg-export',
+      onError: errors.sendPort,
+      onExit: exits.sendPort,
+    );
   } catch (e) {
     progressNotifier.dispose();
     if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
     return FfmpegRunResult.failed('Could not start ffmpeg: $e');
   }
 
-  // Cancel = kill the child.
-  unawaited(cancelCompleter.future.then((_) => process.kill()));
-
-  // Tee stderr into a tail buffer so we can surface the last few
-  // lines on failure.
-  unawaited(process.stderr
-      .transform(utf8.decoder)
-      .transform(const LineSplitter())
-      .forEach((line) {
-    if (stderrBuf.length > 8000) {
-      // Cap at ~8 KB to avoid pathological accumulation.
-      return;
-    }
-    stderrBuf.writeln(line);
-  }));
-
-  // Parse stdout for progress.
-  await process.stdout
-      .transform(utf8.decoder)
-      .transform(const LineSplitter())
-      .forEach((line) {
-    if (line.startsWith('out_time_us=')) {
-      final us = int.tryParse(line.substring(12));
-      if (us != null && totalDurationMs > 0) {
-        final pct = (us / 1000 / totalDurationMs).clamp(0.0, 1.0);
-        progressNotifier.value = pct;
-      }
-    } else if (line == 'progress=end') {
-      progressNotifier.value = 1.0;
-    }
-  });
-
-  final exit = await process.exitCode;
+  final result = await resultCompleter.future;
   progressNotifier.dispose();
+  await messageSub.cancel();
+  await errorSub.cancel();
+  await exitSub.cancel();
+  messages.close();
+  errors.close();
+  exits.close();
+  worker.kill(priority: Isolate.immediate);
 
   if (context.mounted) {
     Navigator.of(context, rootNavigator: true).pop();
   }
 
-  if (cancelled) return const FfmpegRunResult.cancelled();
-  if (exit != 0) {
-    final lines = stderrBuf
-        .toString()
-        .trim()
-        .split('\n')
-        .where((l) => l.trim().isNotEmpty)
-        .toList();
-    final tail = lines.length <= 4 ? lines : lines.sublist(lines.length - 4);
-    return FfmpegRunResult.failed(tail.join(' / '));
+  return result;
+}
+
+void _ffmpegProgressWorker(Map<String, Object?> message) async {
+  final sendPort = message['sendPort']! as SendPort;
+  final ffmpegPath = message['ffmpegPath']! as String;
+  final args = (message['args']! as List).cast<String>();
+  final totalDurationMs = message['totalDurationMs']! as int;
+  final controlPort = ReceivePort();
+
+  Process? process;
+  var cancelled = false;
+  final stderrLines = <String>[];
+
+  sendPort.send(<Object?>['ready', controlPort.sendPort]);
+
+  final controlSub = controlPort.listen((command) {
+    if (command != 'cancel') return;
+    cancelled = true;
+    process?.kill();
+  });
+
+  try {
+    process = await Process.start(ffmpegPath, args);
+    if (cancelled) process.kill();
+  } catch (e) {
+    await controlSub.cancel();
+    controlPort.close();
+    sendPort.send(<Object?>[
+      'done',
+      false,
+      cancelled,
+      'Could not start ffmpeg: $e',
+    ]);
+    return;
   }
-  return FfmpegRunResult.ok(outputPath);
+
+  final stdoutDone = Completer<void>();
+  final stderrDone = Completer<void>();
+
+  final stderrSub = process.stderr
+      .transform(utf8.decoder)
+      .transform(const LineSplitter())
+      .listen(
+        (line) {
+          if (line.trim().isEmpty) return;
+          stderrLines.add(line);
+          if (stderrLines.length > 24) stderrLines.removeAt(0);
+        },
+        onError: (_) {
+          if (!stderrDone.isCompleted) stderrDone.complete();
+        },
+        onDone: () {
+          if (!stderrDone.isCompleted) stderrDone.complete();
+        },
+      );
+
+  final stdoutSub = process.stdout
+      .transform(utf8.decoder)
+      .transform(const LineSplitter())
+      .listen(
+        (line) {
+          if (line.startsWith('out_time_us=')) {
+            final us = int.tryParse(line.substring(12));
+            if (us != null && totalDurationMs > 0) {
+              final pct = (us / 1000 / totalDurationMs).clamp(0.0, 1.0);
+              sendPort.send(<Object?>['progress', pct]);
+            }
+          } else if (line == 'progress=end') {
+            sendPort.send(<Object?>['progress', 1.0]);
+          }
+        },
+        onError: (_) {
+          if (!stdoutDone.isCompleted) stdoutDone.complete();
+        },
+        onDone: () {
+          if (!stdoutDone.isCompleted) stdoutDone.complete();
+        },
+      );
+
+  final exit = await process.exitCode;
+  try {
+    await Future.wait<void>([
+      stdoutDone.future,
+      stderrDone.future,
+    ]).timeout(const Duration(seconds: 1));
+  } catch (_) {}
+  await stdoutSub.cancel();
+  await stderrSub.cancel();
+  await controlSub.cancel();
+  controlPort.close();
+
+  final tail = stderrLines.length <= 4
+      ? stderrLines
+      : stderrLines.sublist(stderrLines.length - 4);
+  sendPort.send(<Object?>['done', exit == 0, cancelled, tail.join(' / ')]);
 }
 
 class _ProgressDialog extends StatelessWidget {
@@ -173,10 +305,10 @@ class _ProgressDialog extends StatelessWidget {
                   value: indeterminate ? null : value,
                   minHeight: 6,
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Text(
                   indeterminate
-                      ? 'Encoding…'
+                      ? AppLocalizations.of(context).uiEncoding
                       : '${(value * 100).clamp(0, 100).toStringAsFixed(1)}%',
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -190,7 +322,10 @@ class _ProgressDialog extends StatelessWidget {
         ),
       ),
       actions: [
-        TextButton(onPressed: onCancel, child: const Text('Cancel')),
+        TextButton(
+          onPressed: onCancel,
+          child: Text(AppLocalizations.of(context).uiCancel),
+        ),
       ],
     );
   }
@@ -207,7 +342,7 @@ Future<void> showExportSuccessDialog({
   await showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text('Export successful'),
+      title: Text(AppLocalizations.of(context).uiExportSuccessful),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,7 +352,7 @@ Future<void> showExportSuccessDialog({
             style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
           ),
           if (extraNote != null) ...[
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             Text(
               extraNote,
               style: TextStyle(
@@ -235,12 +370,12 @@ Future<void> showExportSuccessDialog({
             unawaited(revealInFileManager(filePath));
           },
           icon: const Icon(Icons.folder_open_rounded, size: 16),
-          label: const Text('Open folder'),
+          label: Text(AppLocalizations.of(context).uiOpenFolder),
           style: TextButton.styleFrom(foregroundColor: AppTheme.accentColor),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Done'),
+          child: Text(AppLocalizations.of(context).uiDone),
         ),
       ],
     ),

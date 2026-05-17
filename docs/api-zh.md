@@ -11,13 +11,30 @@ Neiroha 在两个层面上暴露音频 API：
 
 ## 1. 本地 API 服务器（Shelf）
 
-内置服务器运行在 `0.0.0.0:8976`（可配置），可从设置页面开关。
+内置服务器默认运行在 `127.0.0.1:8976`，可从 **设置 → API Server**
+开关。只有在明确需要局域网访问时，才将绑定地址改为 `0.0.0.0`。
+
+### 安全与运行配置
+
+设置页会将本地 API 配置持久化到 `AppSettings`：
+
+| 设置 | 默认值 | 说明 |
+|---|---|---|
+| 绑定地址 | `127.0.0.1` | 默认仅本机回环访问 |
+| 端口 | `8976` | 修改后需要重启服务器 |
+| API Key | 空 | 设置后请求需发送 `Authorization: Bearer <key>` 或 `X-API-Key: <key>` |
+| CORS origins | 空 | 空值拒绝浏览器跨域访问；`*` 允许任意 origin |
+| 限流 | `60` req/min/IP | `0` 表示禁用 |
+| 最大请求体 | `1048576` 字节 | `0` 表示不检查声明的 Content-Length |
+| API 日志输出 | 关闭 | 仅记录元数据；不会记录请求体和认证头 |
+
+所有合成请求都会进入共享的 `TtsQueueService`，因此 Provider 并发数和
+限流规则同时作用于桌面端界面和外部 API 客户端。
 
 ### 音色库作为模型
 
 API 以**音色库（Voice Bank）**作为 `model` 的抽象层：
-- 多个音色库可以**同时处于激活状态**
-- 每个激活的音色库在 `/v1/models` 中作为一个模型出现
+- 激活的音色库记录会在 `/v1/models` 中作为模型出现
 - 音色库名称用作 API 请求中的 `model` 值
 - `/v1/audio/voices` 和 `/speakers` 列出的声音均限定在激活的音色库范围内
 
@@ -62,6 +79,9 @@ API 以**音色库（Voice Bank）**作为 `model` 的抽象层：
 
 **错误响应：**
 - `400` — 缺少 `input` 或 `voice` 字段
+- `401` — 配置鉴权后缺少或传入了错误的 API Key
+- `413` — 请求体超过配置的大小限制
+- `429` — 超过按 IP 统计的请求预算
 - `404` — 未找到声音角色
 - `500` — 未找到 Provider 或上游合成失败
 
@@ -117,7 +137,12 @@ API 以**音色库（Voice Bank）**作为 `model` 的抽象层：
 
 **响应：**
 ```json
-{ "status": "ok", "port": 8976 }
+{
+  "status": "ok",
+  "host": "127.0.0.1",
+  "port": 8976,
+  "authRequired": false
+}
 ```
 
 ---
@@ -134,6 +159,19 @@ abstract class TtsAdapter {
   Future<List<ModelInfo>> getModels();
 }
 ```
+
+### 平台可用性
+
+Provider 与媒体能力会按当前运行平台过滤：
+
+| 能力 | Windows | Linux / macOS | Android |
+|---|---|---|---|
+| 外部 FFmpeg CLI 路径 / PATH 检测 | 是 | 是 | 否 |
+| 本地波形提取、裁剪、混音导出 | 是 | 是 | 禁用 |
+| Windows SAPI 系统 TTS | 是 | 否 | 否 |
+
+新增 Provider 时不会列出当前平台不支持的适配器。若数据库中已有来自
+其他平台的记录，则会显示为“当前平台不可用”，不能启用或执行健康检查。
 
 ### 2.1 OpenAI 兼容适配器（`openaiCompatible`）
 
@@ -197,6 +235,7 @@ abstract class TtsAdapter {
 | 合成（上传） | `POST` | `/cosyvoice/speech/upload` | **已实现** |
 | 健康检查 | `GET` | `/health` | **已实现** |
 | 列出说话人 | `GET` | `/speakers` | **已实现** |
+| 列出服务端 profile | `GET` | `/cosyvoice/profiles` | **已实现** |
 
 **JSON 合成（`/cosyvoice/speech`）：**
 ```json
@@ -220,34 +259,41 @@ abstract class TtsAdapter {
 | `instruct` | 指令模式 | `prompt_audio_path`/`prompt_audio` + `instruct_text` |
 
 **Multipart 上传（`/cosyvoice/speech/upload`）：**
-用于 zero_shot 模式上传参考音频文件。字段以 `multipart/form-data` 发送：
-- `text`、`mode`（= `zero_shot`）、`speed`、`response_format`
+用于上传本地参考音频文件。字段以 `multipart/form-data` 发送：
+- `text`、`mode`、`speed`、`response_format`
 - `prompt_audio` — 参考音频文件
-- `prompt_text`、`prompt_lang`、`profile`、`instruct_text`（可选）
+- `prompt_text`（zero_shot 必填）、`prompt_lang`、`instruct_text`（instruct 必填）
+
+> **重要：** multipart 路径不会发送 `profile`。服务端
+> `build_runtime_char_config` 会把 `profile` 当成已注册角色名严格查找，
+> 未注册名称会导致 400 “未找到角色”。上传音频时，上传文件本身已经完整
+> 定义了参考声音；只有 JSON 路径在不上传音频时才使用 `profile`。
 
 ### 2.4 GPT-SoVITS 适配器（`gptSovits`）
 
-适用于 GPT-SoVITS TTS 后端（api_v2.py 风格）。
+适用于 Neiroha GPT-SoVITS 本地启动器，支持已训练说话人 profile 和参考音频克隆模式。
 
 | 操作 | 方法 | 路径 | 状态 |
 |---|---|---|---|
-| 合成 | `POST` | `/tts` | **已实现** |
-| 健康检查 | `GET` | `/control` | **已实现** |
-| 列出说话人 | — | — | 不支持（使用参考音频文件） |
+| 已训练说话人合成 | `POST` | `/v1/audio/speech` | **已实现** |
+| 克隆合成 | `POST` | `/gpt-sovits/clone` | **已实现** |
+| 健康检查 | `GET` | `/health` | **已实现** |
+| 列出原生模型 | `GET` | `/gpt-sovits/models` | **已实现** |
+| 列出说话人 | `GET` | `/gpt-sovits/voices`、`/v1/audio/voices`、`/speakers` | **已实现** |
 
-**合成请求体：**
+**克隆请求体：**
 ```json
 {
-  "text": "要合成的文本",
+  "input": "要合成的文本",
+  "speaker": "clone",
   "text_lang": "zh",
   "ref_audio_path": "/path/to/ref.wav",
   "prompt_text": "参考文本",
   "prompt_lang": "zh",
-  "speed_factor": 1.0,
-  "media_type": "wav",
+  "speed": 1.0,
+  "response_format": "wav",
   "text_split_method": "cut5",
-  "batch_size": 1,
-  "streaming_mode": false
+  "batch_size": 1
 }
 ```
 
@@ -272,6 +318,8 @@ Microsoft Azure 认知服务文本转语音 REST API。免费层每月 50 万字
 ### 2.6 Windows 系统 TTS 适配器（`systemTts`）
 
 通过 PowerShell 调用内置 Windows SAPI（System.Speech.Synthesis）。零配置 — 适用于任何 Windows 10/11。
+该 Provider 只会在 Windows 上 seed 和显示。Android、Apple 与 Linux 的系统
+TTS 后端在真正实现原生平台适配器前保持隐藏。
 
 | 操作 | 方法 | 路径 | 状态 |
 |---|---|---|---|
@@ -300,10 +348,12 @@ Microsoft Azure 认知服务文本转语音 REST API。免费层每月 50 万字
 |---|---|---|
 | `openaiCompatible` | 是 | 是 |
 | `chatCompletionsTts` | 是 | 是 |
-| `azureTts` | 否 | 是 |
-| `systemTts` | 否 | 是 |
-| `cosyvoice` | 否 | 否 |
-| `gptSovits` | 否 | 否 |
+| `azureTts` | 通过语音列表返回 locale | 是 |
+| `systemTts` | 否 | 是，仅 Windows |
+| `cosyvoice` | profile | profile |
+| `gptSovits` | 原生模型列表 | 是 |
+| `geminiTts` | 是，内置 TTS 模型列表 | 是，内置声音列表 |
+| `voxcpm2Native` | 是 | 是 |
 
 ---
 
@@ -319,6 +369,11 @@ Microsoft Azure 认知服务文本转语音 REST API。免费层每月 50 万字
 
 | 方法 | 路径 | 说明 | 优先级 |
 |---|---|---|---|
+| `POST` | `/v1/jobs` | 创建持久化异步 TTS 任务 | 高 |
+| `GET` | `/v1/jobs/:id` | 查看任务状态、进度和结果元数据 | 高 |
+| `DELETE` | `/v1/jobs/:id` | 取消排队/运行中的任务 | 高 |
+| `POST` | `/v1/jobs/:id/retry` | 将失败或完成的任务作为新 attempt 重试 | 中 |
+| `GET` | `/v1/jobs/:id/events` | 可选 SSE 进度流 | 中 |
 | `GET` | `/v1/audio/speech/:id` | 通过 ID 检索之前生成的音频 | 中 |
 
 ### 缺少的适配器功能

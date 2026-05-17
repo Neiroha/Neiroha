@@ -552,7 +552,7 @@ modelName: Value(_isGptSovits
 ### Step 5 — Seed a default provider (optional)
 
 If you want the backend to appear pre-configured in the Providers list open
-`lib/data/database/app_database.dart` and find the `_seedDefaultProviders` method. Add an entry:
+`lib/data/database/app_database.dart` and find the `_seedDefaults` method. Add an entry:
 
 ```dart
 db.TtsProvidersCompanion(
@@ -563,11 +563,13 @@ db.TtsProvidersCompanion(
   apiKey: const Value(''),
   defaultModelName: const Value(''),
   enabled: const Value(false),
-  position: const Value(7),   // one more than the last seeded provider
+  position: const Value(8),   // one more than the last seeded provider
 ),
 ```
 
-Bump the schema version constant and add a migration step if needed.
+Neiroha is still pre-release, so database compatibility migrations are not
+required for seed-only changes. Do not add migration work unless the project has
+started supporting stable public data upgrades.
 
 ---
 

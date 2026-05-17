@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   cupertino_icons: ^1.0.8
 
@@ -34,6 +36,10 @@ dependencies:
   # Audio playback
   audioplayers: ^6.0.0
 
+  # Windows microphone recording (MediaFoundation, without federated record pkg)
+  record_platform_interface: ^1.5.0
+  record_windows: ^1.0.7
+
   # Video playback (libmpv-based — desktop-capable across Win/macOS/Linux)
   media_kit: ^1.1.11
   media_kit_video: ^1.2.5
@@ -43,6 +49,7 @@ dependencies:
   file_picker: ^8.0.0
 
   # Utilities
+  intl: any
   uuid: ^4.5.1
   path_provider: ^2.1.5
   path: ^1.9.1
@@ -62,6 +69,7 @@ dev_dependencies:
   drift_dev: ^2.25.0
 
 flutter:
+  generate: true
   uses-material-design: true
   assets:
     - assets/

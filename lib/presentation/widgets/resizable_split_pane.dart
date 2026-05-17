@@ -1,6 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// A two-pane layout with a draggable divider.
 ///
@@ -28,6 +31,10 @@ class ResizableSplitPane extends StatefulWidget {
   final bool startCollapsedLeft;
   final bool startCollapsedRight;
   final ValueChanged<bool?>? onCollapseChanged;
+  final double compactBreakpoint;
+  final IconData compactRightIcon;
+  final String? compactRightLabel;
+  final double compactHandleBottomInset;
 
   const ResizableSplitPane({
     super.key,
@@ -35,10 +42,14 @@ class ResizableSplitPane extends StatefulWidget {
     required this.rightBuilder,
     this.initialLeftFraction = 0.35,
     this.collapseThreshold = 80,
-    this.minPaneWidth = 120,
+    this.minPaneWidth = 320,
     this.startCollapsedLeft = false,
     this.startCollapsedRight = false,
     this.onCollapseChanged,
+    this.compactBreakpoint = 840,
+    this.compactRightIcon = Icons.tune_rounded,
+    this.compactRightLabel,
+    this.compactHandleBottomInset = 16,
   });
 
   @override
@@ -57,6 +68,13 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
   /// Tracks whether the user is actively dragging out of a collapsed state.
   /// While true we show the split layout with the live fraction.
   bool _draggingFromCollapsed = false;
+  bool _isCompactLayout = false;
+  bool _collapsedByCompactNavigation = false;
+  Offset? _compactHandleOffset;
+  Offset? _compactBackOffset;
+  Size? _lastCompactSize;
+  Size? _lastCompactBackSize;
+  String? _lastCompactHandleLabel;
 
   final _focusNode = FocusNode();
 
@@ -80,12 +98,14 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
 
   void collapseLeft() {
     _savedFraction = _leftFraction;
+    _collapsedByCompactNavigation = false;
     setState(() => _collapsed = true);
     widget.onCollapseChanged?.call(true);
   }
 
   void collapseRight() {
     _savedFraction = _leftFraction;
+    _collapsedByCompactNavigation = false;
     setState(() => _collapsed = false);
     widget.onCollapseChanged?.call(false);
   }
@@ -94,8 +114,25 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
     setState(() {
       _leftFraction = _savedFraction;
       _collapsed = null;
+      _collapsedByCompactNavigation = false;
     });
     widget.onCollapseChanged?.call(null);
+  }
+
+  void showLeftPane({bool onlyWhenCompact = false}) {
+    if (onlyWhenCompact && !_isCompactLayout) return;
+    _savedFraction = _leftFraction;
+    _collapsedByCompactNavigation = onlyWhenCompact;
+    setState(() => _collapsed = false);
+    widget.onCollapseChanged?.call(false);
+  }
+
+  void showRightPane({bool onlyWhenCompact = false}) {
+    if (onlyWhenCompact && !_isCompactLayout) return;
+    _savedFraction = _leftFraction;
+    _collapsedByCompactNavigation = onlyWhenCompact;
+    setState(() => _collapsed = true);
+    widget.onCollapseChanged?.call(true);
   }
 
   @override
@@ -113,6 +150,27 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final totalWidth = constraints.maxWidth;
+          final compact = totalWidth < widget.compactBreakpoint;
+          _isCompactLayout = compact;
+
+          if (!compact &&
+              _collapsedByCompactNavigation &&
+              _collapsed != null &&
+              !_draggingFromCollapsed) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted ||
+                  _isCompactLayout ||
+                  !_collapsedByCompactNavigation) {
+                return;
+              }
+              expand();
+            });
+            return _buildSplit(totalWidth);
+          }
+
+          if (compact && !_draggingFromCollapsed) {
+            return _buildCompact(constraints);
+          }
 
           // ── While dragging out of collapsed, show normal split ──
           if (_draggingFromCollapsed) {
@@ -184,13 +242,19 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
   Widget _buildSplit(double totalWidth) {
     const dividerWidth = 6.0;
     // Clamp fraction so both panes keep at least minPaneWidth.
-    final minFraction = widget.minPaneWidth / totalWidth;
+    final effectiveMinPaneWidth = math.min(
+      widget.minPaneWidth,
+      math.max(0, (totalWidth - dividerWidth) / 2),
+    );
+    final minFraction = effectiveMinPaneWidth / totalWidth;
     final maxFraction =
-        1.0 - (widget.minPaneWidth + dividerWidth) / totalWidth;
+        1.0 - (effectiveMinPaneWidth + dividerWidth) / totalWidth;
     final clampedFraction = _leftFraction.clamp(minFraction, maxFraction);
     final leftWidth = (totalWidth * clampedFraction).clamp(0.0, totalWidth);
-    final rightWidth =
-        (totalWidth - leftWidth - dividerWidth).clamp(0.0, totalWidth);
+    final rightWidth = (totalWidth - leftWidth - dividerWidth).clamp(
+      0.0,
+      totalWidth,
+    );
 
     return Row(
       children: [
@@ -198,9 +262,8 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
         _DragDivider(
           onDrag: (dx) {
             setState(() {
-              _leftFraction =
-                  ((_leftFraction * totalWidth + dx) / totalWidth)
-                      .clamp(minFraction, maxFraction);
+              _leftFraction = ((_leftFraction * totalWidth + dx) / totalWidth)
+                  .clamp(minFraction, maxFraction);
             });
           },
           onDragEnd: () {
@@ -217,10 +280,238 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
     );
   }
 
+  Widget _buildCompact(BoxConstraints constraints) {
+    if (_collapsed == true) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _goBackFromRight();
+        },
+        child: Stack(
+          children: [
+            widget.rightBuilder(_goBackFromRight),
+            _buildCompactBackButton(constraints),
+          ],
+        ),
+      );
+    }
+
+    final label =
+        widget.compactRightLabel ?? AppLocalizations.of(context).uiDetails;
+    final totalWidth = constraints.maxWidth;
+    final totalHeight =
+        constraints.maxHeight.isFinite && constraints.maxHeight > 120
+        ? constraints.maxHeight
+        : MediaQuery.sizeOf(context).height;
+    final compactSize = Size(totalWidth, totalHeight);
+    final previousSize = _lastCompactSize;
+    if (previousSize == null ||
+        (previousSize.width - compactSize.width).abs() > 1 ||
+        (previousSize.height - compactSize.height).abs() > 1 ||
+        _lastCompactHandleLabel != label) {
+      _compactHandleOffset = null;
+      _lastCompactSize = compactSize;
+      _lastCompactHandleLabel = label;
+    }
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    final handleWidth = _compactHandleWidth(label, totalWidth);
+    const handleHeight = 44.0;
+    final defaultOffset = Offset(
+      math.max(12, totalWidth - handleWidth - 12),
+      math.max(
+        12,
+        totalHeight -
+            handleHeight -
+            widget.compactHandleBottomInset -
+            bottomPadding,
+      ),
+    );
+    if ((_compactHandleOffset?.dy ?? 0) <= 12 && defaultOffset.dy > 120) {
+      _compactHandleOffset = null;
+    }
+    final offset = _clampCompactHandleOffset(
+      _compactHandleOffset ?? defaultOffset,
+      totalWidth,
+      totalHeight,
+      handleWidth,
+      handleHeight,
+    );
+    _compactHandleOffset = offset;
+
+    return Stack(
+      children: [
+        widget.left,
+        Positioned(
+          left: offset.dx,
+          top: offset.dy,
+          child: GestureDetector(
+            onPanUpdate: (details) {
+              setState(() {
+                _compactHandleOffset = _clampCompactHandleOffset(
+                  (_compactHandleOffset ?? offset) + details.delta,
+                  totalWidth,
+                  totalHeight,
+                  handleWidth,
+                  handleHeight,
+                );
+              });
+            },
+            onPanEnd: (_) {
+              final current = _compactHandleOffset ?? offset;
+              final snappedX = current.dx + handleWidth / 2 < totalWidth / 2
+                  ? 12.0
+                  : math.max(12.0, totalWidth - handleWidth - 12);
+              setState(() {
+                _compactHandleOffset = _clampCompactHandleOffset(
+                  Offset(snappedX, current.dy),
+                  totalWidth,
+                  totalHeight,
+                  handleWidth,
+                  handleHeight,
+                );
+              });
+            },
+            child: _CompactPaneHandle(
+              width: handleWidth,
+              icon: widget.compactRightIcon,
+              label: label,
+              onTap: showRightPane,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactBackButton(BoxConstraints constraints) {
+    final totalWidth = constraints.maxWidth;
+    final totalHeight =
+        constraints.maxHeight.isFinite && constraints.maxHeight > 120
+        ? constraints.maxHeight
+        : MediaQuery.sizeOf(context).height;
+    final compactSize = Size(totalWidth, totalHeight);
+    final previousSize = _lastCompactBackSize;
+    if (previousSize == null ||
+        (previousSize.width - compactSize.width).abs() > 1 ||
+        (previousSize.height - compactSize.height).abs() > 1) {
+      _compactBackOffset = null;
+      _lastCompactBackSize = compactSize;
+    }
+
+    const buttonSize = 44.0;
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    final defaultOffset = Offset(
+      12,
+      math.max(12, totalHeight - buttonSize - 12 - bottomPadding),
+    );
+    final offset = _clampCompactHandleOffset(
+      _compactBackOffset ?? defaultOffset,
+      totalWidth,
+      totalHeight,
+      buttonSize,
+      buttonSize,
+    );
+    _compactBackOffset = offset;
+
+    return Positioned(
+      left: offset.dx,
+      top: offset.dy,
+      child: GestureDetector(
+        onPanUpdate: (details) {
+          setState(() {
+            _compactBackOffset = _clampCompactHandleOffset(
+              (_compactBackOffset ?? offset) + details.delta,
+              totalWidth,
+              totalHeight,
+              buttonSize,
+              buttonSize,
+            );
+          });
+        },
+        child: _BackButton(onTap: _goBackFromRight),
+      ),
+    );
+  }
+
   void _goBackFromRight() {
-    _savedFraction = _leftFraction;
-    setState(() => _collapsed = false);
-    widget.onCollapseChanged?.call(false);
+    showLeftPane();
+  }
+
+  double _compactHandleWidth(String label, double totalWidth) {
+    if (totalWidth < 340) return 48;
+    final labelWidth = label.length * 7.5 + 58;
+    return labelWidth
+        .clamp(86.0, math.min(136.0, math.max(86.0, totalWidth - 24)))
+        .toDouble();
+  }
+
+  Offset _clampCompactHandleOffset(
+    Offset offset,
+    double totalWidth,
+    double totalHeight,
+    double handleWidth,
+    double handleHeight,
+  ) {
+    final maxX = math.max(12.0, totalWidth - handleWidth - 12);
+    final maxY = math.max(12.0, totalHeight - handleHeight - 12);
+    return Offset(
+      offset.dx.clamp(12.0, maxX).toDouble(),
+      offset.dy.clamp(12.0, maxY).toDouble(),
+    );
+  }
+}
+
+class _CompactPaneHandle extends StatelessWidget {
+  final double width;
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _CompactPaneHandle({
+    required this.width,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final compact = width < 72;
+    return Material(
+      color: AppTheme.accentColor.withValues(alpha: 0.92),
+      borderRadius: BorderRadius.circular(14),
+      elevation: 8,
+      shadowColor: Colors.black54,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: SizedBox(
+          width: width,
+          height: 44,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 19, color: Colors.white),
+              if (!compact) ...[
+                SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -366,8 +657,10 @@ class _VerticalResizableSplitPaneState
             1.0 - (widget.minPaneHeight + dividerHeight) / totalHeight;
         final clamped = _topFraction.clamp(minFraction, maxFraction);
         final topHeight = (totalHeight * clamped).clamp(0.0, totalHeight);
-        final bottomHeight =
-            (totalHeight - topHeight - dividerHeight).clamp(0.0, totalHeight);
+        final bottomHeight = (totalHeight - topHeight - dividerHeight).clamp(
+          0.0,
+          totalHeight,
+        );
 
         return Column(
           children: [
@@ -376,8 +669,10 @@ class _VerticalResizableSplitPaneState
               onDrag: (dy) {
                 setState(() {
                   _topFraction =
-                      ((_topFraction * totalHeight + dy) / totalHeight)
-                          .clamp(minFraction, maxFraction);
+                      ((_topFraction * totalHeight + dy) / totalHeight).clamp(
+                        minFraction,
+                        maxFraction,
+                      );
                 });
               },
             ),
@@ -407,7 +702,7 @@ class HorizontalResizableSplitPane extends StatefulWidget {
     required this.left,
     required this.right,
     this.initialLeftFraction = 0.7,
-    this.minPaneWidth = 220,
+    this.minPaneWidth = 320,
   });
 
   @override
@@ -431,13 +726,19 @@ class _HorizontalResizableSplitPaneState
       builder: (context, constraints) {
         final totalWidth = constraints.maxWidth;
         const dividerWidth = 6.0;
-        final minFraction = widget.minPaneWidth / totalWidth;
+        final effectiveMinPaneWidth = math.min(
+          widget.minPaneWidth,
+          math.max(0, (totalWidth - dividerWidth) / 2),
+        );
+        final minFraction = effectiveMinPaneWidth / totalWidth;
         final maxFraction =
-            1.0 - (widget.minPaneWidth + dividerWidth) / totalWidth;
+            1.0 - (effectiveMinPaneWidth + dividerWidth) / totalWidth;
         final clamped = _leftFraction.clamp(minFraction, maxFraction);
         final leftWidth = (totalWidth * clamped).clamp(0.0, totalWidth);
-        final rightWidth =
-            (totalWidth - leftWidth - dividerWidth).clamp(0.0, totalWidth);
+        final rightWidth = (totalWidth - leftWidth - dividerWidth).clamp(
+          0.0,
+          totalWidth,
+        );
 
         return Row(
           children: [
@@ -446,8 +747,10 @@ class _HorizontalResizableSplitPaneState
               onDrag: (dx) {
                 setState(() {
                   _leftFraction =
-                      ((_leftFraction * totalWidth + dx) / totalWidth)
-                          .clamp(minFraction, maxFraction);
+                      ((_leftFraction * totalWidth + dx) / totalWidth).clamp(
+                        minFraction,
+                        maxFraction,
+                      );
                 });
               },
               onDragEnd: () {},
@@ -512,28 +815,19 @@ class _BackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppTheme.surfaceBright.withValues(alpha: 0.92),
-      borderRadius: BorderRadius.circular(10),
-      elevation: 4,
-      shadowColor: Colors.black54,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.arrow_back_rounded,
-                  size: 20, color: Colors.white),
-              const SizedBox(width: 8),
-              Text('Back',
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white.withValues(alpha: 0.85))),
-            ],
+    return Tooltip(
+      message: AppLocalizations.of(context).uiBack,
+      child: Material(
+        color: AppTheme.surfaceBright.withValues(alpha: 0.9),
+        shape: const CircleBorder(),
+        elevation: 4,
+        shadowColor: Colors.black54,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: const SizedBox.square(
+            dimension: 44,
+            child: Icon(Icons.arrow_back_rounded, size: 23),
           ),
         ),
       ),

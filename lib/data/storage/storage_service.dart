@@ -82,6 +82,13 @@ class StorageService {
         mark: (m) => _db.markDialogLineMissing(row.id, m).then((_) {}),
       );
     }
+    for (final row in await _db.getAllNovelSegmentsRaw()) {
+      await visit(
+        path: row.audioPath,
+        wasMissing: row.missing,
+        mark: (m) => _db.markNovelSegmentMissing(row.id, m).then((_) {}),
+      );
+    }
     for (final row in await _db.getAllAudioTracksRaw()) {
       await visit(
         path: row.audioPath,
@@ -157,70 +164,97 @@ class StorageService {
       });
 
   /// Same as [ensureVoiceAssetSlug] but for Phase TTS projects.
-  Future<String> ensurePhaseProjectSlug(String projectId) =>
-      _db.transaction(() async {
-        final project = await _db.getPhaseTtsProjectById(projectId);
-        if (project == null) {
-          throw StateError('Phase project $projectId not found');
-        }
-        final existing = project.folderSlug;
-        if (existing != null && existing.isNotEmpty) return existing;
+  Future<String> ensurePhaseProjectSlug(
+    String projectId,
+  ) => _db.transaction(() async {
+    final project = await _db.getPhaseTtsProjectById(projectId);
+    if (project == null) {
+      throw StateError('Phase project $projectId not found');
+    }
+    final existing = project.folderSlug;
+    if (existing != null && existing.isNotEmpty) return existing;
 
-        final all = await _db.getAllPhaseTtsProjects();
-        final taken = <String>{
-          for (final p in all)
-            if (p.id != projectId &&
-                p.folderSlug != null &&
-                p.folderSlug!.isNotEmpty)
-              p.folderSlug!,
-        };
-        final slug = _dedupeSlug(
-          PathService.sanitizeSegment(project.name, fallback: 'unnamed_project'),
-          taken,
-        );
-        await _db.updatePhaseTtsProject(
-            project.copyWith(folderSlug: Value(slug)));
-        return slug;
-      });
+    final all = await _db.getAllPhaseTtsProjects();
+    final taken = <String>{
+      for (final p in all)
+        if (p.id != projectId &&
+            p.folderSlug != null &&
+            p.folderSlug!.isNotEmpty)
+          p.folderSlug!,
+    };
+    final slug = _dedupeSlug(
+      PathService.sanitizeSegment(project.name, fallback: 'unnamed_project'),
+      taken,
+    );
+    await _db.updatePhaseTtsProject(project.copyWith(folderSlug: Value(slug)));
+    return slug;
+  });
 
   /// Same as [ensureVoiceAssetSlug] but for Video Dub projects.
-  Future<String> ensureVideoDubProjectSlug(String projectId) =>
-      _db.transaction(() async {
-        final project = await _db.getVideoDubProjectById(projectId);
-        if (project == null) {
-          throw StateError('Video dub project $projectId not found');
-        }
-        final existing = project.folderSlug;
-        if (existing != null && existing.isNotEmpty) return existing;
+  Future<String> ensureVideoDubProjectSlug(
+    String projectId,
+  ) => _db.transaction(() async {
+    final project = await _db.getVideoDubProjectById(projectId);
+    if (project == null) {
+      throw StateError('Video dub project $projectId not found');
+    }
+    final existing = project.folderSlug;
+    if (existing != null && existing.isNotEmpty) return existing;
 
-        final all = await _db.getAllVideoDubProjects();
-        final taken = <String>{
-          for (final p in all)
-            if (p.id != projectId &&
-                p.folderSlug != null &&
-                p.folderSlug!.isNotEmpty)
-              p.folderSlug!,
-        };
-        final slug = _dedupeSlug(
-          PathService.sanitizeSegment(project.name, fallback: 'unnamed_project'),
-          taken,
-        );
-        await _db.updateVideoDubProject(
-            project.copyWith(folderSlug: Value(slug)));
-        return slug;
-      });
+    final all = await _db.getAllVideoDubProjects();
+    final taken = <String>{
+      for (final p in all)
+        if (p.id != projectId &&
+            p.folderSlug != null &&
+            p.folderSlug!.isNotEmpty)
+          p.folderSlug!,
+    };
+    final slug = _dedupeSlug(
+      PathService.sanitizeSegment(project.name, fallback: 'unnamed_project'),
+      taken,
+    );
+    await _db.updateVideoDubProject(project.copyWith(folderSlug: Value(slug)));
+    return slug;
+  });
 
   /// Same as [ensureVoiceAssetSlug] but for Dialog TTS projects.
-  Future<String> ensureDialogProjectSlug(String projectId) =>
+  Future<String> ensureDialogProjectSlug(
+    String projectId,
+  ) => _db.transaction(() async {
+    final project = await _db.getDialogTtsProjectById(projectId);
+    if (project == null) {
+      throw StateError('Dialog project $projectId not found');
+    }
+    final existing = project.folderSlug;
+    if (existing != null && existing.isNotEmpty) return existing;
+
+    final all = await _db.getAllDialogTtsProjects();
+    final taken = <String>{
+      for (final p in all)
+        if (p.id != projectId &&
+            p.folderSlug != null &&
+            p.folderSlug!.isNotEmpty)
+          p.folderSlug!,
+    };
+    final slug = _dedupeSlug(
+      PathService.sanitizeSegment(project.name, fallback: 'unnamed_project'),
+      taken,
+    );
+    await _db.updateDialogTtsProject(project.copyWith(folderSlug: Value(slug)));
+    return slug;
+  });
+
+  /// Same as [ensureVoiceAssetSlug] but for Novel Reader projects.
+  Future<String> ensureNovelProjectSlug(String projectId) =>
       _db.transaction(() async {
-        final project = await _db.getDialogTtsProjectById(projectId);
+        final project = await _db.getNovelProjectById(projectId);
         if (project == null) {
-          throw StateError('Dialog project $projectId not found');
+          throw StateError('Novel project $projectId not found');
         }
         final existing = project.folderSlug;
         if (existing != null && existing.isNotEmpty) return existing;
 
-        final all = await _db.getAllDialogTtsProjects();
+        final all = await _db.getAllNovelProjects();
         final taken = <String>{
           for (final p in all)
             if (p.id != projectId &&
@@ -229,11 +263,10 @@ class StorageService {
               p.folderSlug!,
         };
         final slug = _dedupeSlug(
-          PathService.sanitizeSegment(project.name, fallback: 'unnamed_project'),
+          PathService.sanitizeSegment(project.name, fallback: 'unnamed_novel'),
           taken,
         );
-        await _db.updateDialogTtsProject(
-            project.copyWith(folderSlug: Value(slug)));
+        await _db.updateNovelProject(project.copyWith(folderSlug: Value(slug)));
         return slug;
       });
 
@@ -258,6 +291,7 @@ class StorageService {
         'quick_tts',
         'phase_tts',
         'dialog_tts',
+        'novel_reader',
         'video_dub',
         'voice_character_ref',
       ]) {
@@ -275,11 +309,13 @@ class StorageService {
     final assets = await _db.getAllVoiceAssets();
     for (final a in assets) {
       if (a.refAudioPath != null) {
-        await _db.updateVoiceAsset(a.copyWith(
-          refAudioPath: const Value(null),
-          refAudioTrimStart: const Value(null),
-          refAudioTrimEnd: const Value(null),
-        ));
+        await _db.updateVoiceAsset(
+          a.copyWith(
+            refAudioPath: const Value(null),
+            refAudioTrimStart: const Value(null),
+            refAudioTrimEnd: const Value(null),
+          ),
+        );
       }
     }
   }

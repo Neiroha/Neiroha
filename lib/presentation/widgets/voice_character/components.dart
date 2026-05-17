@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 class VoiceCharacterVoxCpm2ModeSelector extends StatelessWidget {
   final String? selected;
@@ -70,7 +71,7 @@ class VoiceCharacterVoxCpm2ModeSelector extends StatelessWidget {
                           ? AppTheme.accentColor
                           : Colors.white.withValues(alpha: 0.5),
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Text(
                       label,
                       style: TextStyle(
@@ -81,7 +82,7 @@ class VoiceCharacterVoxCpm2ModeSelector extends StatelessWidget {
                             : Colors.white.withValues(alpha: 0.7),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       hint,
                       style: TextStyle(
@@ -168,7 +169,7 @@ class VoiceCharacterCosyVoiceModeSelector extends StatelessWidget {
                           ? AppTheme.accentColor
                           : Colors.white.withValues(alpha: 0.5),
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Text(
                       label,
                       style: TextStyle(
@@ -179,7 +180,94 @@ class VoiceCharacterCosyVoiceModeSelector extends StatelessWidget {
                             : Colors.white.withValues(alpha: 0.7),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
+                    Text(
+                      hint,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class VoiceCharacterGptSovitsModeSelector extends StatelessWidget {
+  final String? selected;
+  final ValueChanged<String> onChanged;
+
+  const VoiceCharacterGptSovitsModeSelector({
+    super.key,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  static const _modes = [
+    (
+      'trained',
+      Icons.record_voice_over_rounded,
+      'Trained',
+      'Use a saved\nspeaker profile',
+    ),
+    ('clone', Icons.mic_rounded, 'Clone', 'Clone voice from\nreference audio'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: _modes.map((rec) {
+        final (mode, icon, label, hint) = rec;
+        final isSelected = selected == mode;
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(right: mode != 'clone' ? 8 : 0),
+            child: InkWell(
+              onTap: () => onChanged(mode),
+              borderRadius: BorderRadius.circular(10),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: isSelected
+                      ? AppTheme.accentColor.withValues(alpha: 0.15)
+                      : AppTheme.surfaceDim,
+                  border: Border.all(
+                    color: isSelected
+                        ? AppTheme.accentColor.withValues(alpha: 0.5)
+                        : Colors.transparent,
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 20,
+                      color: isSelected
+                          ? AppTheme.accentColor
+                          : Colors.white.withValues(alpha: 0.5),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    SizedBox(height: 4),
                     Text(
                       hint,
                       style: TextStyle(
@@ -234,9 +322,9 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
                     Icons.upload_file_rounded,
                     color: Colors.white.withValues(alpha: 0.4),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Text(
-                    'Click to select audio file',
+                    AppLocalizations.of(context).uiClickToSelectAudioFile,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.4),
                     ),
@@ -246,7 +334,7 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
             : Row(
                 children: [
                   const Icon(Icons.audio_file_rounded, color: Colors.green),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,7 +348,7 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          'Tap to change',
+                          AppLocalizations.of(context).uiTapToChange,
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.white.withValues(alpha: 0.3),
@@ -490,12 +578,12 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
         ),
         // Search field + filtered list — only shown when open
         if (_isOpen) ...[
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           TextField(
             controller: _searchCtrl,
             autofocus: true,
             decoration: InputDecoration(
-              hintText: 'Search…',
+              hintText: AppLocalizations.of(context).uiSearch,
               prefixIcon: const Icon(Icons.filter_list_rounded, size: 18),
               suffixIcon: _searchCtrl.text.isNotEmpty
                   ? IconButton(
@@ -504,11 +592,13 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
                     )
                   : null,
               isDense: true,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Container(
             height: 200,
             decoration: BoxDecoration(

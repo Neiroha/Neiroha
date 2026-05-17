@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/widgets/dialog_tts/chat_bubble.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Scrolling, reorderable list of [ChatBubble]s for a Dialog TTS project.
 ///
@@ -35,8 +36,9 @@ class ChatListView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return linesAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      loading: () => Center(child: CircularProgressIndicator()),
+      error: (e, _) =>
+          Center(child: Text(AppLocalizations.of(context).uiError2(e))),
       data: (lines) {
         if (lines.isEmpty) return const _EmptyState();
         return LayoutBuilder(
@@ -56,14 +58,15 @@ class ChatListView extends ConsumerWidget {
                 final asset = line.voiceAssetId != null
                     ? assetMap[line.voiceAssetId]
                     : null;
-                final isThisPlaying = line.audioPath != null &&
+                final isThisPlaying =
+                    line.audioPath != null &&
                     playback.audioPath == line.audioPath &&
                     playback.isPlaying;
                 final isGenerating = generatingLineIds.contains(line.id);
                 final canGenerate =
                     onGenerate != null &&
-                        line.voiceAssetId != null &&
-                        !isGenerating;
+                    line.voiceAssetId != null &&
+                    !isGenerating;
                 return ReorderableDragStartListener(
                   key: ValueKey(line.id),
                   index: i,
@@ -72,8 +75,7 @@ class ChatListView extends ConsumerWidget {
                     asset: asset,
                     isPlaying: isThisPlaying,
                     isGenerating: isGenerating,
-                    playbackPosition:
-                        isThisPlaying ? playback.position : null,
+                    playbackPosition: isThisPlaying ? playback.position : null,
                     maxBubbleWidth: maxBubbleWidth,
                     onPlay: () => onPlay(line),
                     onPlayFrom: line.audioPath == null
@@ -101,12 +103,19 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.chat_bubble_outline_rounded,
-              size: 48, color: Colors.white.withValues(alpha: 0.15)),
-          const SizedBox(height: 12),
-          Text('Add dialog lines below',
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.3), fontSize: 13)),
+          Icon(
+            Icons.chat_bubble_outline_rounded,
+            size: 48,
+            color: Colors.white.withValues(alpha: 0.15),
+          ),
+          SizedBox(height: 12),
+          Text(
+            AppLocalizations.of(context).uiAddDialogLinesBelow,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.3),
+              fontSize: 13,
+            ),
+          ),
         ],
       ),
     );

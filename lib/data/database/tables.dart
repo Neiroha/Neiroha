@@ -23,6 +23,11 @@ class TtsProviders extends Table {
       text().withDefault(const Constant('tts-1'))();
   BoolColumn get enabled => boolean().withDefault(const Constant(false))();
   IntColumn get position => integer().withDefault(const Constant(0))();
+  IntColumn get maxConcurrency => integer().withDefault(const Constant(1))();
+  IntColumn get requestsPerMinute => integer().nullable()();
+  IntColumn get requestsPerDay => integer().nullable()();
+  IntColumn get tokensPerMinute => integer().nullable()();
+  IntColumn get tokensPerDay => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -55,8 +60,7 @@ class ModelBindings extends Table {
   TextColumn get id => text()();
   TextColumn get providerId => text().references(TtsProviders, #id)();
   TextColumn get modelKey => text()();
-  TextColumn get supportedTaskModes =>
-      text().withDefault(const Constant(''))();
+  TextColumn get supportedTaskModes => text().withDefault(const Constant(''))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -166,6 +170,79 @@ class PhaseTtsSegments extends Table {
   TextColumn get voiceAssetId => text().nullable()();
   TextColumn get audioPath => text().nullable()();
   RealColumn get audioDuration => real().nullable()();
+  TextColumn get error => text().nullable()();
+  BoolColumn get missing => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ─────────────── Novel Reader Projects, Chapters & Segments ───────────────
+
+class NovelProjects extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text().withLength(min: 1)();
+  TextColumn get bankId => text().references(VoiceBanks, #id)();
+  TextColumn get narratorVoiceAssetId => text().nullable()();
+  TextColumn get dialogueVoiceAssetId => text().nullable()();
+  TextColumn get readerTheme => text().withDefault(const Constant('dark'))();
+  RealColumn get fontSize => real().withDefault(const Constant(20.0))();
+  RealColumn get lineHeight => real().withDefault(const Constant(1.75))();
+  BoolColumn get autoTurnPage => boolean().withDefault(const Constant(true))();
+  BoolColumn get autoAdvanceChapters =>
+      boolean().withDefault(const Constant(true))();
+  BoolColumn get autoSliceLongSegments =>
+      boolean().withDefault(const Constant(true))();
+  BoolColumn get sliceOnlyAtPunctuation =>
+      boolean().withDefault(const Constant(true))();
+  IntColumn get maxSliceChars => integer().withDefault(const Constant(50))();
+  IntColumn get prefetchSegments => integer().withDefault(const Constant(5))();
+  BoolColumn get overwriteCacheWhilePlaying =>
+      boolean().withDefault(const Constant(false))();
+  BoolColumn get skipPunctuationOnlySegments =>
+      boolean().withDefault(const Constant(true))();
+  TextColumn get cacheCurrentColor =>
+      text().withDefault(const Constant('#2F6B54'))();
+  TextColumn get cacheStaleColor =>
+      text().withDefault(const Constant('#7A5A2A'))();
+  RealColumn get cacheHighlightOpacity =>
+      real().withDefault(const Constant(0.12))();
+  IntColumn get currentGlobalIndex =>
+      integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get folderSlug => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class NovelChapters extends Table {
+  TextColumn get id => text()();
+  TextColumn get projectId => text().references(NovelProjects, #id)();
+  IntColumn get orderIndex => integer()();
+  TextColumn get title => text().withLength(min: 1)();
+  TextColumn get sourcePath => text().nullable()();
+  TextColumn get rawText => text().withDefault(const Constant(''))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class NovelSegments extends Table {
+  TextColumn get id => text()();
+  TextColumn get projectId => text().references(NovelProjects, #id)();
+  TextColumn get chapterId => text().references(NovelChapters, #id)();
+  IntColumn get globalIndex => integer()();
+  IntColumn get orderIndex => integer()();
+  TextColumn get segmentText => text()();
+  // narrator | dialogue. Future role assignment can add speaker labels without
+  // changing the lightweight reader workflow.
+  TextColumn get segmentType =>
+      text().withDefault(const Constant('narrator'))();
+  TextColumn get audioPath => text().nullable()();
+  RealColumn get audioDuration => real().nullable()();
+  TextColumn get audioCacheKey => text().nullable()();
   TextColumn get error => text().nullable()();
   BoolColumn get missing => boolean().withDefault(const Constant(false))();
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/video_dub/tracks.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Multi-track timeline for Video Dub. Shows:
 ///   • V1 — imported video (from TimelineClips)
@@ -40,6 +41,7 @@ class VideoDubTimeline extends StatefulWidget {
   final bool a1Muted;
   final VoidCallback? onToggleA1Mute;
   final List<double>? waveformPeaks;
+  final bool ffmpegSupported;
   final bool ffmpegAvailable;
   final VoidCallback onConfigureFfmpeg;
 
@@ -58,6 +60,7 @@ class VideoDubTimeline extends StatefulWidget {
     required this.onDeleteClip,
     required this.onImport,
     required this.waveformPeaks,
+    required this.ffmpegSupported,
     required this.ffmpegAvailable,
     required this.onConfigureFfmpeg,
     this.onMoveCue,
@@ -73,8 +76,9 @@ class VideoDubTimeline extends StatefulWidget {
 class _VideoDubTimelineState extends State<VideoDubTimeline> {
   static const double _trackHeight = 44.0;
   static const double _rulerHeight = 18.0;
-  static const double _scrubberHeight = 30.0;
+  static const double _scrubberHeight = 38.0;
   static const double _headerWidth = 82.0;
+  final _verticalScrollController = ScrollController();
 
   // Visible window in ms — the range scrubber drives these.
   int _viewLeftMs = 0;
@@ -106,6 +110,12 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
   }
 
   @override
+  void dispose() {
+    _verticalScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final total = _contentTotalMs;
     _viewRightMs ??= total;
@@ -127,6 +137,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
         final pxPerMs = bodyWidth / _viewSpanMs;
 
         final tracks = _buildTrackList();
+        final trackContentHeight = _rulerHeight + tracks.length * _trackHeight;
 
         return Container(
           color: AppTheme.surfaceDim,
@@ -136,20 +147,40 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
               const Divider(height: 1),
               if (!widget.ffmpegAvailable) _buildFfmpegBanner(),
               Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(
-                      width: _headerWidth,
-                      child: _buildTrackHeaders(tracks),
-                    ),
-                    const VerticalDivider(width: 1, thickness: 1),
-                    Expanded(
-                      child: ExcludeSemantics(
-                        child: _buildTrackBody(tracks, pxPerMs),
+                child: LayoutBuilder(
+                  builder: (context, viewport) {
+                    final viewportHeight = viewport.maxHeight.isFinite
+                        ? viewport.maxHeight
+                        : trackContentHeight;
+                    final contentHeight = trackContentHeight > viewportHeight
+                        ? trackContentHeight
+                        : viewportHeight;
+                    return Scrollbar(
+                      controller: _verticalScrollController,
+                      thumbVisibility: trackContentHeight > viewportHeight,
+                      child: SingleChildScrollView(
+                        controller: _verticalScrollController,
+                        child: SizedBox(
+                          height: contentHeight,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              SizedBox(
+                                width: _headerWidth,
+                                child: _buildTrackHeaders(tracks),
+                              ),
+                              const VerticalDivider(width: 1, thickness: 1),
+                              Expanded(
+                                child: ExcludeSemantics(
+                                  child: _buildTrackBody(tracks, pxPerMs),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
               _buildRangeScrubber(total),
@@ -168,38 +199,54 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
         : 'Import a video onto V1 (its audio appears on A1)';
     return SizedBox(
       height: 44,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Row(
-          children: [
-            const Text(
-              'Dub Timeline',
-              style: TextStyle(fontSize: 12, color: Colors.white54),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              '${widget.cues.length} cues · ${widget.clips.length} clips · ${_fmtMs(_contentTotalMs)}',
-              style: const TextStyle(fontSize: 11, color: Colors.white38),
-            ),
-            const Spacer(),
-            Tooltip(
-              message: v1Tooltip,
-              child: OutlinedButton.icon(
-                onPressed: widget.v1Occupied
-                    ? null
-                    : () => widget.onImport(DubImportKind.video),
-                icon: const Icon(Icons.movie_outlined, size: 16),
-                label: const Text('Import Video'),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      AppLocalizations.of(context).uiDubTimeline,
+                      style: TextStyle(fontSize: 12, color: Colors.white54),
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      '${widget.cues.length} cues · ${widget.clips.length} clips · ${_fmtMs(_contentTotalMs)}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.white38,
+                      ),
+                    ),
+                    SizedBox(width: 24),
+                    Tooltip(
+                      message: v1Tooltip,
+                      child: OutlinedButton.icon(
+                        onPressed: widget.v1Occupied
+                            ? null
+                            : () => widget.onImport(DubImportKind.video),
+                        icon: const Icon(Icons.movie_outlined, size: 16),
+                        label: Text(AppLocalizations.of(context).uiImportVideo),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => widget.onImport(DubImportKind.audio),
+                      icon: const Icon(Icons.audiotrack_rounded, size: 16),
+                      label: Text(AppLocalizations.of(context).uiImportAudio),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(width: 8),
-            OutlinedButton.icon(
-              onPressed: () => widget.onImport(DubImportKind.audio),
-              icon: const Icon(Icons.audiotrack_rounded, size: 16),
-              label: const Text('Import Audio'),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -213,22 +260,32 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
       child: Row(
         children: [
           const Icon(Icons.info_outline_rounded, size: 14, color: Colors.amber),
-          const SizedBox(width: 6),
-          const Expanded(
+          SizedBox(width: 6),
+          Expanded(
             child: Text(
-              'FFmpeg not detected — waveforms and media probing are skipped.',
+              widget.ffmpegSupported
+                  ? AppLocalizations.of(
+                      context,
+                    ).uiFFmpegNotDetectedWaveformsAndMediaProbingAreSkipped
+                  : AppLocalizations.of(
+                      context,
+                    ).uiFFmpegUnavailableWaveformsAndLocalExportsAreDisabled,
               style: TextStyle(fontSize: 11, color: Colors.white70),
             ),
           ),
-          TextButton(
-            onPressed: widget.onConfigureFfmpeg,
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-              minimumSize: const Size(0, 24),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          if (widget.ffmpegSupported)
+            TextButton(
+              onPressed: widget.onConfigureFfmpeg,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                minimumSize: const Size(0, 24),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                AppLocalizations.of(context).navSettings,
+                style: TextStyle(fontSize: 11),
+              ),
             ),
-            child: const Text('Settings', style: TextStyle(fontSize: 11)),
-          ),
         ],
       ),
     );
@@ -250,7 +307,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: _rulerHeight),
+        SizedBox(height: _rulerHeight),
         for (final t in tracks)
           SizedBox(
             height: _trackHeight,
@@ -589,7 +646,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: 11, color: Colors.white),
-              const SizedBox(width: 4),
+              SizedBox(width: 4),
               Expanded(
                 child: Text(
                   clip.label.isEmpty ? kind.name : clip.label,
@@ -647,8 +704,8 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
         padding: const EdgeInsets.only(
           left: _headerWidth,
           right: 8,
-          top: 4,
-          bottom: 4,
+          top: 6,
+          bottom: 6,
         ),
         child: _RangeScrubber(
           totalMs: totalMs,
@@ -746,7 +803,7 @@ class _RangeScrubber extends StatefulWidget {
 }
 
 class _RangeScrubberState extends State<_RangeScrubber> {
-  static const double _handleWidth = 12.0;
+  static const double _handleWidth = 14.0;
   static const int _minSpanMs = 500;
 
   int? _dragLeftMs;
@@ -774,22 +831,19 @@ class _RangeScrubberState extends State<_RangeScrubber> {
 
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTapDown: (d) {
-            // Tap outside the handles seeks the playhead.
-            final x = d.localPosition.dx;
-            if (x >= leftX - _handleWidth && x <= rightX + _handleWidth) {
-              widget.onScrub(pxToMs(x));
-            }
-          },
+          onTapUp: (d) => widget.onScrub(pxToMs(d.localPosition.dx)),
           child: Stack(
             children: [
               // Background strip.
               Positioned.fill(
                 child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  margin: const EdgeInsets.symmetric(vertical: 3),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(3),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
               ),
@@ -806,17 +860,38 @@ class _RangeScrubberState extends State<_RangeScrubber> {
               // Highlighted visible range.
               Positioned(
                 left: leftX,
-                top: 4,
+                top: 3,
                 width: (rightX - leftX).clamp(0.0, width),
-                bottom: 4,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppTheme.accentColor.withValues(alpha: 0.15),
-                    border: Border.all(
-                      color: AppTheme.accentColor.withValues(alpha: 0.6),
-                      width: 1,
+                bottom: 3,
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.move,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onHorizontalDragStart: (_) => _beginDrag(),
+                    onHorizontalDragUpdate: (d) =>
+                        _dragWholeRange(d.delta, width),
+                    onHorizontalDragEnd: (_) => _commit(),
+                    onHorizontalDragCancel: _cancelDrag,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppTheme.accentColor.withValues(alpha: 0.18),
+                        border: Border.all(
+                          color: AppTheme.accentColor.withValues(alpha: 0.75),
+                          width: 1,
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Center(
+                        child: Container(
+                          width: 34,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.38),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
                     ),
-                    borderRadius: BorderRadius.circular(3),
                   ),
                 ),
               ),
@@ -832,15 +907,16 @@ class _RangeScrubberState extends State<_RangeScrubber> {
               _buildHandle(
                 x: leftX,
                 onUpdate: (delta) {
-                  setState(() {
-                    _dragLeftMs =
-                        (((_dragLeftMs ?? widget.leftMs) +
-                                (delta.dx / width * widget.totalMs).round())
-                            .clamp(
-                              0,
-                              (_dragRightMs ?? widget.rightMs) - _minSpanMs,
-                            ));
-                  });
+                  _beginDrag();
+                  final next =
+                      ((_dragLeftMs ?? widget.leftMs) +
+                              (delta.dx / width * widget.totalMs).round())
+                          .clamp(
+                            0,
+                            (_dragRightMs ?? widget.rightMs) - _minSpanMs,
+                          )
+                          .toInt();
+                  setState(() => _dragLeftMs = next);
                 },
                 onEnd: _commit,
               ),
@@ -848,15 +924,16 @@ class _RangeScrubberState extends State<_RangeScrubber> {
               _buildHandle(
                 x: rightX,
                 onUpdate: (delta) {
-                  setState(() {
-                    _dragRightMs =
-                        (((_dragRightMs ?? widget.rightMs) +
-                                (delta.dx / width * widget.totalMs).round())
-                            .clamp(
-                              (_dragLeftMs ?? widget.leftMs) + _minSpanMs,
-                              widget.totalMs,
-                            ));
-                  });
+                  _beginDrag();
+                  final next =
+                      ((_dragRightMs ?? widget.rightMs) +
+                              (delta.dx / width * widget.totalMs).round())
+                          .clamp(
+                            (_dragLeftMs ?? widget.leftMs) + _minSpanMs,
+                            widget.totalMs,
+                          )
+                          .toInt();
+                  setState(() => _dragRightMs = next);
                 },
                 onEnd: _commit,
               ),
@@ -867,6 +944,30 @@ class _RangeScrubberState extends State<_RangeScrubber> {
     );
   }
 
+  void _beginDrag() {
+    if (_dragLeftMs != null && _dragRightMs != null) return;
+    setState(() {
+      _dragLeftMs = widget.leftMs;
+      _dragRightMs = widget.rightMs;
+    });
+  }
+
+  void _dragWholeRange(Offset delta, double width) {
+    if (width <= 0) return;
+    _beginDrag();
+    final currentLeft = _dragLeftMs ?? widget.leftMs;
+    final currentRight = _dragRightMs ?? widget.rightMs;
+    final span = currentRight - currentLeft;
+    final deltaMs = (delta.dx / width * widget.totalMs).round();
+    final nextLeft = (currentLeft + deltaMs)
+        .clamp(0, widget.totalMs - span)
+        .toInt();
+    setState(() {
+      _dragLeftMs = nextLeft;
+      _dragRightMs = nextLeft + span;
+    });
+  }
+
   void _commit() {
     final l = _dragLeftMs ?? widget.leftMs;
     final r = _dragRightMs ?? widget.rightMs;
@@ -875,6 +976,13 @@ class _RangeScrubberState extends State<_RangeScrubber> {
       _dragRightMs = null;
     });
     widget.onRangeChanged(l, r);
+  }
+
+  void _cancelDrag() {
+    setState(() {
+      _dragLeftMs = null;
+      _dragRightMs = null;
+    });
   }
 
   Widget _buildHandle({
@@ -891,20 +999,17 @@ class _RangeScrubberState extends State<_RangeScrubber> {
         cursor: SystemMouseCursors.resizeColumn,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onHorizontalDragStart: (_) {
-            setState(() {
-              _dragLeftMs ??= widget.leftMs;
-              _dragRightMs ??= widget.rightMs;
-            });
-          },
+          onHorizontalDragStart: (_) => _beginDrag(),
           onHorizontalDragUpdate: (d) => onUpdate(d.delta),
           onHorizontalDragEnd: (_) => onEnd(),
+          onHorizontalDragCancel: _cancelDrag,
           child: Center(
             child: Container(
-              width: 4,
+              width: 5,
               decoration: BoxDecoration(
                 color: AppTheme.accentColor,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(3),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               ),
             ),
           ),

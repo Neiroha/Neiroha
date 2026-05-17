@@ -14,6 +14,7 @@ import '../../data/database/app_database.dart' as db;
 import '../../providers/app_providers.dart';
 import '../../providers/playback_provider.dart';
 import '../theme/app_theme.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Payload carried by draggable segment cards / chat bubbles when dropped
 /// onto the story timeline. The timeline inserts a new clip using these fields.
@@ -60,7 +61,7 @@ class TimelineDragButton extends StatelessWidget {
       icon: icon,
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(),
-      tooltip: 'Add to timeline (drag to place)',
+      tooltip: AppLocalizations.of(context).uiAddToTimelineDragToPlace,
       onPressed: enabled ? onTap : null,
     );
     if (!enabled || payload == null) return button;
@@ -178,7 +179,8 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
       return false;
     }
     final key = event.logicalKey;
-    final isToggleKey = key == LogicalKeyboardKey.space ||
+    final isToggleKey =
+        key == LogicalKeyboardKey.space ||
         key == LogicalKeyboardKey.keyP ||
         key == LogicalKeyboardKey.enter ||
         key == LogicalKeyboardKey.numpadEnter;
@@ -190,7 +192,7 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
     }
     final clips =
         ref.read(timelineClipsStreamProvider(_streamKey)).valueOrNull ??
-            const <db.TimelineClip>[];
+        const <db.TimelineClip>[];
     if (clips.isEmpty) return false;
     _playAll(clips);
     return true;
@@ -213,8 +215,7 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
     // honours the user's dragged-playhead starting point.
     final anchor = _seekAnchorMs;
     final fromAnchor = ordered.where((c) {
-      final endMs =
-          c.startTimeMs + ((c.durationSec ?? 0) * 1000).round();
+      final endMs = c.startTimeMs + ((c.durationSec ?? 0) * 1000).round();
       return endMs > anchor;
     }).toList();
     if (fromAnchor.isEmpty) return;
@@ -238,8 +239,7 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
           final gapFuture = Future.delayed(Duration(milliseconds: gapMs));
           // Animate the playhead through the gap so the user sees motion.
           while (!cancel.isCompleted) {
-            final elapsed =
-                DateTime.now().difference(gapStart).inMilliseconds;
+            final elapsed = DateTime.now().difference(gapStart).inMilliseconds;
             if (elapsed >= gapMs) break;
             if (mounted) {
               setState(() => _seekAnchorMs = playheadMs + elapsed);
@@ -256,13 +256,11 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
           if (mounted) setState(() => _seekAnchorMs = playheadMs);
         }
         // Play the clip, seeking inside it if the anchor landed mid-clip.
-        final clipOffsetMs =
-            playheadMs > c.startTimeMs ? playheadMs - c.startTimeMs : 0;
+        final clipOffsetMs = playheadMs > c.startTimeMs
+            ? playheadMs - c.startTimeMs
+            : 0;
         if (mounted) setState(() => _activeClipId = c.id);
-        await notifier.load(
-          c.audioPath,
-          c.label.isEmpty ? 'Clip' : c.label,
-        );
+        await notifier.load(c.audioPath, c.label.isEmpty ? 'Clip' : c.label);
         if (clipOffsetMs > 0) {
           // audioplayers may not have the duration yet; a short delay
           // before seeking avoids being ignored by the platform backend.
@@ -358,9 +356,11 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
           SizedBox(
             height: tracksAreaHeight,
             child: clips.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
-                      'Drop a voice here or click "Add to timeline" on a segment',
+                      AppLocalizations.of(
+                        context,
+                      ).uiDropAVoiceHereOrClickAddToTimelineOnASegment,
                       style: TextStyle(fontSize: 11, color: Colors.white24),
                     ),
                   )
@@ -373,27 +373,31 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
                           controller: _scrollController,
                           scrollDirection: Axis.horizontal,
                           child: DragTarget<TimelineDropPayload>(
-                            onAcceptWithDetails: (details) => _handleDropOnStack(
-                              details.data,
-                              details.offset,
-                              minLane,
-                              clips,
-                            ),
+                            onAcceptWithDetails: (details) =>
+                                _handleDropOnStack(
+                                  details.data,
+                                  details.offset,
+                                  minLane,
+                                  clips,
+                                ),
                             builder: (context, candidate, rejected) {
                               final hovering = candidate.isNotEmpty;
                               return Container(
                                 decoration: BoxDecoration(
                                   color: hovering
-                                      ? AppTheme.accentColor
-                                          .withValues(alpha: 0.07)
+                                      ? AppTheme.accentColor.withValues(
+                                          alpha: 0.07,
+                                        )
                                       : null,
                                 ),
                                 child: GestureDetector(
                                   behavior: HitTestBehavior.opaque,
                                   onTapDown: (d) => _handleRulerTap(
-                                      d.localPosition, stackHeight),
-                                  onTap: () => setState(
-                                      () => _selectedClipId = null),
+                                    d.localPosition,
+                                    stackHeight,
+                                  ),
+                                  onTap: () =>
+                                      setState(() => _selectedClipId = null),
                                   child: SizedBox(
                                     key: _tracksStackKey,
                                     width: totalWidth,
@@ -407,27 +411,29 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
                                           height: _rulerHeight,
                                           child: CustomPaint(
                                             painter: _TimeRulerPainter(
-                                                pixelsPerSecond:
-                                                    _pixelsPerSecond),
+                                              pixelsPerSecond: _pixelsPerSecond,
+                                            ),
                                           ),
                                         ),
                                         for (int i = 0; i <= laneCount; i++)
                                           Positioned(
-                                            top: _rulerHeight +
-                                                i * _laneHeight,
+                                            top: _rulerHeight + i * _laneHeight,
                                             left: 0,
                                             right: 0,
                                             child: Container(
                                               height: 1,
-                                              color: Colors.white
-                                                  .withValues(alpha: 0.05),
+                                              color: Colors.white.withValues(
+                                                alpha: 0.05,
+                                              ),
                                             ),
                                           ),
                                         for (final c in clips)
-                                          _positionedClip(
-                                              c, minLane, playback),
+                                          _positionedClip(c, minLane, playback),
                                         _buildPlayhead(
-                                            clips, playback, stackHeight),
+                                          clips,
+                                          playback,
+                                          stackHeight,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -479,7 +485,10 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
   /// Tapping the time ruler seeks the playhead anchor to that position.
   void _handleRulerTap(Offset localPos, double stackHeight) {
     if (localPos.dy > _rulerHeight) return;
-    final ms = (localPos.dx / _pixelsPerSecond * 1000).round().clamp(0, 1 << 30);
+    final ms = (localPos.dx / _pixelsPerSecond * 1000).round().clamp(
+      0,
+      1 << 30,
+    );
     setState(() => _seekAnchorMs = ms);
   }
 
@@ -494,12 +503,15 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
         _tracksStackKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null) return;
     final local = box.globalToLocal(globalOffset);
-    final startMs = (local.dx / _pixelsPerSecond * 1000)
-        .round()
-        .clamp(0, 1 << 30);
+    final startMs = (local.dx / _pixelsPerSecond * 1000).round().clamp(
+      0,
+      1 << 30,
+    );
     final laneOffset = ((local.dy - _rulerHeight) / _laneHeight).floor();
     final lane = (minLane + laneOffset).clamp(-20, 20);
-    await ref.read(databaseProvider).insertTimelineClip(
+    await ref
+        .read(databaseProvider)
+        .insertTimelineClip(
           db.TimelineClipsCompanion(
             id: Value(const Uuid().v4()),
             projectId: Value(widget.projectId),
@@ -516,7 +528,10 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
   }
 
   Widget _positionedClip(
-      db.TimelineClip c, int minLane, PlaybackState playback) {
+    db.TimelineClip c,
+    int minLane,
+    PlaybackState playback,
+  ) {
     final isDragging = _dragClipId == c.id;
     final effectiveStartMs = isDragging ? _dragStartMs! : c.startTimeMs;
     final effectiveLane = isDragging ? _dragLane! : c.laneIndex;
@@ -524,17 +539,18 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
       key: ValueKey(c.id),
       top: _rulerHeight + (effectiveLane - minLane) * _laneHeight + 4,
       left: effectiveStartMs / 1000.0 * _pixelsPerSecond,
-      width: ((c.durationSec ?? 1.0) * _pixelsPerSecond)
-          .clamp(16.0, double.infinity),
+      width: ((c.durationSec ?? 1.0) * _pixelsPerSecond).clamp(
+        16.0,
+        double.infinity,
+      ),
       height: _laneHeight - 8,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
           setState(() => _selectedClipId = c.id);
-          ref.read(playbackNotifierProvider.notifier).load(
-                c.audioPath,
-                c.label.isEmpty ? 'Clip' : c.label,
-              );
+          ref
+              .read(playbackNotifierProvider.notifier)
+              .load(c.audioPath, c.label.isEmpty ? 'Clip' : c.label);
         },
         onPanStart: (_) {
           setState(() {
@@ -552,9 +568,10 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
           // lane. Accumulate and compute once so vertical drags actually
           // switch lanes instead of being silently truncated.
           _dragCumulativeDy += details.delta.dy;
-          final newMs = (_dragStartMs! +
-                  (details.delta.dx / _pixelsPerSecond * 1000).round())
-              .clamp(0, 1 << 30);
+          final newMs =
+              (_dragStartMs! +
+                      (details.delta.dx / _pixelsPerSecond * 1000).round())
+                  .clamp(0, 1 << 30);
           final origin = _dragOriginLane ?? c.laneIndex;
           final laneShift = (_dragCumulativeDy / _laneHeight).round();
           final newLane = (origin + laneShift).clamp(-20, 20);
@@ -598,18 +615,19 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Row(
         children: [
-          const Text('Timeline',
-              style: TextStyle(fontSize: 11, color: Colors.white54)),
-          const SizedBox(width: 12),
+          Text(
+            AppLocalizations.of(context).uiTimeline,
+            style: TextStyle(fontSize: 11, color: Colors.white54),
+          ),
+          SizedBox(width: 12),
           Text(
             '${clips.length} clips · ${_fmtSec(totalSec)}',
             style: const TextStyle(fontSize: 10, color: Colors.white38),
           ),
           if (selected != null) ...[
-            const SizedBox(width: 16),
+            SizedBox(width: 16),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: AppTheme.accentColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(4),
@@ -620,14 +638,16 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
                 style: const TextStyle(fontSize: 10, color: Colors.white70),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             IconButton(
-              icon: const Icon(Icons.delete_outline,
-                  size: 16, color: Colors.redAccent),
+              icon: const Icon(
+                Icons.delete_outline,
+                size: 16,
+                color: Colors.redAccent,
+              ),
               padding: EdgeInsets.zero,
-              constraints:
-                  const BoxConstraints.tightFor(width: 28, height: 28),
-              tooltip: 'Delete clip',
+              constraints: const BoxConstraints.tightFor(width: 28, height: 28),
+              tooltip: AppLocalizations.of(context).uiDeleteClip,
               onPressed: () {
                 final id = selected.id;
                 setState(() => _selectedClipId = null);
@@ -640,7 +660,7 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
             icon: const Icon(Icons.skip_previous_rounded, size: 18),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints.tightFor(width: 28, height: 28),
-            tooltip: 'Previous voice',
+            tooltip: AppLocalizations.of(context).uiPreviousVoice,
             onPressed: clips.isEmpty
                 ? null
                 : () => _jumpToSibling(clips, next: false),
@@ -658,8 +678,9 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               minimumSize: const Size(0, 28),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              foregroundColor:
-                  _playingAll ? Colors.amber : AppTheme.accentColor,
+              foregroundColor: _playingAll
+                  ? Colors.amber
+                  : AppTheme.accentColor,
             ),
             onPressed: clips.isEmpty
                 ? null
@@ -669,24 +690,27 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
             icon: const Icon(Icons.skip_next_rounded, size: 18),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints.tightFor(width: 28, height: 28),
-            tooltip: 'Next voice',
+            tooltip: AppLocalizations.of(context).uiNextVoice,
             onPressed: clips.isEmpty
                 ? null
                 : () => _jumpToSibling(clips, next: true),
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           Tooltip(
-            message: 'Space / Enter / P to play or stop',
+            message: AppLocalizations.of(context).uiSpaceEnterPToPlayOrStop,
             child: Icon(
               Icons.keyboard_rounded,
               size: 13,
               color: Colors.white.withValues(alpha: 0.25),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           TextButton.icon(
             icon: const Icon(Icons.library_music_rounded, size: 14),
-            label: const Text('Import', style: TextStyle(fontSize: 11)),
+            label: Text(
+              AppLocalizations.of(context).uiImport,
+              style: TextStyle(fontSize: 11),
+            ),
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               minimumSize: const Size(0, 28),
@@ -694,20 +718,22 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
             ),
             onPressed: () => _showImportMenu(clips),
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.zoom_out, size: 16),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints.tightFor(width: 28, height: 28),
-            onPressed: () => setState(() =>
-                _pixelsPerSecond = (_pixelsPerSecond / 1.5).clamp(10, 200)),
+            onPressed: () => setState(
+              () => _pixelsPerSecond = (_pixelsPerSecond / 1.5).clamp(10, 200),
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.zoom_in, size: 16),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints.tightFor(width: 28, height: 28),
-            onPressed: () => setState(() =>
-                _pixelsPerSecond = (_pixelsPerSecond * 1.5).clamp(10, 200)),
+            onPressed: () => setState(
+              () => _pixelsPerSecond = (_pixelsPerSecond * 1.5).clamp(10, 200),
+            ),
           ),
         ],
       ),
@@ -719,7 +745,7 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
       width: 28,
       child: Column(
         children: [
-          const SizedBox(height: _rulerHeight),
+          SizedBox(height: _rulerHeight),
           for (int lane = minLane; lane <= maxLane; lane++)
             SizedBox(
               height: _laneHeight,
@@ -753,8 +779,7 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
     if (_draggingPlayheadMs != null) {
       currentMs = _draggingPlayheadMs!;
     } else if (_activeClipId != null) {
-      final activeClip =
-          clips.where((c) => c.id == _activeClipId).firstOrNull;
+      final activeClip = clips.where((c) => c.id == _activeClipId).firstOrNull;
       if (activeClip != null &&
           playback.isPlaying &&
           playback.audioPath == activeClip.audioPath) {
@@ -772,8 +797,9 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
         currentMs = _seekAnchorMs;
       }
     } else if (playback.isPlaying && playback.audioPath != null) {
-      final activeClip =
-          clips.where((c) => c.audioPath == playback.audioPath).firstOrNull;
+      final activeClip = clips
+          .where((c) => c.audioPath == playback.audioPath)
+          .firstOrNull;
       if (activeClip != null) {
         currentMs = activeClip.startTimeMs + playback.position.inMilliseconds;
       } else {
@@ -798,9 +824,8 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
           onPanUpdate: (d) {
             final delta = (d.delta.dx / _pixelsPerSecond * 1000).round();
             setState(() {
-              _draggingPlayheadMs =
-                  ((_draggingPlayheadMs ?? currentMs) + delta)
-                      .clamp(0, 1 << 30);
+              _draggingPlayheadMs = ((_draggingPlayheadMs ?? currentMs) + delta)
+                  .clamp(0, 1 << 30);
             });
           },
           onPanEnd: (_) {
@@ -880,14 +905,20 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
           children: [
             ListTile(
               leading: const Icon(Icons.library_music_rounded),
-              title: const Text('Import from Audio Library'),
-              subtitle: const Text('Pick a clip collected in the app'),
+              title: Text(
+                AppLocalizations.of(context).uiImportFromAudioLibrary,
+              ),
+              subtitle: Text(
+                AppLocalizations.of(context).uiPickAClipCollectedInTheApp,
+              ),
               onTap: () => Navigator.pop(ctx, 'library'),
             ),
             ListTile(
               leading: const Icon(Icons.graphic_eq_rounded),
-              title: const Text('Import SFX from file'),
-              subtitle: const Text('Pick an audio file from disk'),
+              title: Text(AppLocalizations.of(context).uiImportSFXFromFile),
+              subtitle: Text(
+                AppLocalizations.of(context).uiPickAnAudioFileFromDisk,
+              ),
               onTap: () => Navigator.pop(ctx, 'file'),
             ),
           ],
@@ -903,12 +934,13 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
   }
 
   Future<void> _importFromLibrary(List<db.TimelineClip> clips) async {
-    final tracks =
-        ref.read(audioTracksStreamProvider).valueOrNull ?? const [];
+    final tracks = ref.read(audioTracksStreamProvider).valueOrNull ?? const [];
     if (tracks.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Audio library is empty')),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).uiAudioLibraryIsEmpty),
+          ),
         );
       }
       return;
@@ -922,13 +954,14 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
           height: 400,
           child: Column(
             children: [
-              const Padding(
+              Padding(
                 padding: EdgeInsets.all(16),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('Pick audio',
-                      style: TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w600)),
+                  child: Text(
+                    AppLocalizations.of(context).uiPickAudio,
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
               const Divider(height: 1),
@@ -939,11 +972,12 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
                     final t = tracks[i];
                     return ListTile(
                       dense: true,
-                      leading: Icon(Icons.audiotrack_rounded,
-                          size: 18,
-                          color: AppTheme.accentColor),
-                      title: Text(t.name,
-                          style: const TextStyle(fontSize: 13)),
+                      leading: Icon(
+                        Icons.audiotrack_rounded,
+                        size: 18,
+                        color: AppTheme.accentColor,
+                      ),
+                      title: Text(t.name, style: const TextStyle(fontSize: 13)),
                       subtitle: Text(
                         '${t.sourceType} · '
                         '${t.durationSec != null ? "${t.durationSec!.toStringAsFixed(1)}s" : "?"}',
@@ -964,7 +998,9 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
     // back to probing the file so the timeline clip gets a real width.
     double? dur = picked.durationSec;
     dur ??= await measureAudioDuration(picked.audioPath);
-    await ref.read(databaseProvider).insertTimelineClip(
+    await ref
+        .read(databaseProvider)
+        .insertTimelineClip(
           db.TimelineClipsCompanion(
             id: Value(const Uuid().v4()),
             projectId: Value(widget.projectId),
@@ -1008,7 +1044,9 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
     // Probe the copied file so the imported clip renders at its true
     // width and the Play-All scheduler advances by the real duration.
     final dur = await measureAudioDuration(destPath);
-    await ref.read(databaseProvider).insertTimelineClip(
+    await ref
+        .read(databaseProvider)
+        .insertTimelineClip(
           db.TimelineClipsCompanion(
             id: Value(const Uuid().v4()),
             projectId: Value(widget.projectId),
@@ -1053,8 +1091,8 @@ class _ClipTile extends StatelessWidget {
     final borderColor = isSelected
         ? Colors.amber
         : isActive
-            ? Colors.white.withValues(alpha: 0.9)
-            : Colors.white.withValues(alpha: 0.15);
+        ? Colors.white.withValues(alpha: 0.9)
+        : Colors.white.withValues(alpha: 0.15);
     return Opacity(
       opacity: isDragging ? 0.75 : 1.0,
       child: Container(

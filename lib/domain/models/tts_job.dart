@@ -17,6 +17,5 @@ class TtsJob with _$TtsJob {
     DateTime? completedAt,
   }) = _TtsJob;
 
-  factory TtsJob.fromJson(Map<String, dynamic> json) =>
-      _$TtsJobFromJson(json);
+  factory TtsJob.fromJson(Map<String, dynamic> json) => _$TtsJobFromJson(json);
 }

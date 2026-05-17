@@ -21,6 +21,7 @@ extension AppDatabaseProjectQueries on AppDatabase {
       update(phaseTtsProjects).replace(project);
 
   Future<int> deletePhaseTtsProject(String id) => transaction(() async {
+    await _deleteTimelineClipsForProject(id, 'phase');
     await (delete(phaseTtsSegments)..where((t) => t.projectId.equals(id))).go();
     return (delete(phaseTtsProjects)..where((t) => t.id.equals(id))).go();
   });
@@ -45,12 +46,239 @@ extension AppDatabaseProjectQueries on AppDatabase {
   Future<bool> updatePhaseTtsSegment(PhaseTtsSegment seg) =>
       update(phaseTtsSegments).replace(seg);
 
-  Future<int> deletePhaseTtsSegment(String id) =>
-      (delete(phaseTtsSegments)..where((t) => t.id.equals(id))).go();
+  Future<int> deletePhaseTtsSegment(String id) => transaction(() async {
+    await deleteTimelineClipsByLine(id, projectType: 'phase');
+    return (delete(phaseTtsSegments)..where((t) => t.id.equals(id))).go();
+  });
 
-  Future<int> clearPhaseTtsSegments(String projectId) => (delete(
-    phaseTtsSegments,
-  )..where((t) => t.projectId.equals(projectId))).go();
+  Future<int> clearPhaseTtsSegments(String projectId) => transaction(() async {
+    await _deleteTimelineClipsForProject(projectId, 'phase');
+    return (delete(
+      phaseTtsSegments,
+    )..where((t) => t.projectId.equals(projectId))).go();
+  });
+
+  // --- Novel Reader Projects ---
+
+  Stream<List<NovelProject>> watchNovelProjects() => (select(
+    novelProjects,
+  )..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])).watch();
+
+  Future<int> insertNovelProject(NovelProjectsCompanion project) =>
+      into(novelProjects).insert(project);
+
+  Future<List<NovelProject>> getAllNovelProjects() =>
+      select(novelProjects).get();
+
+  Future<NovelProject?> getNovelProjectById(String id) =>
+      (select(novelProjects)..where((t) => t.id.equals(id))).getSingleOrNull();
+
+  Future<bool> updateNovelProject(NovelProject project) =>
+      update(novelProjects).replace(project);
+
+  Future<int> deleteNovelProject(String id) => transaction(() async {
+    await (delete(novelSegments)..where((t) => t.projectId.equals(id))).go();
+    await (delete(novelChapters)..where((t) => t.projectId.equals(id))).go();
+    return (delete(novelProjects)..where((t) => t.id.equals(id))).go();
+  });
+
+  // --- Novel Reader Chapters ---
+
+  Stream<List<NovelChapter>> watchNovelChapters(String projectId) =>
+      (select(novelChapters)
+            ..where((t) => t.projectId.equals(projectId))
+            ..orderBy([(t) => OrderingTerm.asc(t.orderIndex)]))
+          .watch();
+
+  Future<List<NovelChapter>> getNovelChapters(String projectId) =>
+      (select(novelChapters)
+            ..where((t) => t.projectId.equals(projectId))
+            ..orderBy([(t) => OrderingTerm.asc(t.orderIndex)]))
+          .get();
+
+  Future<int> insertNovelChapter(NovelChaptersCompanion chapter) =>
+      into(novelChapters).insert(chapter);
+
+  Future<void> insertNovelChapterWithSegments({
+    required String projectId,
+    required NovelChaptersCompanion chapter,
+    required List<NovelSegmentsCompanion> segments,
+  }) => transaction(() async {
+    await into(novelChapters).insert(chapter);
+    await batch((b) {
+      if (segments.isNotEmpty) {
+        b.insertAll(novelSegments, segments);
+      }
+    });
+    final total = await _reindexNovelProject(projectId);
+    await _touchNovelProjectAfterStructureEdit(projectId, total);
+  });
+
+  Future<bool> updateNovelChapter(NovelChapter chapter) =>
+      update(novelChapters).replace(chapter);
+
+  Future<int> deleteNovelChapter(String projectId, String chapterId) =>
+      transaction(() async {
+        await (delete(
+          novelSegments,
+        )..where((t) => t.chapterId.equals(chapterId))).go();
+        final removed = await (delete(
+          novelChapters,
+        )..where((t) => t.id.equals(chapterId))).go();
+        final total = await _reindexNovelProject(projectId);
+        await _touchNovelProjectAfterStructureEdit(projectId, total);
+        return removed;
+      });
+
+  Future<void> replaceNovelChapterText({
+    required NovelChapter chapter,
+    required List<NovelSegmentsCompanion> segments,
+  }) => transaction(() async {
+    await updateNovelChapter(chapter);
+    await (delete(
+      novelSegments,
+    )..where((t) => t.chapterId.equals(chapter.id))).go();
+    await batch((b) {
+      if (segments.isNotEmpty) {
+        b.insertAll(novelSegments, segments);
+      }
+    });
+    final total = await _reindexNovelProject(chapter.projectId);
+    await _touchNovelProjectAfterStructureEdit(chapter.projectId, total);
+  });
+
+  Future<int> clearNovelContent(String projectId) => transaction(() async {
+    await (delete(
+      novelSegments,
+    )..where((t) => t.projectId.equals(projectId))).go();
+    return (delete(
+      novelChapters,
+    )..where((t) => t.projectId.equals(projectId))).go();
+  });
+
+  Future<void> replaceNovelContent({
+    required String projectId,
+    required List<NovelChaptersCompanion> chapters,
+    required List<NovelSegmentsCompanion> segments,
+    required NovelProject project,
+  }) => transaction(() async {
+    await (delete(
+      novelSegments,
+    )..where((t) => t.projectId.equals(projectId))).go();
+    await (delete(
+      novelChapters,
+    )..where((t) => t.projectId.equals(projectId))).go();
+    await batch((b) {
+      if (chapters.isNotEmpty) {
+        b.insertAll(novelChapters, chapters);
+      }
+      if (segments.isNotEmpty) {
+        b.insertAll(novelSegments, segments);
+      }
+    });
+    await updateNovelProject(project);
+  });
+
+  // --- Novel Reader Segments ---
+
+  Stream<List<NovelSegment>> watchNovelSegments(String projectId) =>
+      (select(novelSegments)
+            ..where((t) => t.projectId.equals(projectId))
+            ..orderBy([(t) => OrderingTerm.asc(t.globalIndex)]))
+          .watch();
+
+  Stream<List<NovelSegment>> watchNovelSegmentsForChapter(String chapterId) =>
+      (select(novelSegments)
+            ..where((t) => t.chapterId.equals(chapterId))
+            ..orderBy([(t) => OrderingTerm.asc(t.orderIndex)]))
+          .watch();
+
+  Future<List<NovelSegment>> getNovelSegments(String projectId) =>
+      (select(novelSegments)
+            ..where((t) => t.projectId.equals(projectId))
+            ..orderBy([(t) => OrderingTerm.asc(t.globalIndex)]))
+          .get();
+
+  Future<List<NovelSegment>> getNovelSegmentsForChapter(String chapterId) =>
+      (select(novelSegments)
+            ..where((t) => t.chapterId.equals(chapterId))
+            ..orderBy([(t) => OrderingTerm.asc(t.orderIndex)]))
+          .get();
+
+  Future<int> insertNovelSegment(NovelSegmentsCompanion segment) =>
+      into(novelSegments).insert(segment);
+
+  Future<bool> updateNovelSegment(NovelSegment segment) =>
+      update(novelSegments).replace(segment);
+
+  Future<int> deleteNovelSegment(String projectId, String segmentId) =>
+      transaction(() async {
+        final removed = await (delete(
+          novelSegments,
+        )..where((t) => t.id.equals(segmentId))).go();
+        final total = await _reindexNovelProject(projectId);
+        await _touchNovelProjectAfterStructureEdit(projectId, total);
+        return removed;
+      });
+
+  Future<int> markNovelProgress(String projectId, int globalIndex) =>
+      (update(novelProjects)..where((t) => t.id.equals(projectId))).write(
+        NovelProjectsCompanion(
+          currentGlobalIndex: Value(globalIndex),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+
+  Future<int> _reindexNovelProject(String projectId) async {
+    final chapters = await getNovelChapters(projectId);
+    var globalIndex = 0;
+    for (var chapterIndex = 0; chapterIndex < chapters.length; chapterIndex++) {
+      final chapter = chapters[chapterIndex];
+      if (chapter.orderIndex != chapterIndex) {
+        await (update(novelChapters)..where((t) => t.id.equals(chapter.id)))
+            .write(NovelChaptersCompanion(orderIndex: Value(chapterIndex)));
+      }
+
+      final segments = await getNovelSegmentsForChapter(chapter.id);
+      for (
+        var segmentIndex = 0;
+        segmentIndex < segments.length;
+        segmentIndex++
+      ) {
+        final segment = segments[segmentIndex];
+        if (segment.orderIndex != segmentIndex ||
+            segment.globalIndex != globalIndex) {
+          await (update(
+            novelSegments,
+          )..where((t) => t.id.equals(segment.id))).write(
+            NovelSegmentsCompanion(
+              globalIndex: Value(globalIndex),
+              orderIndex: Value(segmentIndex),
+            ),
+          );
+        }
+        globalIndex++;
+      }
+    }
+    return globalIndex;
+  }
+
+  Future<void> _touchNovelProjectAfterStructureEdit(
+    String projectId,
+    int totalSegments,
+  ) async {
+    final project = await getNovelProjectById(projectId);
+    if (project == null) return;
+    final current = totalSegments <= 0
+        ? 0
+        : project.currentGlobalIndex.clamp(0, totalSegments - 1).toInt();
+    await (update(novelProjects)..where((t) => t.id.equals(projectId))).write(
+      NovelProjectsCompanion(
+        currentGlobalIndex: Value(current),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
 
   // --- Dialog TTS Projects ---
 
@@ -72,6 +300,7 @@ extension AppDatabaseProjectQueries on AppDatabase {
       update(dialogTtsProjects).replace(project);
 
   Future<int> deleteDialogTtsProject(String id) => transaction(() async {
+    await _deleteTimelineClipsForProject(id, 'dialog');
     await (delete(dialogTtsLines)..where((t) => t.projectId.equals(id))).go();
     return (delete(dialogTtsProjects)..where((t) => t.id.equals(id))).go();
   });
@@ -96,12 +325,17 @@ extension AppDatabaseProjectQueries on AppDatabase {
   Future<bool> updateDialogTtsLine(DialogTtsLine line) =>
       update(dialogTtsLines).replace(line);
 
-  Future<int> deleteDialogTtsLine(String id) =>
-      (delete(dialogTtsLines)..where((t) => t.id.equals(id))).go();
+  Future<int> deleteDialogTtsLine(String id) => transaction(() async {
+    await deleteTimelineClipsByLine(id, projectType: 'dialog');
+    return (delete(dialogTtsLines)..where((t) => t.id.equals(id))).go();
+  });
 
-  Future<int> clearDialogTtsLines(String projectId) => (delete(
-    dialogTtsLines,
-  )..where((t) => t.projectId.equals(projectId))).go();
+  Future<int> clearDialogTtsLines(String projectId) => transaction(() async {
+    await _deleteTimelineClipsForProject(projectId, 'dialog');
+    return (delete(
+      dialogTtsLines,
+    )..where((t) => t.projectId.equals(projectId))).go();
+  });
 
   /// Reorder a dialog line within its project by rewriting all affected
   /// `orderIndex` values in a single transaction. `oldIndex` and `newIndex`
@@ -151,6 +385,7 @@ extension AppDatabaseProjectQueries on AppDatabase {
       update(videoDubProjects).replace(project);
 
   Future<int> deleteVideoDubProject(String id) => transaction(() async {
+    await _deleteTimelineClipsForProject(id, 'videodub');
     await (delete(subtitleCues)..where((t) => t.projectId.equals(id))).go();
     return (delete(videoDubProjects)..where((t) => t.id.equals(id))).go();
   });
@@ -218,8 +453,23 @@ extension AppDatabaseProjectQueries on AppDatabase {
   Future<bool> updateTimelineClip(TimelineClip clip) =>
       update(timelineClips).replace(clip);
 
-  Future<int> deleteTimelineClip(String id) =>
-      (delete(timelineClips)..where((t) => t.id.equals(id))).go();
+  Future<int> deleteTimelineClip(String id) => transaction(() async {
+    final clip = await (select(
+      timelineClips,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (clip == null) return 0;
+    final linkGroupId = clip.linkGroupId;
+    if (linkGroupId != null && linkGroupId.isNotEmpty) {
+      return (delete(timelineClips)..where(
+            (t) =>
+                t.projectId.equals(clip.projectId) &
+                t.projectType.equals(clip.projectType) &
+                t.linkGroupId.equals(linkGroupId),
+          ))
+          .go();
+    }
+    return (delete(timelineClips)..where((t) => t.id.equals(id))).go();
+  });
 
   /// Replace a clip's position (lane + start). Use for drag operations.
   Future<int> moveTimelineClip(
@@ -233,9 +483,28 @@ extension AppDatabaseProjectQueries on AppDatabase {
     ),
   );
 
-  Future<int> deleteTimelineClipsByLine(String sourceLineId) => (delete(
-    timelineClips,
-  )..where((t) => t.sourceLineId.equals(sourceLineId))).go();
+  Future<int> deleteTimelineClipsByLine(
+    String sourceLineId, {
+    String? projectType,
+  }) {
+    return (delete(timelineClips)..where((t) {
+          final byLine = t.sourceLineId.equals(sourceLineId);
+          if (projectType == null) return byLine;
+          return byLine & t.projectType.equals(projectType);
+        }))
+        .go();
+  }
+
+  Future<int> _deleteTimelineClipsForProject(
+    String projectId,
+    String projectType,
+  ) {
+    return (delete(timelineClips)..where(
+          (t) =>
+              t.projectId.equals(projectId) & t.projectType.equals(projectType),
+        ))
+        .go();
+  }
 
   // --- Audio Tracks ---
 
@@ -249,6 +518,38 @@ extension AppDatabaseProjectQueries on AppDatabase {
   Future<bool> updateAudioTrack(AudioTrack track) =>
       update(audioTracks).replace(track);
 
-  Future<int> deleteAudioTrack(String id) =>
-      (delete(audioTracks)..where((t) => t.id.equals(id))).go();
+  Future<int> deleteAudioTrack(String id) => transaction(() async {
+    final track = await (select(
+      audioTracks,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (track == null) return 0;
+    await (update(
+      voiceAssets,
+    )..where((t) => t.refAudioPath.equals(track.audioPath))).write(
+      const VoiceAssetsCompanion(
+        refAudioPath: Value(null),
+        refAudioTrimStart: Value(null),
+        refAudioTrimEnd: Value(null),
+      ),
+    );
+    await (update(quickTtsHistories)
+          ..where((t) => t.audioPath.equals(track.audioPath)))
+        .write(const QuickTtsHistoriesCompanion(missing: Value(true)));
+    await (update(phaseTtsSegments)
+          ..where((t) => t.audioPath.equals(track.audioPath)))
+        .write(const PhaseTtsSegmentsCompanion(missing: Value(true)));
+    await (update(dialogTtsLines)
+          ..where((t) => t.audioPath.equals(track.audioPath)))
+        .write(const DialogTtsLinesCompanion(missing: Value(true)));
+    await (update(novelSegments)
+          ..where((t) => t.audioPath.equals(track.audioPath)))
+        .write(const NovelSegmentsCompanion(missing: Value(true)));
+    await (update(subtitleCues)
+          ..where((t) => t.audioPath.equals(track.audioPath)))
+        .write(const SubtitleCuesCompanion(missing: Value(true)));
+    await (update(timelineClips)
+          ..where((t) => t.audioPath.equals(track.audioPath)))
+        .write(const TimelineClipsCompanion(missing: Value(true)));
+    return (delete(audioTracks)..where((t) => t.id.equals(id))).go();
+  });
 }

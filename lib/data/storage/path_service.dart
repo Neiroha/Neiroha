@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 /// - `{voiceAssetRoot}/quick_tts/{char}/`
 /// - `{voiceAssetRoot}/phase_tts/{project}/`
 /// - `{voiceAssetRoot}/dialog_tts/{project}/`
+/// - `{voiceAssetRoot}/novel_reader/{project}/`
 /// - `{voiceAssetRoot}/voice_character_ref/`
 ///
 /// `{root}` is the executable directory when writable (portable mode),
@@ -185,6 +186,26 @@ class PathService {
       ),
     ),
   );
+
+  Future<Directory> novelReaderDir(String projectName) => _ensure(
+    Directory(
+      p.join(
+        voiceAssetRoot.path,
+        'novel_reader',
+        sanitizeSegment(projectName, fallback: 'unnamed_novel'),
+      ),
+    ),
+  );
+
+  Future<Directory> novelReaderSourceDir(String projectName) async {
+    final base = await novelReaderDir(projectName);
+    return _ensure(Directory(p.join(base.path, 'source')));
+  }
+
+  Future<Directory> novelReaderAudioDir(String projectName) async {
+    final base = await novelReaderDir(projectName);
+    return _ensure(Directory(p.join(base.path, 'audio')));
+  }
 
   Future<Directory> videoDubDir(String projectName) => _ensure(
     Directory(

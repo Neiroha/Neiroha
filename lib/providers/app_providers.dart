@@ -1,11 +1,18 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
+import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/data/storage/export_prefs.dart';
 import 'package:neiroha/data/storage/ffmpeg_service.dart';
+import 'package:neiroha/data/storage/novel_dialogue_rules_service.dart';
+import 'package:neiroha/data/storage/novel_import_service.dart';
 import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
+import 'package:neiroha/domain/platform/platform_capabilities.dart';
+import 'package:neiroha/l10n/app_locale.dart';
+import 'package:neiroha/presentation/theme/app_font.dart';
 import 'package:neiroha/server/api_server.dart';
 
 /// Single database instance for the app.
@@ -15,14 +22,42 @@ final databaseProvider = Provider<AppDatabase>((ref) {
   return db;
 });
 
+/// Current app display locale. Persisted in AppSettings via
+/// [AppLocaleSettings.localeKey] and watched by MaterialApp.
+final appLocaleProvider = StateProvider<Locale>((ref) {
+  return AppLocaleSettings.defaultLocale;
+});
+
+/// Current app font mode. Persisted in AppSettings via
+/// [AppFontSettings.fontModeKey] and watched by MaterialApp.
+final appFontModeProvider = StateProvider<AppFontMode>((ref) {
+  return AppFontSettings.defaultMode;
+});
+
+/// Current product capability matrix for the running platform.
+final platformCapabilitiesProvider = Provider<PlatformCapabilities>((ref) {
+  return PlatformCapabilities.current();
+});
+
 /// Disk-backed storage orchestration (voice-asset root, sync, clear-all).
 final storageServiceProvider = Provider<StorageService>((ref) {
   return StorageService(ref.watch(databaseProvider));
 });
 
+/// TXT/folder import pipeline for the lightweight Novel Reader.
+final novelImportServiceProvider = Provider<NovelImportService>((ref) {
+  return NovelImportService(
+    ref.watch(databaseProvider),
+    ref.watch(storageServiceProvider),
+  );
+});
+
 /// System `ffmpeg` resolver. Used by waveform extraction + media import.
 final ffmpegServiceProvider = Provider<FFmpegService>((ref) {
-  return FFmpegService(ref.watch(databaseProvider));
+  return FFmpegService(
+    ref.watch(databaseProvider),
+    capabilities: ref.watch(platformCapabilitiesProvider),
+  );
 });
 
 /// User-configurable export defaults (audio format / video + audio codecs)
@@ -43,6 +78,17 @@ final splitRulesProvider = FutureProvider((ref) {
   return ref.watch(splitRulesServiceProvider).load();
 });
 
+/// Global rules for detecting dialogue spans in imported novel text.
+final novelDialogueRulesServiceProvider = Provider<NovelDialogueRulesService>((
+  ref,
+) {
+  return NovelDialogueRulesService(ref.watch(databaseProvider));
+});
+
+final novelDialogueRulesProvider = FutureProvider((ref) {
+  return ref.watch(novelDialogueRulesServiceProvider).load();
+});
+
 /// Per-segment Phase TTS generation overrides, such as one sentence's
 /// temporary instruction/emotion prompt.
 final phaseSegmentSettingsFileServiceProvider =
@@ -50,11 +96,24 @@ final phaseSegmentSettingsFileServiceProvider =
       return PhaseSegmentSettingsFileService();
     });
 
+/// Shared TTS scheduler. Every synthesis entry point should go through this
+/// provider so per-provider concurrency and rate limits are enforced globally.
+final ttsQueueServiceProvider = Provider<TtsQueueService>((ref) {
+  return TtsQueueService.instance;
+});
+
+/// Live process-wide TTS queue snapshot for task monitoring surfaces.
+final ttsQueueSnapshotProvider = StreamProvider<TtsQueueSnapshot>((ref) {
+  return ref.watch(ttsQueueServiceProvider).watchSnapshots();
+});
+
 /// Probes `ffmpeg -version` once per session. Watch this in the Settings
 /// screen (so the badge updates after the user changes the path) and in
 /// the Video Dub editor (so the waveform banner toggles). Invalidate via
 /// `ref.invalidate(ffmpegAvailabilityProvider)` after the override changes.
 final ffmpegAvailabilityProvider = FutureProvider<bool>((ref) async {
+  final capabilities = ref.watch(platformCapabilitiesProvider);
+  if (!capabilities.supportsFfmpegCli) return false;
   final svc = ref.watch(ffmpegServiceProvider);
   return svc.isAvailable();
 });
@@ -76,6 +135,11 @@ final storageStartupProvider = FutureProvider<StorageScanReport>((ref) async {
 final apiServerProvider = Provider<ApiServer>((ref) {
   final db = ref.watch(databaseProvider);
   return ApiServer(db: db);
+});
+
+/// In-memory API request log emitted by the local middleware server.
+final apiServerLogsProvider = StreamProvider<List<ApiLogEntry>>((ref) {
+  return ref.watch(apiServerProvider).watchLogs();
 });
 
 /// Stream of all providers from the database.
@@ -126,6 +190,26 @@ final phaseTtsSegmentsStreamProvider =
     StreamProvider.family<List<PhaseTtsSegment>, String>((ref, projectId) {
       final db = ref.watch(databaseProvider);
       return db.watchPhaseTtsSegments(projectId);
+    });
+
+/// Novel Reader projects stream.
+final novelProjectsStreamProvider = StreamProvider((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.watchNovelProjects();
+});
+
+/// Novel Reader chapters for a project.
+final novelChaptersStreamProvider =
+    StreamProvider.family<List<NovelChapter>, String>((ref, projectId) {
+      final db = ref.watch(databaseProvider);
+      return db.watchNovelChapters(projectId);
+    });
+
+/// Novel Reader segments for a project.
+final novelSegmentsStreamProvider =
+    StreamProvider.family<List<NovelSegment>, String>((ref, projectId) {
+      final db = ref.watch(databaseProvider);
+      return db.watchNovelSegments(projectId);
     });
 
 /// Dialog TTS projects stream.

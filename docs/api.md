@@ -11,13 +11,32 @@ Neiroha exposes audio APIs at two levels:
 
 ## 1. Local API Server (Shelf)
 
-The built-in server runs on `0.0.0.0:8976` (configurable) and can be toggled from the Settings screen.
+The built-in server defaults to `127.0.0.1:8976` and can be toggled from
+**Settings → API Server**. Set the bind host to `0.0.0.0` only when you
+intentionally want LAN access.
+
+### Security and operational controls
+
+The Settings screen persists the local API configuration in `AppSettings`:
+
+| Setting | Default | Notes |
+|---|---|---|
+| Bind host | `127.0.0.1` | Loopback-only by default |
+| Port | `8976` | Restart the server after changing |
+| API key | empty | When set, requests must send `Authorization: Bearer <key>` or `X-API-Key: <key>` |
+| CORS origins | empty | Empty denies browser cross-origin access; `*` allows any origin |
+| Rate limit | `60` req/min/IP | `0` disables |
+| Max body size | `1048576` bytes | `0` disables declared Content-Length check |
+| API log output | off | Logs metadata only; request bodies and auth headers are never captured |
+
+Every synthesis request goes through the shared `TtsQueueService`, so provider
+concurrency and rate limits apply equally to desktop screens and external API
+clients.
 
 ### Voice Bank as Model
 
 The API uses **voice banks** as the `model` abstraction:
-- Multiple voice banks can be **active simultaneously**
-- Each active bank appears as a model in `/v1/models`
+- Active voice bank rows appear as models in `/v1/models`
 - The bank name is used as the `model` value in API requests
 - Voices listed in `/v1/audio/voices` and `/speakers` are scoped to active banks
 
@@ -62,6 +81,9 @@ OpenAI-compatible TTS endpoint. Resolves voice by name (optionally scoped to a b
 
 **Error responses:**
 - `400` — Missing `input` or `voice` field
+- `401` — Missing or invalid API key when auth is configured
+- `413` — Request body exceeds configured limit
+- `429` — Per-IP request budget exceeded
 - `404` — Voice character not found
 - `500` — Provider not found or upstream synthesis failed
 
@@ -117,7 +139,12 @@ Simple health check.
 
 **Response:**
 ```json
-{ "status": "ok", "port": 8976 }
+{
+  "status": "ok",
+  "host": "127.0.0.1",
+  "port": 8976,
+  "authRequired": false
+}
 ```
 
 ---
@@ -134,6 +161,20 @@ abstract class TtsAdapter {
   Future<List<ModelInfo>> getModels();
 }
 ```
+
+### Platform availability
+
+Provider and media capabilities are filtered by the running platform:
+
+| Capability | Windows | Linux / macOS | Android |
+|---|---|---|---|
+| External FFmpeg CLI path / PATH detection | yes | yes | no |
+| Local waveform extraction, trimming and muxed export | yes | yes | disabled |
+| Windows SAPI system TTS | yes | no | no |
+
+Unsupported providers are not offered in the Add Provider dialog. Existing
+database rows from another platform remain visible as unavailable and cannot be
+enabled or health-checked.
 
 ### 2.1 OpenAI Compatible (`openaiCompatible`)
 
@@ -262,27 +303,30 @@ class CosyVoiceProfile {
 
 ### 2.4 GPT-SoVITS (`gptSovits`)
 
-Adapter for the GPT-SoVITS TTS backend (api_v2.py style).
+Adapter for the Neiroha GPT-SoVITS launcher. It supports saved trained
+speaker profiles and reference-audio clone mode.
 
 | Operation | Method | Path | Status |
 |---|---|---|---|
-| Synthesize | `POST` | `/tts` | **Implemented** |
-| Health check | `GET` | `/control` | **Implemented** |
-| List speakers | — | — | Not supported (uses ref audio files) |
+| Synthesize trained speaker | `POST` | `/v1/audio/speech` | **Implemented** |
+| Synthesize clone | `POST` | `/gpt-sovits/clone` | **Implemented** |
+| Health check | `GET` | `/health` | **Implemented** |
+| List native models | `GET` | `/gpt-sovits/models` | **Implemented** |
+| List speakers | `GET` | `/gpt-sovits/voices`, `/v1/audio/voices`, `/speakers` | **Implemented** |
 
-**Synthesis payload:**
+**Clone payload:**
 ```json
 {
-  "text": "text to synthesize",
+  "input": "text to synthesize",
+  "speaker": "clone",
   "text_lang": "zh",
   "ref_audio_path": "/path/to/ref.wav",
   "prompt_text": "reference text",
   "prompt_lang": "zh",
-  "speed_factor": 1.0,
-  "media_type": "wav",
+  "speed": 1.0,
+  "response_format": "wav",
   "text_split_method": "cut5",
-  "batch_size": 1,
-  "streaming_mode": false
+  "batch_size": 1
 }
 ```
 
@@ -306,6 +350,9 @@ Microsoft Azure Cognitive Services Text-to-Speech REST API. Free tier provides 5
 ### 2.6 Windows System TTS (`systemTts`)
 
 Built-in Windows SAPI (System.Speech.Synthesis) via PowerShell. Zero setup — works on any Windows 10/11 installation.
+This provider is seeded and shown only on Windows. Android, Apple and Linux
+system TTS backends are intentionally hidden until native platform adapters are
+implemented.
 
 | Operation | Method | Path | Status |
 |---|---|---|---|
@@ -326,7 +373,18 @@ Providers that support it can auto-query available models from their API. The pr
 - Models are stored in the `ModelBindings` table and persist across sessions
 - Voice assets can reference specific models within a provider
 
-Supported adapters: `openaiCompatible`, `chatCompletionsTts`, `azureTts`
+Supported adapters:
+
+| Adapter type | Model query | Voice query |
+|---|---|---|
+| `openaiCompatible` | yes | yes |
+| `chatCompletionsTts` | yes | yes |
+| `azureTts` | locales via voice list | yes |
+| `systemTts` | no | yes, Windows only |
+| `cosyvoice` | profiles | profiles |
+| `gptSovits` | native model list | yes |
+| `geminiTts` | yes, built-in TTS model list | yes, built-in voice list |
+| `voxcpm2Native` | yes | yes |
 
 ---
 
@@ -341,12 +399,18 @@ Supported adapters: `openaiCompatible`, `chatCompletionsTts`, `azureTts`
 | `kokoro` | Kokoro-TTS | Preset + voice design modes |
 | `f5Tts` | F5-TTS / E2-TTS | Zero-shot voice clone mode |
 
-See [add-llm-tts-adapter.md](add-llm-tts-adapter.md) for the step-by-step guide on wiring a new LLM TTS backend.
+See [`research/llm-tts-adapter-guide.md`](research/llm-tts-adapter-guide.md)
+for guidance on wiring a new LLM TTS backend.
 
 ### Missing local server endpoints
 
 | Method | Path | Description | Priority |
 |---|---|---|---|
+| `POST` | `/v1/jobs` | Create a durable async TTS job | High |
+| `GET` | `/v1/jobs/:id` | Inspect job status/progress/result metadata | High |
+| `DELETE` | `/v1/jobs/:id` | Cancel a queued/running job | High |
+| `POST` | `/v1/jobs/:id/retry` | Retry a failed or completed job as a new attempt | Medium |
+| `GET` | `/v1/jobs/:id/events` | Optional SSE progress stream | Medium |
 | `GET` | `/v1/audio/speech/:id` | Retrieve previously generated audio by ID | Medium |
 
 ### Missing adapter capabilities

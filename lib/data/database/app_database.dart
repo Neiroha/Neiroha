@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:neiroha/domain/platform/platform_capabilities.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
@@ -27,6 +28,9 @@ part 'queries/storage.dart';
     QuickTtsHistories,
     PhaseTtsProjects,
     PhaseTtsSegments,
+    NovelProjects,
+    NovelChapters,
+    NovelSegments,
     DialogTtsProjects,
     DialogTtsLines,
     VideoDubProjects,
@@ -41,7 +45,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -52,6 +56,65 @@ class AppDatabase extends _$AppDatabase {
     onUpgrade: (m, from, to) async {
       if (from < 16) {
         await m.addColumn(phaseTtsSegments, phaseTtsSegments.speakerLabel);
+      }
+      if (from < 17) {
+        await m.createTable(novelProjects);
+        await m.createTable(novelChapters);
+        await m.createTable(novelSegments);
+      } else {
+        if (from < 18) {
+          await m.addColumn(novelProjects, novelProjects.autoTurnPage);
+          await m.addColumn(novelProjects, novelProjects.autoSliceLongSegments);
+          await m.addColumn(novelProjects, novelProjects.maxSliceChars);
+          await customStatement(
+            "UPDATE novel_projects SET reader_theme = 'dark' "
+            "WHERE reader_theme = 'comfort'",
+          );
+        }
+        if (from < 19) {
+          await m.addColumn(novelProjects, novelProjects.autoAdvanceChapters);
+          await customStatement(
+            'UPDATE novel_projects SET max_slice_chars = 50 '
+            'WHERE max_slice_chars > 80',
+          );
+          await customStatement(
+            'UPDATE novel_projects SET max_slice_chars = 20 '
+            'WHERE max_slice_chars < 20',
+          );
+        }
+        if (from < 20) {
+          await m.addColumn(
+            novelProjects,
+            novelProjects.sliceOnlyAtPunctuation,
+          );
+        }
+        if (from < 21) {
+          await m.addColumn(novelProjects, novelProjects.prefetchSegments);
+        }
+        if (from < 22) {
+          await m.addColumn(novelProjects, novelProjects.cacheCurrentColor);
+          await m.addColumn(novelProjects, novelProjects.cacheStaleColor);
+          await m.addColumn(novelProjects, novelProjects.cacheHighlightOpacity);
+        }
+        if (from < 23) {
+          await m.addColumn(
+            novelProjects,
+            novelProjects.overwriteCacheWhilePlaying,
+          );
+        }
+        if (from < 24) {
+          await m.addColumn(
+            novelProjects,
+            novelProjects.skipPunctuationOnlySegments,
+          );
+        }
+      }
+      if (from < 25) {
+        await m.addColumn(ttsProviders, ttsProviders.maxConcurrency);
+        await m.addColumn(ttsProviders, ttsProviders.requestsPerMinute);
+        await m.addColumn(ttsProviders, ttsProviders.requestsPerDay);
+        await m.addColumn(ttsProviders, ttsProviders.tokensPerMinute);
+        await m.addColumn(ttsProviders, ttsProviders.tokensPerDay);
       }
     },
   );
@@ -139,18 +202,22 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
 
-    const providerSystem = 'default-system-tts';
-    await into(ttsProviders).insert(
-      TtsProvidersCompanion(
-        id: const Value(providerSystem),
-        name: const Value('Windows SAPI'),
-        adapterType: const Value('systemTts'),
-        baseUrl: const Value(''),
-        defaultModelName: const Value(''),
-        enabled: const Value(false),
-        position: const Value(6),
-      ),
-    );
+    final platformCapabilities = PlatformCapabilities.current();
+    final systemTtsProviderName = platformCapabilities.systemTtsProviderName;
+    if (systemTtsProviderName != null) {
+      const providerSystem = 'default-system-tts';
+      await into(ttsProviders).insert(
+        TtsProvidersCompanion(
+          id: const Value(providerSystem),
+          name: Value(systemTtsProviderName),
+          adapterType: const Value('systemTts'),
+          baseUrl: const Value(''),
+          defaultModelName: const Value(''),
+          enabled: const Value(false),
+          position: const Value(6),
+        ),
+      );
+    }
 
     const providerGemini = 'default-gemini-tts';
     await into(ttsProviders).insert(

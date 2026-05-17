@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/presentation/widgets/voice_character/create_character_dialog.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 export 'package:neiroha/presentation/widgets/voice_character/character_inspector.dart';
 export 'package:neiroha/presentation/widgets/voice_character/create_character_dialog.dart';
@@ -19,23 +20,30 @@ void openCreateCharacterDialog(
 }) {
   final allProviders =
       ref.read(ttsProvidersStreamProvider).valueOrNull ?? const [];
-  final enabledProviders = allProviders.where((p) => p.enabled).toList();
+  final capabilities = ref.read(platformCapabilitiesProvider);
+  final enabledProviders = allProviders
+      .where(
+        (p) => p.enabled && capabilities.supportsAdapterName(p.adapterType),
+      )
+      .toList();
   if (enabledProviders.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Enable at least one Provider first (Providers tab)'),
+      SnackBar(
+        content: Text(
+          AppLocalizations.of(
+            context,
+          ).uiEnableAtLeastOneProviderFirstProvidersTab,
+        ),
       ),
     );
     return;
   }
-  final existingAssets = ref.read(voiceAssetsStreamProvider).valueOrNull ?? [];
   final audioTracks = ref.read(audioTracksStreamProvider).valueOrNull ?? [];
   showDialog(
     context: context,
     barrierDismissible: false,
     builder: (ctx) => CreateCharacterDialog(
       providers: enabledProviders,
-      existingAssets: existingAssets,
       audioTracks: audioTracks,
       database: ref.read(databaseProvider),
       onSave: (companion) async {

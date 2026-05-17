@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// One row of the subtitle panel in the Video Dub editor.
 ///
@@ -43,9 +44,7 @@ class CueCard extends StatelessWidget {
         cue.voiceAssetId != null && bankHasVoice && !isGenerating;
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
-      color: isSelected
-          ? AppTheme.accentColor.withValues(alpha: 0.16)
-          : null,
+      color: isSelected ? AppTheme.accentColor.withValues(alpha: 0.16) : null,
       shape: RoundedRectangleBorder(
         side: BorderSide(
           color: isSelected
@@ -65,13 +64,15 @@ class CueCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Text('#${index + 1}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white.withValues(alpha: 0.55),
-                      )),
-                  const SizedBox(width: 8),
+                  Text(
+                    '#${index + 1}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.55),
+                    ),
+                  ),
+                  SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       '${_ms(cue.startMs)} → ${_ms(cue.endMs)}',
@@ -83,7 +84,7 @@ class CueCard extends StatelessWidget {
                     ),
                   ),
                   if (isGenerating)
-                    const SizedBox(
+                    SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
@@ -91,31 +92,40 @@ class CueCard extends StatelessWidget {
                   else if (cue.error != null)
                     Tooltip(
                       message: cue.error!,
-                      child: const Icon(Icons.error_rounded,
-                          size: 16, color: Colors.redAccent),
+                      child: const Icon(
+                        Icons.error_rounded,
+                        size: 16,
+                        color: Colors.redAccent,
+                      ),
                     )
                   else if (cue.audioPath != null)
                     IconButton(
                       padding: EdgeInsets.zero,
-                      constraints:
-                          const BoxConstraints.tightFor(width: 24, height: 24),
+                      constraints: const BoxConstraints.tightFor(
+                        width: 24,
+                        height: 24,
+                      ),
                       icon: Icon(
                         isPreviewing
                             ? Icons.stop_rounded
                             : Icons.play_arrow_rounded,
                         size: 16,
                       ),
-                      tooltip: 'Preview',
+                      tooltip: AppLocalizations.of(context).uiPreview,
                       onPressed: onPreview,
                     )
                   else
-                    Icon(Icons.pending_rounded,
-                        size: 14,
-                        color: Colors.white.withValues(alpha: 0.22)),
+                    Icon(
+                      Icons.pending_rounded,
+                      size: 14,
+                      color: Colors.white.withValues(alpha: 0.22),
+                    ),
                   IconButton(
                     padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 24, height: 24),
+                    constraints: const BoxConstraints.tightFor(
+                      width: 24,
+                      height: 24,
+                    ),
                     icon: Icon(
                       cue.audioPath != null
                           ? Icons.refresh_rounded
@@ -125,54 +135,72 @@ class CueCard extends StatelessWidget {
                           ? AppTheme.accentColor
                           : Colors.white.withValues(alpha: 0.18),
                     ),
-                    tooltip:
-                        cue.audioPath != null ? 'Regenerate' : 'Generate',
+                    tooltip: cue.audioPath != null
+                        ? AppLocalizations.of(context).uiRegenerate
+                        : AppLocalizations.of(context).uiGenerate,
                     onPressed: canGenerate ? onGenerate : null,
                   ),
                   IconButton(
                     padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 24, height: 24),
-                    icon: Icon(Icons.edit_outlined,
-                        size: 14,
-                        color: Colors.white.withValues(alpha: 0.4)),
-                    tooltip: 'Edit',
+                    constraints: const BoxConstraints.tightFor(
+                      width: 24,
+                      height: 24,
+                    ),
+                    icon: Icon(
+                      Icons.edit_outlined,
+                      size: 14,
+                      color: Colors.white.withValues(alpha: 0.4),
+                    ),
+                    tooltip: AppLocalizations.of(context).uiEdit,
                     onPressed: onEdit,
                   ),
                   IconButton(
                     padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 24, height: 24),
-                    icon: Icon(Icons.close_rounded,
-                        size: 14,
-                        color: Colors.white.withValues(alpha: 0.35)),
+                    constraints: const BoxConstraints.tightFor(
+                      width: 24,
+                      height: 24,
+                    ),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      size: 14,
+                      color: Colors.white.withValues(alpha: 0.35),
+                    ),
                     onPressed: onDelete,
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(cue.cueText,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13)),
-              const SizedBox(height: 6),
+              SizedBox(height: 4),
+              Text(
+                cue.cueText,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13),
+              ),
+              SizedBox(height: 6),
               SizedBox(
                 height: 30,
                 child: DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                    hintText: 'Voice',
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context).uiVoice,
                     isDense: true,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                   ),
                   isExpanded: true,
                   initialValue: bankHasVoice ? cue.voiceAssetId : null,
                   items: bankAssets
-                      .map((a) => DropdownMenuItem(
+                      .map(
+                        (a) => DropdownMenuItem(
                           value: a.id,
-                          child: Text(a.name,
-                              style: const TextStyle(fontSize: 12),
-                              overflow: TextOverflow.ellipsis)))
+                          child: Text(
+                            a.name,
+                            style: const TextStyle(fontSize: 12),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
                       .toList(),
                   onChanged: onVoiceChanged,
                 ),

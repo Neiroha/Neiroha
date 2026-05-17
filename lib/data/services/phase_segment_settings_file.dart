@@ -52,10 +52,7 @@ class SegmentVoiceSettings {
   final String? voiceInstruction;
   final String? audioTagPrefix;
 
-  const SegmentVoiceSettings({
-    this.voiceInstruction,
-    this.audioTagPrefix,
-  });
+  const SegmentVoiceSettings({this.voiceInstruction, this.audioTagPrefix});
 
   bool get isEmpty =>
       (voiceInstruction == null || voiceInstruction!.isEmpty) &&

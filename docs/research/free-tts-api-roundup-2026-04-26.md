@@ -110,7 +110,7 @@
 
 ## 对接层面的一个小提醒
 
-结合仓库里现有文档 [`add-llm-tts-adapter.md`](./add-llm-tts-adapter.md) 来看，后面实现时可以先按三类切：
+结合仓库里现有文档 [`llm-tts-adapter-guide.md`](./llm-tts-adapter-guide.md) 来看，后面实现时可以先按三类切：
 
 - **最容易复用现有思路**
   - SiliconFlow：最接近现有 `openAiTts`

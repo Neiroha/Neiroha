@@ -9,6 +9,7 @@ import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Right-side sentence list for Phase TTS.
 ///
@@ -21,7 +22,7 @@ class SegmentVoicePanel extends ConsumerStatefulWidget {
   final Set<String> generatingSegmentIds;
   final Future<void> Function(String? voiceAssetId) onApplyVoiceToAll;
   final void Function(db.PhaseTtsSegment segment, String? voiceAssetId)
-      onVoiceChanged;
+  onVoiceChanged;
   final void Function(db.PhaseTtsSegment segment, int index) onPlay;
   final Future<void> Function(db.PhaseTtsSegment segment)? onGenerate;
   final ValueChanged<String> onDelete;
@@ -90,9 +91,9 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
       final service = _settingsService;
       final settings = _settings;
       unawaited(
-        _pendingSave.catchError((_) {}).then(
-              (_) => service.save(slug, settings),
-            ),
+        _pendingSave
+            .catchError((_) {})
+            .then((_) => service.save(slug, settings)),
       );
     }
     super.dispose();
@@ -120,9 +121,7 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     SegmentVoiceSettings settings, {
     bool saveNow = false,
   }) {
-    final next = Map<String, SegmentVoiceSettings>.from(
-      _settings.bySegmentId,
-    );
+    final next = Map<String, SegmentVoiceSettings>.from(_settings.bySegmentId);
     if (settings.isEmpty) {
       next.remove(segmentId);
     } else {
@@ -175,16 +174,16 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     final provider = selectedAsset == null
         ? null
         : providerById[selectedAsset.providerId];
-    final keepInstruction = selectedAsset != null &&
+    final keepInstruction =
+        selectedAsset != null &&
         provider != null &&
         _supportsVoiceInstruction(selectedAsset, provider);
-    final keepAudioTag = selectedAsset != null &&
+    final keepAudioTag =
+        selectedAsset != null &&
         provider != null &&
         _supportsAudioTags(selectedAsset, provider);
 
-    final next = Map<String, SegmentVoiceSettings>.from(
-      _settings.bySegmentId,
-    );
+    final next = Map<String, SegmentVoiceSettings>.from(_settings.bySegmentId);
     for (final segment in segments) {
       final current = next[segment.id];
       if (current == null || current.isEmpty) continue;
@@ -217,10 +216,12 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     final provider = selectedAsset == null
         ? null
         : providerById[selectedAsset.providerId];
-    final keepInstruction = selectedAsset != null &&
+    final keepInstruction =
+        selectedAsset != null &&
         provider != null &&
         _supportsVoiceInstruction(selectedAsset, provider);
-    final keepAudioTag = selectedAsset != null &&
+    final keepAudioTag =
+        selectedAsset != null &&
         provider != null &&
         _supportsAudioTags(selectedAsset, provider);
 
@@ -248,8 +249,8 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     final providerById = {
       for (final provider in providers) provider.id: provider,
     };
-    final current = _settings.bySegmentId[segment.id] ??
-        const SegmentVoiceSettings();
+    final current =
+        _settings.bySegmentId[segment.id] ?? const SegmentVoiceSettings();
     var selectedVoiceId = segment.voiceAssetId;
     final instructionCtrl = TextEditingController(
       text: current.voiceInstruction ?? '',
@@ -269,15 +270,17 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
             final provider = selectedAsset == null
                 ? null
                 : providerById[selectedAsset.providerId];
-            final supportsInstruction = selectedAsset != null &&
+            final supportsInstruction =
+                selectedAsset != null &&
                 provider != null &&
                 _supportsVoiceInstruction(selectedAsset, provider);
-            final supportsAudioTag = selectedAsset != null &&
+            final supportsAudioTag =
+                selectedAsset != null &&
                 provider != null &&
                 _supportsAudioTags(selectedAsset, provider);
 
             return AlertDialog(
-              title: const Text('Sentence Voice'),
+              title: Text(AppLocalizations.of(context).uiSentenceVoice),
               content: SizedBox(
                 width: 460,
                 child: Column(
@@ -290,41 +293,47 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
                       maxLines: 4,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     _VoiceDropdown(
                       value: selectedVoiceId,
                       assets: widget.bankAssets,
-                      hintText: 'Voice',
+                      hintText: AppLocalizations.of(context).uiVoice,
                       onChanged: (id) =>
                           setDialogState(() => selectedVoiceId = id),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     if (supportsInstruction)
                       TextField(
                         controller: instructionCtrl,
                         minLines: 2,
                         maxLines: 4,
-                        decoration: const InputDecoration(
-                          labelText: 'Style / direction',
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(
+                            context,
+                          ).uiStyleDirection,
                           hintText: '焦虑地说，压低声音，语速稍快',
                         ),
                       ),
                     if (supportsAudioTag) ...[
-                      const SizedBox(height: 10),
+                      SizedBox(height: 10),
                       TextField(
                         controller: audioTagCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Audio tag prefix',
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(
+                            context,
+                          ).uiAudioTagPrefix,
                           hintText: '(紧张|深呼吸)',
                         ),
                       ),
                     ],
                     if (!supportsInstruction && !supportsAudioTag) ...[
-                      const SizedBox(height: 10),
+                      SizedBox(height: 10),
                       TextField(
                         enabled: false,
-                        decoration: const InputDecoration(
-                          labelText: 'No per-sentence style controls',
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(
+                            context,
+                          ).uiNoPerSentenceStyleControls,
                         ),
                       ),
                     ],
@@ -338,11 +347,11 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
                     audioTagCtrl.clear();
                     setDialogState(() => selectedVoiceId = null);
                   },
-                  child: const Text('Clear'),
+                  child: Text(AppLocalizations.of(context).uiClear),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text(AppLocalizations.of(context).uiCancel),
                 ),
                 FilledButton(
                   onPressed: () {
@@ -363,7 +372,7 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
                     );
                     Navigator.pop(context);
                   },
-                  child: const Text('Save'),
+                  child: Text(AppLocalizations.of(context).uiSave),
                 ),
               ],
             );
@@ -381,10 +390,7 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     return trimmed.isEmpty ? null : trimmed;
   }
 
-  bool _supportsVoiceInstruction(
-    db.VoiceAsset asset,
-    db.TtsProvider provider,
-  ) {
+  bool _supportsVoiceInstruction(db.VoiceAsset asset, db.TtsProvider provider) {
     return switch (provider.adapterType) {
       'chatCompletionsTts' => _isMimoTtsModel(asset, provider),
       'cosyvoice' => true,
@@ -418,7 +424,8 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     final hasGeneratedAudio = ordered.any(
       (segment) => segment.audioPath != null && !segment.missing,
     );
-    final canGenerateAll = ordered.isNotEmpty &&
+    final canGenerateAll =
+        ordered.isNotEmpty &&
         widget.bankAssets.isNotEmpty &&
         !widget.generatingAll;
 
@@ -430,7 +437,7 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
           child: Row(
             children: [
               Text(
-                'SEGMENTS',
+                AppLocalizations.of(context).uiSEGMENTS,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -438,7 +445,7 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
                   color: Colors.white.withValues(alpha: 0.4),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
@@ -466,34 +473,34 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
                   child: _VoiceDropdown(
                     value: bulkValue,
                     assets: widget.bankAssets,
-                    hintText: 'Voice for all',
+                    hintText: AppLocalizations.of(context).uiVoiceForAll,
                     onChanged: (id) => setState(() => _bulkVoiceId = id),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               FilledButton.icon(
                 onPressed: ordered.isEmpty
                     ? null
                     : () => unawaited(_applyBulkVoice(ordered)),
                 icon: const Icon(Icons.done_all_rounded, size: 14),
-                label: const Text('Apply All'),
+                label: Text(AppLocalizations.of(context).uiApplyAll),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               FilledButton.icon(
                 onPressed: canGenerateAll ? widget.onGenerateAll : null,
                 icon: widget.generatingAll
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 14,
                         height: 14,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.auto_awesome_rounded, size: 14),
-                label: const Text('Generate All'),
+                label: Text(AppLocalizations.of(context).uiGenerateAll),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               IconButton.filled(
-                tooltip: 'Play all generated audio',
+                tooltip: AppLocalizations.of(context).uiPlayAllGeneratedAudio,
                 onPressed: hasGeneratedAudio ? widget.onPlayAll : null,
                 icon: const Icon(Icons.playlist_play_rounded, size: 18),
               ),
@@ -601,21 +608,21 @@ class _SegmentVoiceRow extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
                 child: SizedBox(
                   height: 34,
                   child: _VoiceDropdown(
                     value: value,
                     assets: assets,
-                    hintText: 'Voice',
+                    hintText: AppLocalizations.of(context).uiVoice,
                     onChanged: onVoiceChanged,
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
               IconButton(
-                tooltip: 'Voice settings',
+                tooltip: AppLocalizations.of(context).uiVoiceSettings,
                 icon: Icon(
                   Icons.tune_rounded,
                   size: 17,
@@ -627,9 +634,9 @@ class _SegmentVoiceRow extends StatelessWidget {
                 constraints: const BoxConstraints(),
                 onPressed: onSettings,
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: 4),
               IconButton(
-                tooltip: 'Delete segment',
+                tooltip: AppLocalizations.of(context).uiDeleteSegment,
                 icon: Icon(
                   Icons.close_rounded,
                   size: 16,
@@ -639,14 +646,14 @@ class _SegmentVoiceRow extends StatelessWidget {
                 constraints: const BoxConstraints(),
                 onPressed: onDelete,
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: 4),
               _StatusButton(
                 isGenerating: isGenerating,
                 hasAudio: segment.audioPath != null,
                 error: segment.error,
                 onPlay: onPlay,
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: 4),
               IconButton(
                 icon: Icon(
                   segment.audioPath != null
@@ -664,7 +671,7 @@ class _SegmentVoiceRow extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Text(
             segment.segmentText,
             style: const TextStyle(fontSize: 12),
@@ -672,7 +679,7 @@ class _SegmentVoiceRow extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           if (hasSettings) ...[
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             _SettingsSummary(settings: settings!),
           ],
         ],
@@ -692,7 +699,8 @@ class _SettingsSummary extends StatelessWidget {
       if (settings.voiceInstruction != null &&
           settings.voiceInstruction!.isNotEmpty)
         settings.voiceInstruction!,
-      if (settings.audioTagPrefix != null && settings.audioTagPrefix!.isNotEmpty)
+      if (settings.audioTagPrefix != null &&
+          settings.audioTagPrefix!.isNotEmpty)
         settings.audioTagPrefix!,
     ];
     return Text(
@@ -732,9 +740,12 @@ class _VoiceDropdown extends StatelessWidget {
       isExpanded: true,
       initialValue: value,
       items: [
-        const DropdownMenuItem<String>(
+        DropdownMenuItem<String>(
           value: null,
-          child: Text('-- Unassigned --', style: TextStyle(fontSize: 12)),
+          child: Text(
+            AppLocalizations.of(context).uiUnassigned,
+            style: TextStyle(fontSize: 12),
+          ),
         ),
         for (final asset in assets)
           DropdownMenuItem<String>(
@@ -767,7 +778,7 @@ class _StatusButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isGenerating) {
-      return const SizedBox(
+      return SizedBox(
         width: 18,
         height: 18,
         child: CircularProgressIndicator(strokeWidth: 2),
@@ -806,7 +817,7 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Text(
-        'Run Auto Split to create segments',
+        AppLocalizations.of(context).uiRunAutoSplitToCreateSegments,
         style: TextStyle(
           fontSize: 12,
           color: Colors.white.withValues(alpha: 0.3),

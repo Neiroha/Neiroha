@@ -38,33 +38,32 @@ class SplitRule {
     String? mode,
     String? pattern,
     bool? enabled,
-  }) =>
-      SplitRule(
-        id: id,
-        name: name ?? this.name,
-        mode: mode ?? this.mode,
-        pattern: pattern ?? this.pattern,
-        builtIn: builtIn,
-        enabled: enabled ?? this.enabled,
-      );
+  }) => SplitRule(
+    id: id,
+    name: name ?? this.name,
+    mode: mode ?? this.mode,
+    pattern: pattern ?? this.pattern,
+    builtIn: builtIn,
+    enabled: enabled ?? this.enabled,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'mode': mode,
-        'pattern': pattern,
-        'builtIn': builtIn,
-        'enabled': enabled,
-      };
+    'id': id,
+    'name': name,
+    'mode': mode,
+    'pattern': pattern,
+    'builtIn': builtIn,
+    'enabled': enabled,
+  };
 
   factory SplitRule.fromJson(Map<String, dynamic> json) => SplitRule(
-        id: json['id']?.toString() ?? '',
-        name: json['name']?.toString() ?? '',
-        mode: json['mode']?.toString() ?? 'regex',
-        pattern: json['pattern']?.toString() ?? '',
-        builtIn: json['builtIn'] == true,
-        enabled: json['enabled'] != false,
-      );
+    id: json['id']?.toString() ?? '',
+    name: json['name']?.toString() ?? '',
+    mode: json['mode']?.toString() ?? 'regex',
+    pattern: json['pattern']?.toString() ?? '',
+    builtIn: json['builtIn'] == true,
+    enabled: json['enabled'] != false,
+  );
 }
 
 /// Apply a [SplitRule] to a script. Returns trimmed, non-empty segments in
@@ -156,7 +155,9 @@ class SplitRulesService {
       if (decoded is! List) return List.of(builtInRules);
       final user = <SplitRule>[];
       for (final entry in decoded) {
-        if (entry is Map) user.add(SplitRule.fromJson(entry.cast<String, dynamic>()));
+        if (entry is Map) {
+          user.add(SplitRule.fromJson(entry.cast<String, dynamic>()));
+        }
       }
       // Ensure built-ins are always present (re-add any the user lost
       // through a corrupt write) but preserve their `enabled` state.

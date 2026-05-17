@@ -5,6 +5,7 @@ import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/split_rules_dialog.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Left-pane script workspace. It keeps the original text and split controls;
 /// the generated segment list lives in the right pane.
@@ -39,7 +40,7 @@ class _PhaseScriptWorkspaceState extends ConsumerState<PhaseScriptWorkspace> {
           child: Row(
             children: [
               Text(
-                'SCRIPT',
+                AppLocalizations.of(context).uiSCRIPT,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -81,8 +82,9 @@ class _PhaseScriptWorkspaceState extends ConsumerState<PhaseScriptWorkspace> {
               textAlignVertical: TextAlignVertical.top,
               onChanged: (_) => widget.onScriptChanged(),
               decoration: InputDecoration(
-                hintText:
-                    'Paste your novel text here...\n\nUse Auto Split to break it into TTS segments.',
+                hintText: AppLocalizations.of(
+                  context,
+                ).uiPasteYourNovelTextHereUseAutoSplitToBreakItInto,
                 hintStyle: TextStyle(
                   color: Colors.white.withValues(alpha: 0.25),
                 ),
@@ -138,7 +140,10 @@ class _SplitToolbar extends StatelessWidget {
             child: DropdownButton<String>(
               value: activeId,
               isDense: true,
-              hint: const Text('No rule', style: TextStyle(fontSize: 12)),
+              hint: Text(
+                AppLocalizations.of(context).uiNoRule,
+                style: TextStyle(fontSize: 12),
+              ),
               items: [
                 for (final rule in enabled)
                   DropdownMenuItem(
@@ -157,17 +162,17 @@ class _SplitToolbar extends StatelessWidget {
           ),
         ),
         IconButton(
-          tooltip: 'Manage rules',
+          tooltip: AppLocalizations.of(context).uiManageRules,
           onPressed: onManage,
           icon: const Icon(Icons.tune_rounded, size: 16),
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minHeight: 32, minWidth: 32),
         ),
-        const SizedBox(width: 4),
+        SizedBox(width: 4),
         TextButton.icon(
           onPressed: enabled.isEmpty ? null : onRun,
           icon: const Icon(Icons.splitscreen_rounded, size: 16),
-          label: const Text('Auto Split'),
+          label: Text(AppLocalizations.of(context).uiAutoSplit),
         ),
       ],
     );

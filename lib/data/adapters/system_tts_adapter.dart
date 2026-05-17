@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+import 'package:neiroha/domain/platform/platform_capabilities.dart';
+
 import 'tts_adapter.dart';
 
 /// Adapter for the built-in Windows SAPI (System.Speech) TTS engine.
@@ -16,16 +18,16 @@ class SystemTtsAdapter extends TtsAdapter {
   final String apiKey; // unused
   final String modelName; // unused
 
-  SystemTtsAdapter({
-    this.baseUrl = '',
-    this.apiKey = '',
-    this.modelName = '',
-  });
+  SystemTtsAdapter({this.baseUrl = '', this.apiKey = '', this.modelName = ''});
 
   @override
   Future<TtsResult> synthesize(TtsRequest request) async {
+    _ensureSupported();
     final tempDir = await getTemporaryDirectory();
-    final outFile = p.join(tempDir.path, 'sapi_tts_${DateTime.now().millisecondsSinceEpoch}.wav');
+    final outFile = p.join(
+      tempDir.path,
+      'sapi_tts_${DateTime.now().millisecondsSinceEpoch}.wav',
+    );
 
     // Escape single quotes for PowerShell string
     final escapedText = request.text.replaceAll("'", "''");
@@ -34,7 +36,9 @@ class SystemTtsAdapter extends TtsAdapter {
     // Build PowerShell script
     final script = StringBuffer()
       ..writeln('Add-Type -AssemblyName System.Speech')
-      ..writeln('\$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer');
+      ..writeln(
+        '\$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer',
+      );
 
     // Select voice if specified
     if (voiceName.isNotEmpty) {
@@ -53,10 +57,12 @@ class SystemTtsAdapter extends TtsAdapter {
       ..writeln('\$synth.Speak(\'$escapedText\')')
       ..writeln('\$synth.Dispose()');
 
-    final result = await Process.run(
-      'powershell',
-      ['-NoProfile', '-NonInteractive', '-Command', script.toString()],
-    );
+    final result = await Process.run('powershell', [
+      '-NoProfile',
+      '-NonInteractive',
+      '-Command',
+      script.toString(),
+    ]);
 
     if (result.exitCode != 0) {
       throw Exception('SAPI TTS failed: ${result.stderr}');
@@ -79,6 +85,7 @@ class SystemTtsAdapter extends TtsAdapter {
 
   @override
   Future<bool> healthCheck() async {
+    if (!PlatformCapabilities.current().supportsSystemTtsAdapter) return false;
     if (!Platform.isWindows) return false;
     try {
       final result = await Process.run('powershell', [
@@ -105,6 +112,7 @@ class SystemTtsAdapter extends TtsAdapter {
 
   @override
   Future<List<String>> getSpeakers() async {
+    if (!PlatformCapabilities.current().supportsSystemTtsAdapter) return [];
     if (!Platform.isWindows) return [];
     try {
       final result = await Process.run('powershell', [
@@ -127,5 +135,14 @@ class SystemTtsAdapter extends TtsAdapter {
       }
     } catch (_) {}
     return [];
+  }
+
+  void _ensureSupported() {
+    final capabilities = PlatformCapabilities.current();
+    if (!capabilities.supportsSystemTtsAdapter || !Platform.isWindows) {
+      throw UnsupportedError(
+        'Windows SAPI is not available on ${capabilities.platformLabel}.',
+      );
+    }
   }
 }

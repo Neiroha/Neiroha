@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
 /// Compact server status indicator for the bottom of the sidebar or top bar.
@@ -23,16 +24,15 @@ class ServerStatusBar extends ConsumerWidget {
               color: running ? Colors.green : Colors.orange,
               boxShadow: [
                 if (running)
-                  const BoxShadow(
-                    color: Colors.green,
-                    blurRadius: 6,
-                  ),
+                  const BoxShadow(color: Colors.green, blurRadius: 6),
               ],
             ),
           ),
           const SizedBox(width: 8),
           Text(
-            running ? 'API :${ref.read(apiServerProvider).port}' : 'API Off',
+            running
+                ? 'API :${ref.read(apiServerProvider).port}'
+                : AppLocalizations.of(context).uiAPIOff,
             style: TextStyle(
               fontSize: 12,
               color: Colors.white.withValues(alpha: 0.6),

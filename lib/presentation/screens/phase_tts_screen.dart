@@ -21,6 +21,7 @@ import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 typedef PhaseTtsExitGuard = Future<bool> Function();
 
@@ -65,7 +66,13 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     if (_selectedProjectId == null) {
       return _buildProjectListScreen();
     }
-    return _buildProjectContent();
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_backActiveProject());
+      },
+      child: _buildProjectContent(),
+    );
   }
 
   // ───────────────── List mode (card grid) ─────────────────
@@ -78,8 +85,9 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         const Divider(height: 1),
         Expanded(
           child: projectsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            loading: () => Center(child: CircularProgressIndicator()),
+            error: (e, _) =>
+                Center(child: Text(AppLocalizations.of(context).uiError2(e))),
             data: (projects) => ProjectCardGrid(
               projects: [
                 for (final p in projects)
@@ -127,7 +135,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         ?.where((p) => p.id == projectId)
         .firstOrNull;
     if (project == null) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: CircularProgressIndicator());
     }
 
     final membersAsync = ref.watch(bankMembersStreamProvider(project.bankId));
@@ -161,6 +169,8 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         Expanded(
           child: ResizableSplitPane(
             initialLeftFraction: 0.55,
+            compactRightIcon: Icons.tune_rounded,
+            compactRightLabel: AppLocalizations.of(context).uiDetails,
             left: PhaseScriptWorkspace(
               controller: _scriptController,
               onScriptChanged: () => _saveScript(project),
@@ -248,19 +258,34 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     return _confirmLeave(project);
   }
 
+  Future<void> _backActiveProject() async {
+    final projectId = _selectedProjectId;
+    if (projectId == null) return;
+    final project = await ref
+        .read(databaseProvider)
+        .getPhaseTtsProjectById(projectId);
+    if (project == null) {
+      if (mounted) setState(() => _selectedProjectId = null);
+      return;
+    }
+    await _back(project);
+  }
+
   Future<bool> _confirmLeave(db.PhaseTtsProject project) async {
     if (!_dirty) return true;
     final choice = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Unsaved changes'),
-        content: const Text(
-          'You have unsaved changes in this project. Save before leaving?',
+        title: Text(AppLocalizations.of(context).uiUnsavedChanges),
+        content: Text(
+          AppLocalizations.of(
+            context,
+          ).uiYouHaveUnsavedChangesInThisProjectSaveBeforeLeaving,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'cancel'),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).uiCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'discard'),
@@ -268,7 +293,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, 'save'),
-            child: const Text('Save & Leave'),
+            child: Text(AppLocalizations.of(context).uiSaveLeave),
           ),
         ],
       ),
@@ -324,10 +349,9 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
       _showSnack('No generated audio to play.');
       return;
     }
-    await ref.read(playbackNotifierProvider.notifier).playSequenceFrom(
-          items,
-          sourceTag: phaseTtsPlaybackSource,
-        );
+    await ref
+        .read(playbackNotifierProvider.notifier)
+        .playSequenceFrom(items, sourceTag: phaseTtsPlaybackSource);
   }
 
   void _createProject() async {
@@ -335,7 +359,9 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     if (banks.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Create a Voice Bank first')),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).uiCreateAVoiceBankFirst),
+          ),
         );
       }
       return;
@@ -450,16 +476,16 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     setState(() => _generatingAll = true);
     try {
       final segmentSettings = await _loadSegmentSettings(project);
-      for (final seg in segments) {
-        if (seg.audioPath != null) continue;
-        if (seg.voiceAssetId == null) continue;
-        await _generateOne(
-          project,
-          seg,
-          bankAssets,
-          segmentSettings: segmentSettings,
-        );
-      }
+      await Future.wait([
+        for (final seg in segments)
+          if (seg.audioPath == null && seg.voiceAssetId != null)
+            _generateOne(
+              project,
+              seg,
+              bankAssets,
+              segmentSettings: segmentSettings,
+            ),
+      ]);
     } finally {
       if (mounted) setState(() => _generatingAll = false);
     }
@@ -493,31 +519,36 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
           .ensurePhaseProjectSlug(project.id);
       final outDir = await PathService.instance.phaseTtsDir(slug);
 
-      final adapter = createAdapter(provider, modelName: asset.modelName);
-      final result = await adapter.synthesize(
-        TtsRequest(
-          text: seg.segmentText,
-          voice: asset.presetVoiceName ?? asset.name,
-          speed: asset.speed,
-          textLang: provider.adapterType == 'gptSovits'
-              ? asset.modelName
-              : null,
-          presetVoiceName: asset.presetVoiceName,
-          voiceInstruction: _supportsVoiceInstruction(asset, provider)
-              ? (instructionOverride == null || instructionOverride.isEmpty
-                    ? asset.voiceInstruction
-                    : instructionOverride)
-              : null,
-          audioTagPrefix: _supportsAudioTags(asset, provider)
-              ? (audioTagPrefix == null || audioTagPrefix.isEmpty
-                    ? null
-                    : audioTagPrefix)
-              : null,
-          refAudioPath: asset.refAudioPath,
-          promptText: asset.promptText,
-          promptLang: asset.promptLang,
-        ),
-      );
+      final result = await ref
+          .read(ttsQueueServiceProvider)
+          .synthesize(
+            provider: provider,
+            modelName: asset.modelName,
+            source: 'Phase TTS',
+            label: 'Segment ${seg.orderIndex + 1}: ${seg.segmentText}',
+            request: TtsRequest(
+              text: seg.segmentText,
+              voice: asset.presetVoiceName ?? asset.name,
+              speed: asset.speed,
+              textLang: provider.adapterType == 'gptSovits'
+                  ? asset.modelName
+                  : null,
+              presetVoiceName: asset.presetVoiceName,
+              voiceInstruction: _supportsVoiceInstruction(asset, provider)
+                  ? (instructionOverride == null || instructionOverride.isEmpty
+                        ? asset.voiceInstruction
+                        : instructionOverride)
+                  : null,
+              audioTagPrefix: _supportsAudioTags(asset, provider)
+                  ? (audioTagPrefix == null || audioTagPrefix.isEmpty
+                        ? null
+                        : audioTagPrefix)
+                  : null,
+              refAudioPath: asset.refAudioPath,
+              promptText: asset.promptText,
+              promptLang: asset.promptLang,
+            ),
+          );
       final ext = result.contentType.contains('wav') ? '.wav' : '.mp3';
       final filePath = PathService.dedupeFilename(
         outDir,
@@ -544,10 +575,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     }
   }
 
-  bool _supportsVoiceInstruction(
-    db.VoiceAsset asset,
-    db.TtsProvider provider,
-  ) {
+  bool _supportsVoiceInstruction(db.VoiceAsset asset, db.TtsProvider provider) {
     return switch (provider.adapterType) {
       'chatCompletionsTts' => _isMimoTtsModel(asset, provider),
       'cosyvoice' => true,

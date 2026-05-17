@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:neiroha/domain/platform/platform_capabilities.dart';
 import 'package:path/path.dart' as p;
 
 import '../database/app_database.dart';
@@ -17,11 +18,13 @@ import '../database/app_database.dart';
 ///  3. The literal string `ffmpeg` — the caller's Process.run can still
 ///     find it if the current process's PATH contains it.
 class FFmpegService {
-  FFmpegService(this._db);
+  FFmpegService(this._db, {PlatformCapabilities? capabilities})
+    : _capabilities = capabilities ?? PlatformCapabilities.current();
 
   static const String kFfmpegPathKey = 'ffmpegPath';
 
   final AppDatabase _db;
+  final PlatformCapabilities _capabilities;
 
   /// Cache the last successful probe so repeated callers don't spin up a
   /// `ffmpeg -version` child for every waveform extraction.
@@ -49,6 +52,11 @@ class FFmpegService {
   /// Resolve the ffmpeg executable path. Falls back to the literal
   /// `ffmpeg` if nothing more specific is found.
   Future<String> resolvePath() async {
+    if (!_capabilities.supportsFfmpegCli) {
+      throw UnsupportedError(
+        'FFmpeg CLI is not available on ${_capabilities.platformLabel}.',
+      );
+    }
     if (_cachedPath != null) return _cachedPath!;
     final override = await getOverride();
     if (override != null && override.isNotEmpty) {
@@ -62,6 +70,10 @@ class FFmpegService {
 
   /// Probe `ffmpeg -version`. `true` if exit 0. Cached per-run.
   Future<bool> isAvailable() async {
+    if (!_capabilities.supportsFfmpegCli) {
+      _cachedAvailable = false;
+      return false;
+    }
     if (_cachedAvailable != null) return _cachedAvailable!;
     final path = await resolvePath();
     try {
@@ -92,6 +104,79 @@ class FFmpegService {
     }
   }
 
+  /// List Windows DirectShow audio capture devices via ffmpeg.
+  ///
+  /// FFmpeg writes the device list to stderr and exits non-zero because
+  /// `dummy` is not a real input. That is expected; callers should treat an
+  /// empty list as "fall back to default capture device" rather than a hard
+  /// failure.
+  Future<List<DshowAudioInput>> listDshowAudioInputs() async {
+    if (!_capabilities.supportsFfmpegCli) return const [];
+    if (!Platform.isWindows) return const [];
+    if (!await isAvailable()) return const [];
+    final ffmpegPath = await resolvePath();
+    try {
+      final result = await Process.run(ffmpegPath, const [
+        '-hide_banner',
+        '-list_devices',
+        'true',
+        '-f',
+        'dshow',
+        '-i',
+        'dummy',
+      ]).timeout(const Duration(seconds: 5));
+      return parseDshowAudioInputs('${result.stderr}\n${result.stdout}');
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  @visibleForTesting
+  static List<DshowAudioInput> parseDshowAudioInputs(String output) {
+    final devices = <DshowAudioInput>[];
+    final seen = <String>{};
+    int? currentDeviceIndex;
+
+    final deviceRe = RegExp(r'^\[dshow[^\]]*\]\s+"(.+)"\s+\(audio\)\s*$');
+    final nonAudioDeviceRe = RegExp(
+      r'^\[dshow[^\]]*\]\s+".+"\s+\((video|none)\)\s*$',
+    );
+    final altRe = RegExp(r'^\[dshow[^\]]*\]\s+Alternative name\s+"(.+)"\s*$');
+
+    for (final line in output.split(RegExp(r'\r?\n'))) {
+      final deviceMatch = deviceRe.firstMatch(line);
+      if (deviceMatch != null) {
+        final name = deviceMatch.group(1)!.trim();
+        if (name.isEmpty || !seen.add(name)) {
+          currentDeviceIndex = null;
+          continue;
+        }
+        devices.add(DshowAudioInput(name: name));
+        currentDeviceIndex = devices.length - 1;
+        continue;
+      }
+
+      if (nonAudioDeviceRe.hasMatch(line)) {
+        currentDeviceIndex = null;
+        continue;
+      }
+
+      final altMatch = altRe.firstMatch(line);
+      if (altMatch != null && currentDeviceIndex != null) {
+        final alt = altMatch.group(1)!.trim();
+        if (alt.isNotEmpty) {
+          final current = devices[currentDeviceIndex];
+          devices[currentDeviceIndex] = DshowAudioInput(
+            name: current.name,
+            alternativeName: alt,
+          );
+        }
+      }
+    }
+
+    return devices;
+  }
+
   /// Extract a mono PCM16 stream from [mediaPath] and reduce it to a
   /// normalised list of peak magnitudes (length == [bucketCount]).
   ///
@@ -106,6 +191,7 @@ class FFmpegService {
     int bucketCount = 600,
     int sampleRate = 8000,
   }) async {
+    if (!_capabilities.supportsFfmpegCli) return null;
     if (!await isAvailable()) return null;
     final path = await resolvePath();
 
@@ -118,17 +204,19 @@ class FFmpegService {
 
     Process? process;
     try {
-      process = await Process.start(
-        path,
-        [
-          '-v', 'error',
-          '-i', mediaPath,
-          '-ac', '1',
-          '-ar', '$sampleRate',
-          '-f', 's16le',
-          '-',
-        ],
-      );
+      process = await Process.start(path, [
+        '-v',
+        'error',
+        '-i',
+        mediaPath,
+        '-ac',
+        '1',
+        '-ar',
+        '$sampleRate',
+        '-f',
+        's16le',
+        '-',
+      ]);
       // Drain stderr so a full pipe can't stall the decode.
       unawaited(process.stderr.drain<void>());
 
@@ -149,18 +237,19 @@ class FFmpegService {
   /// ffprobe is missing or the probe fails. Images report 0 — callers
   /// should substitute a sensible default (e.g. 3 s still frame).
   Future<double?> probeDurationSeconds(String mediaPath) async {
+    if (!_capabilities.supportsFfmpegCli) return null;
     final ffmpegPath = await resolvePath();
     final ffprobePath = _deriveFfprobePath(ffmpegPath);
     try {
-      final result = await Process.run(
-        ffprobePath,
-        [
-          '-v', 'error',
-          '-show_entries', 'format=duration',
-          '-of', 'default=noprint_wrappers=1:nokey=1',
-          mediaPath,
-        ],
-      );
+      final result = await Process.run(ffprobePath, [
+        '-v',
+        'error',
+        '-show_entries',
+        'format=duration',
+        '-of',
+        'default=noprint_wrappers=1:nokey=1',
+        mediaPath,
+      ]);
       if (result.exitCode != 0) return null;
       final raw = (result.stdout as String).trim();
       return double.tryParse(raw);
@@ -185,6 +274,7 @@ class FFmpegService {
     required String outputPath,
     bool reEncode = false,
   }) async {
+    if (!_capabilities.supportsFfmpegCli) return false;
     if (inputPaths.isEmpty) return false;
     if (!await isAvailable()) return false;
     final ffmpegPath = await resolvePath();
@@ -193,10 +283,12 @@ class FFmpegService {
     final outDir = outFile.parent;
     if (!await outDir.exists()) await outDir.create(recursive: true);
 
-    final listFile = File(p.join(
-      outDir.path,
-      '.concat_${DateTime.now().microsecondsSinceEpoch}.txt',
-    ));
+    final listFile = File(
+      p.join(
+        outDir.path,
+        '.concat_${DateTime.now().microsecondsSinceEpoch}.txt',
+      ),
+    );
 
     try {
       final buffer = StringBuffer();
@@ -211,10 +303,19 @@ class FFmpegService {
       final ext = p.extension(outputPath).toLowerCase();
       final args = <String>[
         '-y',
-        '-f', 'concat',
-        '-safe', '0',
-        '-i', listFile.path,
-        if (reEncode) ...['-c:a', _audioCodecForExt(ext)] else ...['-c', 'copy'],
+        '-f',
+        'concat',
+        '-safe',
+        '0',
+        '-i',
+        listFile.path,
+        if (reEncode) ...[
+          '-c:a',
+          _audioCodecForExt(ext),
+        ] else ...[
+          '-c',
+          'copy',
+        ],
         outputPath,
       ];
 
@@ -238,6 +339,74 @@ class FFmpegService {
         if (await listFile.exists()) await listFile.delete();
       } catch (_) {}
     }
+  }
+
+  /// Cut [inputPath] from [startSec] to [endSec] into [outputPath]. Output
+  /// extension determines the container; same-codec sources stream-copy in
+  /// near-instant, mismatched codecs re-encode automatically.
+  ///
+  /// Returns `true` on success. Caller must guarantee `endSec > startSec >=
+  /// 0`. Output directory is created if missing.
+  Future<bool> trimAudio({
+    required String inputPath,
+    required String outputPath,
+    required double startSec,
+    required double endSec,
+  }) async {
+    if (!_capabilities.supportsFfmpegCli) return false;
+    if (endSec <= startSec || startSec < 0) return false;
+    if (!await isAvailable()) return false;
+    final ffmpegPath = await resolvePath();
+
+    final outFile = File(outputPath);
+    final outDir = outFile.parent;
+    if (!await outDir.exists()) await outDir.create(recursive: true);
+
+    final ext = p.extension(outputPath).toLowerCase();
+    // Stream-copy first; if the codec/container can't accept a copy at these
+    // timestamps (common with mp3 frame boundaries), retry with re-encode.
+    final copyArgs = <String>[
+      '-y',
+      '-ss',
+      _fmtTime(startSec),
+      '-to',
+      _fmtTime(endSec),
+      '-i',
+      inputPath,
+      '-c',
+      'copy',
+      outputPath,
+    ];
+    final copy = await Process.run(ffmpegPath, copyArgs);
+    if (copy.exitCode == 0) return true;
+
+    final reArgs = <String>[
+      '-y',
+      '-ss',
+      _fmtTime(startSec),
+      '-to',
+      _fmtTime(endSec),
+      '-i',
+      inputPath,
+      '-c:a',
+      _audioCodecForExt(ext),
+      outputPath,
+    ];
+    final re = await Process.run(ffmpegPath, reArgs);
+    return re.exitCode == 0;
+  }
+
+  /// Format seconds as `HH:MM:SS.mmm` for ffmpeg `-ss` / `-to` flags.
+  static String _fmtTime(double sec) {
+    final ms = (sec * 1000).round();
+    final h = ms ~/ 3600000;
+    final m = (ms ~/ 60000) % 60;
+    final s = (ms ~/ 1000) % 60;
+    final r = ms % 1000;
+    return '${h.toString().padLeft(2, '0')}:'
+        '${m.toString().padLeft(2, '0')}:'
+        '${s.toString().padLeft(2, '0')}.'
+        '${r.toString().padLeft(3, '0')}';
   }
 
   static String _audioCodecForExt(String ext) {
@@ -277,6 +446,21 @@ class FFmpegService {
   }
 }
 
+class DshowAudioInput {
+  final String name;
+  final String? alternativeName;
+
+  const DshowAudioInput({required this.name, this.alternativeName});
+
+  /// Prefer the friendly name for recording. Some FFmpeg builds list
+  /// `@device_cm_...\wave_...` alternative names that enumerate correctly
+  /// but fail to open as DirectShow capture inputs.
+  List<String> get recordingNames => [
+    name,
+    if (alternativeName != null && alternativeName != name) alternativeName!,
+  ];
+}
+
 /// Streaming reducer for little-endian signed 16-bit PCM. Feed arbitrary
 /// byte chunks via [addBytes]; call [finish] once to flush the running
 /// peak into the final bucket.
@@ -286,8 +470,8 @@ class FFmpegService {
 @visibleForTesting
 class PeakReducer {
   PeakReducer(this.sampleCount, this.bucketCount)
-      : _peaks = List<double>.filled(bucketCount, 0.0),
-        _boundaries = _computeBoundaries(sampleCount, bucketCount);
+    : _peaks = List<double>.filled(bucketCount, 0.0),
+      _boundaries = _computeBoundaries(sampleCount, bucketCount);
 
   final int sampleCount;
   final int bucketCount;

@@ -45,7 +45,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 26;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -116,8 +116,150 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(ttsProviders, ttsProviders.tokensPerMinute);
         await m.addColumn(ttsProviders, ttsProviders.tokensPerDay);
       }
+      if (from < 26) {
+        await _repairMissingCurrentSchema(m);
+      }
+    },
+    beforeOpen: (_) async {
+      await _repairMissingCurrentSchema(Migrator(this));
     },
   );
+
+  Future<void> _repairMissingCurrentSchema(Migrator m) async {
+    await _createTableIfMissing(
+      'app_settings',
+      () => m.createTable(appSettings),
+    );
+    await _createTableIfMissing(
+      'tts_providers',
+      () => m.createTable(ttsProviders),
+    );
+    await _createTableIfMissing(
+      'model_bindings',
+      () => m.createTable(modelBindings),
+    );
+    await _createTableIfMissing(
+      'voice_assets',
+      () => m.createTable(voiceAssets),
+    );
+    await _createTableIfMissing('voice_banks', () => m.createTable(voiceBanks));
+    await _createTableIfMissing(
+      'voice_bank_members',
+      () => m.createTable(voiceBankMembers),
+    );
+    await _createTableIfMissing('tts_jobs', () => m.createTable(ttsJobs));
+    await _createTableIfMissing(
+      'quick_tts_histories',
+      () => m.createTable(quickTtsHistories),
+    );
+    await _createTableIfMissing(
+      'phase_tts_projects',
+      () => m.createTable(phaseTtsProjects),
+    );
+    await _createTableIfMissing(
+      'phase_tts_segments',
+      () => m.createTable(phaseTtsSegments),
+    );
+    await _createTableIfMissing(
+      'novel_projects',
+      () => m.createTable(novelProjects),
+    );
+    await _createTableIfMissing(
+      'novel_chapters',
+      () => m.createTable(novelChapters),
+    );
+    await _createTableIfMissing(
+      'novel_segments',
+      () => m.createTable(novelSegments),
+    );
+    await _createTableIfMissing(
+      'dialog_tts_projects',
+      () => m.createTable(dialogTtsProjects),
+    );
+    await _createTableIfMissing(
+      'dialog_tts_lines',
+      () => m.createTable(dialogTtsLines),
+    );
+    await _createTableIfMissing(
+      'video_dub_projects',
+      () => m.createTable(videoDubProjects),
+    );
+    await _createTableIfMissing(
+      'subtitle_cues',
+      () => m.createTable(subtitleCues),
+    );
+    await _createTableIfMissing(
+      'audio_tracks',
+      () => m.createTable(audioTracks),
+    );
+    await _createTableIfMissing(
+      'timeline_clips',
+      () => m.createTable(timelineClips),
+    );
+
+    await _addColumnIfMissing(
+      tableName: 'tts_providers',
+      columnName: 'max_concurrency',
+      addColumn: () => m.addColumn(ttsProviders, ttsProviders.maxConcurrency),
+    );
+    await _addColumnIfMissing(
+      tableName: 'tts_providers',
+      columnName: 'requests_per_minute',
+      addColumn: () =>
+          m.addColumn(ttsProviders, ttsProviders.requestsPerMinute),
+    );
+    await _addColumnIfMissing(
+      tableName: 'tts_providers',
+      columnName: 'requests_per_day',
+      addColumn: () => m.addColumn(ttsProviders, ttsProviders.requestsPerDay),
+    );
+    await _addColumnIfMissing(
+      tableName: 'tts_providers',
+      columnName: 'tokens_per_minute',
+      addColumn: () => m.addColumn(ttsProviders, ttsProviders.tokensPerMinute),
+    );
+    await _addColumnIfMissing(
+      tableName: 'tts_providers',
+      columnName: 'tokens_per_day',
+      addColumn: () => m.addColumn(ttsProviders, ttsProviders.tokensPerDay),
+    );
+  }
+
+  Future<void> _createTableIfMissing(
+    String tableName,
+    Future<void> Function() createTable,
+  ) async {
+    if (!await _tableExists(tableName)) {
+      await createTable();
+    }
+  }
+
+  Future<void> _addColumnIfMissing({
+    required String tableName,
+    required String columnName,
+    required Future<void> Function() addColumn,
+  }) async {
+    if (await _tableExists(tableName) &&
+        !await _columnExists(tableName, columnName)) {
+      await addColumn();
+    }
+  }
+
+  Future<bool> _tableExists(String tableName) async {
+    final row = await customSelect(
+      'SELECT 1 FROM sqlite_master WHERE type = ? AND name = ? LIMIT 1',
+      variables: [const Variable<String>('table'), Variable(tableName)],
+    ).getSingleOrNull();
+    return row != null;
+  }
+
+  Future<bool> _columnExists(String tableName, String columnName) async {
+    final safeTableName = tableName.replaceAll('"', '""');
+    final rows = await customSelect(
+      'PRAGMA table_info("$safeTableName")',
+    ).get();
+    return rows.any((row) => row.data['name'] == columnName);
+  }
 
   /// Populate the database with built-in providers and starter data so new
   /// users can immediately understand the workflow.

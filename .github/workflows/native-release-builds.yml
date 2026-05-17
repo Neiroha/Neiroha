@@ -66,8 +66,18 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Resolve release version
+        shell: bash
+        run: |
+          version="${RELEASE_TAG#v}"
+          if [[ "$version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            version="${version}.0"
+          fi
+          echo "BUILD_NAME=$version" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER"
 
       - name: Package APK
         run: |
@@ -147,8 +157,18 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Resolve release version
+        shell: bash
+        run: |
+          version="${RELEASE_TAG#v}"
+          if [[ "$version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            version="${version}.0"
+          fi
+          echo "BUILD_NAME=$version" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+
       - name: Build Linux
-        run: flutter build linux --release
+        run: flutter build linux --release --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER"
 
       - name: Show C/C++ cache stats
         if: always()
@@ -203,8 +223,18 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Resolve release version
+        shell: pwsh
+        run: |
+          $version = $env:RELEASE_TAG.TrimStart('v')
+          if ($version -match '^\d+\.\d+$') {
+            $version = "$version.0"
+          }
+          "BUILD_NAME=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "BUILD_NUMBER=$env:GITHUB_RUN_NUMBER" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
       - name: Build Windows
-        run: flutter build windows --release
+        run: flutter build windows --release --build-name "$env:BUILD_NAME" --build-number "$env:BUILD_NUMBER"
 
       - name: Package Windows bundle
         shell: pwsh

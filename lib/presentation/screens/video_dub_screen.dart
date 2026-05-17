@@ -49,7 +49,7 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
   }
 
   bool _isAndroidPhoneLayout(BuildContext context, BoxConstraints constraints) {
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+    if (defaultTargetPlatform != TargetPlatform.android) {
       return false;
     }
     final fallback = MediaQuery.sizeOf(context);

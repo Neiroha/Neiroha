@@ -6,7 +6,6 @@ Neiroha is a Flutter app for an AI audio middleware and dubbing workstation.
 
 Primary local targets:
 - Windows desktop
-- Web
 - Android phone and tablet
 
 Use the existing Flutter/Riverpod/Drift patterns in the repository. Keep changes scoped and run the relevant Flutter checks before reporting success.
@@ -69,7 +68,6 @@ flutter pub get
 dart run build_runner build --delete-conflicting-outputs
 flutter test
 flutter run -d windows
-flutter run -d chrome
 flutter build apk --debug
 ```
 

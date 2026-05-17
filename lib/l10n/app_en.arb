@@ -717,6 +717,6 @@
     }
   },
   "uiVideoDubUnavailableOnAndroidPhone": "Video Dub is disabled on Android phones",
-  "uiVideoDubUnavailableOnAndroidPhoneDescription": "Video editing needs more horizontal space than tall phone screens can provide. Use a tablet, foldable wide layout, desktop, or web window to edit video dubbing projects.",
+  "uiVideoDubUnavailableOnAndroidPhoneDescription": "Video editing needs more horizontal space than tall phone screens can provide. Use a tablet, foldable wide layout, or desktop to edit video dubbing projects.",
   "uiDetails": "Details"
 }

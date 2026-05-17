@@ -1697,7 +1697,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get uiVideoDubUnavailableOnAndroidPhoneDescription =>
-      '视频剪辑需要比长屏手机更多的横向空间。请使用平板、折叠屏宽屏布局、桌面端或 Web 窗口编辑视频配音项目。';
+      '视频剪辑需要比长屏手机更多的横向空间。请使用平板、折叠屏宽屏布局或桌面端编辑视频配音项目。';
 
   @override
   String get uiDetails => '详情';

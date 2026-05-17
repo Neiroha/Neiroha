@@ -1744,7 +1744,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get uiVideoDubUnavailableOnAndroidPhoneDescription =>
-      'Video editing needs more horizontal space than tall phone screens can provide. Use a tablet, foldable wide layout, desktop, or web window to edit video dubbing projects.';
+      'Video editing needs more horizontal space than tall phone screens can provide. Use a tablet, foldable wide layout, or desktop to edit video dubbing projects.';
 
   @override
   String get uiDetails => 'Details';

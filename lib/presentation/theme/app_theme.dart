@@ -47,7 +47,6 @@ class AppTheme {
   static const surfaceBright = Color(0xFF1E1E2A);
 
   static String get _systemFontFamily {
-    if (kIsWeb) return 'system-ui';
     return switch (defaultTargetPlatform) {
       TargetPlatform.windows => 'Segoe UI',
       TargetPlatform.macOS || TargetPlatform.iOS => '.AppleSystemUIFont',

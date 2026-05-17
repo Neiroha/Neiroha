@@ -14,9 +14,8 @@ Goal: keep unsupported platform features explicit instead of letting users reach
 dead paths.
 
 - Windows keeps Windows SAPI and user-configured FFmpeg CLI support.
-- Android and Web should not expose local FFmpeg muxing, trimming, waveform
-  extraction or video export. Web remains a UI/path-selection surface until the
-  missing local file persistence and native media workflow are designed.
+- Android should not expose local FFmpeg muxing, trimming, waveform extraction
+  or video export.
 - Non-Windows system TTS should stay hidden until native Android/Apple/Linux
   adapters are implemented behind platform channels or a proven platform API.
 - Database migration compatibility is intentionally out of scope until the app

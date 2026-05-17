@@ -164,12 +164,11 @@ abstract class TtsAdapter {
 
 Provider 与媒体能力会按当前运行平台过滤：
 
-| 能力 | Windows | Linux / macOS | Android | Web |
-|---|---|---|---|---|
-| 外部 FFmpeg CLI 路径 / PATH 检测 | 是 | 是 | 否 | 否 |
-| 本地波形提取、裁剪、混音导出 | 是 | 是 | 禁用 | 禁用 |
-| Windows SAPI 系统 TTS | 是 | 否 | 否 | 否 |
-| Web UI / 路径选择表面 | n/a | n/a | n/a | 仅展示 |
+| 能力 | Windows | Linux / macOS | Android |
+|---|---|---|---|
+| 外部 FFmpeg CLI 路径 / PATH 检测 | 是 | 是 | 否 |
+| 本地波形提取、裁剪、混音导出 | 是 | 是 | 禁用 |
+| Windows SAPI 系统 TTS | 是 | 否 | 否 |
 
 新增 Provider 时不会列出当前平台不支持的适配器。若数据库中已有来自
 其他平台的记录，则会显示为“当前平台不可用”，不能启用或执行健康检查。
@@ -319,8 +318,8 @@ Microsoft Azure 认知服务文本转语音 REST API。免费层每月 50 万字
 ### 2.6 Windows 系统 TTS 适配器（`systemTts`）
 
 通过 PowerShell 调用内置 Windows SAPI（System.Speech.Synthesis）。零配置 — 适用于任何 Windows 10/11。
-该 Provider 只会在 Windows 上 seed 和显示。Android、Apple、Linux 与 Web
-的系统 TTS 后端在真正实现原生平台适配器前保持隐藏。
+该 Provider 只会在 Windows 上 seed 和显示。Android、Apple 与 Linux 的系统
+TTS 后端在真正实现原生平台适配器前保持隐藏。
 
 | 操作 | 方法 | 路径 | 状态 |
 |---|---|---|---|

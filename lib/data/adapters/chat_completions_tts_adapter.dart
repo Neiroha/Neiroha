@@ -182,8 +182,8 @@ class ChatCompletionsTtsAdapter extends TtsAdapter {
       );
     }
 
-    // refAudioPath can also carry a pre-encoded data URL (Web fallback,
-    // or callers that pre-compute the dataURL at save time). Pass through.
+    // refAudioPath can also carry a pre-encoded data URL from callers that
+    // pre-compute the dataURL at save time. Pass through.
     if (refPath.startsWith('data:audio/')) return refPath;
 
     final lower = refPath.toLowerCase();

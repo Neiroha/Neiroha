@@ -25,10 +25,9 @@ promise that every screen can run every native feature everywhere.
 | Windows | Primary desktop target. Windows SAPI and external FFmpeg CLI are available. |
 | Linux / macOS | Desktop target shape. External FFmpeg CLI is supported when installed/configured; platform-native system TTS is not implemented yet. |
 | Android phone/tablet | UI and TTS client workflows are supported. Local FFmpeg muxing, trimming, waveform extraction and video export are disabled. |
-| Web | UI/path-selection surface only for now. Full local file persistence, FFmpeg, and native filesystem workflows are out of scope. |
 
 System TTS is currently implemented only for Windows SAPI. Do not expose Android,
-Apple, Linux, or Web system TTS in the UI until native platform adapters exist.
+Apple, or Linux system TTS in the UI until native platform adapters exist.
 
 ## Archive And Research
 

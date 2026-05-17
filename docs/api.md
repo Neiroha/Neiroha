@@ -166,12 +166,11 @@ abstract class TtsAdapter {
 
 Provider and media capabilities are filtered by the running platform:
 
-| Capability | Windows | Linux / macOS | Android | Web |
-|---|---|---|---|---|
-| External FFmpeg CLI path / PATH detection | yes | yes | no | no |
-| Local waveform extraction, trimming and muxed export | yes | yes | disabled | disabled |
-| Windows SAPI system TTS | yes | no | no | no |
-| Web UI/path-selection surface | n/a | n/a | n/a | display only |
+| Capability | Windows | Linux / macOS | Android |
+|---|---|---|---|
+| External FFmpeg CLI path / PATH detection | yes | yes | no |
+| Local waveform extraction, trimming and muxed export | yes | yes | disabled |
+| Windows SAPI system TTS | yes | no | no |
 
 Unsupported providers are not offered in the Add Provider dialog. Existing
 database rows from another platform remain visible as unavailable and cannot be
@@ -351,7 +350,7 @@ Microsoft Azure Cognitive Services Text-to-Speech REST API. Free tier provides 5
 ### 2.6 Windows System TTS (`systemTts`)
 
 Built-in Windows SAPI (System.Speech.Synthesis) via PowerShell. Zero setup — works on any Windows 10/11 installation.
-This provider is seeded and shown only on Windows. Android, Apple, Linux and Web
+This provider is seeded and shown only on Windows. Android, Apple and Linux
 system TTS backends are intentionally hidden until native platform adapters are
 implemented.
 

@@ -3206,7 +3206,7 @@ abstract class AppLocalizations {
   /// No description provided for @uiVideoDubUnavailableOnAndroidPhoneDescription.
   ///
   /// In en, this message translates to:
-  /// **'Video editing needs more horizontal space than tall phone screens can provide. Use a tablet, foldable wide layout, desktop, or web window to edit video dubbing projects.'**
+  /// **'Video editing needs more horizontal space than tall phone screens can provide. Use a tablet, foldable wide layout, or desktop to edit video dubbing projects.'**
   String get uiVideoDubUnavailableOnAndroidPhoneDescription;
 
   /// No description provided for @uiDetails.

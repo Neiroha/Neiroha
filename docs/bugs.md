@@ -149,4 +149,4 @@ Fix: extract a shared model-kind utility or persist model capabilities.
 - Unsupported SVG filters were removed from the logo asset, clearing the
   `flutter_svg` warning in widget tests.
 - Platform capability guards now hide or disable unsupported Windows SAPI and
-  FFmpeg CLI workflows on Android/Web and other unsupported targets.
+  FFmpeg CLI workflows on Android and other unsupported native targets.

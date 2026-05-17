@@ -2,16 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:neiroha/domain/enums/adapter_type.dart';
 
-enum NeirohaPlatform {
-  windows,
-  linux,
-  macos,
-  android,
-  ios,
-  web,
-  fuchsia,
-  unknown,
-}
+enum NeirohaPlatform { windows, linux, macos, android, ios, fuchsia, unknown }
 
 /// Product-level platform capability switches.
 ///
@@ -22,7 +13,6 @@ class PlatformCapabilities {
   const PlatformCapabilities(this.platform);
 
   factory PlatformCapabilities.current() {
-    if (kIsWeb) return const PlatformCapabilities(NeirohaPlatform.web);
     return PlatformCapabilities(_platformFromFlutter(defaultTargetPlatform));
   }
 
@@ -45,13 +35,12 @@ class PlatformCapabilities {
     NeirohaPlatform.macos => 'macOS',
     NeirohaPlatform.android => 'Android',
     NeirohaPlatform.ios => 'iOS',
-    NeirohaPlatform.web => 'Web',
     NeirohaPlatform.fuchsia => 'Fuchsia',
     NeirohaPlatform.unknown => 'this platform',
   };
 
   /// Neiroha deliberately uses an external ffmpeg CLI instead of bundling one.
-  /// That model is a desktop-only fit; Android/Web should use subtitle/audio
+  /// That model is a desktop-only fit; Android should use subtitle/audio
   /// package export or future server-side rendering instead.
   bool get supportsFfmpegCli => switch (platform) {
     NeirohaPlatform.windows ||

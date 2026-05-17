@@ -170,6 +170,12 @@ jobs:
       - name: Build Linux
         run: flutter build linux --release --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER"
 
+      - name: Remove local state from bundle
+        run: |
+          rm -rf \
+            build/linux/x64/release/bundle/data/neiroha.db \
+            build/linux/x64/release/bundle/neiroha_data
+
       - name: Show C/C++ cache stats
         if: always()
         run: ccache --show-stats || true
@@ -235,6 +241,13 @@ jobs:
 
       - name: Build Windows
         run: flutter build windows --release --build-name "$env:BUILD_NAME" --build-number "$env:BUILD_NUMBER"
+
+      - name: Remove local state from bundle
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force -ErrorAction SilentlyContinue `
+            "build/windows/x64/runner/Release/data/neiroha.db", `
+            "build/windows/x64/runner/Release/neiroha_data"
 
       - name: Package Windows bundle
         shell: pwsh

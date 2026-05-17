@@ -6,8 +6,8 @@ import 'package:path_provider/path_provider.dart';
 /// Central resolver for on-disk paths used by the app.
 ///
 /// Layout:
-/// - `{root}/data/neiroha.db` — SQLite file, non-configurable
-/// - `{root}/data/avatars/` — character & track avatar images
+/// - `{root}/neiroha_data/neiroha.db` — SQLite file, non-configurable
+/// - `{root}/neiroha_data/avatars/` — character & track avatar images
 /// - `{voiceAssetRoot}/quick_tts/{char}/`
 /// - `{voiceAssetRoot}/phase_tts/{project}/`
 /// - `{voiceAssetRoot}/dialog_tts/{project}/`
@@ -50,7 +50,10 @@ class PathService {
     _portable = await _isWritable(exeDir);
     _appRoot = _portable ? exeDir : _legacyAppSupportDir;
 
-    _dataRoot = Directory(p.join(_appRoot.path, 'data'));
+    // Flutter desktop bundles already use `{exeDir}/data` for app.so,
+    // flutter_assets, and ICU data. Keep user state in a separate folder so
+    // local runs and release packaging never accidentally carry a SQLite DB.
+    _dataRoot = Directory(p.join(_appRoot.path, 'neiroha_data'));
     if (!await _dataRoot.exists()) {
       await _dataRoot.create(recursive: true);
     }

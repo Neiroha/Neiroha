@@ -447,6 +447,14 @@ Future<File> _resolveDatabaseFile(Directory dataDir) async {
   final currentFile = File(p.join(dataDir.path, 'neiroha.db'));
   if (await currentFile.exists()) return currentFile;
 
+  // Portable release folders must start clean. Earlier builds stored the DB
+  // inside the Flutter bundle's `data/` directory and tried to copy legacy
+  // app-support DBs automatically, which made fresh release extractions pick
+  // up local development/user test databases.
+  if (PathService.instance.isPortable) {
+    return currentFile;
+  }
+
   for (final legacyFile in _legacyDatabaseCandidates(dataDir)) {
     if (await legacyFile.exists()) {
       await legacyFile.copy(currentFile.path);

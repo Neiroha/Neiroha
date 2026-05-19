@@ -716,6 +716,32 @@
       }
     }
   },
+  "healthCheckTimeoutTitle": "Health Check Timeout",
+  "healthCheckTimeoutSubtitle": "Stop provider and voice-bank checks that hang too long.",
+  "healthCheckTimeoutSaved": "Health check timeout saved: {seconds}s",
+  "@healthCheckTimeoutSaved": {
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "healthCheckFailedTooltip": "Health check failed",
+  "uiDisabled": "Disabled",
+  "uiProviderMissing": "Provider missing",
+  "uiReachable": "Reachable",
+  "uiUnreachable": "Unreachable",
+  "unhealthyVoiceWarning": "Health check failed for {voice}. Generation may fail.",
+  "@unhealthyVoiceWarning": {
+    "placeholders": {
+      "voice": {
+        "type": "String",
+        "example": "Narrator"
+      }
+    }
+  },
+  "novelPureReadingMode": "Pure reading mode",
   "uiVideoDubUnavailableOnAndroidPhone": "Video Dub is disabled on Android phones",
   "uiVideoDubUnavailableOnAndroidPhoneDescription": "Video editing needs more horizontal space than tall phone screens can provide. Use a tablet, foldable wide layout, or desktop to edit video dubbing projects.",
   "uiDetails": "Details"

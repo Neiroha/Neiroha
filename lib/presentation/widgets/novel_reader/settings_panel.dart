@@ -10,6 +10,8 @@ class _NovelSettingsPane extends StatelessWidget {
   final bool hasAudio;
   final bool generatingAll;
   final bool editing;
+  final bool cacheComplete;
+  final bool cacheOnlyPlayback;
   final ValueChanged<String?> onNarratorChanged;
   final ValueChanged<String?> onDialogueChanged;
   final ValueChanged<bool> onAutoTurnPageChanged;
@@ -20,6 +22,7 @@ class _NovelSettingsPane extends StatelessWidget {
   final ValueChanged<int> onMaxSliceCharsChanged;
   final ValueChanged<int> onPrefetchSegmentsChanged;
   final ValueChanged<bool> onOverwriteWhilePlayingChanged;
+  final ValueChanged<bool> onCacheOnlyPlaybackChanged;
   final ValueChanged<bool> onSkipPunctuationOnlyChanged;
   final VoidCallback onManageDialogueRules;
   final ValueChanged<String> onCacheCurrentColorChanged;
@@ -38,6 +41,8 @@ class _NovelSettingsPane extends StatelessWidget {
     required this.hasAudio,
     required this.generatingAll,
     required this.editing,
+    required this.cacheComplete,
+    required this.cacheOnlyPlayback,
     required this.onNarratorChanged,
     required this.onDialogueChanged,
     required this.onAutoTurnPageChanged,
@@ -48,6 +53,7 @@ class _NovelSettingsPane extends StatelessWidget {
     required this.onMaxSliceCharsChanged,
     required this.onPrefetchSegmentsChanged,
     required this.onOverwriteWhilePlayingChanged,
+    required this.onCacheOnlyPlaybackChanged,
     required this.onSkipPunctuationOnlyChanged,
     required this.onManageDialogueRules,
     required this.onCacheCurrentColorChanged,
@@ -133,6 +139,11 @@ class _NovelSettingsPane extends StatelessWidget {
             label: AppLocalizations.of(context).uiOverwriteWhileReading,
             value: project.overwriteCacheWhilePlaying,
             onChanged: onOverwriteWhilePlayingChanged,
+          ),
+          _CompactSwitch(
+            label: AppLocalizations.of(context).novelPureReadingMode,
+            value: cacheOnlyPlayback,
+            onChanged: cacheComplete ? onCacheOnlyPlaybackChanged : null,
           ),
           _CompactSwitch(
             label: AppLocalizations.of(context).uiSkipPunctuationOnlyText,
@@ -577,7 +588,7 @@ class _SliderSetting extends StatelessWidget {
 class _CompactSwitch extends StatelessWidget {
   final String label;
   final bool value;
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool>? onChanged;
 
   const _CompactSwitch({
     required this.label,

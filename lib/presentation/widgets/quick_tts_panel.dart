@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/providers/app_providers.dart';
@@ -199,12 +200,12 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
           );
         }
 
+        final playback = ref.watch(playbackNotifierProvider);
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           itemCount: history.length,
           itemBuilder: (ctx, i) {
             final entry = history[i];
-            final playback = ref.watch(playbackNotifierProvider);
             final isPlaying =
                 entry.audioPath != null &&
                 playback.audioPath == entry.audioPath &&
@@ -527,6 +528,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
+    warnIfVoiceHealthFailedOnce(context: context, ref: ref, asset: asset);
     setState(() => _generating = true);
     if (_deleteAllConfirm) setState(() => _deleteAllConfirm = false);
     final database = ref.read(databaseProvider);

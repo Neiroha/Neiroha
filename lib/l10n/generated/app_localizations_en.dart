@@ -1739,6 +1739,41 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get healthCheckTimeoutTitle => 'Health Check Timeout';
+
+  @override
+  String get healthCheckTimeoutSubtitle =>
+      'Stop provider and voice-bank checks that hang too long.';
+
+  @override
+  String healthCheckTimeoutSaved(int seconds) {
+    return 'Health check timeout saved: ${seconds}s';
+  }
+
+  @override
+  String get healthCheckFailedTooltip => 'Health check failed';
+
+  @override
+  String get uiDisabled => 'Disabled';
+
+  @override
+  String get uiProviderMissing => 'Provider missing';
+
+  @override
+  String get uiReachable => 'Reachable';
+
+  @override
+  String get uiUnreachable => 'Unreachable';
+
+  @override
+  String unhealthyVoiceWarning(String voice) {
+    return 'Health check failed for $voice. Generation may fail.';
+  }
+
+  @override
+  String get novelPureReadingMode => 'Pure reading mode';
+
+  @override
   String get uiVideoDubUnavailableOnAndroidPhone =>
       'Video Dub is disabled on Android phones';
 

@@ -520,6 +520,9 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     }
 
     final selectedId = ref.watch(selectedCharacterIdProvider);
+    final healthStatus =
+        ref.watch(voiceHealthStatusProvider).valueOrNull ??
+        const <String, bool>{};
     return ListView.builder(
       padding: const EdgeInsets.all(8),
       itemCount: filtered.length,
@@ -529,6 +532,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
         return VoiceBankCharacterTile(
           asset: asset,
           isSelected: isSelected,
+          healthOk: healthStatus[asset.id],
           onTap: () {
             ref.read(selectedCharacterIdProvider.notifier).state = asset.id;
             _showCharacterInspectorPane();
@@ -783,6 +787,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     final members = membersAsync.valueOrNull ?? [];
     final allAssets = assetsAsync.valueOrNull ?? [];
     final allProviders = providersAsync.valueOrNull ?? [];
+    final l10n = AppLocalizations.of(context);
     if (members.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -796,49 +801,95 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
 
     final assetMap = {for (final a in allAssets) a.id: a};
     final providerMap = {for (final p in allProviders) p.id: p};
+    final timeout = await readHealthCheckTimeout(ref);
+    if (!mounted) return;
 
-    final results = <String, bool>{};
-    for (final m in members) {
-      final asset = assetMap[m.voiceAssetId];
+    final checks = <Future<_VoiceHealthCheckResult>>[];
+    for (final member in members) {
+      final asset = assetMap[member.voiceAssetId];
       if (asset == null) continue;
       final provider = providerMap[asset.providerId];
       if (provider == null) {
-        results[asset.name] = false;
+        checks.add(
+          Future.value(
+            _VoiceHealthCheckResult(
+              assetId: asset.id,
+              name: asset.name,
+              ok: false,
+              message: l10n.uiProviderMissing,
+            ),
+          ),
+        );
         continue;
       }
-      try {
+      checks.add(() async {
         final adapter = createAdapter(provider, modelName: asset.modelName);
-        results[asset.name] = await adapter.healthCheck();
-      } catch (_) {
-        results[asset.name] = false;
-      }
+        try {
+          final ok = await adapter.healthCheck().timeout(
+            timeout,
+            onTimeout: () => false,
+          );
+          return _VoiceHealthCheckResult(
+            assetId: asset.id,
+            name: asset.name,
+            ok: ok,
+            message: ok ? l10n.uiReachable : l10n.uiUnreachable,
+          );
+        } catch (e) {
+          return _VoiceHealthCheckResult(
+            assetId: asset.id,
+            name: asset.name,
+            ok: false,
+            message: e.toString(),
+          );
+        }
+      }());
     }
+
+    final results = await Future.wait(checks);
+    if (!mounted) return;
+    final dbx = ref.read(databaseProvider);
+    for (final result in results) {
+      await dbx.setSetting(
+        VoiceHealthSettings.keyFor(result.assetId),
+        result.ok
+            ? VoiceHealthSettings.okValue
+            : VoiceHealthSettings.failedValue,
+      );
+    }
+    ref.invalidate(voiceHealthStatusProvider);
 
     if (!mounted) return;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context).uiHealthCheckResults),
-        content: SizedBox(
-          width: 320,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: results.entries
-                .map(
-                  (e) => ListTile(
-                    dense: true,
-                    leading: Icon(
-                      e.value
-                          ? Icons.check_circle_rounded
-                          : Icons.error_rounded,
-                      color: e.value ? Colors.green : Colors.redAccent,
-                      size: 20,
-                    ),
-                    title: Text(e.key),
-                    subtitle: Text(e.value ? 'Reachable' : 'Unreachable'),
-                  ),
-                )
-                .toList(),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 360,
+            maxHeight: MediaQuery.sizeOf(ctx).height * 0.56,
+          ),
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: results.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 2),
+            itemBuilder: (_, index) {
+              final result = results[index];
+              return ListTile(
+                dense: true,
+                leading: Icon(
+                  result.ok ? Icons.check_circle_rounded : Icons.error_rounded,
+                  color: result.ok ? Colors.green : Colors.redAccent,
+                  size: 20,
+                ),
+                title: Text(result.name, overflow: TextOverflow.ellipsis),
+                subtitle: Text(
+                  result.message,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            },
           ),
         ),
         actions: [
@@ -850,4 +901,18 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
       ),
     );
   }
+}
+
+class _VoiceHealthCheckResult {
+  final String assetId;
+  final String name;
+  final bool ok;
+  final String message;
+
+  const _VoiceHealthCheckResult({
+    required this.assetId,
+    required this.name,
+    required this.ok,
+    required this.message,
+  });
 }

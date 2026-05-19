@@ -3197,6 +3197,66 @@ abstract class AppLocalizations {
   /// **'Font set to {font}.'**
   String fontModeSaved(String font);
 
+  /// No description provided for @healthCheckTimeoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Check Timeout'**
+  String get healthCheckTimeoutTitle;
+
+  /// No description provided for @healthCheckTimeoutSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop provider and voice-bank checks that hang too long.'**
+  String get healthCheckTimeoutSubtitle;
+
+  /// No description provided for @healthCheckTimeoutSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Health check timeout saved: {seconds}s'**
+  String healthCheckTimeoutSaved(int seconds);
+
+  /// No description provided for @healthCheckFailedTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Health check failed'**
+  String get healthCheckFailedTooltip;
+
+  /// No description provided for @uiDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get uiDisabled;
+
+  /// No description provided for @uiProviderMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider missing'**
+  String get uiProviderMissing;
+
+  /// No description provided for @uiReachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Reachable'**
+  String get uiReachable;
+
+  /// No description provided for @uiUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unreachable'**
+  String get uiUnreachable;
+
+  /// No description provided for @unhealthyVoiceWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Health check failed for {voice}. Generation may fail.'**
+  String unhealthyVoiceWarning(String voice);
+
+  /// No description provided for @novelPureReadingMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Pure reading mode'**
+  String get novelPureReadingMode;
+
   /// No description provided for @uiVideoDubUnavailableOnAndroidPhone.
   ///
   /// In en, this message translates to:

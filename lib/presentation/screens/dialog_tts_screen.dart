@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/chat_list_view.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/create_project_dialog.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/editor_project_bar.dart';
@@ -400,6 +401,9 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
       if (asset == null) return;
       final provider = providerMap[asset.providerId];
       if (provider == null) return;
+      if (mounted) {
+        warnIfVoiceHealthFailedOnce(context: context, ref: ref, asset: asset);
+      }
 
       final slug = await ref
           .read(storageServiceProvider)

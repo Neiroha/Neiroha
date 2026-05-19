@@ -12,6 +12,7 @@ import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
 import 'package:neiroha/presentation/actions/phase_tts/exporter.dart';
+import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/create_project_dialog.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/editor_project_bar.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/project_list_header.dart';
@@ -509,6 +510,9 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
       if (asset == null) return;
       final provider = providerMap[asset.providerId];
       if (provider == null) return;
+      if (mounted) {
+        warnIfVoiceHealthFailedOnce(context: context, ref: ref, asset: asset);
+      }
 
       final settings = segmentSettings ?? await _loadSegmentSettings(project);
       final overrides = settings.bySegmentId[seg.id];

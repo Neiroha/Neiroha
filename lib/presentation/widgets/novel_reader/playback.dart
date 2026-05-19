@@ -145,16 +145,21 @@ extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {
         if (mounted) {
           _updateState(() => _activePlaybackGlobalIndex = segment.globalIndex);
         }
-        final forceCache = activeProject.overwriteCacheWhilePlaying;
+        final cacheOnly =
+            _cacheOnlyPlayback && _novelCacheComplete(activeProject, ordered);
+        final forceCache = cacheOnly
+            ? false
+            : activeProject.overwriteCacheWhilePlaying;
         _prefetchRunId++;
-        final audioPath = await _ensureAudioForSegment(
-          activeProject,
-          segment,
-          bankAssets,
-          force: forceCache,
-        );
+        final audioPath = cacheOnly
+            ? _cachedAudioPathForSegment(segment)
+            : await _ensureAudioForSegment(
+                activeProject,
+                segment,
+                bankAssets,
+                force: forceCache,
+              );
         if (runId != _playRunId || stopCompleter.isCompleted) break;
-        final completed = ref.read(audioPlayerProvider).onPlayerComplete.first;
         await ref
             .read(playbackNotifierProvider.notifier)
             .load(
@@ -163,17 +168,20 @@ extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {
               subtitle: _segmentSubtitle(segment),
               sourceTag: _playbackSourceTag,
             );
-        unawaited(
-          _prefetchAfter(
-            activeProject,
-            ordered,
-            i,
-            bankAssets,
-            runId,
-            prefetchRunId: _prefetchRunId,
-            forceCache: forceCache,
-          ),
-        );
+        final completed = _waitForNovelPlaybackComplete(audioPath);
+        if (!cacheOnly) {
+          unawaited(
+            _prefetchAfter(
+              activeProject,
+              ordered,
+              i,
+              bankAssets,
+              runId,
+              prefetchRunId: _prefetchRunId,
+              forceCache: forceCache,
+            ),
+          );
+        }
         await Future.any([completed, stopCompleter.future]);
       }
     } catch (e) {
@@ -186,6 +194,21 @@ extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {
         });
       }
     }
+  }
+
+  String _cachedAudioPathForSegment(db.NovelSegment segment) {
+    if (_hasUsableNovelAudio(segment)) return segment.audioPath!;
+    throw StateError(
+      'Cached audio missing for segment ${segment.globalIndex + 1}.',
+    );
+  }
+
+  Future<void> _waitForNovelPlaybackComplete(String audioPath) {
+    return ref.read(audioPlayerProvider).onPlayerComplete.where((_) {
+      final playback = ref.read(playbackNotifierProvider);
+      return playback.audioPath == audioPath &&
+          playback.sourceTag == _playbackSourceTag;
+    }).first;
   }
 
   void _stopNovel({bool updateUi = true}) {
@@ -384,6 +407,9 @@ extension _NovelReaderEditorGeneration on _NovelReaderEditorState {
         .where((p) => p.id == asset.providerId)
         .firstOrNull;
     if (provider == null) throw StateError('Provider not found for voice.');
+    if (mounted) {
+      warnIfVoiceHealthFailedOnce(context: context, ref: ref, asset: asset);
+    }
 
     if (!force &&
         segment.audioPath != null &&
@@ -825,14 +851,19 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
     try {
       final ordered = [...segments]
         ..sort((a, b) => a.globalIndex.compareTo(b.globalIndex));
-      final inputs = [
+      final requiredSegments = [
         for (final segment in ordered)
-          if (segment.audioPath != null &&
-              !segment.missing &&
-              File(segment.audioPath!).existsSync())
-            segment.audioPath!,
+          if (!_shouldSkipSegment(project, segment)) segment,
       ];
-      if (inputs.length != ordered.length) {
+      final inputs = [
+        for (final segment in requiredSegments)
+          if (_hasUsableNovelAudio(segment)) segment.audioPath!,
+      ];
+      if (requiredSegments.isEmpty) {
+        _snack('No readable segments to export.');
+        return;
+      }
+      if (inputs.length != requiredSegments.length) {
         _snack('Generate the full book cache before exporting.');
         return;
       }
@@ -888,7 +919,7 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
           context: context,
           ffmpegPath: ffmpegPath,
           args: args,
-          totalDurationMs: _totalDurationMs(ordered),
+          totalDurationMs: _totalDurationMs(requiredSegments),
           taskLabel: 'Exporting novel audio...',
         );
         if (!mounted) return;

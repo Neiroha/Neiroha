@@ -121,6 +121,9 @@ extension _VideoDubEditorGenerationActions on _VideoDubEditorState {
     if (asset == null) return;
     final provider = providerMap[asset.providerId];
     if (provider == null) return;
+    if (mounted) {
+      warnIfVoiceHealthFailedOnce(context: context, ref: ref, asset: asset);
+    }
 
     final slug = await ref
         .read(storageServiceProvider)

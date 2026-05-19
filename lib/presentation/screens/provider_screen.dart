@@ -689,7 +689,11 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     );
     try {
       final adapter = createAdapter(tmp);
-      final ok = await adapter.healthCheck();
+      final timeout = await readHealthCheckTimeout(ref);
+      final ok = await adapter.healthCheck().timeout(
+        timeout,
+        onTimeout: () => false,
+      );
       if (mounted) setState(() => _lastHealth = ok);
     } catch (e) {
       if (mounted) {

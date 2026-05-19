@@ -23,6 +23,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
   bool _generatingAll = false;
   bool _exporting = false;
   bool _editing = false;
+  bool _cacheOnlyPlayback = false;
   int? _activePlaybackGlobalIndex;
   int _prefetchRunId = 0;
   final Set<String> _generatingSegmentIds = <String>{};
@@ -74,6 +75,8 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
       bankAssets,
       providers,
     );
+    final cacheComplete = _novelCacheComplete(project, segments);
+    final cacheOnlyPlayback = _cacheOnlyPlayback && cacheComplete;
 
     final currentIndex = segments.isEmpty
         ? 0
@@ -177,6 +180,8 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
               hasAudio: segments.any((s) => s.audioPath != null && !s.missing),
               generatingAll: _generatingAll,
               editing: _editing,
+              cacheComplete: cacheComplete,
+              cacheOnlyPlayback: cacheOnlyPlayback,
               onNarratorChanged: (id) => _updateProject(
                 project.copyWith(narratorVoiceAssetId: Value(id)),
               ),
@@ -226,6 +231,8 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
                   updatedAt: DateTime.now(),
                 ),
               ),
+              onCacheOnlyPlaybackChanged: (v) =>
+                  setState(() => _cacheOnlyPlayback = v),
               onSkipPunctuationOnlyChanged: (v) => _updateProject(
                 project.copyWith(
                   skipPunctuationOnlySegments: v,

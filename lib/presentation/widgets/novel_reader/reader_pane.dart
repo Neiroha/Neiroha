@@ -26,6 +26,26 @@ bool _shouldSkipSegment(db.NovelProject project, db.NovelSegment segment) {
       isNovelPunctuationOnly(segment.segmentText);
 }
 
+bool _hasUsableNovelAudio(db.NovelSegment segment) {
+  final path = segment.audioPath;
+  return path != null && !segment.missing && File(path).existsSync();
+}
+
+bool _isNovelSegmentCacheReady(
+  db.NovelProject project,
+  db.NovelSegment segment,
+) {
+  return _shouldSkipSegment(project, segment) || _hasUsableNovelAudio(segment);
+}
+
+bool _novelCacheComplete(
+  db.NovelProject project,
+  List<db.NovelSegment> segments,
+) {
+  return segments.isNotEmpty &&
+      segments.every((segment) => _isNovelSegmentCacheReady(project, segment));
+}
+
 Color _colorFromHex(String raw, Color fallback) {
   final cleaned = raw.trim().replaceFirst('#', '');
   if (cleaned.length != 6 && cleaned.length != 8) return fallback;

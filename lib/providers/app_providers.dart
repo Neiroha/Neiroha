@@ -107,6 +107,59 @@ final ttsQueueSnapshotProvider = StreamProvider<TtsQueueSnapshot>((ref) {
   return ref.watch(ttsQueueServiceProvider).watchSnapshots();
 });
 
+class HealthCheckSettings {
+  static const timeoutSecondsKey = 'healthCheck.timeoutSeconds';
+  static const defaultTimeoutSeconds = 5;
+
+  const HealthCheckSettings._();
+
+  static int parseTimeoutSeconds(String? raw) {
+    final parsed = int.tryParse(raw ?? '');
+    return (parsed ?? defaultTimeoutSeconds).clamp(1, 60).toInt();
+  }
+}
+
+class VoiceHealthSettings {
+  static const prefix = 'voiceHealth.';
+  static const okValue = 'ok';
+  static const failedValue = 'failed';
+
+  const VoiceHealthSettings._();
+
+  static String keyFor(String assetId) => '$prefix$assetId';
+
+  static String? assetIdFromKey(String key) {
+    if (!key.startsWith(prefix)) return null;
+    return key.substring(prefix.length);
+  }
+}
+
+final voiceHealthStatusProvider = FutureProvider<Map<String, bool>>((
+  ref,
+) async {
+  final rows = await ref
+      .watch(databaseProvider)
+      .getSettingsWithPrefix(VoiceHealthSettings.prefix);
+  final statuses = <String, bool>{};
+  for (final entry in rows.entries) {
+    final assetId = VoiceHealthSettings.assetIdFromKey(entry.key);
+    if (assetId == null) continue;
+    statuses[assetId] = entry.value == VoiceHealthSettings.okValue;
+  }
+  return statuses;
+});
+
+final warnedUnhealthyVoiceIdsProvider = StateProvider<Set<String>>(
+  (ref) => const <String>{},
+);
+
+Future<Duration> readHealthCheckTimeout(WidgetRef ref) async {
+  final stored = await ref
+      .read(databaseProvider)
+      .getSetting(HealthCheckSettings.timeoutSecondsKey);
+  return Duration(seconds: HealthCheckSettings.parseTimeoutSeconds(stored));
+}
+
 /// Probes `ffmpeg -version` once per session. Watch this in the Settings
 /// screen (so the badge updates after the user changes the path) and in
 /// the Video Dub editor (so the waveform banner toggles). Invalidate via

@@ -15,6 +15,13 @@ extension AppDatabaseStorageQueries on AppDatabase {
         AppSettingsCompanion(key: Value(key), value: Value(value)),
       );
 
+  Future<Map<String, String>> getSettingsWithPrefix(String prefix) async {
+    final rows = await (select(
+      appSettings,
+    )..where((t) => t.key.like('$prefix%'))).get();
+    return {for (final row in rows) row.key: row.value};
+  }
+
   Future<int> deleteSetting(String key) =>
       (delete(appSettings)..where((t) => t.key.equals(key))).go();
 

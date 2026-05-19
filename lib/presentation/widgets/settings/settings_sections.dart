@@ -207,6 +207,8 @@ class SettingsSectionContent extends ConsumerWidget {
         StartupSettingsCard(),
         SizedBox(height: 12),
         TaskBehaviorSettingsCard(),
+        SizedBox(height: 12),
+        HealthCheckTimeoutSettingsCard(),
       ],
       SettingsSection.tasks => const <Widget>[TaskMonitorSettingsCard()],
       SettingsSection.api => const <Widget>[ApiServerSettingsCard()],

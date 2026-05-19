@@ -1693,6 +1693,40 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get healthCheckTimeoutTitle => '健康检查超时';
+
+  @override
+  String get healthCheckTimeoutSubtitle => '超过时限就停止服务商和语音库健康检查。';
+
+  @override
+  String healthCheckTimeoutSaved(int seconds) {
+    return '健康检查超时已保存：$seconds 秒';
+  }
+
+  @override
+  String get healthCheckFailedTooltip => '健康检查失败';
+
+  @override
+  String get uiDisabled => '已禁用';
+
+  @override
+  String get uiProviderMissing => '服务商缺失';
+
+  @override
+  String get uiReachable => '可访问';
+
+  @override
+  String get uiUnreachable => '不可访问';
+
+  @override
+  String unhealthyVoiceWarning(String voice) {
+    return '$voice 的健康检查失败，生成可能会失败。';
+  }
+
+  @override
+  String get novelPureReadingMode => '纯阅读模式';
+
+  @override
   String get uiVideoDubUnavailableOnAndroidPhone => 'Android 手机端已禁用视频配音';
 
   @override

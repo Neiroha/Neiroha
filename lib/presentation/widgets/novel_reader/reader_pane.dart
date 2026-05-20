@@ -12,14 +12,10 @@ class _ReaderPagePiece {
   });
 }
 
-class _ReaderPageHit {
-  final int pageIndex;
-  final int textLength;
-
-  const _ReaderPageHit({required this.pageIndex, required this.textLength});
-}
-
 enum _NovelSegmentCacheState { none, current, stale }
+
+const int _readerPagesCacheLimit = 12;
+final Map<String, List<List<_ReaderPagePiece>>> _readerPagesCache = {};
 
 bool _shouldSkipSegment(db.NovelProject project, db.NovelSegment segment) {
   return project.skipPunctuationOnlySegments &&
@@ -31,19 +27,16 @@ bool _hasUsableNovelAudio(db.NovelSegment segment) {
   return path != null && !segment.missing && File(path).existsSync();
 }
 
-bool _isNovelSegmentCacheReady(
-  db.NovelProject project,
-  db.NovelSegment segment,
-) {
-  return _shouldSkipSegment(project, segment) || _hasUsableNovelAudio(segment);
-}
-
-bool _novelCacheComplete(
+bool _novelCacheCompleteByMetadata(
   db.NovelProject project,
   List<db.NovelSegment> segments,
 ) {
   return segments.isNotEmpty &&
-      segments.every((segment) => _isNovelSegmentCacheReady(project, segment));
+      segments.every(
+        (segment) =>
+            _shouldSkipSegment(project, segment) ||
+            (segment.audioPath != null && !segment.missing),
+      );
 }
 
 Color _colorFromHex(String raw, Color fallback) {
@@ -118,10 +111,15 @@ class _ReaderPane extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = _readerColors(project.readerTheme);
-    final playback = ref.watch(playbackNotifierProvider);
     return LayoutBuilder(
       builder: (context, constraints) {
         final pages = _buildPages(
+          cacheKey: _readerPagesCacheKey(
+            constraints: constraints,
+            segments: segments,
+            fontSize: project.fontSize,
+            lineHeight: project.lineHeight,
+          ),
           constraints: constraints,
           colors: colors,
           segments: segments,
@@ -129,7 +127,7 @@ class _ReaderPane extends ConsumerWidget {
           lineHeight: project.lineHeight,
         );
         final pageCount = math.max(1, pages.length);
-        final activePage = _pageForCurrentSegment(pages, playback);
+        final activePage = _pageForCurrentSegment(pages);
         final pageIndex = (requestedPageIndex ?? activePage)
             .clamp(0, pageCount - 1)
             .toInt();
@@ -270,53 +268,30 @@ class _ReaderPane extends ConsumerWidget {
     );
   }
 
-  int _pageForCurrentSegment(
-    List<List<_ReaderPagePiece>> pages,
-    PlaybackState playback,
-  ) {
+  int _pageForCurrentSegment(List<List<_ReaderPagePiece>> pages) {
     final current = currentGlobalIndex;
     if (current == null) return 0;
-    final hits = <_ReaderPageHit>[];
     for (var pageIndex = 0; pageIndex < pages.length; pageIndex++) {
       for (final piece in pages[pageIndex]) {
         if (piece.segment.globalIndex == current) {
-          hits.add(
-            _ReaderPageHit(pageIndex: pageIndex, textLength: piece.text.length),
-          );
+          return pageIndex;
         }
       }
     }
-    if (hits.isEmpty) return 0;
-    if (hits.length == 1) return hits.first.pageIndex;
-    if (!project.autoTurnPage ||
-        playback.sourceTag != playbackSourceTag ||
-        playback.duration.inMilliseconds <= 0) {
-      return hits.first.pageIndex;
-    }
-
-    final totalTextLength = hits.fold<int>(
-      0,
-      (sum, hit) => sum + math.max(1, hit.textLength),
-    );
-    final fraction =
-        playback.position.inMilliseconds /
-        math.max(1, playback.duration.inMilliseconds);
-    final target = (totalTextLength * fraction.clamp(0.0, 0.999)).floor();
-    var cursor = 0;
-    for (final hit in hits) {
-      cursor += math.max(1, hit.textLength);
-      if (target < cursor) return hit.pageIndex;
-    }
-    return hits.last.pageIndex;
+    return 0;
   }
 
   List<List<_ReaderPagePiece>> _buildPages({
+    required String cacheKey,
     required BoxConstraints constraints,
     required _ReaderColors colors,
     required List<db.NovelSegment> segments,
     required double fontSize,
     required double lineHeight,
   }) {
+    final cached = _readerPagesCache[cacheKey];
+    if (cached != null) return cached;
+
     if (segments.isEmpty ||
         constraints.maxWidth <= 0 ||
         constraints.maxHeight <= 0) {
@@ -387,7 +362,42 @@ class _ReaderPane extends ConsumerWidget {
       }
     }
     if (currentPage.isNotEmpty) pages.add(currentPage);
+    _readerPagesCache[cacheKey] = pages;
+    if (_readerPagesCache.length > _readerPagesCacheLimit) {
+      _readerPagesCache.remove(_readerPagesCache.keys.first);
+    }
     return pages;
+  }
+
+  String _readerPagesCacheKey({
+    required BoxConstraints constraints,
+    required List<db.NovelSegment> segments,
+    required double fontSize,
+    required double lineHeight,
+  }) {
+    var hash = 0x811c9dc5;
+    for (final segment in segments) {
+      hash = 0x1fffffff & (hash ^ segment.id.hashCode);
+      hash = 0x1fffffff & (hash * 16777619);
+      hash = 0x1fffffff & (hash ^ segment.chapterId.hashCode);
+      hash = 0x1fffffff & (hash * 16777619);
+      hash = 0x1fffffff & (hash ^ segment.globalIndex.hashCode);
+      hash = 0x1fffffff & (hash * 16777619);
+      hash = 0x1fffffff & (hash ^ segment.orderIndex.hashCode);
+      hash = 0x1fffffff & (hash * 16777619);
+      hash = 0x1fffffff & (hash ^ segment.segmentType.hashCode);
+      hash = 0x1fffffff & (hash * 16777619);
+      hash = 0x1fffffff & (hash ^ segment.segmentText.hashCode);
+      hash = 0x1fffffff & (hash * 16777619);
+    }
+    return [
+      constraints.maxWidth.round(),
+      constraints.maxHeight.round(),
+      fontSize.toStringAsFixed(2),
+      lineHeight.toStringAsFixed(2),
+      segments.length,
+      hash,
+    ].join('|');
   }
 
   double _measureTextHeight(String text, TextStyle style, double width) {

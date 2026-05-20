@@ -141,12 +141,12 @@ extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {
           activeProject,
           segment,
           syncPage: activeProject.autoTurnPage,
+          persistImmediately: false,
         );
         if (mounted) {
           _updateState(() => _activePlaybackGlobalIndex = segment.globalIndex);
         }
-        final cacheOnly =
-            _cacheOnlyPlayback && _novelCacheComplete(activeProject, ordered);
+        final cacheOnly = _cacheOnlyPlayback;
         final forceCache = cacheOnly
             ? false
             : activeProject.overwriteCacheWhilePlaying;
@@ -221,6 +221,12 @@ extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {
     _stopCompleter = null;
     if (updateUi && mounted) {
       _updateState(() => _activePlaybackGlobalIndex = null);
+    }
+    final localIndex = _localCurrentGlobalIndex;
+    if (localIndex != null) {
+      unawaited(
+        _persistNovelProgress(widget.projectId, localIndex, force: true),
+      );
     }
     unawaited(
       ref
@@ -492,11 +498,15 @@ extension _NovelReaderEditorGeneration on _NovelReaderEditorState {
         fileBase: fileBase,
         force: force,
       );
-      final durationSec = await measureAudioDuration(filePath);
+      final durationSec = _stopCompleter == null
+          ? await measureAudioDuration(filePath)
+          : null;
       await dbx.updateNovelSegment(
         activeSegment.copyWith(
           audioPath: Value(filePath),
-          audioDuration: Value(durationSec),
+          audioDuration: durationSec == null
+              ? const Value.absent()
+              : Value(durationSec),
           audioCacheKey: Value(activeCacheKey),
           error: const Value(null),
           missing: false,

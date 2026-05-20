@@ -5,15 +5,49 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     db.NovelProject project,
     db.NovelSegment segment, {
     required bool syncPage,
+    bool persistImmediately = true,
   }) async {
-    await ref
-        .read(databaseProvider)
-        .markNovelProgress(project.id, segment.globalIndex);
-    if (!syncPage || !mounted) return;
-    _updateState(() {
-      _manualChapterId = segment.chapterId;
-      _manualPageIndex = null;
+    if (mounted) {
+      _updateState(() {
+        _localCurrentGlobalIndex = segment.globalIndex;
+        if (syncPage) {
+          _manualChapterId = segment.chapterId;
+          _manualPageIndex = null;
+        }
+      });
+    }
+    if (persistImmediately) {
+      await _persistNovelProgress(project.id, segment.globalIndex, force: true);
+    } else {
+      unawaited(_persistNovelProgress(project.id, segment.globalIndex));
+    }
+  }
+
+  Future<void> _persistNovelProgress(
+    String projectId,
+    int globalIndex, {
+    bool force = false,
+  }) async {
+    final now = DateTime.now();
+    if (!force &&
+        _lastPersistedProgressIndex == globalIndex &&
+        _lastProgressPersistAt != null &&
+        now.difference(_lastProgressPersistAt!) < const Duration(seconds: 8)) {
+      return;
+    }
+    if (!force &&
+        _lastProgressPersistAt != null &&
+        now.difference(_lastProgressPersistAt!) < const Duration(seconds: 8)) {
+      return;
+    }
+    _lastProgressPersistAt = now;
+    _lastPersistedProgressIndex = globalIndex;
+    final dbx = ref.read(databaseProvider);
+    final write = _progressPersistQueue.catchError((_) {}).then((_) async {
+      await dbx.markNovelProgress(projectId, globalIndex);
     });
+    _progressPersistQueue = write;
+    await write;
   }
 
   Future<void> _selectChapter(
@@ -31,6 +65,9 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     }
     if (!mounted) return;
     _updateState(() {
+      if (firstSegment.isNotEmpty) {
+        _localCurrentGlobalIndex = firstSegment.first.globalIndex;
+      }
       _manualChapterId = chapterId;
       _manualPageIndex = 0;
     });

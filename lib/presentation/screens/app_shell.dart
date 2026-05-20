@@ -88,7 +88,9 @@ class _AppShellState extends ConsumerState<AppShell> {
       continueTtsAcrossScreensProvider,
     );
     _visitedTabs.add(selectedTab);
-    final playback = ref.watch(playbackNotifierProvider);
+    final playbackSourceTag = ref.watch(
+      playbackNotifierProvider.select((state) => state.sourceTag),
+    );
     // Dialog/Phase render their own inline players, so the global bottom bar
     // is suppressed there to avoid a double UI.
     // Voice Bank quick tests also render inline above the test input.
@@ -97,9 +99,9 @@ class _AppShellState extends ConsumerState<AppShell> {
         selectedTab != NavTab.phaseTts &&
         selectedTab != NavTab.novelReader &&
         (continueTtsAcrossScreens ||
-            !isNovelReaderPlaybackSource(playback.sourceTag)) &&
+            !isNovelReaderPlaybackSource(playbackSourceTag)) &&
         !(selectedTab == NavTab.voiceBank &&
-            playback.sourceTag == voiceBankQuickTestPlaybackSource);
+            playbackSourceTag == voiceBankQuickTestPlaybackSource);
 
     return PopScope(
       canPop: !Platform.isAndroid,

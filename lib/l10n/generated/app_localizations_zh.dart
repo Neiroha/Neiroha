@@ -1719,12 +1719,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get uiUnreachable => '不可访问';
 
   @override
+  String get uiNoHealthCheckResults => '没有健康检查结果。';
+
+  @override
   String unhealthyVoiceWarning(String voice) {
     return '$voice 的健康检查失败，生成可能会失败。';
   }
 
   @override
   String get novelPureReadingMode => '纯阅读模式';
+
+  @override
+  String get pressBackAgainToExit => '再按一次返回键退出。';
 
   @override
   String get uiVideoDubUnavailableOnAndroidPhone => 'Android 手机端已禁用视频配音';

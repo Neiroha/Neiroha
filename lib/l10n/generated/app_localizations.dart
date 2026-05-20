@@ -3245,6 +3245,12 @@ abstract class AppLocalizations {
   /// **'Unreachable'**
   String get uiUnreachable;
 
+  /// No description provided for @uiNoHealthCheckResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No health check results.'**
+  String get uiNoHealthCheckResults;
+
   /// No description provided for @unhealthyVoiceWarning.
   ///
   /// In en, this message translates to:
@@ -3256,6 +3262,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pure reading mode'**
   String get novelPureReadingMode;
+
+  /// No description provided for @pressBackAgainToExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Press Back again to exit.'**
+  String get pressBackAgainToExit;
 
   /// No description provided for @uiVideoDubUnavailableOnAndroidPhone.
   ///

@@ -523,8 +523,10 @@
   "uiProviderMissing": "服务商缺失",
   "uiReachable": "可访问",
   "uiUnreachable": "不可访问",
+  "uiNoHealthCheckResults": "没有健康检查结果。",
   "unhealthyVoiceWarning": "{voice} 的健康检查失败，生成可能会失败。",
   "novelPureReadingMode": "纯阅读模式",
+  "pressBackAgainToExit": "再按一次返回键退出。",
   "uiVideoDubUnavailableOnAndroidPhone": "Android 手机端已禁用视频配音",
   "uiVideoDubUnavailableOnAndroidPhoneDescription": "视频剪辑需要比长屏手机更多的横向空间。请使用平板、折叠屏宽屏布局或桌面端编辑视频配音项目。",
   "uiDetails": "详情"

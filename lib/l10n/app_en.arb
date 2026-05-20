@@ -732,6 +732,7 @@
   "uiProviderMissing": "Provider missing",
   "uiReachable": "Reachable",
   "uiUnreachable": "Unreachable",
+  "uiNoHealthCheckResults": "No health check results.",
   "unhealthyVoiceWarning": "Health check failed for {voice}. Generation may fail.",
   "@unhealthyVoiceWarning": {
     "placeholders": {
@@ -742,6 +743,7 @@
     }
   },
   "novelPureReadingMode": "Pure reading mode",
+  "pressBackAgainToExit": "Press Back again to exit.",
   "uiVideoDubUnavailableOnAndroidPhone": "Video Dub is disabled on Android phones",
   "uiVideoDubUnavailableOnAndroidPhoneDescription": "Video editing needs more horizontal space than tall phone screens can provide. Use a tablet, foldable wide layout, or desktop to edit video dubbing projects.",
   "uiDetails": "Details"

@@ -80,6 +80,28 @@ class AppBehaviorSettings {
   }
 }
 
+class AppBackIntent {
+  static DateTime? _lastChildHandledAt;
+
+  const AppBackIntent._();
+
+  static void markChildHandled() {
+    _lastChildHandledAt = DateTime.now();
+  }
+
+  static bool consumeChildHandledRecently() {
+    final handledAt = _lastChildHandledAt;
+    if (handledAt == null) return false;
+    final recent =
+        DateTime.now().difference(handledAt) <
+        const Duration(milliseconds: 250);
+    if (recent) {
+      _lastChildHandledAt = null;
+    }
+    return recent;
+  }
+}
+
 final selectedTabProvider = StateProvider<NavTab>((ref) => NavTab.voiceBank);
 
 final settingsSectionProvider = StateProvider<SettingsSection>(

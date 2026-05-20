@@ -366,7 +366,10 @@ class _VideoDubEditorState extends ConsumerState<VideoDubEditor> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) unawaited(_back(project));
+        if (!didPop) {
+          AppBackIntent.markChildHandled();
+          unawaited(_back(project));
+        }
       },
       child: Column(
         children: [

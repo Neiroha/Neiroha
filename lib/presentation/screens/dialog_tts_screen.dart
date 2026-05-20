@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/chat_list_view.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/create_project_dialog.dart';
@@ -45,7 +46,10 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) setState(() => _selectedProjectId = null);
+        if (!didPop) {
+          AppBackIntent.markChildHandled();
+          setState(() => _selectedProjectId = null);
+        }
       },
       child: _DialogTtsEditor(
         key: ValueKey(_selectedProjectId),

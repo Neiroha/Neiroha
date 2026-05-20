@@ -15,6 +15,7 @@ import 'package:neiroha/data/storage/novel_import_service.dart';
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/actions/voice_health_warning.dart';
+import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/export_progress.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
@@ -47,10 +48,19 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
   @override
   Widget build(BuildContext context) {
     if (_selectedProjectId == null) return _buildProjectListScreen();
-    return _NovelReaderEditor(
-      key: ValueKey(_selectedProjectId),
-      projectId: _selectedProjectId!,
-      onClose: () => setState(() => _selectedProjectId = null),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          AppBackIntent.markChildHandled();
+          setState(() => _selectedProjectId = null);
+        }
+      },
+      child: _NovelReaderEditor(
+        key: ValueKey(_selectedProjectId),
+        projectId: _selectedProjectId!,
+        onClose: () => setState(() => _selectedProjectId = null),
+      ),
     );
   }
 

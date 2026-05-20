@@ -859,46 +859,68 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     }
     ref.invalidate(voiceHealthStatusProvider);
 
+    await Future<void>.delayed(Duration.zero);
     if (!mounted) return;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context).uiHealthCheckResults),
-        content: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: 360,
-            maxHeight: MediaQuery.sizeOf(ctx).height * 0.56,
-          ),
-          child: ListView.separated(
-            shrinkWrap: true,
-            itemCount: results.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 2),
-            itemBuilder: (_, index) {
-              final result = results[index];
-              return ListTile(
-                dense: true,
-                leading: Icon(
-                  result.ok ? Icons.check_circle_rounded : Icons.error_rounded,
-                  color: result.ok ? Colors.green : Colors.redAccent,
-                  size: 20,
-                ),
-                title: Text(result.name, overflow: TextOverflow.ellipsis),
-                subtitle: Text(
-                  result.message,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              );
-            },
-          ),
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(AppLocalizations.of(context).uiOK),
-          ),
-        ],
+      builder: (ctx) => _HealthCheckResultsDialog(results: results),
+    );
+  }
+}
+
+class _HealthCheckResultsDialog extends StatelessWidget {
+  final List<_VoiceHealthCheckResult> results;
+
+  const _HealthCheckResultsDialog({required this.results});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final size = MediaQuery.sizeOf(context);
+    final width = (size.width - 64).clamp(280.0, 420.0).toDouble();
+    final maxHeight = (size.height - 160).clamp(160.0, 520.0).toDouble();
+    final listHeight = results.isEmpty
+        ? 96.0
+        : (results.length * 70.0).clamp(112.0, maxHeight).toDouble();
+
+    return AlertDialog(
+      title: Text(l10n.uiHealthCheckResults),
+      content: SizedBox(
+        width: width,
+        height: listHeight,
+        child: results.isEmpty
+            ? Center(child: Text(l10n.uiNoHealthCheckResults))
+            : ListView.separated(
+                primary: false,
+                itemCount: results.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 2),
+                itemBuilder: (_, index) {
+                  final result = results[index];
+                  return ListTile(
+                    dense: true,
+                    leading: Icon(
+                      result.ok
+                          ? Icons.check_circle_rounded
+                          : Icons.error_rounded,
+                      color: result.ok ? Colors.green : Colors.redAccent,
+                      size: 20,
+                    ),
+                    title: Text(result.name, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(
+                      result.message,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                },
+              ),
       ),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.uiOK),
+        ),
+      ],
     );
   }
 }

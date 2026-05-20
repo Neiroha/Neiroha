@@ -1766,12 +1766,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uiUnreachable => 'Unreachable';
 
   @override
+  String get uiNoHealthCheckResults => 'No health check results.';
+
+  @override
   String unhealthyVoiceWarning(String voice) {
     return 'Health check failed for $voice. Generation may fail.';
   }
 
   @override
   String get novelPureReadingMode => 'Pure reading mode';
+
+  @override
+  String get pressBackAgainToExit => 'Press Back again to exit.';
 
   @override
   String get uiVideoDubUnavailableOnAndroidPhone =>

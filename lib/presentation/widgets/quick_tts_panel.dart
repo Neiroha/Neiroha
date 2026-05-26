@@ -200,7 +200,11 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
           );
         }
 
-        final playback = ref.watch(playbackNotifierProvider);
+        final playback = ref.watch(
+          playbackNotifierProvider.select(
+            (state) => (audioPath: state.audioPath, isPlaying: state.isPlaying),
+          ),
+        );
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           itemCount: history.length,

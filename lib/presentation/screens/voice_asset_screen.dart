@@ -586,7 +586,11 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
   Widget build(BuildContext context) {
     // Suppress "unused" lint when track refreshes mid-edit.
     assert(_loadedTrackId == widget.track.id);
-    final playback = ref.watch(playbackNotifierProvider);
+    final playback = ref.watch(
+      playbackNotifierProvider.select(
+        (state) => (audioPath: state.audioPath, isPlaying: state.isPlaying),
+      ),
+    );
     final isPlayingThis =
         playback.audioPath == widget.track.audioPath && playback.isPlaying;
     return Container(

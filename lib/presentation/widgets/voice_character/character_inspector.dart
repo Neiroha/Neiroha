@@ -416,7 +416,14 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
                 children: [
                   Consumer(
                     builder: (context, ref, _) {
-                      final playback = ref.watch(playbackNotifierProvider);
+                      final playback = ref.watch(
+                        playbackNotifierProvider.select(
+                          (state) => (
+                            audioPath: state.audioPath,
+                            isPlaying: state.isPlaying,
+                          ),
+                        ),
+                      );
                       final isPlaying =
                           playback.audioPath == a.refAudioPath &&
                           playback.isPlaying;

@@ -319,7 +319,9 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
   @override
   Widget build(BuildContext context) {
     final clipsAsync = ref.watch(timelineClipsStreamProvider(_streamKey));
-    final playback = ref.watch(playbackNotifierProvider);
+    final activeAudioPath = ref.watch(
+      playbackNotifierProvider.select((state) => state.audioPath),
+    );
     final clips = clipsAsync.valueOrNull ?? const <db.TimelineClip>[];
 
     int minLane = -1;
@@ -428,11 +430,78 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
                                             ),
                                           ),
                                         for (final c in clips)
-                                          _positionedClip(c, minLane, playback),
-                                        _buildPlayhead(
+                                          _positionedClip(
+                                            c,
+                                            minLane,
+                                            activeAudioPath,
+                                          ),
+                                        _TimelinePlayhead(
                                           clips,
-                                          playback,
-                                          stackHeight,
+                                          activeClipId: _activeClipId,
+                                          draggingPlayheadMs:
+                                              _draggingPlayheadMs,
+                                          seekAnchorMs: _seekAnchorMs,
+                                          pixelsPerSecond: _pixelsPerSecond,
+                                          stackHeight: stackHeight,
+                                          onDragStart: (currentMs) {
+                                            setState(
+                                              () => _draggingPlayheadMs =
+                                                  currentMs,
+                                            );
+                                          },
+                                          onDragUpdate: (currentMs, deltaMs) {
+                                            setState(() {
+                                              _draggingPlayheadMs =
+                                                  ((_draggingPlayheadMs ??
+                                                              currentMs) +
+                                                          deltaMs)
+                                                      .clamp(0, 1 << 30);
+                                            });
+                                          },
+                                          onDragEnd: (finalMs) {
+                                            setState(() {
+                                              if (finalMs != null) {
+                                                _seekAnchorMs = finalMs;
+                                              }
+                                              _draggingPlayheadMs = null;
+                                            });
+                                            final p = ref.read(
+                                              playbackNotifierProvider,
+                                            );
+                                            if (finalMs != null &&
+                                                p.isPlaying &&
+                                                p.audioPath != null) {
+                                              final active = clips
+                                                  .where(
+                                                    (c) =>
+                                                        c.audioPath ==
+                                                        p.audioPath,
+                                                  )
+                                                  .firstOrNull;
+                                              if (active != null) {
+                                                final off =
+                                                    finalMs -
+                                                    active.startTimeMs;
+                                                if (off >= 0 &&
+                                                    off <=
+                                                        ((active.durationSec ??
+                                                                    0) *
+                                                                1000)
+                                                            .round()) {
+                                                  ref
+                                                      .read(
+                                                        playbackNotifierProvider
+                                                            .notifier,
+                                                      )
+                                                      .seek(
+                                                        Duration(
+                                                          milliseconds: off,
+                                                        ),
+                                                      );
+                                                }
+                                              }
+                                            }
+                                          },
                                         ),
                                       ],
                                     ),
@@ -530,7 +599,7 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
   Widget _positionedClip(
     db.TimelineClip c,
     int minLane,
-    PlaybackState playback,
+    String? activeAudioPath,
   ) {
     final isDragging = _dragClipId == c.id;
     final effectiveStartMs = isDragging ? _dragStartMs! : c.startTimeMs;
@@ -599,7 +668,7 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
         },
         child: _ClipTile(
           clip: c,
-          isActive: playback.audioPath == c.audioPath,
+          isActive: activeAudioPath == c.audioPath,
           isSelected: _selectedClipId == c.id,
           isDragging: isDragging,
         ),
@@ -761,121 +830,6 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  /// The playhead has two personalities:
-  ///   • During playback it tracks the active clip's position live.
-  ///   • Otherwise it parks at [_seekAnchorMs] so the user can scrub to a
-  ///     spot, press Play/Stop, and return to the same anchor.
-  /// The handle at the top is draggable to seek.
-  Widget _buildPlayhead(
-    List<db.TimelineClip> clips,
-    PlaybackState playback,
-    double stackHeight,
-  ) {
-    int currentMs;
-    if (_draggingPlayheadMs != null) {
-      currentMs = _draggingPlayheadMs!;
-    } else if (_activeClipId != null) {
-      final activeClip = clips.where((c) => c.id == _activeClipId).firstOrNull;
-      if (activeClip != null &&
-          playback.isPlaying &&
-          playback.audioPath == activeClip.audioPath) {
-        // Actively playing this clip — track the live position.
-        currentMs = activeClip.startTimeMs + playback.position.inMilliseconds;
-      } else if (activeClip != null) {
-        // Player state is transitioning between clips in Play All:
-        // onPlayerComplete zeros out position and flips isPlaying before
-        // _playAll advances _seekAnchorMs. Pin the playhead to the clip's
-        // end so it doesn't visibly snap back to the clip's start for a
-        // frame during the hand-off.
-        final durMs = ((activeClip.durationSec ?? 0) * 1000).round();
-        currentMs = activeClip.startTimeMs + durMs;
-      } else {
-        currentMs = _seekAnchorMs;
-      }
-    } else if (playback.isPlaying && playback.audioPath != null) {
-      final activeClip = clips
-          .where((c) => c.audioPath == playback.audioPath)
-          .firstOrNull;
-      if (activeClip != null) {
-        currentMs = activeClip.startTimeMs + playback.position.inMilliseconds;
-      } else {
-        currentMs = _seekAnchorMs;
-      }
-    } else {
-      currentMs = _seekAnchorMs;
-    }
-    final x = currentMs / 1000.0 * _pixelsPerSecond;
-    return Positioned(
-      top: 0,
-      left: x - 6,
-      width: 14,
-      height: stackHeight,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.resizeColumn,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onPanStart: (_) {
-            setState(() => _draggingPlayheadMs = currentMs);
-          },
-          onPanUpdate: (d) {
-            final delta = (d.delta.dx / _pixelsPerSecond * 1000).round();
-            setState(() {
-              _draggingPlayheadMs = ((_draggingPlayheadMs ?? currentMs) + delta)
-                  .clamp(0, 1 << 30);
-            });
-          },
-          onPanEnd: (_) {
-            final finalMs = _draggingPlayheadMs;
-            setState(() {
-              if (finalMs != null) _seekAnchorMs = finalMs;
-              _draggingPlayheadMs = null;
-            });
-            // If playback is currently active, seek into the active clip.
-            final p = ref.read(playbackNotifierProvider);
-            if (finalMs != null && p.isPlaying && p.audioPath != null) {
-              final active = clips
-                  .where((c) => c.audioPath == p.audioPath)
-                  .firstOrNull;
-              if (active != null) {
-                final off = finalMs - active.startTimeMs;
-                if (off >= 0 &&
-                    off <= ((active.durationSec ?? 0) * 1000).round()) {
-                  ref
-                      .read(playbackNotifierProvider.notifier)
-                      .seek(Duration(milliseconds: off));
-                }
-              }
-            }
-          },
-          child: Stack(
-            children: [
-              // Centered 2px vertical line.
-              Positioned(
-                left: 6,
-                top: 0,
-                bottom: 0,
-                child: Container(width: 2, color: Colors.amber),
-              ),
-              // Grab handle at the top so it's obvious the line is draggable.
-              Positioned(
-                left: 0,
-                top: 0,
-                width: 14,
-                height: 12,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.amber,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -1059,6 +1013,117 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
             label: Value(label),
           ),
         );
+  }
+}
+
+/// Timeline playhead is isolated from the full timeline so playback position
+/// ticks move only this overlay instead of rebuilding every clip.
+class _TimelinePlayhead extends ConsumerWidget {
+  final List<db.TimelineClip> clips;
+  final String? activeClipId;
+  final int? draggingPlayheadMs;
+  final int seekAnchorMs;
+  final double pixelsPerSecond;
+  final double stackHeight;
+  final ValueChanged<int> onDragStart;
+  final void Function(int currentMs, int deltaMs) onDragUpdate;
+  final ValueChanged<int?> onDragEnd;
+
+  const _TimelinePlayhead(
+    this.clips, {
+    required this.activeClipId,
+    required this.draggingPlayheadMs,
+    required this.seekAnchorMs,
+    required this.pixelsPerSecond,
+    required this.stackHeight,
+    required this.onDragStart,
+    required this.onDragUpdate,
+    required this.onDragEnd,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final playback = ref.watch(
+      playbackNotifierProvider.select(
+        (state) => (
+          audioPath: state.audioPath,
+          isPlaying: state.isPlaying,
+          position: state.position,
+        ),
+      ),
+    );
+    final currentMs = _currentMs(playback);
+    final x = currentMs / 1000.0 * pixelsPerSecond;
+    return Positioned(
+      top: 0,
+      left: x - 6,
+      width: 14,
+      height: stackHeight,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.resizeColumn,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onPanStart: (_) => onDragStart(currentMs),
+          onPanUpdate: (d) {
+            final delta = (d.delta.dx / pixelsPerSecond * 1000).round();
+            onDragUpdate(currentMs, delta);
+          },
+          onPanEnd: (_) => onDragEnd(draggingPlayheadMs ?? currentMs),
+          child: Stack(
+            children: [
+              Positioned(
+                left: 6,
+                top: 0,
+                bottom: 0,
+                child: Container(width: 2, color: Colors.amber),
+              ),
+              Positioned(
+                left: 0,
+                top: 0,
+                width: 14,
+                height: 12,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.amber,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  int _currentMs(
+    ({String? audioPath, bool isPlaying, Duration position}) playback,
+  ) {
+    if (draggingPlayheadMs != null) {
+      return draggingPlayheadMs!;
+    }
+    if (activeClipId != null) {
+      final activeClip = clips.where((c) => c.id == activeClipId).firstOrNull;
+      if (activeClip != null &&
+          playback.isPlaying &&
+          playback.audioPath == activeClip.audioPath) {
+        return activeClip.startTimeMs + playback.position.inMilliseconds;
+      }
+      if (activeClip != null) {
+        final durMs = ((activeClip.durationSec ?? 0) * 1000).round();
+        return activeClip.startTimeMs + durMs;
+      }
+      return seekAnchorMs;
+    }
+    if (playback.isPlaying && playback.audioPath != null) {
+      final activeClip = clips
+          .where((c) => c.audioPath == playback.audioPath)
+          .firstOrNull;
+      if (activeClip != null) {
+        return activeClip.startTimeMs + playback.position.inMilliseconds;
+      }
+    }
+    return seekAnchorMs;
   }
 }
 

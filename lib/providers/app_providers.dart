@@ -8,6 +8,7 @@ import 'package:neiroha/data/storage/export_prefs.dart';
 import 'package:neiroha/data/storage/ffmpeg_service.dart';
 import 'package:neiroha/data/storage/novel_dialogue_rules_service.dart';
 import 'package:neiroha/data/storage/novel_import_service.dart';
+import 'package:neiroha/data/storage/novel_text_filter_rules_service.dart';
 import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
 import 'package:neiroha/domain/platform/platform_capabilities.dart';
@@ -87,6 +88,16 @@ final novelDialogueRulesServiceProvider = Provider<NovelDialogueRulesService>((
 
 final novelDialogueRulesProvider = FutureProvider((ref) {
   return ref.watch(novelDialogueRulesServiceProvider).load();
+});
+
+/// Global regex replacements applied to novel text before it is sent to TTS.
+final novelTextFilterRulesServiceProvider =
+    Provider<NovelTextFilterRulesService>((ref) {
+      return NovelTextFilterRulesService(ref.watch(databaseProvider));
+    });
+
+final novelTextFilterRulesProvider = FutureProvider((ref) {
+  return ref.watch(novelTextFilterRulesServiceProvider).load();
 });
 
 /// Per-segment Phase TTS generation overrides, such as one sentence's

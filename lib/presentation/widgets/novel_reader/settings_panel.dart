@@ -21,10 +21,12 @@ class _NovelSettingsPane extends StatelessWidget {
   final ValueChanged<bool> onSliceOnlyAtPunctuationChanged;
   final ValueChanged<int> onMaxSliceCharsChanged;
   final ValueChanged<int> onPrefetchSegmentsChanged;
+  final ValueChanged<double> onPlaybackGapChanged;
   final ValueChanged<bool> onOverwriteWhilePlayingChanged;
   final ValueChanged<bool> onCacheOnlyPlaybackChanged;
   final ValueChanged<bool> onSkipPunctuationOnlyChanged;
   final VoidCallback onManageDialogueRules;
+  final VoidCallback onManageTextFilters;
   final ValueChanged<String> onCacheCurrentColorChanged;
   final ValueChanged<String> onCacheStaleColorChanged;
   final ValueChanged<double> onCacheHighlightOpacityChanged;
@@ -52,10 +54,12 @@ class _NovelSettingsPane extends StatelessWidget {
     required this.onSliceOnlyAtPunctuationChanged,
     required this.onMaxSliceCharsChanged,
     required this.onPrefetchSegmentsChanged,
+    required this.onPlaybackGapChanged,
     required this.onOverwriteWhilePlayingChanged,
     required this.onCacheOnlyPlaybackChanged,
     required this.onSkipPunctuationOnlyChanged,
     required this.onManageDialogueRules,
+    required this.onManageTextFilters,
     required this.onCacheCurrentColorChanged,
     required this.onCacheStaleColorChanged,
     required this.onCacheHighlightOpacityChanged,
@@ -113,26 +117,24 @@ class _NovelSettingsPane extends StatelessWidget {
             onChanged: (v) => onMaxSliceCharsChanged(v.round()),
           ),
           SizedBox(height: 6),
-          _ColorSetting(
-            label: AppLocalizations.of(context).uiCurrent,
-            value: project.cacheCurrentColor,
-            fallback: const Color(0xFF2F6B54),
-            onChanged: onCacheCurrentColorChanged,
-          ),
-          _ColorSetting(
-            label: AppLocalizations.of(context).uiChanged,
-            value: project.cacheStaleColor,
-            fallback: const Color(0xFF7A5A2A),
-            onChanged: onCacheStaleColorChanged,
+          _CacheColorRow(
+            currentLabel: AppLocalizations.of(context).uiCurrent,
+            currentValue: project.cacheCurrentColor,
+            currentFallback: const Color(0xFF2F6B54),
+            onCurrentChanged: onCacheCurrentColorChanged,
+            changedLabel: AppLocalizations.of(context).uiChanged,
+            changedValue: project.cacheStaleColor,
+            changedFallback: const Color(0xFF7A5A2A),
+            onChangedChanged: onCacheStaleColorChanged,
           ),
           _SliderSetting(
             label: AppLocalizations.of(context).uiAlpha,
-            value: project.cacheHighlightOpacity.clamp(0.02, 0.24).toDouble(),
-            min: 0.02,
+            value: project.cacheHighlightOpacity.clamp(0.0, 0.24).toDouble(),
+            min: 0,
             max: 0.24,
-            divisions: 11,
+            divisions: 12,
             valueLabel:
-                '${(project.cacheHighlightOpacity.clamp(0.02, 0.24) * 100).round()}%',
+                '${(project.cacheHighlightOpacity.clamp(0.0, 0.24) * 100).round()}%',
             onChanged: onCacheHighlightOpacityChanged,
           ),
           _CompactSwitch(
@@ -150,10 +152,30 @@ class _NovelSettingsPane extends StatelessWidget {
             value: project.skipPunctuationOnlySegments,
             onChanged: onSkipPunctuationOnlyChanged,
           ),
-          OutlinedButton.icon(
-            onPressed: onManageDialogueRules,
-            icon: const Icon(Icons.rule_rounded, size: 17),
-            label: Text(AppLocalizations.of(context).uiDialogueRules),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onManageDialogueRules,
+                  icon: const Icon(Icons.rule_rounded, size: 17),
+                  label: Text(
+                    AppLocalizations.of(context).uiDialogueRules,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onManageTextFilters,
+                  icon: const Icon(Icons.filter_alt_rounded, size: 17),
+                  label: Text(
+                    AppLocalizations.of(context).novelTextFilters,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 8),
           FilledButton.icon(
@@ -212,6 +234,17 @@ class _NovelSettingsPane extends StatelessWidget {
             divisions: 20,
             valueLabel: '${project.prefetchSegments.clamp(0, 20)}',
             onChanged: (v) => onPrefetchSegmentsChanged(v.round()),
+          ),
+          _SliderSetting(
+            label: AppLocalizations.of(context).novelPlaybackGap,
+            value: project.playbackGapSeconds.clamp(0.0, 2.0).toDouble(),
+            min: 0,
+            max: 2,
+            divisions: 20,
+            valueLabel:
+                '${project.playbackGapSeconds.clamp(0.0, 2.0).toStringAsFixed(1)}s',
+            onChanged: (v) =>
+                onPlaybackGapChanged((v * 10).roundToDouble() / 10),
           ),
         ],
       ),
@@ -363,13 +396,63 @@ class _VoiceDropdown extends StatelessWidget {
   }
 }
 
-class _ColorSetting extends StatelessWidget {
+class _CacheColorRow extends StatelessWidget {
+  final String currentLabel;
+  final String currentValue;
+  final Color currentFallback;
+  final ValueChanged<String> onCurrentChanged;
+  final String changedLabel;
+  final String changedValue;
+  final Color changedFallback;
+  final ValueChanged<String> onChangedChanged;
+
+  const _CacheColorRow({
+    required this.currentLabel,
+    required this.currentValue,
+    required this.currentFallback,
+    required this.onCurrentChanged,
+    required this.changedLabel,
+    required this.changedValue,
+    required this.changedFallback,
+    required this.onChangedChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: _ColorChipButton(
+              label: currentLabel,
+              value: currentValue,
+              fallback: currentFallback,
+              onChanged: onCurrentChanged,
+            ),
+          ),
+          SizedBox(width: 8),
+          Expanded(
+            child: _ColorChipButton(
+              label: changedLabel,
+              value: changedValue,
+              fallback: changedFallback,
+              onChanged: onChangedChanged,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ColorChipButton extends StatelessWidget {
   final String label;
   final String value;
   final Color fallback;
   final ValueChanged<String> onChanged;
 
-  const _ColorSetting({
+  const _ColorChipButton({
     required this.label,
     required this.value,
     required this.fallback,
@@ -379,51 +462,51 @@ class _ColorSetting extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _colorFromHex(value, fallback);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 64,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.55),
-              ),
-            ),
+    return OutlinedButton(
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        minimumSize: const Size(0, 38),
+      ),
+      onPressed: () async {
+        final picked = await showDialog<String>(
+          context: context,
+          builder: (_) => _ColorPickerDialog(
+            initialHex: _hexFromColor(color),
+            fallback: fallback,
           ),
+        );
+        if (picked != null) onChanged(picked);
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          SizedBox(width: 8),
           Expanded(
-            child: OutlinedButton(
-              onPressed: () async {
-                final picked = await showDialog<String>(
-                  context: context,
-                  builder: (_) => _ColorPickerDialog(
-                    initialHex: _hexFromColor(color),
-                    fallback: fallback,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 11),
+                ),
+                Text(
+                  _hexFromColor(color),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.white.withValues(alpha: 0.5),
                   ),
-                );
-                if (picked != null) onChanged(picked);
-              },
-              child: Row(
-                children: [
-                  Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      _hexFromColor(color),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -762,7 +845,11 @@ class _NovelDialogueRulesDialogState
             if (_dirty) await _save();
             if (context.mounted) Navigator.pop(context, true);
           },
-          child: Text(_dirty ? 'Save & Apply' : 'Apply'),
+          child: Text(
+            _dirty
+                ? AppLocalizations.of(context).novelSaveApply
+                : AppLocalizations.of(context).uiApply,
+          ),
         ),
       ],
     );
@@ -942,5 +1029,342 @@ Future<NovelDialogueRule?> _showNovelDialogueRuleEditor(
   ).whenComplete(() {
     nameCtrl.dispose();
     patternCtrl.dispose();
+  });
+}
+
+class _NovelTextFilterRulesDialog extends ConsumerStatefulWidget {
+  const _NovelTextFilterRulesDialog();
+
+  @override
+  ConsumerState<_NovelTextFilterRulesDialog> createState() =>
+      _NovelTextFilterRulesDialogState();
+}
+
+class _NovelTextFilterRulesDialogState
+    extends ConsumerState<_NovelTextFilterRulesDialog> {
+  List<NovelTextFilterRule> _rules = const [];
+  bool _loading = true;
+  bool _dirty = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final rules = await ref.read(novelTextFilterRulesServiceProvider).load();
+    if (!mounted) return;
+    setState(() {
+      _rules = rules;
+      _loading = false;
+    });
+  }
+
+  Future<void> _save() async {
+    await ref.read(novelTextFilterRulesServiceProvider).save(_rules);
+    ref.invalidate(novelTextFilterRulesProvider);
+    _dirty = false;
+  }
+
+  Future<void> _addRule() async {
+    final rule = await _showNovelTextFilterRuleEditor(context);
+    if (rule == null) return;
+    setState(() {
+      _rules = [..._rules, rule];
+      _dirty = true;
+    });
+  }
+
+  Future<void> _editRule(NovelTextFilterRule rule) async {
+    final next = await _showNovelTextFilterRuleEditor(context, existing: rule);
+    if (next == null) return;
+    setState(() {
+      _rules = [
+        for (final item in _rules)
+          if (item.id == rule.id) next else item,
+      ];
+      _dirty = true;
+    });
+  }
+
+  void _deleteRule(NovelTextFilterRule rule) {
+    if (rule.builtIn) return;
+    setState(() {
+      _rules = _rules.where((item) => item.id != rule.id).toList();
+      _dirty = true;
+    });
+  }
+
+  void _toggleRule(NovelTextFilterRule rule, bool enabled) {
+    setState(() {
+      _rules = [
+        for (final item in _rules)
+          if (item.id == rule.id) item.copyWith(enabled: enabled) else item,
+      ];
+      _dirty = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(AppLocalizations.of(context).novelTextFilterRules),
+          ),
+          IconButton(
+            tooltip: AppLocalizations.of(context).uiAddRule,
+            onPressed: _loading ? null : _addRule,
+            icon: const Icon(Icons.add_rounded),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 620,
+        height: 430,
+        child: _loading
+            ? Center(child: CircularProgressIndicator())
+            : ListView.separated(
+                itemCount: _rules.length,
+                separatorBuilder: (_, _) => SizedBox(height: 6),
+                itemBuilder: (context, index) {
+                  final rule = _rules[index];
+                  return _TextFilterRuleTile(
+                    rule: rule,
+                    onToggle: (enabled) => _toggleRule(rule, enabled),
+                    onEdit: rule.builtIn ? null : () => _editRule(rule),
+                    onDelete: rule.builtIn ? null : () => _deleteRule(rule),
+                  );
+                },
+              ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(AppLocalizations.of(context).uiClose),
+        ),
+        FilledButton(
+          onPressed: () async {
+            if (_dirty) await _save();
+            if (context.mounted) Navigator.pop(context, true);
+          },
+          child: Text(
+            _dirty
+                ? AppLocalizations.of(context).novelSaveApply
+                : AppLocalizations.of(context).uiApply,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TextFilterRuleTile extends StatelessWidget {
+  final NovelTextFilterRule rule;
+  final ValueChanged<bool> onToggle;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  const _TextFilterRuleTile({
+    required this.rule,
+    required this.onToggle,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceDim,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Switch(value: rule.enabled, onChanged: onToggle),
+          SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        rule.name,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    if (rule.builtIn) ...[
+                      SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          AppLocalizations.of(context).uiBuiltIn,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppTheme.accentColor.withValues(alpha: 0.9),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                SizedBox(height: 2),
+                Text(
+                  rule.replacement.isEmpty
+                      ? rule.pattern
+                      : '${rule.pattern} -> ${rule.replacement}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: AppLocalizations.of(context).uiEdit,
+            icon: const Icon(Icons.edit_rounded, size: 16),
+            onPressed: onEdit,
+          ),
+          IconButton(
+            tooltip: AppLocalizations.of(context).uiDelete,
+            icon: const Icon(Icons.delete_rounded, size: 16),
+            onPressed: onDelete,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+Future<NovelTextFilterRule?> _showNovelTextFilterRuleEditor(
+  BuildContext context, {
+  NovelTextFilterRule? existing,
+}) {
+  final nameCtrl = TextEditingController(text: existing?.name ?? '');
+  final patternCtrl = TextEditingController(text: existing?.pattern ?? '');
+  final replacementCtrl = TextEditingController(
+    text: existing?.replacement ?? '',
+  );
+  String? error;
+
+  return showDialog<NovelTextFilterRule>(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setDialogState) {
+        return AlertDialog(
+          title: Text(
+            existing == null
+                ? AppLocalizations.of(context).novelNewTextFilterRule
+                : AppLocalizations.of(context).novelEditTextFilterRule,
+          ),
+          content: SizedBox(
+            width: 520,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).uiName,
+                  ),
+                ),
+                SizedBox(height: 12),
+                TextField(
+                  controller: patternCtrl,
+                  style: const TextStyle(fontFamily: 'monospace'),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).uiRegexPattern,
+                    helperText:
+                        r'Examples: [\u{1F300}-\u{1FAFF}]+   /   \(.*?\)',
+                    errorText: error,
+                  ),
+                ),
+                SizedBox(height: 12),
+                TextField(
+                  controller: replacementCtrl,
+                  style: const TextStyle(fontFamily: 'monospace'),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).novelReplacement,
+                    helperText: AppLocalizations.of(
+                      context,
+                    ).novelReplacementHint,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(AppLocalizations.of(context).uiCancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                final pattern = patternCtrl.text.trim();
+                if (name.isEmpty) {
+                  setDialogState(
+                    () => error = AppLocalizations.of(context).uiNameIsRequired,
+                  );
+                  return;
+                }
+                if (pattern.isEmpty) {
+                  setDialogState(
+                    () => error = AppLocalizations.of(
+                      context,
+                    ).novelPatternRequired,
+                  );
+                  return;
+                }
+                try {
+                  RegExp(pattern, multiLine: true, dotAll: true, unicode: true);
+                } on FormatException catch (e) {
+                  setDialogState(
+                    () => error = AppLocalizations.of(
+                      context,
+                    ).uiInvalidRegex(e.message),
+                  );
+                  return;
+                }
+                Navigator.pop(
+                  ctx,
+                  NovelTextFilterRule(
+                    id: existing?.id ?? const Uuid().v4(),
+                    name: name,
+                    pattern: pattern,
+                    replacement: replacementCtrl.text,
+                    builtIn: existing?.builtIn ?? false,
+                    enabled: existing?.enabled ?? true,
+                  ),
+                );
+              },
+              child: Text(AppLocalizations.of(context).uiSave),
+            ),
+          ],
+        );
+      },
+    ),
+  ).whenComplete(() {
+    nameCtrl.dispose();
+    patternCtrl.dispose();
+    replacementCtrl.dispose();
   });
 }

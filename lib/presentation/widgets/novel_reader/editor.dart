@@ -67,13 +67,26 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     final providers =
         ref.watch(ttsProvidersStreamProvider).valueOrNull ??
         const <db.TtsProvider>[];
+    final textFilterRules =
+        ref.watch(novelTextFilterRulesProvider).valueOrNull ??
+        NovelTextFilterRulesService.builtInRules;
+    final textFilterSignature = NovelTextFilterRulesService.signature(
+      textFilterRules,
+    );
     final assetMap = {for (final a in allAssets) a.id: a};
     final bankAssets = members
         .map((m) => assetMap[m.voiceAssetId])
         .whereType<db.VoiceAsset>()
         .toList();
     final chapterMap = {for (final c in chapters) c.id: c};
-    final cacheComplete = _novelCacheCompleteByMetadata(project, segments);
+    final cacheComplete = _novelCacheComplete(
+      project,
+      segments,
+      bankAssets,
+      providers,
+      textFilterRules,
+      textFilterSignature,
+    );
     final cacheOnlyPlayback = _cacheOnlyPlayback && cacheComplete;
 
     final currentIndex = segments.isEmpty
@@ -103,6 +116,8 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
       chapterSegments,
       bankAssets,
       providers,
+      textFilterRules,
+      textFilterSignature,
     );
 
     return Column(
@@ -232,6 +247,12 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
                   updatedAt: DateTime.now(),
                 ),
               ),
+              onPlaybackGapChanged: (v) => _updateProject(
+                project.copyWith(
+                  playbackGapSeconds: v,
+                  updatedAt: DateTime.now(),
+                ),
+              ),
               onOverwriteWhilePlayingChanged: (v) => _updateProject(
                 project.copyWith(
                   overwriteCacheWhilePlaying: v,
@@ -248,6 +269,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
               ),
               onManageDialogueRules: () =>
                   unawaited(_manageDialogueRules(project, segments)),
+              onManageTextFilters: () => unawaited(_manageTextFilterRules()),
               onCacheCurrentColorChanged: (color) => _updateProject(
                 project.copyWith(
                   cacheCurrentColor: color,

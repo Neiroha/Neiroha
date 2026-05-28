@@ -1199,6 +1199,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uiProjectName => 'Project name';
 
   @override
+  String get uiProjectSettings => 'Project Settings';
+
+  @override
   String get uiPromptLanguage => 'Prompt Language';
 
   @override
@@ -1775,6 +1778,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get novelPureReadingMode => 'Pure reading mode';
+
+  @override
+  String get novelPlaybackGap => 'Gap';
+
+  @override
+  String get novelTextFilters => 'Text Filters';
+
+  @override
+  String get novelTextFilterRules => 'Text Filter Rules';
+
+  @override
+  String get novelNewTextFilterRule => 'New Text Filter Rule';
+
+  @override
+  String get novelEditTextFilterRule => 'Edit Text Filter Rule';
+
+  @override
+  String get novelReplacement => 'Replacement';
+
+  @override
+  String get novelReplacementHint => 'Leave empty to remove matched text.';
+
+  @override
+  String get novelPatternRequired => 'Pattern is required';
+
+  @override
+  String get novelSaveApply => 'Save & Apply';
 
   @override
   String get pressBackAgainToExit => 'Press Back again to exit.';

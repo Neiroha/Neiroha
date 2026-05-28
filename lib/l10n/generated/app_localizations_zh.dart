@@ -1169,6 +1169,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get uiProjectName => '项目名称';
 
   @override
+  String get uiProjectSettings => '项目设置';
+
+  @override
   String get uiPromptLanguage => '提示文本语言';
 
   @override
@@ -1728,6 +1731,33 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get novelPureReadingMode => '纯阅读模式';
+
+  @override
+  String get novelPlaybackGap => '停顿';
+
+  @override
+  String get novelTextFilters => '文本过滤';
+
+  @override
+  String get novelTextFilterRules => '文本过滤规则';
+
+  @override
+  String get novelNewTextFilterRule => '新建文本过滤规则';
+
+  @override
+  String get novelEditTextFilterRule => '编辑文本过滤规则';
+
+  @override
+  String get novelReplacement => '替换为';
+
+  @override
+  String get novelReplacementHint => '留空则删除匹配文本。';
+
+  @override
+  String get novelPatternRequired => '正则不能为空';
+
+  @override
+  String get novelSaveApply => '保存并应用';
 
   @override
   String get pressBackAgainToExit => '再按一次返回键退出。';

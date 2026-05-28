@@ -45,7 +45,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 26;
+  int get schemaVersion => 27;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -118,6 +118,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 26) {
         await _repairMissingCurrentSchema(m);
+      }
+      if (from >= 26 && from < 27) {
+        await m.addColumn(novelProjects, novelProjects.playbackGapSeconds);
       }
     },
     beforeOpen: (_) async {
@@ -339,6 +342,12 @@ class AppDatabase extends _$AppDatabase {
       columnName: 'prefetch_segments',
       addColumn: () =>
           m.addColumn(novelProjects, novelProjects.prefetchSegments),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'playback_gap_seconds',
+      addColumn: () =>
+          m.addColumn(novelProjects, novelProjects.playbackGapSeconds),
     );
     await _addColumnIfMissing(
       tableName: 'novel_projects',

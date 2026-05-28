@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
@@ -29,14 +31,18 @@ class ProjectCardData {
 class ProjectCardGrid extends StatefulWidget {
   final List<ProjectCardData> projects;
   final ValueChanged<String> onOpen;
+  final ValueChanged<ProjectCardData>? onSettings;
   final ValueChanged<String>? onDelete;
+  final Future<void> Function(ProjectCardData project, String name)? onRename;
   final String? emptyLabel;
 
   const ProjectCardGrid({
     super.key,
     required this.projects,
     required this.onOpen,
+    this.onSettings,
     this.onDelete,
+    this.onRename,
     this.emptyLabel,
   });
 
@@ -149,9 +155,13 @@ class _ProjectCardGridState extends State<ProjectCardGrid> {
             return _ProjectCard(
               data: p,
               onTap: () => widget.onOpen(p.id),
+              onSettings: widget.onSettings == null
+                  ? null
+                  : () => widget.onSettings!(p),
               onDelete: widget.onDelete == null
                   ? null
                   : () => widget.onDelete!(p.id),
+              onRename: widget.onRename,
             );
           },
         );
@@ -163,12 +173,16 @@ class _ProjectCardGridState extends State<ProjectCardGrid> {
 class _ProjectCard extends StatefulWidget {
   final ProjectCardData data;
   final VoidCallback onTap;
+  final VoidCallback? onSettings;
   final VoidCallback? onDelete;
+  final Future<void> Function(ProjectCardData project, String name)? onRename;
 
   const _ProjectCard({
     required this.data,
     required this.onTap,
+    required this.onSettings,
     required this.onDelete,
+    required this.onRename,
   });
 
   @override
@@ -222,7 +236,9 @@ class _ProjectCardState extends State<_ProjectCard> {
                         ),
                       ),
                     ),
-                    if (widget.onDelete != null)
+                    if (widget.onSettings != null ||
+                        widget.onDelete != null ||
+                        widget.onRename != null)
                       PopupMenuButton<String>(
                         padding: EdgeInsets.zero,
                         iconSize: 18,
@@ -232,16 +248,54 @@ class _ProjectCardState extends State<_ProjectCard> {
                           color: Colors.white.withValues(alpha: 0.4),
                         ),
                         onSelected: (v) {
+                          if (v == 'settings') widget.onSettings?.call();
                           if (v == 'delete') widget.onDelete?.call();
+                          if (v == 'rename') unawaited(_renameProject());
                         },
                         itemBuilder: (_) => [
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Text(
-                              AppLocalizations.of(context).uiDelete,
-                              style: TextStyle(color: Colors.redAccent),
+                          if (widget.onSettings != null)
+                            PopupMenuItem(
+                              value: 'settings',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.tune_rounded, size: 16),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    AppLocalizations.of(context).navSettings,
+                                  ),
+                                ],
+                              ),
+                            )
+                          else if (widget.onRename != null)
+                            PopupMenuItem(
+                              value: 'rename',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit_rounded, size: 16),
+                                  SizedBox(width: 8),
+                                  Text(AppLocalizations.of(context).uiRename),
+                                ],
+                              ),
                             ),
-                          ),
+                          if (widget.onSettings == null &&
+                              widget.onDelete != null)
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.delete_rounded,
+                                    size: 16,
+                                    color: Colors.redAccent,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    AppLocalizations.of(context).uiDelete,
+                                    style: TextStyle(color: Colors.redAccent),
+                                  ),
+                                ],
+                              ),
+                            ),
                         ],
                       ),
                   ],
@@ -274,6 +328,44 @@ class _ProjectCardState extends State<_ProjectCard> {
         ),
       ),
     );
+  }
+
+  Future<void> _renameProject() async {
+    final callback = widget.onRename;
+    if (callback == null) return;
+    final nameCtrl = TextEditingController(text: widget.data.name);
+    final nextName = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppLocalizations.of(context).uiRename),
+        content: SizedBox(
+          width: 420,
+          child: TextField(
+            controller: nameCtrl,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).uiProjectName,
+            ),
+            onSubmitted: (value) => Navigator.pop(ctx, value),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppLocalizations.of(context).uiCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, nameCtrl.text),
+            child: Text(AppLocalizations.of(context).uiRename),
+          ),
+        ],
+      ),
+    ).whenComplete(nameCtrl.dispose);
+    final trimmed = nextName?.trim();
+    if (trimmed == null || trimmed.isEmpty || trimmed == widget.data.name) {
+      return;
+    }
+    await callback(widget.data, trimmed);
   }
 
   String _formatDate(DateTime dt) {

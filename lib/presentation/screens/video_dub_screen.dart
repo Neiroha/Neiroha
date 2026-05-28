@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:drift/drift.dart' show Value;
@@ -6,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
+import 'package:neiroha/presentation/widgets/project_settings_dialog.dart';
 import 'package:neiroha/presentation/widgets/video_dub/editor.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:uuid/uuid.dart';
@@ -138,6 +140,9 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
 
   Widget _buildProjectListScreen() {
     final projectsAsync = ref.watch(videoDubProjectsStreamProvider);
+    final banks =
+        ref.watch(voiceBanksStreamProvider).valueOrNull ??
+        const <db.VoiceBank>[];
     return Column(
       children: [
         _buildListHeader(),
@@ -162,9 +167,12 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
                   ),
               ],
               onOpen: (id) => setState(() => _selectedProjectId = id),
-              onDelete: (id) {
-                ref.read(databaseProvider).deleteVideoDubProject(id);
-              },
+              onSettings: (card) => unawaited(
+                _showProjectSettings(
+                  projects.where((p) => p.id == card.id).firstOrNull,
+                  banks,
+                ),
+              ),
             ),
           ),
         ),
@@ -203,6 +211,54 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _showProjectSettings(
+    db.VideoDubProject? project,
+    List<db.VoiceBank> banks,
+  ) async {
+    if (project == null) return;
+    final result = await showProjectSettingsDialog(
+      context: context,
+      projectName: project.name,
+      bankId: project.bankId,
+      banks: banks,
+    );
+    if (result == null) return;
+    final database = ref.read(databaseProvider);
+    if (result.deleteRequested) {
+      await database.deleteVideoDubProject(project.id);
+      return;
+    }
+    final bankChanged = result.bankId != project.bankId;
+    if (result.name != project.name || bankChanged) {
+      await database.updateVideoDubProject(
+        project.copyWith(
+          name: result.name,
+          bankId: result.bankId,
+          updatedAt: DateTime.now(),
+        ),
+      );
+      if (bankChanged) {
+        await _clearVideoDubProjectVoiceAssignments(project.id);
+      }
+    }
+  }
+
+  Future<void> _clearVideoDubProjectVoiceAssignments(String projectId) async {
+    final database = ref.read(databaseProvider);
+    final cues = await database.getSubtitleCues(projectId);
+    for (final cue in cues) {
+      await database.updateSubtitleCue(
+        cue.copyWith(
+          voiceAssetId: const Value(null),
+          audioPath: const Value(null),
+          audioDuration: const Value(null),
+          error: const Value(null),
+          missing: false,
+        ),
+      );
+    }
   }
 
   Future<void> _createProject() async {

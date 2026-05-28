@@ -2240,6 +2240,12 @@ abstract class AppLocalizations {
   /// **'Project name'**
   String get uiProjectName;
 
+  /// No description provided for @uiProjectSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Project Settings'**
+  String get uiProjectSettings;
+
   /// No description provided for @uiPromptLanguage.
   ///
   /// In en, this message translates to:
@@ -3262,6 +3268,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pure reading mode'**
   String get novelPureReadingMode;
+
+  /// No description provided for @novelPlaybackGap.
+  ///
+  /// In en, this message translates to:
+  /// **'Gap'**
+  String get novelPlaybackGap;
+
+  /// No description provided for @novelTextFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Text Filters'**
+  String get novelTextFilters;
+
+  /// No description provided for @novelTextFilterRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Text Filter Rules'**
+  String get novelTextFilterRules;
+
+  /// No description provided for @novelNewTextFilterRule.
+  ///
+  /// In en, this message translates to:
+  /// **'New Text Filter Rule'**
+  String get novelNewTextFilterRule;
+
+  /// No description provided for @novelEditTextFilterRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Text Filter Rule'**
+  String get novelEditTextFilterRule;
+
+  /// No description provided for @novelReplacement.
+  ///
+  /// In en, this message translates to:
+  /// **'Replacement'**
+  String get novelReplacement;
+
+  /// No description provided for @novelReplacementHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty to remove matched text.'**
+  String get novelReplacementHint;
+
+  /// No description provided for @novelPatternRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Pattern is required'**
+  String get novelPatternRequired;
+
+  /// No description provided for @novelSaveApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Save & Apply'**
+  String get novelSaveApply;
 
   /// No description provided for @pressBackAgainToExit.
   ///

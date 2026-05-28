@@ -20,6 +20,7 @@ import 'package:neiroha/presentation/widgets/phase_tts/project_list_header.dart'
 import 'package:neiroha/presentation/widgets/phase_tts/segment_voice_panel.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/script_workspace.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
+import 'package:neiroha/presentation/widgets/project_settings_dialog.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
@@ -84,6 +85,9 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
 
   Widget _buildProjectListScreen() {
     final projectsAsync = ref.watch(phaseTtsProjectsStreamProvider);
+    final banks =
+        ref.watch(voiceBanksStreamProvider).valueOrNull ??
+        const <db.VoiceBank>[];
     return Column(
       children: [
         ProjectListHeader(onCreate: _createProject),
@@ -112,9 +116,12 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
                 });
                 _scriptController.text = proj.scriptText;
               },
-              onDelete: (id) {
-                ref.read(databaseProvider).deletePhaseTtsProject(id);
-              },
+              onSettings: (card) => unawaited(
+                _showProjectSettings(
+                  projects.where((p) => p.id == card.id).firstOrNull,
+                  banks,
+                ),
+              ),
             ),
           ),
         ),
@@ -126,6 +133,54 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     final trimmed = scriptText.replaceAll(RegExp(r'\s+'), ' ').trim();
     if (trimmed.isEmpty) return null;
     return trimmed.length > 60 ? '${trimmed.substring(0, 60)}…' : trimmed;
+  }
+
+  Future<void> _showProjectSettings(
+    db.PhaseTtsProject? project,
+    List<db.VoiceBank> banks,
+  ) async {
+    if (project == null) return;
+    final result = await showProjectSettingsDialog(
+      context: context,
+      projectName: project.name,
+      bankId: project.bankId,
+      banks: banks,
+    );
+    if (result == null) return;
+    final database = ref.read(databaseProvider);
+    if (result.deleteRequested) {
+      await database.deletePhaseTtsProject(project.id);
+      return;
+    }
+    final bankChanged = result.bankId != project.bankId;
+    if (result.name != project.name || bankChanged) {
+      await database.updatePhaseTtsProject(
+        project.copyWith(
+          name: result.name,
+          bankId: result.bankId,
+          updatedAt: DateTime.now(),
+        ),
+      );
+      if (bankChanged) {
+        await _clearPhaseProjectVoiceAssignments(project.id);
+      }
+    }
+  }
+
+  Future<void> _clearPhaseProjectVoiceAssignments(String projectId) async {
+    final database = ref.read(databaseProvider);
+    final segments = await database.getPhaseTtsSegments(projectId);
+    for (final segment in segments) {
+      await database.updatePhaseTtsSegment(
+        segment.copyWith(
+          voiceAssetId: const Value(null),
+          audioPath: const Value(null),
+          audioDuration: const Value(null),
+          error: const Value(null),
+          missing: false,
+        ),
+      );
+    }
   }
 
   // ───────────────── Editor mode ─────────────────

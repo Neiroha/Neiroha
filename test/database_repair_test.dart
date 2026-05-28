@@ -157,7 +157,7 @@ void main() {
                   1
                 );
             ''');
-            sqlite.userVersion = 26;
+            sqlite.userVersion = 27;
           },
         ),
       );
@@ -184,6 +184,7 @@ void main() {
         await columns('timeline_clips'),
         containsAll(['missing', 'link_group_id']),
       );
+      expect(await columns('novel_projects'), contains('playback_gap_seconds'));
 
       final slug = await StorageService(
         database,

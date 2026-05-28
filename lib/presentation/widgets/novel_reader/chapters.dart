@@ -340,6 +340,17 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     _snack('Dialogue rules saved; rebuilt $rebuilt segment(s).');
   }
 
+  Future<void> _manageTextFilterRules() async {
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _NovelTextFilterRulesDialog(),
+    );
+    if (changed != true) return;
+    ref.invalidate(novelTextFilterRulesProvider);
+    if (!mounted) return;
+    _snack('Text filters saved. Stale novel audio will regenerate on demand.');
+  }
+
   Future<void> _deleteSegmentAudioFiles(
     Iterable<db.NovelSegment> segments,
   ) async {

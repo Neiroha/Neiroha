@@ -22,21 +22,28 @@ bool _shouldSkipSegment(db.NovelProject project, db.NovelSegment segment) {
       isNovelPunctuationOnly(segment.segmentText);
 }
 
+String _filteredNovelTextForTts(
+  db.NovelSegment segment,
+  List<NovelTextFilterRule> textFilterRules,
+) {
+  return NovelTextFilterRulesService.applyFilters(
+    segment.segmentText,
+    textFilterRules,
+  ).trim();
+}
+
+bool _shouldSkipSegmentForTts(
+  db.NovelProject project,
+  db.NovelSegment segment,
+  List<NovelTextFilterRule> textFilterRules,
+) {
+  return _shouldSkipSegment(project, segment) ||
+      _filteredNovelTextForTts(segment, textFilterRules).isEmpty;
+}
+
 bool _hasUsableNovelAudio(db.NovelSegment segment) {
   final path = segment.audioPath;
   return path != null && !segment.missing && File(path).existsSync();
-}
-
-bool _novelCacheCompleteByMetadata(
-  db.NovelProject project,
-  List<db.NovelSegment> segments,
-) {
-  return segments.isNotEmpty &&
-      segments.every(
-        (segment) =>
-            _shouldSkipSegment(project, segment) ||
-            (segment.audioPath != null && !segment.missing),
-      );
 }
 
 Color _colorFromHex(String raw, Color fallback) {

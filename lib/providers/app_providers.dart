@@ -2,6 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
+import 'package:neiroha/data/services/android_media_session_service.dart';
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/data/storage/export_prefs.dart';
@@ -333,3 +334,12 @@ final audioPlayerProvider = Provider<AudioPlayer>((ref) {
   ref.onDispose(() => player.dispose());
   return player;
 });
+
+/// Android foreground media session for Novel Reader background playback.
+final androidMediaSessionServiceProvider = Provider<AndroidMediaSessionService>(
+  (ref) {
+    final service = AndroidMediaSessionService();
+    ref.onDispose(service.dispose);
+    return service;
+  },
+);

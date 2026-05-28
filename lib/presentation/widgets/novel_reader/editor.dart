@@ -30,6 +30,8 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
   int? _lastPersistedProgressIndex;
   Future<void> _progressPersistQueue = Future<void>.value();
   int _prefetchRunId = 0;
+  Completer<_NovelPlaybackCommand>? _playbackCommandCompleter;
+  StreamSubscription<String>? _androidMediaControlSub;
   final Set<String> _generatingSegmentIds = <String>{};
   final Map<String, Future<String>> _audioTasks = <String, Future<String>>{};
 
@@ -37,7 +39,17 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
       novelReaderPlaybackSourceFor(widget.projectId);
 
   @override
+  void initState() {
+    super.initState();
+    _androidMediaControlSub = ref
+        .read(androidMediaSessionServiceProvider)
+        .controls
+        .listen(_handleAndroidMediaControl);
+  }
+
+  @override
   void dispose() {
+    unawaited(_androidMediaControlSub?.cancel());
     _stopNovel(updateUi: false);
     super.dispose();
   }
@@ -324,5 +336,38 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _handleAndroidMediaControl(String control) {
+    switch (control) {
+      case 'toggle':
+        unawaited(ref.read(playbackNotifierProvider.notifier).togglePlay());
+        break;
+      case 'play':
+        if (!ref.read(playbackNotifierProvider).isPlaying) {
+          unawaited(ref.read(playbackNotifierProvider.notifier).togglePlay());
+        }
+        break;
+      case 'pause':
+        if (ref.read(playbackNotifierProvider).isPlaying) {
+          unawaited(ref.read(playbackNotifierProvider.notifier).togglePlay());
+        }
+        break;
+      case 'previous':
+        _completePlaybackCommand(_NovelPlaybackCommand.previous);
+        break;
+      case 'next':
+        _completePlaybackCommand(_NovelPlaybackCommand.next);
+        break;
+      case 'stop':
+        _stopNovel();
+        break;
+    }
+  }
+
+  void _completePlaybackCommand(_NovelPlaybackCommand command) {
+    final completer = _playbackCommandCompleter;
+    if (completer == null || completer.isCompleted) return;
+    completer.complete(command);
   }
 }

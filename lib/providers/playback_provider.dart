@@ -77,6 +77,7 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
     _completeSub = _player.onPlayerComplete.listen((_) {
       _resetPositionPublishClock();
       state = state.copyWith(isPlaying: false, position: Duration.zero);
+      unawaited(_syncAndroidNovelSession());
     });
     _positionSub = _player.onPositionChanged.listen((pos) {
       _publishPosition(pos);
@@ -126,6 +127,7 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
       isPlaying: true,
     );
     await _player.play(DeviceFileSource(audioPath));
+    await _syncAndroidNovelSession();
   }
 
   Future<void> togglePlay() async {
@@ -137,13 +139,18 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
       await _player.resume();
       state = state.copyWith(isPlaying: true);
     }
+    await _syncAndroidNovelSession();
   }
 
   Future<void> stop() async {
+    final previousSourceTag = state.sourceTag;
     _cancelActiveSequence();
     await _player.stop();
     _resetPositionPublishClock();
     state = const PlaybackState();
+    if (isNovelReaderPlaybackSource(previousSourceTag)) {
+      await ref.read(androidMediaSessionServiceProvider).stopNovelSession();
+    }
   }
 
   Future<void> stopIfSourceTag(String sourceTag) async {
@@ -214,6 +221,20 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
 
   void _resetPositionPublishClock() {
     _lastPositionPublishedAt = DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  Future<void> _syncAndroidNovelSession() async {
+    final session = ref.read(androidMediaSessionServiceProvider);
+    if (!isNovelReaderPlaybackSource(state.sourceTag) ||
+        state.audioPath == null) {
+      await session.stopNovelSession();
+      return;
+    }
+    await session.startOrUpdateNovelSession(
+      title: state.title ?? 'Novel Reader',
+      subtitle: state.subtitle,
+      isPlaying: state.isPlaying,
+    );
   }
 }
 

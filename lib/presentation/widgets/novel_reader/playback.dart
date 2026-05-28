@@ -1,5 +1,7 @@
 part of '../../screens/novel_reader_screen.dart';
 
+enum _NovelPlaybackCommand { previous, next, stop }
+
 extension _NovelReaderEditorCache on _NovelReaderEditorState {
   Map<String, _NovelSegmentCacheState> _cacheStatesForSegments(
     db.NovelProject project,
@@ -208,10 +210,14 @@ extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {
       textFilterRules,
     );
     final providers = await ref.read(databaseProvider).getAllProviders();
+    final chapters = await ref
+        .read(databaseProvider)
+        .getNovelChapters(project.id);
     final assetMap = {for (final asset in bankAssets) asset.id: asset};
     final providerMap = {
       for (final provider in providers) provider.id: provider,
     };
+    final chapterMap = {for (final chapter in chapters) chapter.id: chapter};
     final startAt = ordered.indexWhere(
       (segment) => segment.globalIndex >= start.globalIndex,
     );
@@ -269,7 +275,10 @@ extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {
             .load(
               audioPath,
               segment.segmentText,
-              subtitle: _segmentSubtitle(segment),
+              subtitle: _segmentSubtitle(
+                segment,
+                chapterMap[segment.chapterId],
+              ),
               sourceTag: _playbackSourceTag,
             );
         final completed = _waitForNovelPlaybackComplete(audioPath);
@@ -286,17 +295,46 @@ extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {
             ),
           );
         }
-        await Future.any([completed, stopCompleter.future]);
+        final commandCompleter = Completer<_NovelPlaybackCommand>();
+        _playbackCommandCompleter = commandCompleter;
+        final result = await Future.any<Object?>([
+          completed.then<Object?>((_) => null),
+          stopCompleter.future.then<Object?>((_) => _NovelPlaybackCommand.stop),
+          commandCompleter.future.then<Object?>((command) => command),
+        ]);
+        if (identical(_playbackCommandCompleter, commandCompleter)) {
+          _playbackCommandCompleter = null;
+        }
+        if (result == _NovelPlaybackCommand.stop) break;
+        if (result == _NovelPlaybackCommand.previous) {
+          await ref
+              .read(playbackNotifierProvider.notifier)
+              .stopIfSourceTag(_playbackSourceTag);
+          i = math.max(startAt - 1, i - 2);
+          continue;
+        }
+        if (result == _NovelPlaybackCommand.next) {
+          await ref
+              .read(playbackNotifierProvider.notifier)
+              .stopIfSourceTag(_playbackSourceTag);
+          continue;
+        }
         await _waitForSegmentGap(activeProject, runId, stopCompleter);
       }
     } catch (e) {
       if (runId == _playRunId) _snack('Playback stopped: $e');
     } finally {
-      if (runId == _playRunId && mounted) {
-        _updateState(() {
-          _stopCompleter = null;
-          _activePlaybackGlobalIndex = null;
-        });
+      if (runId == _playRunId) {
+        _stopCompleter = null;
+        _playbackCommandCompleter = null;
+        if (mounted) {
+          _updateState(() {
+            _activePlaybackGlobalIndex = null;
+          });
+        }
+        await ref
+            .read(playbackNotifierProvider.notifier)
+            .stopIfSourceTag(_playbackSourceTag);
       }
     }
   }
@@ -349,6 +387,11 @@ extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {
   void _stopNovel({bool updateUi = true}) {
     _playRunId++;
     _prefetchRunId++;
+    final commandCompleter = _playbackCommandCompleter;
+    if (commandCompleter != null && !commandCompleter.isCompleted) {
+      commandCompleter.complete(_NovelPlaybackCommand.stop);
+    }
+    _playbackCommandCompleter = null;
     final completer = _stopCompleter;
     if (completer != null && !completer.isCompleted) {
       completer.complete();
@@ -1159,9 +1202,12 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
     return total;
   }
 
-  String _segmentSubtitle(db.NovelSegment segment) {
+  String _segmentSubtitle(db.NovelSegment segment, [db.NovelChapter? chapter]) {
     final prefix = segment.segmentType == 'dialogue' ? 'Dialogue' : 'Narrator';
-    return '$prefix · Segment ${segment.globalIndex + 1}';
+    final chapterTitle = chapter?.title.trim();
+    final segmentLabel = '$prefix · Segment ${segment.globalIndex + 1}';
+    if (chapterTitle == null || chapterTitle.isEmpty) return segmentLabel;
+    return '$chapterTitle · $segmentLabel';
   }
 
   String _extensionForContentType(String contentType) {

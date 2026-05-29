@@ -27,6 +27,9 @@ class NovelReaderForegroundService : Service() {
     private var title: String = "Novel Reader"
     private var subtitle: String = ""
     private var isPlaying: Boolean = false
+    private var positionMs: Long = 0L
+    private var durationMs: Long = 0L
+    private var foregroundStarted: Boolean = false
 
     override fun onCreate() {
         super.onCreate()
@@ -49,8 +52,10 @@ class NovelReaderForegroundService : Service() {
                 title = intent.getStringExtra(EXTRA_TITLE)?.ifBlank { null } ?: "Novel Reader"
                 subtitle = intent.getStringExtra(EXTRA_SUBTITLE).orEmpty()
                 isPlaying = intent.getBooleanExtra(EXTRA_IS_PLAYING, false)
+                positionMs = intent.getLongExtra(EXTRA_POSITION_MS, 0L).coerceAtLeast(0L)
+                durationMs = intent.getLongExtra(EXTRA_DURATION_MS, 0L).coerceAtLeast(0L)
                 updateMediaSession()
-                startForegroundCompat(buildNotification())
+                updateForegroundNotification(buildNotification())
             }
             ACTION_TOGGLE -> NovelReaderMediaBridge.sendControl("toggle")
             ACTION_PREVIOUS -> NovelReaderMediaBridge.sendControl("previous")
@@ -58,6 +63,7 @@ class NovelReaderForegroundService : Service() {
             ACTION_STOP -> {
                 NovelReaderMediaBridge.sendControl("stop")
                 hideForeground()
+                foregroundStarted = false
                 stopSelf()
                 return START_NOT_STICKY
             }
@@ -83,6 +89,7 @@ class NovelReaderForegroundService : Service() {
         } else {
             PlaybackState.STATE_PAUSED
         }
+        val safePosition = safePositionMs()
         val actions = PlaybackState.ACTION_PLAY_PAUSE or
             PlaybackState.ACTION_PLAY or
             PlaybackState.ACTION_PAUSE or
@@ -90,17 +97,18 @@ class NovelReaderForegroundService : Service() {
             PlaybackState.ACTION_SKIP_TO_PREVIOUS or
             PlaybackState.ACTION_STOP
 
-        mediaSession.setMetadata(
-            MediaMetadata.Builder()
-                .putString(MediaMetadata.METADATA_KEY_TITLE, title)
-                .putString(MediaMetadata.METADATA_KEY_ARTIST, subtitle)
-                .putString(MediaMetadata.METADATA_KEY_ALBUM, "Neiroha Novel Reader")
-                .build()
-        )
+        val metadata = MediaMetadata.Builder()
+            .putString(MediaMetadata.METADATA_KEY_TITLE, title)
+            .putString(MediaMetadata.METADATA_KEY_ARTIST, subtitle)
+            .putString(MediaMetadata.METADATA_KEY_ALBUM, "Neiroha Novel Reader")
+        if (durationMs > 0L) {
+            metadata.putLong(MediaMetadata.METADATA_KEY_DURATION, durationMs)
+        }
+        mediaSession.setMetadata(metadata.build())
         mediaSession.setPlaybackState(
             PlaybackState.Builder()
                 .setActions(actions)
-                .setState(state, PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1.0f)
+                .setState(state, safePosition, if (isPlaying) 1.0f else 0.0f)
                 .build()
         )
     }
@@ -130,6 +138,11 @@ class NovelReaderForegroundService : Service() {
             .setShowWhen(false)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setCategory(Notification.CATEGORY_TRANSPORT)
+            .apply {
+                if (durationMs > 0L && durationMs <= Int.MAX_VALUE) {
+                    setProgress(durationMs.toInt(), safePositionMs().toInt(), false)
+                }
+            }
             .addAction(
                 android.R.drawable.ic_media_previous,
                 "Previous",
@@ -148,6 +161,15 @@ class NovelReaderForegroundService : Service() {
                     .setShowActionsInCompactView(0, 1, 2)
             )
             .build()
+    }
+
+    private fun safePositionMs(): Long {
+        val positivePosition = positionMs.coerceAtLeast(0L)
+        return if (durationMs > 0L) {
+            positivePosition.coerceAtMost(durationMs)
+        } else {
+            positivePosition
+        }
     }
 
     private fun activityIntent(): PendingIntent {
@@ -198,6 +220,16 @@ class NovelReaderForegroundService : Service() {
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
+        foregroundStarted = true
+    }
+
+    private fun updateForegroundNotification(notification: Notification) {
+        if (!foregroundStarted) {
+            startForegroundCompat(notification)
+            return
+        }
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(NOTIFICATION_ID, notification)
     }
 
     @Suppress("DEPRECATION")
@@ -219,6 +251,8 @@ class NovelReaderForegroundService : Service() {
         const val EXTRA_TITLE = "title"
         const val EXTRA_SUBTITLE = "subtitle"
         const val EXTRA_IS_PLAYING = "isPlaying"
+        const val EXTRA_POSITION_MS = "positionMs"
+        const val EXTRA_DURATION_MS = "durationMs"
 
         private const val CHANNEL_ID = "neiroha_novel_reader"
         private const val NOTIFICATION_ID = 2101

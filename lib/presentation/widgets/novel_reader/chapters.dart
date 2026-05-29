@@ -113,6 +113,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     _updateState(() => _importing = true);
     try {
       _stopNovel();
+      _clearReaderPagesCache();
       final report = await run();
       _updateState(() {
         _manualChapterId = null;
@@ -141,6 +142,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     if (cleaned == segment.segmentText) return;
 
     _stopNovel();
+    _clearReaderPagesCache();
     await _deleteAudioPath(segment.audioPath);
     final dbx = ref.read(databaseProvider);
     await dbx.updateNovelSegment(
@@ -163,6 +165,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     db.NovelSegment segment,
   ) async {
     _stopNovel();
+    _clearReaderPagesCache();
     await _deleteAudioPath(segment.audioPath);
     final dbx = ref.read(databaseProvider);
     await dbx.deleteNovelSegment(project.id, segment.id);
@@ -198,6 +201,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     if (result == null) return;
 
     _stopNovel();
+    _clearReaderPagesCache();
     final dialogueRules = await ref
         .read(novelImportServiceProvider)
         .loadDialogueRules();
@@ -276,6 +280,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     if (!ok) return;
 
     _stopNovel();
+    _clearReaderPagesCache();
     final dbx = ref.read(databaseProvider);
     final oldSegments = await dbx.getNovelSegmentsForChapter(chapter.id);
     await _deleteSegmentAudioFiles(oldSegments);
@@ -314,6 +319,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     final rules = await ref.read(novelDialogueRulesServiceProvider).load();
     final dbx = ref.read(databaseProvider);
     final chapters = await dbx.getNovelChapters(project.id);
+    _clearReaderPagesCache();
     var rebuilt = 0;
     for (final chapter in chapters) {
       final currentSegments = segments

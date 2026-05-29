@@ -21,12 +21,16 @@ class AndroidMediaSessionService {
     required String title,
     String? subtitle,
     required bool isPlaying,
+    Duration position = Duration.zero,
+    Duration duration = Duration.zero,
   }) async {
     if (!isSupported) return;
     await _channel.invokeMethod('startOrUpdateNovelSession', {
       'title': title,
       'subtitle': subtitle ?? '',
       'isPlaying': isPlaying,
+      'positionMs': position.inMilliseconds,
+      'durationMs': duration.inMilliseconds,
     });
   }
 

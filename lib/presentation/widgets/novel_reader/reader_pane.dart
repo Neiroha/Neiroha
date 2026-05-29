@@ -15,7 +15,21 @@ class _ReaderPagePiece {
 enum _NovelSegmentCacheState { none, current, stale }
 
 const int _readerPagesCacheLimit = 12;
-final Map<String, List<List<_ReaderPagePiece>>> _readerPagesCache = {};
+final Map<String, _ReaderPagesLayout> _readerPagesCache = {};
+
+void _clearReaderPagesCache() {
+  _readerPagesCache.clear();
+}
+
+class _ReaderPagesLayout {
+  final List<List<_ReaderPagePiece>> pages;
+  final Map<int, int> pageByGlobalIndex;
+
+  const _ReaderPagesLayout({
+    required this.pages,
+    required this.pageByGlobalIndex,
+  });
+}
 
 bool _shouldSkipSegment(db.NovelProject project, db.NovelSegment segment) {
   return project.skipPunctuationOnlySegments &&
@@ -120,7 +134,7 @@ class _ReaderPane extends ConsumerWidget {
     final colors = _readerColors(project.readerTheme);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final pages = _buildPages(
+        final layout = _buildPages(
           cacheKey: _readerPagesCacheKey(
             constraints: constraints,
             segments: segments,
@@ -133,8 +147,9 @@ class _ReaderPane extends ConsumerWidget {
           fontSize: project.fontSize,
           lineHeight: project.lineHeight,
         );
+        final pages = layout.pages;
         final pageCount = math.max(1, pages.length);
-        final activePage = _pageForCurrentSegment(pages);
+        final activePage = _pageForCurrentSegment(layout);
         final pageIndex = (requestedPageIndex ?? activePage)
             .clamp(0, pageCount - 1)
             .toInt();
@@ -275,20 +290,13 @@ class _ReaderPane extends ConsumerWidget {
     );
   }
 
-  int _pageForCurrentSegment(List<List<_ReaderPagePiece>> pages) {
+  int _pageForCurrentSegment(_ReaderPagesLayout layout) {
     final current = currentGlobalIndex;
     if (current == null) return 0;
-    for (var pageIndex = 0; pageIndex < pages.length; pageIndex++) {
-      for (final piece in pages[pageIndex]) {
-        if (piece.segment.globalIndex == current) {
-          return pageIndex;
-        }
-      }
-    }
-    return 0;
+    return layout.pageByGlobalIndex[current] ?? 0;
   }
 
-  List<List<_ReaderPagePiece>> _buildPages({
+  _ReaderPagesLayout _buildPages({
     required String cacheKey,
     required BoxConstraints constraints,
     required _ReaderColors colors,
@@ -302,7 +310,7 @@ class _ReaderPane extends ConsumerWidget {
     if (segments.isEmpty ||
         constraints.maxWidth <= 0 ||
         constraints.maxHeight <= 0) {
-      return const [];
+      return const _ReaderPagesLayout(pages: [], pageByGlobalIndex: {});
     }
     final textStyle = TextStyle(
       color: colors.text,
@@ -369,11 +377,28 @@ class _ReaderPane extends ConsumerWidget {
       }
     }
     if (currentPage.isNotEmpty) pages.add(currentPage);
-    _readerPagesCache[cacheKey] = pages;
+    final layout = _ReaderPagesLayout(
+      pages: pages,
+      pageByGlobalIndex: _buildPageIndex(pages),
+    );
+    _readerPagesCache[cacheKey] = layout;
     if (_readerPagesCache.length > _readerPagesCacheLimit) {
       _readerPagesCache.remove(_readerPagesCache.keys.first);
     }
-    return pages;
+    return layout;
+  }
+
+  Map<int, int> _buildPageIndex(List<List<_ReaderPagePiece>> pages) {
+    final pageByGlobalIndex = <int, int>{};
+    for (var pageIndex = 0; pageIndex < pages.length; pageIndex++) {
+      for (final piece in pages[pageIndex]) {
+        pageByGlobalIndex.putIfAbsent(
+          piece.segment.globalIndex,
+          () => pageIndex,
+        );
+      }
+    }
+    return pageByGlobalIndex;
   }
 
   String _readerPagesCacheKey({
@@ -382,20 +407,15 @@ class _ReaderPane extends ConsumerWidget {
     required double fontSize,
     required double lineHeight,
   }) {
-    var hash = 0x811c9dc5;
+    final first = segments.firstOrNull;
+    final last = segments.lastOrNull;
+    var revision = 0x811c9dc5;
     for (final segment in segments) {
-      hash = 0x1fffffff & (hash ^ segment.id.hashCode);
-      hash = 0x1fffffff & (hash * 16777619);
-      hash = 0x1fffffff & (hash ^ segment.chapterId.hashCode);
-      hash = 0x1fffffff & (hash * 16777619);
-      hash = 0x1fffffff & (hash ^ segment.globalIndex.hashCode);
-      hash = 0x1fffffff & (hash * 16777619);
-      hash = 0x1fffffff & (hash ^ segment.orderIndex.hashCode);
-      hash = 0x1fffffff & (hash * 16777619);
-      hash = 0x1fffffff & (hash ^ segment.segmentType.hashCode);
-      hash = 0x1fffffff & (hash * 16777619);
-      hash = 0x1fffffff & (hash ^ segment.segmentText.hashCode);
-      hash = 0x1fffffff & (hash * 16777619);
+      revision = _combineReaderRevision(revision, segment.id.hashCode);
+      revision = _combineReaderRevision(revision, segment.globalIndex);
+      revision = _combineReaderRevision(revision, segment.orderIndex);
+      revision = _combineReaderRevision(revision, segment.segmentText.length);
+      revision = _combineReaderRevision(revision, segment.segmentType.hashCode);
     }
     return [
       constraints.maxWidth.round(),
@@ -403,8 +423,16 @@ class _ReaderPane extends ConsumerWidget {
       fontSize.toStringAsFixed(2),
       lineHeight.toStringAsFixed(2),
       segments.length,
-      hash,
+      revision,
+      first?.id ?? '',
+      first?.globalIndex ?? 0,
+      last?.id ?? '',
+      last?.globalIndex ?? 0,
     ].join('|');
+  }
+
+  int _combineReaderRevision(int hash, int value) {
+    return 0x1fffffff & ((hash ^ value) * 16777619);
   }
 
   double _measureTextHeight(String text, TextStyle style, double width) {

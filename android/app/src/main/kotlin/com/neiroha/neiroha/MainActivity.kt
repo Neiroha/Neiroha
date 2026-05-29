@@ -25,11 +25,15 @@ class MainActivity : FlutterActivity() {
                     val title = call.argument<String>("title") ?: "Novel Reader"
                     val subtitle = call.argument<String>("subtitle") ?: ""
                     val isPlaying = call.argument<Boolean>("isPlaying") ?: false
+                    val positionMs = call.argument<Number>("positionMs")?.toLong() ?: 0L
+                    val durationMs = call.argument<Number>("durationMs")?.toLong() ?: 0L
                     val intent = Intent(this, NovelReaderForegroundService::class.java).apply {
                         action = NovelReaderForegroundService.ACTION_UPDATE
                         putExtra(NovelReaderForegroundService.EXTRA_TITLE, title)
                         putExtra(NovelReaderForegroundService.EXTRA_SUBTITLE, subtitle)
                         putExtra(NovelReaderForegroundService.EXTRA_IS_PLAYING, isPlaying)
+                        putExtra(NovelReaderForegroundService.EXTRA_POSITION_MS, positionMs)
+                        putExtra(NovelReaderForegroundService.EXTRA_DURATION_MS, durationMs)
                     }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         startForegroundService(intent)

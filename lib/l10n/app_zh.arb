@@ -34,7 +34,7 @@
   "keepTtsRunningSubtitle": "适合边听小说边查看任务进度或设置。",
   "keepTtsRunningEnabled": "切换页面时 TTS 会继续运行。",
   "keepTtsRunningDisabled": "离开小说阅读器时会停止播放。",
-  "aboutSubtitle": "v0.3.0 - AI 音频中间件与配音工作站",
+  "aboutSubtitle": "v0.3.1 - AI 音频中间件与配音工作站",
   "uiUnassigned": "-- 未分配 --",
   "uiOrUploadANewFile": "— 或上传新文件 —",
   "uiWillBeRemoved": "“{name}”将被移除。",

@@ -8,11 +8,11 @@
 
 [![Language](https://img.shields.io/badge/language-Dart%20%2F%20Flutter-0553B1?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
-[![Version](https://img.shields.io/badge/version-v0.3.0-blue)](https://github.com/Neiroha/Neiroha/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.1-blue)](https://github.com/Neiroha/Neiroha/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Neiroha/Neiroha?style=social)](https://github.com/Neiroha/Neiroha/stargazers)
 
-[English](README.md) · [中文](README_zh.md) · [Wiki](https://neiroha.github.io/) · [API](docs/api.md)
+[English](README.md) · [中文](README_zh.md) · [Wiki](https://neiroha.github.io/en/) · [API](docs/api.md)
 
 </div>
 
@@ -80,11 +80,11 @@ Import video and subtitles, generate TTS cues, align them on a lightweight timel
 
 Neiroha can also run as a local OpenAI-compatible TTS service backed by the active voice bank. This makes it useful as a voice middleware layer for editors, agents, scripts, and other tools.
 
-The full API reference lives in [docs/api.md](docs/api.md). Installation, backend defaults, API keys, model configuration, and workflow guides live in the [Wiki](https://github.com/Neiroha/Neiroha/wiki).
+The full API reference lives in [docs/api.md](docs/api.md). Installation, backend defaults, API keys, model configuration, and workflow guides live in the [Wiki](https://neiroha.github.io/en/).
 
 ## Project Links
 
-- [Wiki](https://neiroha.github.io/) for installation, backend setup, and usage guides.
+- [Wiki](https://neiroha.github.io/en/) for installation, backend setup, and usage guides.
 - [API Reference](docs/api.md) for local HTTP integration.
 - [Releases](https://github.com/Neiroha/Neiroha/releases) for packaged builds.
 

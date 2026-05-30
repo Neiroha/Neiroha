@@ -123,7 +123,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutSubtitle =>
-      'v0.3.0 - AI Audio Middleware & Dubbing Workstation';
+      'v0.3.1 - AI Audio Middleware & Dubbing Workstation';
 
   @override
   String get uiUnassigned => '-- Unassigned --';

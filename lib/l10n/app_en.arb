@@ -53,7 +53,7 @@
   "keepTtsRunningSubtitle": "Useful for reading with Novel Reader while checking task progress or settings.",
   "keepTtsRunningEnabled": "TTS will continue when switching screens.",
   "keepTtsRunningDisabled": "Novel playback will stop when leaving the reader.",
-  "aboutSubtitle": "v0.3.0 - AI Audio Middleware & Dubbing Workstation",
+  "aboutSubtitle": "v0.3.1 - AI Audio Middleware & Dubbing Workstation",
   "uiUnassigned": "-- Unassigned --",
   "uiOrUploadANewFile": "— or upload a new file —",
   "uiWillBeRemoved": "\"{name}\" will be removed.",

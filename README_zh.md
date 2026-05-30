@@ -8,7 +8,7 @@
 
 [![语言](https://img.shields.io/badge/语言-Dart%20%2F%20Flutter-0553B1?logo=flutter&logoColor=white)](https://flutter.dev)
 [![平台](https://img.shields.io/badge/平台-Windows%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
-[![版本](https://img.shields.io/badge/版本-v0.3.0-blue)](https://github.com/Neiroha/Neiroha/releases)
+[![版本](https://img.shields.io/badge/版本-v0.3.1-blue)](https://github.com/Neiroha/Neiroha/releases)
 [![许可证：MIT](https://img.shields.io/badge/许可证-MIT-green)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Neiroha/Neiroha?style=social)](https://github.com/Neiroha/Neiroha/stargazers)
 
@@ -81,7 +81,7 @@ Neiroha 是一个 Flutter 应用，面向需要大量角色音色、多种 TTS �
 
 Neiroha 也可以作为本地 OpenAI 兼容 TTS 服务运行，由当前激活的语音库提供模型和音色。这让它可以作为编辑器、Agent、脚本和其他工具的语音中间件。
 
-完整接口见 [docs/api-zh.md](docs/api-zh.md)。安装、后端默认值、API Key、模型配置和使用教程放在 [Wiki](https://github.com/Neiroha/Neiroha/wiki)。
+完整接口见 [docs/api-zh.md](docs/api-zh.md)。安装、后端默认值、API Key、模型配置和使用教程放在 [Wiki](https://neiroha.github.io/)。
 
 ## 项目入口
 

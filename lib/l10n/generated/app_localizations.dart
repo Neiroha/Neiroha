@@ -305,7 +305,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'v0.3.0 - AI Audio Middleware & Dubbing Workstation'**
+  /// **'v0.3.1 - AI Audio Middleware & Dubbing Workstation'**
   String get aboutSubtitle;
 
   /// No description provided for @uiUnassigned.

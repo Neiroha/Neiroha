@@ -115,7 +115,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get keepTtsRunningDisabled => '离开小说阅读器时会停止播放。';
 
   @override
-  String get aboutSubtitle => 'v0.3.0 - AI 音频中间件与配音工作站';
+  String get aboutSubtitle => 'v0.3.1 - AI 音频中间件与配音工作站';
 
   @override
   String get uiUnassigned => '-- 未分配 --';

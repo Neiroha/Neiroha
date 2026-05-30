@@ -109,7 +109,7 @@ extension _VideoDubEditorSubtitleActions on _VideoDubEditorState {
       final bankAssets = await _resolveBankAssets(project.bankId);
       if (bankAssets.isEmpty) {
         if (mounted) {
-          _snack('Auto-TTS skipped — bank has no voices');
+          _snack(AppLocalizations.of(context).uiAutoTtsSkippedNoVoices);
         }
       } else {
         await _runGenerateAll(project, fresh, bankAssets, forceRegen: false);
@@ -199,7 +199,9 @@ extension _VideoDubEditorSubtitleActions on _VideoDubEditorState {
 
     if (result.autoTts) {
       if (fresh.voiceAssetId == null || bankAssets.isEmpty) {
-        if (mounted) _snack('Auto-TTS skipped — bank has no voices');
+        if (mounted) {
+          _snack(AppLocalizations.of(context).uiAutoTtsSkippedNoVoices);
+        }
       } else {
         // Reuse the bank list we resolved before opening the dialog —
         // no second round-trip to the DB.

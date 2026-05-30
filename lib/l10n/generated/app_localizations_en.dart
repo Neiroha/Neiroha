@@ -123,7 +123,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutSubtitle =>
-      'v0.1.0 - AI Audio Middleware & Dubbing Workstation';
+      'v0.3.0 - AI Audio Middleware & Dubbing Workstation';
 
   @override
   String get uiUnassigned => '-- Unassigned --';
@@ -712,7 +712,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uiExportAudio => 'Export Audio';
 
   @override
+  String get uiExportVideo => 'Export Video';
+
+  @override
   String get uiExportBook => 'Export Book';
+
+  @override
+  String get uiExportNovelAudio => 'Export novel audio';
 
   @override
   String get uiExportCancelled => 'Export cancelled';
@@ -745,7 +751,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uiExportSuccessful => 'Export successful';
 
   @override
+  String get uiExporting => 'Exporting…';
+
+  @override
   String get uiExportingAudio => 'Exporting audio…';
+
+  @override
+  String get uiExportingNovelAudio => 'Exporting novel audio…';
 
   @override
   String get uiExportingVideo => 'Exporting video…';
@@ -820,7 +832,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uiGenerateBook => 'Generate Book';
 
   @override
+  String get uiGenerateFullBookCacheBeforeExporting =>
+      'Generate the full book cache before exporting.';
+
+  @override
+  String uiGenerateAllStopped(Object error) {
+    return 'Generate all stopped: $error';
+  }
+
+  @override
   String get uiGenerated => 'Generated';
+
+  @override
+  String uiGeneratedCues(Object done) {
+    return 'Generated $done cue(s)';
+  }
+
+  @override
+  String uiGeneratedCuesWithFailures(Object done, Object failed) {
+    return 'Generated $done cue(s), $failed failed';
+  }
 
   @override
   String get uiGenerating => 'Generating…';
@@ -1042,6 +1073,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uiNoCuesFoundInFile => 'No cues found in file';
 
   @override
+  String get uiNoCuesToGenerateAssignVoiceFirst =>
+      'No cues to generate — assign a voice first';
+
+  @override
   String get uiNoCuesYetImportAnSRTLRCFileOrAddOneManually =>
       'No cues yet.\nImport an SRT/LRC file or add one manually.';
 
@@ -1057,6 +1092,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get uiNoModelsOrVoicesYetUseFetchAllOrAddManually =>
       'No models or voices yet. Use \"Fetch All\" or add manually.';
+
+  @override
+  String get uiNoReadableSegmentsToExport => 'No readable segments to export.';
 
   @override
   String get uiNoPerSentenceStyleControls => 'No per-sentence style controls';
@@ -1114,6 +1152,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get uiNovelLongFormNarration => 'Novel & long-form narration';
+
+  @override
+  String get uiNovelCacheCompleted => 'Novel cache completed.';
+
+  @override
+  String uiNovelCacheCompletedWithFailures(Object failed) {
+    return 'Novel cache completed with $failed failed segment(s).';
+  }
+
+  @override
+  String get uiNovelCacheOverwritten => 'Novel cache overwritten.';
 
   @override
   String get uiOK => 'OK';
@@ -1431,6 +1480,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uiSelectVoice => 'Select Voice';
 
   @override
+  String get uiDontSave => 'Don\'t save';
+
+  @override
   String uiSendFailed(Object error) {
     return 'Send failed: $error';
   }
@@ -1480,6 +1532,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get uiSplitRules => 'Split Rules';
+
+  @override
+  String get splitRuleNewlineName => 'By paragraph (blank line)';
+
+  @override
+  String get splitRuleSentenceName =>
+      'By sentence punctuation (Chinese / English)';
+
+  @override
+  String get splitRuleQuotesName => 'By closing quote (Chinese / English)';
 
   @override
   String get uiStart => 'Start';
@@ -1664,6 +1726,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uiVoiceSettings => 'Voice settings';
 
   @override
+  String uiVoiceCount(Object count) {
+    return '$count voices';
+  }
+
+  @override
   String get uiVOICES => 'VOICES';
 
   @override
@@ -1808,6 +1875,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pressBackAgainToExit => 'Press Back again to exit.';
+
+  @override
+  String uiVideoDubMissingVoiceSkippedText(Object missingVoice) {
+    return '$missingVoice without a voice will be skipped. ';
+  }
+
+  @override
+  String uiVideoDubRegenerateExistingCuesPrompt(
+    Object alreadyDone,
+    Object pending,
+    Object missingVoiceText,
+  ) {
+    return '$alreadyDone cue(s) already have audio. $pending pending. ${missingVoiceText}Regenerate the existing ones too, or only fill in the gaps?';
+  }
+
+  @override
+  String get uiAutoTtsSkippedNoVoices =>
+      'Auto-TTS skipped — bank has no voices';
 
   @override
   String get uiVideoDubUnavailableOnAndroidPhone =>

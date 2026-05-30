@@ -406,8 +406,8 @@ Supported adapters:
 | `kokoro` | Kokoro-TTS | Preset + voice design modes |
 | `f5Tts` | F5-TTS / E2-TTS | Zero-shot voice clone mode |
 
-See [`research/llm-tts-adapter-guide.md`](research/llm-tts-adapter-guide.md)
-for guidance on wiring a new LLM TTS backend.
+Backend wiring notes live in the project Wiki and local design notes, keeping this
+directory focused on published API references.
 
 ### Missing local server endpoints
 

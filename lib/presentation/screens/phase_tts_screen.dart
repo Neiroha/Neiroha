@@ -294,7 +294,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         );
     if (!mounted) return;
     setState(() => _dirty = false);
-    _showSnack('Saved');
+    _showSnack(AppLocalizations.of(context).uiSaved);
   }
 
   Future<bool> _back(db.PhaseTtsProject project) async {
@@ -349,7 +349,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'discard'),
-            child: const Text("Don't save"),
+            child: Text(AppLocalizations.of(context).uiDontSave),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, 'save'),

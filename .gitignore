@@ -19,6 +19,7 @@ captures/
 temp/
 migrate_working_dir/
 AGENTS.md
+.local-docs/
 
 
 # IntelliJ related

@@ -61,10 +61,10 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
     final db = ref.read(databaseProvider);
     final storedLocale = await db.getSetting(AppLocaleSettings.localeKey);
     final storedFont = await db.getSetting(AppFontSettings.fontModeKey);
+    final locale = AppLocaleSettings.parse(storedLocale);
+    await db.localizeStarterContent(AppLocaleSettings.storageValue(locale));
     if (!mounted) return;
-    ref.read(appLocaleProvider.notifier).state = AppLocaleSettings.parse(
-      storedLocale,
-    );
+    ref.read(appLocaleProvider.notifier).state = locale;
     ref.read(appFontModeProvider.notifier).state = AppFontMode.parse(
       storedFont,
     );

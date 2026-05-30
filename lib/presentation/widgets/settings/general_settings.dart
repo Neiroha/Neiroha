@@ -45,6 +45,11 @@ class LanguageSettingsCard extends ConsumerWidget {
                     AppLocaleSettings.localeKey,
                     AppLocaleSettings.storageValue(nextLocale),
                   );
+              await ref
+                  .read(databaseProvider)
+                  .localizeStarterContent(
+                    AppLocaleSettings.storageValue(nextLocale),
+                  );
               if (!context.mounted) return;
               final nextL10n = AppLocalizations.of(context);
               final label = value == 'zh'

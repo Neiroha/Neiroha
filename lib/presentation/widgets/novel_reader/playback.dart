@@ -483,6 +483,7 @@ extension _NovelReaderEditorGeneration on _NovelReaderEditorState {
   }) async {
     if (_generatingAll) return;
     _updateState(() => _generatingAll = true);
+    final l10n = AppLocalizations.of(context);
     final failures = <Object>[];
     try {
       final ordered = [...segments]
@@ -511,14 +512,14 @@ extension _NovelReaderEditorGeneration on _NovelReaderEditorState {
         failures: failures,
       );
       if (failures.isEmpty) {
-        _snack(force ? 'Novel cache overwritten.' : 'Novel cache completed.');
-      } else {
         _snack(
-          'Novel cache completed with ${failures.length} failed segment(s).',
+          force ? l10n.uiNovelCacheOverwritten : l10n.uiNovelCacheCompleted,
         );
+      } else {
+        _snack(l10n.uiNovelCacheCompletedWithFailures(failures.length));
       }
     } catch (e) {
-      _snack('Generate all stopped: $e');
+      _snack(l10n.uiGenerateAllStopped(e));
     } finally {
       if (mounted) _updateState(() => _generatingAll = false);
     }
@@ -1117,11 +1118,11 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
             segment.audioPath!,
       ];
       if (requiredSegments.isEmpty) {
-        _snack('No readable segments to export.');
+        _snack(l10n.uiNoReadableSegmentsToExport);
         return;
       }
       if (inputs.length != requiredSegments.length) {
-        _snack('Generate the full book cache before exporting.');
+        _snack(l10n.uiGenerateFullBookCacheBeforeExporting);
         return;
       }
       final capabilities = ref.read(platformCapabilitiesProvider);
@@ -1131,11 +1132,11 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
       }
       final ffmpeg = ref.read(ffmpegServiceProvider);
       if (!await ffmpeg.isAvailable()) {
-        _snack('FFmpeg is required for export - configure it in Settings.');
+        _snack(l10n.uiFFmpegIsRequiredForExportConfigureItInSettings);
         return;
       }
       var outPath = await FilePicker.platform.saveFile(
-        dialogTitle: 'Export novel audio',
+        dialogTitle: l10n.uiExportNovelAudio,
         fileName:
             '${PathService.sanitizeSegment(project.name)}_${PathService.formatTimestamp()}.wav',
         type: FileType.audio,
@@ -1173,15 +1174,15 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
           ffmpegPath: ffmpegPath,
           args: args,
           totalDurationMs: _totalDurationMs(requiredSegments),
-          taskLabel: 'Exporting novel audio...',
+          taskLabel: l10n.uiExportingNovelAudio,
         );
         if (!mounted) return;
         if (result.success) {
           await showExportSuccessDialog(context: context, filePath: outPath);
         } else if (result.cancelled) {
-          _snack('Export cancelled.');
+          _snack(l10n.uiExportCancelled);
         } else {
-          _snack('Export failed: ${result.stderrTail}');
+          _snack(l10n.uiExportFailed(result.stderrTail));
         }
       } finally {
         try {

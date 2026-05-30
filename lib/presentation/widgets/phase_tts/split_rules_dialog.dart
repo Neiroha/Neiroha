@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/phase_tts/split_rule_labels.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 
@@ -155,7 +156,7 @@ class _RuleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subtitle = rule.isNewline ? 'paragraph (blank line)' : rule.pattern;
+    final subtitle = localizedSplitRuleSummary(context, rule);
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.surfaceDim,
@@ -174,7 +175,7 @@ class _RuleTile extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        rule.name,
+                        localizedSplitRuleName(context, rule),
                         style: const TextStyle(fontWeight: FontWeight.w600),
                         overflow: TextOverflow.ellipsis,
                       ),

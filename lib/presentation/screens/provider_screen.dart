@@ -1256,7 +1256,9 @@ class _TtsModelRowState extends State<_TtsModelRow> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          '${voices.length} voices',
+                          AppLocalizations.of(
+                            context,
+                          ).uiVoiceCount(voices.length),
                           style: TextStyle(
                             fontSize: 10,
                             color: Colors.white.withValues(alpha: 0.55),

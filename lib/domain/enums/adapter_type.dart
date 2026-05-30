@@ -21,9 +21,9 @@ enum AdapterType {
 
   String get defaultModel => switch (this) {
     openaiCompatible => 'tts-1',
-    gptSovits => 'gpt-sovits',
-    cosyvoice => '',
-    voxcpm2Native => 'voxcpm2',
+    gptSovits => 'default',
+    cosyvoice => 'default',
+    voxcpm2Native => 'default',
     chatCompletionsTts => 'mimo-v2-tts',
     azureTts => '',
     systemTts => '',

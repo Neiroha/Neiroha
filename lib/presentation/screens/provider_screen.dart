@@ -666,8 +666,8 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     AdapterType.azureTts =>
       'https://eastasia.tts.speech.microsoft.com  (or region name)',
     AdapterType.systemTts => '(not required)',
-    AdapterType.gptSovits => 'http://localhost:9880',
-    AdapterType.cosyvoice => 'http://localhost:9880',
+    AdapterType.gptSovits => 'http://127.0.0.1:9880',
+    AdapterType.cosyvoice => 'http://127.0.0.1:9880',
     AdapterType.voxcpm2Native => 'http://127.0.0.1:8000',
     _ => 'https://api.openai.com/v1',
   };
@@ -859,9 +859,9 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                   ),
                 ),
               ),
+              SizedBox(height: 14),
               // ── Default Model Name (only for adapters without model/voice query) ──
               if (_adapterType.showDefaultModelField) ...[
-                SizedBox(height: 14),
                 TextField(
                   controller: _modelCtrl,
                   decoration: InputDecoration(

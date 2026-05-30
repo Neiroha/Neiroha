@@ -94,7 +94,7 @@ Fill in the fields for the selected provider:
 
 - **Base URL** — e.g. `http://localhost:8880/v1` for a local OpenAI-compatible server, or `eastus` / `https://eastus.tts.speech.microsoft.com` for Azure.
 - **API Key** — leave blank if your server doesn't require one.
-- **Default Model Name** — for GPT-SoVITS / CosyVoice; ignored for Azure/System TTS.
+- **Default Model Name** — for local backends such as GPT-SoVITS, CosyVoice, and VoxCPM2; ignored for Azure/System TTS.
 
 Click **Fetch** (or **Fetch All**) to pull the available models/voices from the provider and cache them locally. You can also add entries manually with **+ Add**.
 
@@ -319,15 +319,17 @@ Use **Fetch** to pull the full list of Azure Neural voices (~400+). Pick one as 
 
 ```
 Base URL: http://127.0.0.1:9880
+Default Model Name: default
 ```
 
-Set **Default Model Name** to the GPT-SoVITS model path or leave blank to use the server default. Characters should use *Voice Clone with Prompt* mode, with a reference `.wav` and matching transcript text.
+Use **Fetch** to pull voice-set models from `/v1/models` and voices from the launcher. Characters can use trained speakers or *Voice Clone with Prompt* with a reference `.wav` and matching transcript text.
 Related repo: [GPT-SoVITS](https://github.com/RVC-Boss/GPT-SoVITS)
 
 ### CosyVoice
 
 ```
 Base URL: http://127.0.0.1:9880
+Default Model Name: default
 ```
 
 Compatible with the CosyVoice inference server. Users need to upload audio to configure the voice cloning service. See [CosyVoiceDesktop](https://github.com/Moeary/CosyVoiceDesktop) for a companion GUI.

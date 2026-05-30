@@ -45,7 +45,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 27;
+  int get schemaVersion => 29;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -121,6 +121,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from >= 26 && from < 27) {
         await m.addColumn(novelProjects, novelProjects.playbackGapSeconds);
+      }
+      if (from < 29) {
+        await _migrateDefaultProviderApiContracts();
       }
     },
     beforeOpen: (_) async {
@@ -583,6 +586,44 @@ class AppDatabase extends _$AppDatabase {
     return rows.any((row) => row.data['name'] == columnName);
   }
 
+  Future<void> _migrateDefaultProviderApiContracts() async {
+    await customStatement(
+      "UPDATE tts_providers "
+      "SET base_url = 'http://127.0.0.1:9880', "
+      "default_model_name = 'default' "
+      "WHERE id = 'default-gpt-sovits' "
+      "AND adapter_type = 'gptSovits' "
+      "AND base_url IN ("
+      "'http://127.0.0.1:9880', "
+      "'http://localhost:9880', "
+      "'http://127.0.0.1:19880', "
+      "'http://localhost:19880'"
+      ") "
+      "AND default_model_name IN ('', 'default', 'gpt-sovits')",
+    );
+    await customStatement(
+      "UPDATE tts_providers "
+      "SET base_url = 'http://127.0.0.1:9880', "
+      "default_model_name = 'default' "
+      "WHERE id = 'default-cosyvoice' "
+      "AND adapter_type = 'cosyvoice' "
+      "AND base_url IN ("
+      "'http://127.0.0.1:9880', "
+      "'http://localhost:9880', "
+      "'http://127.0.0.1:19890', "
+      "'http://localhost:19890'"
+      ") "
+      "AND default_model_name IN ('', 'default')",
+    );
+    await customStatement(
+      "UPDATE tts_providers "
+      "SET default_model_name = 'default' "
+      "WHERE id = 'default-voxcpm2-native' "
+      "AND adapter_type = 'voxcpm2Native' "
+      "AND default_model_name IN ('', 'default', 'voxcpm2')",
+    );
+  }
+
   /// Populate the database with built-in providers and starter data so new
   /// users can immediately understand the workflow.
   Future<void> _seedDefaults() async {
@@ -621,7 +662,7 @@ class AppDatabase extends _$AppDatabase {
         name: const Value('CosyVoice3 (Local)'),
         adapterType: const Value('cosyvoice'),
         baseUrl: const Value('http://127.0.0.1:9880'),
-        defaultModelName: const Value(''),
+        defaultModelName: const Value('default'),
         enabled: const Value(false),
         position: const Value(2),
       ),
@@ -634,7 +675,7 @@ class AppDatabase extends _$AppDatabase {
         name: const Value('VoxCPM2 (Local)'),
         adapterType: const Value('voxcpm2Native'),
         baseUrl: const Value('http://127.0.0.1:8000'),
-        defaultModelName: const Value('voxcpm2'),
+        defaultModelName: const Value('default'),
         enabled: const Value(false),
         position: const Value(3),
       ),
@@ -647,7 +688,7 @@ class AppDatabase extends _$AppDatabase {
         name: const Value('GPT-SoVITS V2 Pro (Local)'),
         adapterType: const Value('gptSovits'),
         baseUrl: const Value('http://127.0.0.1:9880'),
-        defaultModelName: const Value('gpt-sovits'),
+        defaultModelName: const Value('default'),
         enabled: const Value(false),
         position: const Value(4),
       ),

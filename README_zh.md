@@ -94,7 +94,7 @@ flutter run -d windows
 
 - **Base URL** — 例如本地 OpenAI 兼容服务器填 `http://localhost:8880/v1`，Azure 填区域名 `eastus` 或完整 URL。
 - **API Key** — 若服务器无需鉴权则留空。
-- **默认模型名** — 用于 GPT-SoVITS / CosyVoice；Azure/系统 TTS 忽略此项。
+- **默认模型名** — 用于 GPT-SoVITS / CosyVoice / VoxCPM2 等本地后端；Azure/系统 TTS 忽略此项。
 
 点击 **获取（Fetch）** 或 **全部获取（Fetch All）** 从提供商拉取可用模型/音色并缓存到本地。也可通过 **+ 添加** 手动录入。
 
@@ -319,15 +319,17 @@ API Key:  <Ocp-Apim-Subscription-Key>
 
 ```
 Base URL: http://127.0.0.1:9880
+Default Model Name: default
 ```
 
-将 **默认模型名** 设为 GPT-SoVITS 模型路径，或留空使用服务器默认值。角色应使用 *音色克隆（带提示）* 模式，并提供参考 `.wav` 及对应的文字记录。
+使用 **获取** 从 `/v1/models` 拉取 voice-set 模型，并从 launcher 拉取可用声音。角色可以使用已训练说话人，也可以使用 *音色克隆（带提示）* 并提供参考 `.wav` 及对应文字记录。
 相关仓库：[GptSoVITS](https://github.com/RVC-Boss/GPT-SoVITS)
 
 ### CosyVoice
 
 ```
 Base URL: http://127.0.0.1:9880
+Default Model Name: default
 ```
 
 兼容 CosyVoice 推理服务器。需用户自行上传音频配置克隆服务,相关程序可访问[CosyvoiceDesktop](https://github.com/Moeary/CosyVoiceDesktop)

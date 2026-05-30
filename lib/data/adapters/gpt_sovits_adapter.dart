@@ -6,19 +6,23 @@ import 'tts_adapter.dart';
 ///
 /// Endpoints used:
 ///   POST /v1/audio/speech      - trained/profile voices
-///   POST /gpt-sovits/clone     - reference-audio clone mode
-///   GET  /gpt-sovits/models    - native model catalog
-///   GET  /gpt-sovits/voices    - trained/profile voices
+///   POST /api/gpt-sovits/clone - reference-audio clone mode
+///   GET  /v1/models            - voice-set models
+///   GET  /api/gpt-sovits/voices - trained/profile voices
 class GptSovitsAdapter extends TtsAdapter {
   final String baseUrl;
   final String apiKey;
   final String modelName;
   late final Dio _dio;
 
+  static const _nativePrefix = 'api/gpt-sovits';
+  static const _legacyNativePrefix = 'gpt-sovits';
+  static const _languageCodes = {'zh', 'en', 'ja', 'ko', 'yue', 'auto'};
+
   GptSovitsAdapter({
     required this.baseUrl,
     required this.apiKey,
-    this.modelName = 'gpt-sovits',
+    this.modelName = 'default',
   }) {
     final rootBaseUrl = _normalizeRootBaseUrl(baseUrl);
     _dio = Dio(
@@ -82,8 +86,9 @@ class GptSovitsAdapter extends TtsAdapter {
       body['prompt_lang'] = request.promptLang;
     }
 
-    final response = await _dio.post(
-      'gpt-sovits/clone',
+    final response = await _postWithLegacyFallback(
+      '$_nativePrefix/clone',
+      '$_legacyNativePrefix/clone',
       data: body,
       options: Options(responseType: ResponseType.bytes),
     );
@@ -113,9 +118,10 @@ class GptSovitsAdapter extends TtsAdapter {
   @override
   Future<List<String>> getSpeakers() async {
     for (final endpoint in const [
-      'gpt-sovits/voices',
+      '$_nativePrefix/voices',
       'v1/audio/voices',
       'speakers',
+      '$_legacyNativePrefix/voices',
     ]) {
       try {
         final response = await _dio.get(
@@ -133,43 +139,53 @@ class GptSovitsAdapter extends TtsAdapter {
 
   @override
   Future<List<ModelInfo>> getModels() async {
-    try {
-      final response = await _dio.get(
-        'gpt-sovits/models',
-        options: Options(responseType: ResponseType.json),
-      );
-      if (response.statusCode == 200 && response.data is Map) {
-        final data = response.data as Map<String, dynamic>;
-        final list = data['data'];
-        if (list is List) {
-          return list
-              .map((e) {
-                if (e is! Map) return ModelInfo(id: e.toString());
-                final id = (e['id'] ?? '').toString();
-                if (id.isEmpty) return null;
-                return ModelInfo(id: id, name: (e['name'] ?? id).toString());
-              })
-              .whereType<ModelInfo>()
-              .toList();
+    for (final endpoint in const [
+      'v1/models',
+      '$_nativePrefix/models',
+      '$_legacyNativePrefix/models',
+    ]) {
+      try {
+        final response = await _dio.get(
+          endpoint,
+          options: Options(responseType: ResponseType.json),
+        );
+        if (response.statusCode == 200 && response.data is Map) {
+          final data = response.data as Map<String, dynamic>;
+          final list = data['data'];
+          if (list is List) {
+            final models = list
+                .map((e) {
+                  if (e is! Map) return ModelInfo(id: e.toString());
+                  final id = (e['id'] ?? '').toString();
+                  if (id.isEmpty) return null;
+                  return ModelInfo(id: id, name: (e['name'] ?? id).toString());
+                })
+                .whereType<ModelInfo>()
+                .toList();
+            if (models.isNotEmpty) return models;
+          }
         }
-      }
-    } catch (_) {}
+      } catch (_) {}
+    }
     return [];
   }
 
   String get _openAiModelName {
     final model = modelName.trim();
-    if (model == 'gpt-sovits' || model == 'tts-1' || model == 'tts-1-hd') {
+    if (model.isEmpty || _languageCodes.contains(model.toLowerCase())) {
+      return 'default';
+    }
+    if (model.isNotEmpty) {
       return model;
     }
-    return 'gpt-sovits';
+    return 'default';
   }
 
   String? _textLang(TtsRequest request) {
     final direct = request.textLang?.trim();
     if (direct != null && direct.isNotEmpty) return direct;
     final model = modelName.trim().toLowerCase();
-    if (const {'zh', 'en', 'ja', 'ko', 'yue', 'auto'}.contains(model)) {
+    if (_languageCodes.contains(model)) {
       return model;
     }
     return null;
@@ -213,6 +229,20 @@ class GptSovitsAdapter extends TtsAdapter {
         .toSet()
         .toList()
       ..sort();
+  }
+
+  Future<Response<dynamic>> _postWithLegacyFallback(
+    String endpoint,
+    String legacyEndpoint, {
+    Object? data,
+    Options? options,
+  }) async {
+    try {
+      return await _dio.post(endpoint, data: data, options: options);
+    } on DioException catch (e) {
+      if (e.response?.statusCode != 404) rethrow;
+      return _dio.post(legacyEndpoint, data: data, options: options);
+    }
   }
 
   static String _normalizeRootBaseUrl(String raw) {

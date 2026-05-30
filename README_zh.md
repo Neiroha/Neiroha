@@ -9,8 +9,10 @@
 [![语言](https://img.shields.io/badge/语言-Dart%20%2F%20Flutter-0553B1?logo=flutter&logoColor=white)](https://flutter.dev)
 [![平台](https://img.shields.io/badge/平台-Windows%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
 [![版本](https://img.shields.io/badge/版本-v0.3.0-blue)](https://github.com/Neiroha/Neiroha/releases)
+[![许可证：MIT](https://img.shields.io/badge/许可证-MIT-green)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/Neiroha/Neiroha?style=social)](https://github.com/Neiroha/Neiroha/stargazers)
 
-[English](README.md) · [中文](README_zh.md) · [Wiki](https://github.com/Neiroha/Neiroha/wiki) · [API](docs/api-zh.md)
+[English](README.md) · [中文](README_zh.md) · [Wiki](https://neiroha.github.io/) · [API](docs/api-zh.md)
 
 </div>
 
@@ -83,7 +85,7 @@ Neiroha 也可以作为本地 OpenAI 兼容 TTS 服务运行，由当前激活�
 
 ## 项目入口
 
-- [Wiki](https://github.com/Neiroha/Neiroha/wiki)：安装、后端配置和使用教程。
+- [Wiki](https://neiroha.github.io/)：安装、后端配置和使用教程。
 - [API 文档](docs/api-zh.md)：本地 HTTP 集成说明。
 - [Releases](https://github.com/Neiroha/Neiroha/releases)：发布包下载。
 
@@ -105,9 +107,6 @@ Neiroha 也可以作为本地 OpenAI 兼容 TTS 服务运行，由当前激活�
 ## 项目统计
 
 <div align="center">
-
-[![许可证：MIT](https://img.shields.io/badge/许可证-MIT-green)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Neiroha/Neiroha?style=social)](https://github.com/Neiroha/Neiroha/stargazers)
 
 <a href="https://star-history.com/#Neiroha/Neiroha&Date">
   <img src="https://api.star-history.com/svg?repos=Neiroha/Neiroha&type=Date" alt="Neiroha Star History" width="620" />

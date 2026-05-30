@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to publish assets to, for example v0.1.0"
+        description: "Release tag to publish assets to, for example v0.3.0"
         required: true
         type: string
 
@@ -83,7 +83,6 @@ jobs:
         run: |
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-release.apk "dist/neiroha-${RELEASE_TAG}-android-release.apk"
-          (cd dist && sha256sum "neiroha-${RELEASE_TAG}-android-release.apk" > SHA256SUMS-android-release.txt)
 
       - name: Attest APK provenance
         uses: actions/attest-build-provenance@v2
@@ -184,7 +183,6 @@ jobs:
         run: |
           mkdir -p dist
           tar -C build/linux/x64/release/bundle -czf "dist/neiroha-${RELEASE_TAG}-linux-x64-release.tar.gz" .
-          (cd dist && sha256sum "neiroha-${RELEASE_TAG}-linux-x64-release.tar.gz" > SHA256SUMS-linux-release.txt)
 
       - name: Attest Linux provenance
         uses: actions/attest-build-provenance@v2
@@ -256,8 +254,6 @@ jobs:
           $zipName = "neiroha-${env:RELEASE_TAG}-windows-x64-release.zip"
           $zip = "dist/$zipName"
           Compress-Archive -Path "build/windows/x64/runner/Release/*" -DestinationPath $zip -Force
-          $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
-          "$hash  $zipName" | Out-File -FilePath "dist/SHA256SUMS-windows-release.txt" -Encoding ascii
 
       - name: Attest Windows provenance
         uses: actions/attest-build-provenance@v2
@@ -279,16 +275,105 @@ jobs:
       - build-linux
       - build-windows
     steps:
+      - name: Checkout release history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
 
-      - name: Generate aggregate checksums
+      - name: Generate release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+        shell: bash
         run: |
+          set -euo pipefail
+
           cd dist
-          sha256sum neiroha-* > SHA256SUMS.txt
+          sha256sum neiroha-* | sort -k2 > SHA256SUMS.txt
+          cd ..
+
+          release_sha="$(git rev-list -n 1 "$RELEASE_TAG" 2>/dev/null || git rev-parse HEAD)"
+          previous_tag="$(git describe --tags --abbrev=0 "${release_sha}^" --match 'v*' 2>/dev/null || true)"
+
+          if [[ -n "$previous_tag" ]]; then
+            commit_range="${previous_tag}..${release_sha}"
+            compare_url="${SERVER_URL}/${REPOSITORY}/compare/${previous_tag}...${RELEASE_TAG}"
+          else
+            commit_range="$release_sha"
+            compare_url="${SERVER_URL}/${REPOSITORY}/commits/${RELEASE_TAG}"
+          fi
+
+          if notes="$(gh api "repos/${REPOSITORY}/releases/generate-notes" \
+            -f tag_name="${RELEASE_TAG}" \
+            --jq '.body' 2>/dev/null)"; then
+            printf "%s\n\n" "$notes" > RELEASE_NOTES.md
+          else
+            {
+              echo "## What's Changed"
+              echo
+              echo "See the commit log below."
+              echo
+              echo "**Full Changelog**: ${compare_url}"
+              echo
+            } > RELEASE_NOTES.md
+          fi
+
+          commit_count="$(git rev-list --count "$commit_range" 2>/dev/null || echo 0)"
+          {
+            echo "## Commit Log"
+            echo
+            if [[ "$commit_count" == "0" ]]; then
+              echo "- No commits found for this release range."
+            else
+              git log -n 50 --date=short --pretty=format:'- `%h` %s (%an, %ad)' "$commit_range"
+              echo
+              if (( commit_count > 50 )); then
+                echo "- ...and $((commit_count - 50)) more commits."
+              fi
+            fi
+            echo
+          } >> RELEASE_NOTES.md
+
+          current_authors="$(mktemp)"
+          previous_authors="$(mktemp)"
+          first_time_authors="$(mktemp)"
+          git log --format='%ae%x09%an' "$commit_range" \
+            | sort -u \
+            | awk -F '\t' 'tolower($2) !~ /bot/ { print }' \
+            > "$current_authors"
+          if [[ -n "$previous_tag" ]]; then
+            git log --format='%ae' "$previous_tag" | sort -u > "$previous_authors"
+            awk -F '\t' 'NR == FNR { seen[$1] = 1; next } !seen[$1] { print "- " $2 }' \
+              "$previous_authors" "$current_authors" \
+              | sort -u > "$first_time_authors"
+          else
+            awk -F '\t' '{ print "- " $2 }' "$current_authors" | sort -u > "$first_time_authors"
+          fi
+
+          {
+            echo "## First-Time Contributors"
+            echo
+            if [[ -s "$first_time_authors" ]]; then
+              cat "$first_time_authors"
+            else
+              echo "- None"
+            fi
+            echo
+            echo "## Checksums"
+            echo
+            echo "| Asset | SHA256 |"
+            echo "|---|---|"
+            while read -r hash file; do
+              echo "| \`${file}\` | \`${hash}\` |"
+            done < dist/SHA256SUMS.txt
+          } >> RELEASE_NOTES.md
 
       - name: Publish release assets
         uses: softprops/action-gh-release@v2
@@ -296,4 +381,6 @@ jobs:
           tag_name: ${{ env.RELEASE_TAG }}
           name: Neiroha ${{ env.RELEASE_TAG }}
           prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
-          files: dist/**
+          body_path: RELEASE_NOTES.md
+          fail_on_unmatched_files: true
+          files: dist/neiroha-*

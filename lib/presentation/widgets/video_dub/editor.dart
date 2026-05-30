@@ -13,6 +13,7 @@ import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/data/storage/subtitle_parser.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/actions/video_dub/exporter.dart';
+import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
@@ -365,7 +366,10 @@ class _VideoDubEditorState extends ConsumerState<VideoDubEditor> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) unawaited(_back(project));
+        if (!didPop) {
+          AppBackIntent.markChildHandled();
+          unawaited(_back(project));
+        }
       },
       child: Column(
         children: [

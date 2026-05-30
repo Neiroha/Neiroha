@@ -10,9 +10,13 @@ import 'tts_adapter.dart';
 /// Endpoints used:
 ///   GET  /health                   — health check
 ///   GET  /v1/models                — list available model IDs
-///   GET  /voxcpm/voices            — list registered voice profiles
-///   POST /voxcpm/speech            — JSON-body synthesis
-///   POST /voxcpm/speech/upload     — multipart synthesis with uploaded audio
+///   GET  /api/voxcpm/voices        — list registered voice profiles
+///   POST /api/voxcpm/tts           — JSON-body synthesis
+///   POST /api/voxcpm/tts/upload    — multipart synthesis with uploaded audio
+///
+/// Older launchers exposed the same native surface under `/voxcpm/*`. The
+/// adapter prefers the Neiroha contract paths and falls back to the legacy
+/// paths when a server returns 404.
 ///
 /// The three native modes are:
 ///   • design          — text only (natural-language voice description in
@@ -30,7 +34,13 @@ class VoxCpm2NativeAdapter extends TtsAdapter {
   late final Dio _dio;
 
   static const _knownModes = {'design', 'clone', 'ultimate_clone'};
-  static const _modelIdFallback = 'voxcpm2';
+  static const _modelIdFallback = 'default';
+  static const _speechEndpoint = 'api/voxcpm/tts';
+  static const _legacySpeechEndpoint = 'voxcpm/speech';
+  static const _uploadEndpoint = 'api/voxcpm/tts/upload';
+  static const _legacyUploadEndpoint = 'voxcpm/speech/upload';
+  static const _voicesEndpoint = 'api/voxcpm/voices';
+  static const _legacyVoicesEndpoint = 'voxcpm/voices';
 
   VoxCpm2NativeAdapter({
     required this.baseUrl,
@@ -81,7 +91,7 @@ class VoxCpm2NativeAdapter extends TtsAdapter {
 
   // ─────────────────────────── JSON endpoint ─────────────────────────────────
 
-  /// POST /voxcpm/speech — JSON body.
+  /// POST /api/voxcpm/tts — JSON body.
   ///
   /// Used for:
   ///   • design          — pure text synthesis
@@ -123,7 +133,11 @@ class VoxCpm2NativeAdapter extends TtsAdapter {
     }
 
     try {
-      final response = await _dio.post('voxcpm/speech', data: body);
+      final response = await _postWithLegacyFallback(
+        _speechEndpoint,
+        _legacySpeechEndpoint,
+        data: body,
+      );
       return TtsResult(
         audioBytes: Uint8List.fromList(response.data as List<int>),
         contentType: response.headers.value('content-type') ?? 'audio/wav',
@@ -135,7 +149,7 @@ class VoxCpm2NativeAdapter extends TtsAdapter {
 
   // ─────────────────────────── Upload endpoint ───────────────────────────────
 
-  /// POST /voxcpm/speech/upload — multipart with a local reference file.
+  /// POST /api/voxcpm/tts/upload — multipart with a local reference file.
   ///
   /// For `clone` we send `reference_audio`. For `ultimate_clone` we send the
   /// same file under `prompt_audio` alongside the required `prompt_text`,
@@ -144,41 +158,47 @@ class VoxCpm2NativeAdapter extends TtsAdapter {
     TtsRequest request, {
     required String mode,
   }) async {
-    final file = File(request.refAudioPath!);
-    final fileName = file.path.split(Platform.pathSeparator).last;
-    final multipart = await MultipartFile.fromFile(
-      file.path,
-      filename: fileName,
-    );
+    Future<FormData> buildFormData() async {
+      final file = File(request.refAudioPath!);
+      final fileName = file.path.split(Platform.pathSeparator).last;
+      final multipart = await MultipartFile.fromFile(
+        file.path,
+        filename: fileName,
+      );
 
-    final fields = <String, dynamic>{
-      'text': request.text,
-      'mode': mode,
-      'response_format': request.responseFormat ?? 'wav',
-    };
+      final fields = <String, dynamic>{
+        'model': _modelIdForRequest,
+        'text': request.text,
+        'mode': mode,
+        'response_format': request.responseFormat ?? 'wav',
+      };
 
-    if (mode == 'ultimate_clone') {
-      fields['prompt_audio'] = multipart;
-      if (request.promptText != null && request.promptText!.isNotEmpty) {
-        fields['prompt_text'] = request.promptText;
+      if (mode == 'ultimate_clone') {
+        fields['prompt_audio'] = multipart;
+        if (request.promptText != null && request.promptText!.isNotEmpty) {
+          fields['prompt_text'] = request.promptText;
+        }
+      } else {
+        fields['reference_audio'] = multipart;
       }
-    } else {
-      fields['reference_audio'] = multipart;
-    }
 
-    if (request.presetVoiceName != null &&
-        request.presetVoiceName!.isNotEmpty) {
-      fields['voice_id'] = request.presetVoiceName;
-    }
-    if (request.voiceInstruction != null &&
-        request.voiceInstruction!.isNotEmpty) {
-      fields['instruction'] = request.voiceInstruction;
+      if (request.presetVoiceName != null &&
+          request.presetVoiceName!.isNotEmpty) {
+        fields['voice_id'] = request.presetVoiceName;
+      }
+      if (request.voiceInstruction != null &&
+          request.voiceInstruction!.isNotEmpty) {
+        fields['instruction'] = request.voiceInstruction;
+      }
+
+      return FormData.fromMap(fields);
     }
 
     try {
-      final response = await _dio.post(
-        'voxcpm/speech/upload',
-        data: FormData.fromMap(fields),
+      final response = await _postFormWithLegacyFallback(
+        _uploadEndpoint,
+        _legacyUploadEndpoint,
+        buildFormData,
       );
       return TtsResult(
         audioBytes: Uint8List.fromList(response.data as List<int>),
@@ -197,6 +217,49 @@ class VoxCpm2NativeAdapter extends TtsAdapter {
         lower.startsWith('https://') ||
         lower.startsWith('file://') ||
         lower.startsWith('data:');
+  }
+
+  bool _shouldFallbackToLegacy(DioException e) {
+    return e.response?.statusCode == 404;
+  }
+
+  Future<Response<dynamic>> _postWithLegacyFallback(
+    String endpoint,
+    String legacyEndpoint, {
+    Object? data,
+  }) async {
+    try {
+      return await _dio.post(endpoint, data: data);
+    } on DioException catch (e) {
+      if (!_shouldFallbackToLegacy(e)) rethrow;
+      return _dio.post(legacyEndpoint, data: data);
+    }
+  }
+
+  Future<Response<dynamic>> _postFormWithLegacyFallback(
+    String endpoint,
+    String legacyEndpoint,
+    Future<FormData> Function() buildFormData,
+  ) async {
+    try {
+      return await _dio.post(endpoint, data: await buildFormData());
+    } on DioException catch (e) {
+      if (!_shouldFallbackToLegacy(e)) rethrow;
+      return _dio.post(legacyEndpoint, data: await buildFormData());
+    }
+  }
+
+  Future<Response<dynamic>> _getWithLegacyFallback(
+    String endpoint,
+    String legacyEndpoint, {
+    Options? options,
+  }) async {
+    try {
+      return await _dio.get(endpoint, options: options);
+    } on DioException catch (e) {
+      if (!_shouldFallbackToLegacy(e)) rethrow;
+      return _dio.get(legacyEndpoint, options: options);
+    }
   }
 
   String _decodeError(DioException e) {
@@ -256,12 +319,13 @@ class VoxCpm2NativeAdapter extends TtsAdapter {
   }
 
   /// Fetch the list of server-side registered voice profiles via
-  /// `/voxcpm/voices`. These are the only values that can safely be sent as
-  /// `voice_id` to the synthesis endpoints.
+  /// `/api/voxcpm/voices`. These are the only values that can safely be sent
+  /// as `voice_id` to the synthesis endpoints.
   Future<List<VoxCpm2Voice>> getVoices() async {
     try {
-      final response = await _dio.get(
-        'voxcpm/voices',
+      final response = await _getWithLegacyFallback(
+        _voicesEndpoint,
+        _legacyVoicesEndpoint,
         options: Options(responseType: ResponseType.json),
       );
       if (response.statusCode == 200) {
@@ -291,7 +355,7 @@ class VoxCpm2NativeAdapter extends TtsAdapter {
   }
 }
 
-/// A registered voice profile returned by `/voxcpm/voices`.
+/// A registered voice profile returned by `/api/voxcpm/voices`.
 class VoxCpm2Voice {
   final String id;
   final String displayName;

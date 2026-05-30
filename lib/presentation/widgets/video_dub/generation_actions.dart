@@ -18,30 +18,34 @@ extension _VideoDubEditorGenerationActions on _VideoDubEditorState {
         .length;
     final missingVoice = cues.where((c) => c.voiceAssetId == null).length;
 
+    final l10n = AppLocalizations.of(context);
     bool forceRegen = false;
     if (alreadyDone > 0) {
       final choice = await showDialog<String>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text(AppLocalizations.of(context).uiGenerateAllCues),
+          title: Text(l10n.uiGenerateAllCues),
           content: Text(
-            '$alreadyDone cue(s) already have audio. '
-            '$pending pending. '
-            '${missingVoice > 0 ? '$missingVoice without a voice will be skipped. ' : ''}'
-            'Regenerate the existing ones too, or only fill in the gaps?',
+            l10n.uiVideoDubRegenerateExistingCuesPrompt(
+              alreadyDone,
+              pending,
+              missingVoice > 0
+                  ? l10n.uiVideoDubMissingVoiceSkippedText(missingVoice)
+                  : '',
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, 'cancel'),
-              child: Text(AppLocalizations.of(context).uiCancel),
+              child: Text(l10n.uiCancel),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, 'skip'),
-              child: Text(AppLocalizations.of(context).uiOnlyPending),
+              child: Text(l10n.uiOnlyPending),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, 'regen'),
-              child: Text(AppLocalizations.of(context).uiRegenerateAll),
+              child: Text(l10n.uiRegenerateAll),
             ),
           ],
         ),
@@ -49,7 +53,7 @@ extension _VideoDubEditorGenerationActions on _VideoDubEditorState {
       if (choice == null || choice == 'cancel') return;
       forceRegen = choice == 'regen';
     } else if (pending == 0) {
-      _snack('No cues to generate — assign a voice first');
+      _snack(l10n.uiNoCuesToGenerateAssignVoiceFirst);
       return;
     }
 
@@ -86,8 +90,11 @@ extension _VideoDubEditorGenerationActions on _VideoDubEditorState {
     if (done > 0) _markDirty();
     if (mounted) {
       _snack(
-        'Generated $done cue(s)'
-        '${failed > 0 ? ', $failed failed' : ''}',
+        failed > 0
+            ? AppLocalizations.of(
+                context,
+              ).uiGeneratedCuesWithFailures(done, failed)
+            : AppLocalizations.of(context).uiGeneratedCues(done),
       );
     }
   }
@@ -121,6 +128,9 @@ extension _VideoDubEditorGenerationActions on _VideoDubEditorState {
     if (asset == null) return;
     final provider = providerMap[asset.providerId];
     if (provider == null) return;
+    if (mounted) {
+      warnIfVoiceHealthFailedOnce(context: context, ref: ref, asset: asset);
+    }
 
     final slug = await ref
         .read(storageServiceProvider)
@@ -185,7 +195,7 @@ extension _VideoDubEditorGenerationActions on _VideoDubEditorState {
         .updateVideoDubProject(project.copyWith(updatedAt: DateTime.now()));
     if (!mounted) return;
     _updateState(() => _dirty = false);
-    _snack('Saved');
+    _snack(AppLocalizations.of(context).uiSaved);
   }
 
   /// Handle the back arrow. If there's unsaved work, prompt with
@@ -213,7 +223,7 @@ extension _VideoDubEditorGenerationActions on _VideoDubEditorState {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'discard'),
-            child: const Text("Don't save"),
+            child: Text(AppLocalizations.of(context).uiDontSave),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, 'save'),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart'
     show AppDatabaseStorageQueries;
@@ -38,6 +39,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   final Set<NavTab> _visitedTabs = {AppNavigationSettings.defaultStartupTab};
   PhaseTtsExitGuard? _phaseTtsExitGuard;
   String? _lastPersistedTabName;
+  DateTime? _lastAndroidBackAt;
 
   @override
   void initState() {
@@ -86,7 +88,9 @@ class _AppShellState extends ConsumerState<AppShell> {
       continueTtsAcrossScreensProvider,
     );
     _visitedTabs.add(selectedTab);
-    final playback = ref.watch(playbackNotifierProvider);
+    final playbackSourceTag = ref.watch(
+      playbackNotifierProvider.select((state) => state.sourceTag),
+    );
     // Dialog/Phase render their own inline players, so the global bottom bar
     // is suppressed there to avoid a double UI.
     // Voice Bank quick tests also render inline above the test input.
@@ -95,55 +99,96 @@ class _AppShellState extends ConsumerState<AppShell> {
         selectedTab != NavTab.phaseTts &&
         selectedTab != NavTab.novelReader &&
         (continueTtsAcrossScreens ||
-            !isNovelReaderPlaybackSource(playback.sourceTag)) &&
+            !isNovelReaderPlaybackSource(playbackSourceTag)) &&
         !(selectedTab == NavTab.voiceBank &&
-            playback.sourceTag == voiceBankQuickTestPlaybackSource);
+            playbackSourceTag == voiceBankQuickTestPlaybackSource);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < _compactShellBreakpoint;
-        return Scaffold(
-          key: _scaffoldKey,
-          drawerEnableOpenDragGesture: compact,
-          drawer: compact
-              ? AppNavigationDrawer(
-                  selected: selectedTab,
-                  onTabChanged: (tab) => unawaited(_switchFromDrawer(tab)),
-                )
-              : null,
-          body: Column(
-            children: [
-              if (Platform.isWindows) const _WindowsTitleBar(),
-              if (compact)
-                _MobileTopBar(
-                  selectedTab: selectedTab,
-                  onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                ),
-              Expanded(
-                child: compact
-                    ? _buildPageStack(selectedTab)
-                    : SafeArea(
-                        child: Row(
-                          children: [
-                            Sidebar(
-                              selected: selectedTab,
-                              onTabChanged: (tab) => unawaited(_switchTab(tab)),
-                            ),
-                            const VerticalDivider(width: 1, thickness: 1),
-                            Expanded(child: _buildPageStack(selectedTab)),
-                          ],
-                        ),
-                      ),
-              ),
-              if (showGlobalPlayer)
-                Platform.isWindows
-                    ? const PersistentAudioBar()
-                    : const SafeArea(top: false, child: PersistentAudioBar()),
-            ],
-          ),
-        );
+    return PopScope(
+      canPop: !Platform.isAndroid,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && Platform.isAndroid) {
+          unawaited(_handleAndroidBackIntent());
+        }
       },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < _compactShellBreakpoint;
+          return Scaffold(
+            key: _scaffoldKey,
+            drawerEnableOpenDragGesture: compact,
+            drawer: compact
+                ? AppNavigationDrawer(
+                    selected: selectedTab,
+                    onTabChanged: (tab) => unawaited(_switchFromDrawer(tab)),
+                  )
+                : null,
+            body: Column(
+              children: [
+                if (Platform.isWindows) const _WindowsTitleBar(),
+                if (compact)
+                  _MobileTopBar(
+                    selectedTab: selectedTab,
+                    onMenuPressed: () =>
+                        _scaffoldKey.currentState?.openDrawer(),
+                  ),
+                Expanded(
+                  child: compact
+                      ? _buildPageStack(selectedTab)
+                      : SafeArea(
+                          child: Row(
+                            children: [
+                              Sidebar(
+                                selected: selectedTab,
+                                onTabChanged: (tab) =>
+                                    unawaited(_switchTab(tab)),
+                              ),
+                              const VerticalDivider(width: 1, thickness: 1),
+                              Expanded(child: _buildPageStack(selectedTab)),
+                            ],
+                          ),
+                        ),
+                ),
+                if (showGlobalPlayer)
+                  Platform.isWindows
+                      ? const PersistentAudioBar()
+                      : const SafeArea(top: false, child: PersistentAudioBar()),
+              ],
+            ),
+          );
+        },
+      ),
     );
+  }
+
+  Future<void> _handleAndroidBackIntent() async {
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted || AppBackIntent.consumeChildHandledRecently()) return;
+
+    final scaffold = _scaffoldKey.currentState;
+    if (scaffold?.isDrawerOpen ?? false) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    final now = DateTime.now();
+    final shouldExit =
+        _lastAndroidBackAt != null &&
+        now.difference(_lastAndroidBackAt!) < const Duration(seconds: 2);
+    if (shouldExit) {
+      await SystemNavigator.pop();
+      return;
+    }
+
+    _lastAndroidBackAt = now;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).pressBackAgainToExit),
+          duration: const Duration(seconds: 2),
+        ),
+      );
   }
 
   Future<void> _switchFromDrawer(NavTab tab) async {
@@ -157,6 +202,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   Future<void> _switchTab(NavTab tab) async {
     final current = ref.read(selectedTabProvider);
     if (current == tab) return;
+    _lastAndroidBackAt = null;
     if (current == NavTab.phaseTts) {
       final guard = _phaseTtsExitGuard;
       if (guard != null && !await guard()) return;

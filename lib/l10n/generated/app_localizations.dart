@@ -305,7 +305,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'v0.1.0 - AI Audio Middleware & Dubbing Workstation'**
+  /// **'v0.3.0 - AI Audio Middleware & Dubbing Workstation'**
   String get aboutSubtitle;
 
   /// No description provided for @uiUnassigned.
@@ -1370,11 +1370,23 @@ abstract class AppLocalizations {
   /// **'Export Audio'**
   String get uiExportAudio;
 
+  /// No description provided for @uiExportVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Video'**
+  String get uiExportVideo;
+
   /// No description provided for @uiExportBook.
   ///
   /// In en, this message translates to:
   /// **'Export Book'**
   String get uiExportBook;
+
+  /// No description provided for @uiExportNovelAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Export novel audio'**
+  String get uiExportNovelAudio;
 
   /// No description provided for @uiExportCancelled.
   ///
@@ -1430,11 +1442,23 @@ abstract class AppLocalizations {
   /// **'Export successful'**
   String get uiExportSuccessful;
 
+  /// No description provided for @uiExporting.
+  ///
+  /// In en, this message translates to:
+  /// **'Exporting…'**
+  String get uiExporting;
+
   /// No description provided for @uiExportingAudio.
   ///
   /// In en, this message translates to:
   /// **'Exporting audio…'**
   String get uiExportingAudio;
+
+  /// No description provided for @uiExportingNovelAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Exporting novel audio…'**
+  String get uiExportingNovelAudio;
 
   /// No description provided for @uiExportingVideo.
   ///
@@ -1550,11 +1574,35 @@ abstract class AppLocalizations {
   /// **'Generate Book'**
   String get uiGenerateBook;
 
+  /// No description provided for @uiGenerateFullBookCacheBeforeExporting.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate the full book cache before exporting.'**
+  String get uiGenerateFullBookCacheBeforeExporting;
+
+  /// No description provided for @uiGenerateAllStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate all stopped: {error}'**
+  String uiGenerateAllStopped(Object error);
+
   /// No description provided for @uiGenerated.
   ///
   /// In en, this message translates to:
   /// **'Generated'**
   String get uiGenerated;
+
+  /// No description provided for @uiGeneratedCues.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated {done} cue(s)'**
+  String uiGeneratedCues(Object done);
+
+  /// No description provided for @uiGeneratedCuesWithFailures.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated {done} cue(s), {failed} failed'**
+  String uiGeneratedCuesWithFailures(Object done, Object failed);
 
   /// No description provided for @uiGenerating.
   ///
@@ -1952,6 +2000,12 @@ abstract class AppLocalizations {
   /// **'No cues found in file'**
   String get uiNoCuesFoundInFile;
 
+  /// No description provided for @uiNoCuesToGenerateAssignVoiceFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'No cues to generate — assign a voice first'**
+  String get uiNoCuesToGenerateAssignVoiceFirst;
+
   /// No description provided for @uiNoCuesYetImportAnSRTLRCFileOrAddOneManually.
   ///
   /// In en, this message translates to:
@@ -1981,6 +2035,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No models or voices yet. Use \"Fetch All\" or add manually.'**
   String get uiNoModelsOrVoicesYetUseFetchAllOrAddManually;
+
+  /// No description provided for @uiNoReadableSegmentsToExport.
+  ///
+  /// In en, this message translates to:
+  /// **'No readable segments to export.'**
+  String get uiNoReadableSegmentsToExport;
 
   /// No description provided for @uiNoPerSentenceStyleControls.
   ///
@@ -2083,6 +2143,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Novel & long-form narration'**
   String get uiNovelLongFormNarration;
+
+  /// No description provided for @uiNovelCacheCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Novel cache completed.'**
+  String get uiNovelCacheCompleted;
+
+  /// No description provided for @uiNovelCacheCompletedWithFailures.
+  ///
+  /// In en, this message translates to:
+  /// **'Novel cache completed with {failed} failed segment(s).'**
+  String uiNovelCacheCompletedWithFailures(Object failed);
+
+  /// No description provided for @uiNovelCacheOverwritten.
+  ///
+  /// In en, this message translates to:
+  /// **'Novel cache overwritten.'**
+  String get uiNovelCacheOverwritten;
 
   /// No description provided for @uiOK.
   ///
@@ -2239,6 +2317,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Project name'**
   String get uiProjectName;
+
+  /// No description provided for @uiProjectSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Project Settings'**
+  String get uiProjectSettings;
 
   /// No description provided for @uiPromptLanguage.
   ///
@@ -2660,6 +2744,12 @@ abstract class AppLocalizations {
   /// **'Select Voice'**
   String get uiSelectVoice;
 
+  /// No description provided for @uiDontSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'\'t save'**
+  String get uiDontSave;
+
   /// No description provided for @uiSendFailed.
   ///
   /// In en, this message translates to:
@@ -2755,6 +2845,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Split Rules'**
   String get uiSplitRules;
+
+  /// No description provided for @splitRuleNewlineName.
+  ///
+  /// In en, this message translates to:
+  /// **'By paragraph (blank line)'**
+  String get splitRuleNewlineName;
+
+  /// No description provided for @splitRuleSentenceName.
+  ///
+  /// In en, this message translates to:
+  /// **'By sentence punctuation (Chinese / English)'**
+  String get splitRuleSentenceName;
+
+  /// No description provided for @splitRuleQuotesName.
+  ///
+  /// In en, this message translates to:
+  /// **'By closing quote (Chinese / English)'**
+  String get splitRuleQuotesName;
 
   /// No description provided for @uiStart.
   ///
@@ -3080,6 +3188,12 @@ abstract class AppLocalizations {
   /// **'Voice settings'**
   String get uiVoiceSettings;
 
+  /// No description provided for @uiVoiceCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} voices'**
+  String uiVoiceCount(Object count);
+
   /// No description provided for @uiVOICES.
   ///
   /// In en, this message translates to:
@@ -3196,6 +3310,154 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Font set to {font}.'**
   String fontModeSaved(String font);
+
+  /// No description provided for @healthCheckTimeoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Check Timeout'**
+  String get healthCheckTimeoutTitle;
+
+  /// No description provided for @healthCheckTimeoutSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop provider and voice-bank checks that hang too long.'**
+  String get healthCheckTimeoutSubtitle;
+
+  /// No description provided for @healthCheckTimeoutSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Health check timeout saved: {seconds}s'**
+  String healthCheckTimeoutSaved(int seconds);
+
+  /// No description provided for @healthCheckFailedTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Health check failed'**
+  String get healthCheckFailedTooltip;
+
+  /// No description provided for @uiDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get uiDisabled;
+
+  /// No description provided for @uiProviderMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider missing'**
+  String get uiProviderMissing;
+
+  /// No description provided for @uiReachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Reachable'**
+  String get uiReachable;
+
+  /// No description provided for @uiUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unreachable'**
+  String get uiUnreachable;
+
+  /// No description provided for @uiNoHealthCheckResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No health check results.'**
+  String get uiNoHealthCheckResults;
+
+  /// No description provided for @unhealthyVoiceWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Health check failed for {voice}. Generation may fail.'**
+  String unhealthyVoiceWarning(String voice);
+
+  /// No description provided for @novelPureReadingMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Pure reading mode'**
+  String get novelPureReadingMode;
+
+  /// No description provided for @novelPlaybackGap.
+  ///
+  /// In en, this message translates to:
+  /// **'Gap'**
+  String get novelPlaybackGap;
+
+  /// No description provided for @novelTextFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Text Filters'**
+  String get novelTextFilters;
+
+  /// No description provided for @novelTextFilterRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Text Filter Rules'**
+  String get novelTextFilterRules;
+
+  /// No description provided for @novelNewTextFilterRule.
+  ///
+  /// In en, this message translates to:
+  /// **'New Text Filter Rule'**
+  String get novelNewTextFilterRule;
+
+  /// No description provided for @novelEditTextFilterRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Text Filter Rule'**
+  String get novelEditTextFilterRule;
+
+  /// No description provided for @novelReplacement.
+  ///
+  /// In en, this message translates to:
+  /// **'Replacement'**
+  String get novelReplacement;
+
+  /// No description provided for @novelReplacementHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty to remove matched text.'**
+  String get novelReplacementHint;
+
+  /// No description provided for @novelPatternRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Pattern is required'**
+  String get novelPatternRequired;
+
+  /// No description provided for @novelSaveApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Save & Apply'**
+  String get novelSaveApply;
+
+  /// No description provided for @pressBackAgainToExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Press Back again to exit.'**
+  String get pressBackAgainToExit;
+
+  /// No description provided for @uiVideoDubMissingVoiceSkippedText.
+  ///
+  /// In en, this message translates to:
+  /// **'{missingVoice} without a voice will be skipped. '**
+  String uiVideoDubMissingVoiceSkippedText(Object missingVoice);
+
+  /// No description provided for @uiVideoDubRegenerateExistingCuesPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'{alreadyDone} cue(s) already have audio. {pending} pending. {missingVoiceText}Regenerate the existing ones too, or only fill in the gaps?'**
+  String uiVideoDubRegenerateExistingCuesPrompt(
+    Object alreadyDone,
+    Object pending,
+    Object missingVoiceText,
+  );
+
+  /// No description provided for @uiAutoTtsSkippedNoVoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-TTS skipped — bank has no voices'**
+  String get uiAutoTtsSkippedNoVoices;
 
   /// No description provided for @uiVideoDubUnavailableOnAndroidPhone.
   ///

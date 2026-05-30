@@ -61,24 +61,35 @@ class PlaybackState {
 }
 
 class PlaybackNotifier extends Notifier<PlaybackState> {
+  static const _positionPublishInterval = Duration(milliseconds: 100);
+  static const _androidSessionProgressInterval = Duration(seconds: 1);
+
   late final AudioPlayer _player;
   StreamSubscription<void>? _completeSub;
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<Duration>? _durationSub;
   Completer<void>? _sequenceCancelCompleter;
+  DateTime _lastPositionPublishedAt = DateTime.fromMillisecondsSinceEpoch(0);
+  DateTime _lastAndroidSessionSyncedAt = DateTime.fromMillisecondsSinceEpoch(0);
   int _sequenceRunId = 0;
 
   @override
   PlaybackState build() {
     _player = ref.read(audioPlayerProvider);
     _completeSub = _player.onPlayerComplete.listen((_) {
+      _resetPositionPublishClock();
       state = state.copyWith(isPlaying: false, position: Duration.zero);
+      unawaited(_syncAndroidNovelSession(force: true));
     });
     _positionSub = _player.onPositionChanged.listen((pos) {
-      state = state.copyWith(position: pos);
+      _publishPosition(pos);
     });
     _durationSub = _player.onDurationChanged.listen((dur) {
+      if (state.duration == dur) return;
       state = state.copyWith(duration: dur);
+      if (isNovelReaderPlaybackSource(state.sourceTag)) {
+        unawaited(_syncAndroidNovelSession(force: true));
+      }
     });
     ref.onDispose(() {
       _completeSub?.cancel();
@@ -110,6 +121,7 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
     String? sourceTag,
   }) async {
     await _player.stop();
+    _resetPositionPublishClock();
     state = state.copyWith(
       audioPath: audioPath,
       title: title,
@@ -120,6 +132,7 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
       isPlaying: true,
     );
     await _player.play(DeviceFileSource(audioPath));
+    await _syncAndroidNovelSession(force: true);
   }
 
   Future<void> togglePlay() async {
@@ -131,12 +144,18 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
       await _player.resume();
       state = state.copyWith(isPlaying: true);
     }
+    await _syncAndroidNovelSession(force: true);
   }
 
   Future<void> stop() async {
+    final previousSourceTag = state.sourceTag;
     _cancelActiveSequence();
     await _player.stop();
+    _resetPositionPublishClock();
     state = const PlaybackState();
+    if (isNovelReaderPlaybackSource(previousSourceTag)) {
+      await ref.read(androidMediaSessionServiceProvider).stopNovelSession();
+    }
   }
 
   Future<void> stopIfSourceTag(String sourceTag) async {
@@ -152,7 +171,7 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
   Future<void> seek(Duration position) async {
     if (state.audioPath == null) return;
     await _player.seek(position);
-    state = state.copyWith(position: position);
+    _publishPosition(position, force: true);
   }
 
   /// Play a sequence of audio files sequentially (for Dialog TTS "play from here").
@@ -192,6 +211,48 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
       completer.complete();
     }
     _sequenceCancelCompleter = null;
+  }
+
+  void _publishPosition(Duration position, {bool force = false}) {
+    final now = DateTime.now();
+    if (!force &&
+        now.difference(_lastPositionPublishedAt) < _positionPublishInterval) {
+      return;
+    }
+    if (state.position == position) return;
+    _lastPositionPublishedAt = now;
+    state = state.copyWith(position: position);
+    if (isNovelReaderPlaybackSource(state.sourceTag)) {
+      unawaited(_syncAndroidNovelSession(force: force));
+    }
+  }
+
+  void _resetPositionPublishClock() {
+    _lastPositionPublishedAt = DateTime.fromMillisecondsSinceEpoch(0);
+    _lastAndroidSessionSyncedAt = DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  Future<void> _syncAndroidNovelSession({bool force = false}) async {
+    final session = ref.read(androidMediaSessionServiceProvider);
+    if (!isNovelReaderPlaybackSource(state.sourceTag) ||
+        state.audioPath == null) {
+      await session.stopNovelSession();
+      return;
+    }
+    final now = DateTime.now();
+    if (!force &&
+        now.difference(_lastAndroidSessionSyncedAt) <
+            _androidSessionProgressInterval) {
+      return;
+    }
+    _lastAndroidSessionSyncedAt = now;
+    await session.startOrUpdateNovelSession(
+      title: state.title ?? 'Novel Reader',
+      subtitle: state.subtitle,
+      isPlaying: state.isPlaying,
+      position: state.position,
+      duration: state.duration,
+    );
   }
 }
 

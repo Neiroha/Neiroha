@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 
@@ -285,7 +286,10 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
       return PopScope(
         canPop: false,
         onPopInvokedWithResult: (didPop, _) {
-          if (!didPop) _goBackFromRight();
+          if (!didPop) {
+            AppBackIntent.markChildHandled();
+            _goBackFromRight();
+          }
         },
         child: Stack(
           children: [

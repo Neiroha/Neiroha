@@ -45,6 +45,11 @@ class LanguageSettingsCard extends ConsumerWidget {
                     AppLocaleSettings.localeKey,
                     AppLocaleSettings.storageValue(nextLocale),
                   );
+              await ref
+                  .read(databaseProvider)
+                  .localizeStarterContent(
+                    AppLocaleSettings.storageValue(nextLocale),
+                  );
               if (!context.mounted) return;
               final nextL10n = AppLocalizations.of(context);
               final label = value == 'zh'
@@ -307,6 +312,83 @@ class _TaskBehaviorSettingsCardState
           trailing: Switch(
             value: _continueAcrossScreens,
             onChanged: _loaded ? _setContinueAcrossScreens : null,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class HealthCheckTimeoutSettingsCard extends ConsumerStatefulWidget {
+  const HealthCheckTimeoutSettingsCard({super.key});
+
+  @override
+  ConsumerState<HealthCheckTimeoutSettingsCard> createState() =>
+      _HealthCheckTimeoutSettingsCardState();
+}
+
+class _HealthCheckTimeoutSettingsCardState
+    extends ConsumerState<HealthCheckTimeoutSettingsCard> {
+  static const _options = [3, 5, 10, 20, 30, 60];
+
+  bool _loaded = false;
+  int _seconds = HealthCheckSettings.defaultTimeoutSeconds;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_load);
+  }
+
+  Future<void> _load() async {
+    final stored = await ref
+        .read(databaseProvider)
+        .getSetting(HealthCheckSettings.timeoutSecondsKey);
+    if (!mounted) return;
+    setState(() {
+      _seconds = HealthCheckSettings.parseTimeoutSeconds(stored);
+      _loaded = true;
+    });
+  }
+
+  Future<void> _setSeconds(int seconds) async {
+    setState(() => _seconds = seconds);
+    await ref
+        .read(databaseProvider)
+        .setSetting(HealthCheckSettings.timeoutSecondsKey, seconds.toString());
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.healthCheckTimeoutSaved(seconds))),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SettingsRow(
+          icon: Icons.health_and_safety_rounded,
+          title: l10n.healthCheckTimeoutTitle,
+          subtitle: l10n.healthCheckTimeoutSubtitle,
+          trailing: DropdownButton<int>(
+            value: _options.contains(_seconds)
+                ? _seconds
+                : HealthCheckSettings.defaultTimeoutSeconds,
+            underline: const SizedBox.shrink(),
+            items: [
+              for (final seconds in _options)
+                DropdownMenuItem(value: seconds, child: Text('${seconds}s')),
+            ],
+            onChanged: !_loaded
+                ? null
+                : (value) {
+                    if (value != null && value != _seconds) {
+                      _setSeconds(value);
+                    }
+                  },
           ),
         ),
       ),

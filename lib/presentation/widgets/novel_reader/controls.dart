@@ -58,7 +58,15 @@ class _NovelReaderBottomBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final playback = ref.watch(playbackNotifierProvider);
+    final playback = ref.watch(
+      playbackNotifierProvider.select(
+        (state) => (
+          audioPath: state.audioPath,
+          sourceTag: state.sourceTag,
+          isPlaying: state.isPlaying,
+        ),
+      ),
+    );
     final isNovelAudio =
         playback.audioPath != null && playback.sourceTag == playbackSourceTag;
     final selectedIsActiveRead =
@@ -68,11 +76,6 @@ class _NovelReaderBottomBar extends ConsumerWidget {
     final showStopForSelection =
         selectedIsActiveRead && (!isNovelAudio || playback.isPlaying);
     final notifier = ref.read(playbackNotifierProvider.notifier);
-    final durMs = playback.duration.inMilliseconds;
-    final posMs = playback.position.inMilliseconds.clamp(
-      0,
-      durMs == 0 ? 1 : durMs,
-    );
     final cached = segments
         .where(
           (segment) =>
@@ -81,9 +84,7 @@ class _NovelReaderBottomBar extends ConsumerWidget {
         )
         .length;
     final cacheProgress = segments.isEmpty ? 0.0 : cached / segments.length;
-    final statusText = isNovelAudio
-        ? '${_fmt(playback.position)} / ${_fmt(playback.duration)}'
-        : generatingSegmentIds.isEmpty
+    final idleStatusText = generatingSegmentIds.isEmpty
         ? 'Idle'
         : 'Generating ${generatingSegmentIds.length}';
 
@@ -146,18 +147,13 @@ class _NovelReaderBottomBar extends ConsumerWidget {
                           ),
                           SizedBox(width: 8),
                           Flexible(
-                            child: Text(
-                              statusText,
-                              textAlign: TextAlign.end,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: colors.muted,
-                                fontFeatures: const [
-                                  FontFeature.tabularFigures(),
-                                ],
-                              ),
-                            ),
+                            child: isNovelAudio
+                                ? _ReaderPlaybackTimeText(colors: colors)
+                                : _ReaderIdleStatusText(
+                                    text: idleStatusText,
+                                    colors: colors,
+                                    textAlign: TextAlign.end,
+                                  ),
                           ),
                           SizedBox(width: 4),
                           SizedBox.square(
@@ -181,27 +177,7 @@ class _NovelReaderBottomBar extends ConsumerWidget {
                     ),
                     SizedBox(
                       height: 28,
-                      child: SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          trackHeight: 3,
-                          thumbShape: const RoundSliderThumbShape(
-                            enabledThumbRadius: 5,
-                          ),
-                          overlayShape: const RoundSliderOverlayShape(
-                            overlayRadius: 11,
-                          ),
-                        ),
-                        child: Slider(
-                          min: 0,
-                          max: durMs == 0 ? 1 : durMs.toDouble(),
-                          value: posMs.toDouble(),
-                          onChanged: !isNovelAudio || durMs == 0
-                              ? null
-                              : (v) => notifier.seek(
-                                  Duration(milliseconds: v.toInt()),
-                                ),
-                        ),
-                      ),
+                      child: _ReaderPlaybackSlider(enabled: isNovelAudio),
                     ),
                     SizedBox(height: 6),
                     SizedBox(
@@ -368,39 +344,15 @@ class _NovelReaderBottomBar extends ConsumerWidget {
                           ),
                           SizedBox(width: 14),
                           Expanded(
-                            child: SliderTheme(
-                              data: SliderTheme.of(context).copyWith(
-                                trackHeight: 3,
-                                thumbShape: const RoundSliderThumbShape(
-                                  enabledThumbRadius: 5,
-                                ),
-                                overlayShape: const RoundSliderOverlayShape(
-                                  overlayRadius: 11,
-                                ),
-                              ),
-                              child: Slider(
-                                min: 0,
-                                max: durMs == 0 ? 1 : durMs.toDouble(),
-                                value: posMs.toDouble(),
-                                onChanged: !isNovelAudio || durMs == 0
-                                    ? null
-                                    : (v) => notifier.seek(
-                                        Duration(milliseconds: v.toInt()),
-                                      ),
-                              ),
-                            ),
+                            child: _ReaderPlaybackSlider(enabled: isNovelAudio),
                           ),
                           SizedBox(width: 8),
-                          Text(
-                            statusText,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: colors.muted,
-                              fontFeatures: const [
-                                FontFeature.tabularFigures(),
-                              ],
-                            ),
-                          ),
+                          isNovelAudio
+                              ? _ReaderPlaybackTimeText(colors: colors)
+                              : _ReaderIdleStatusText(
+                                  text: idleStatusText,
+                                  colors: colors,
+                                ),
                           SizedBox(width: 8),
                           IconButton(
                             tooltip: playback.isPlaying ? 'Pause' : 'Resume',
@@ -547,11 +499,103 @@ class _NovelReaderBottomBar extends ConsumerWidget {
       _ => Icons.dark_mode_rounded,
     };
   }
+}
+
+class _ReaderPlaybackSlider extends ConsumerWidget {
+  final bool enabled;
+
+  const _ReaderPlaybackSlider({required this.enabled});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final timing = ref.watch(
+      playbackNotifierProvider.select(
+        (state) => (position: state.position, duration: state.duration),
+      ),
+    );
+    final durMs = timing.duration.inMilliseconds;
+    final posMs = timing.position.inMilliseconds.clamp(
+      0,
+      durMs == 0 ? 1 : durMs,
+    );
+    final notifier = ref.read(playbackNotifierProvider.notifier);
+
+    return ExcludeSemantics(
+      child: SliderTheme(
+        data: SliderTheme.of(context).copyWith(
+          trackHeight: 3,
+          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
+          overlayShape: const RoundSliderOverlayShape(overlayRadius: 11),
+        ),
+        child: Slider(
+          min: 0,
+          max: durMs == 0 ? 1 : durMs.toDouble(),
+          value: posMs.toDouble(),
+          onChanged: !enabled || durMs == 0
+              ? null
+              : (v) => notifier.seek(Duration(milliseconds: v.toInt())),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReaderPlaybackTimeText extends ConsumerWidget {
+  final _ReaderColors colors;
+
+  const _ReaderPlaybackTimeText({required this.colors});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final timing = ref.watch(
+      playbackNotifierProvider.select(
+        (state) => (position: state.position, duration: state.duration),
+      ),
+    );
+    return ExcludeSemantics(
+      child: Text(
+        '${_fmt(timing.position)} / ${_fmt(timing.duration)}',
+        textAlign: TextAlign.end,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 11,
+          color: colors.muted,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      ),
+    );
+  }
 
   String _fmt(Duration d) {
     final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
     final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$m:$s';
+  }
+}
+
+class _ReaderIdleStatusText extends StatelessWidget {
+  final String text;
+  final _ReaderColors colors;
+  final TextAlign? textAlign;
+
+  const _ReaderIdleStatusText({
+    required this.text,
+    required this.colors,
+    this.textAlign,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      textAlign: textAlign,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontSize: 11,
+        color: colors.muted,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+    );
   }
 }
 

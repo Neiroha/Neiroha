@@ -197,6 +197,8 @@ class NovelProjects extends Table {
       boolean().withDefault(const Constant(true))();
   IntColumn get maxSliceChars => integer().withDefault(const Constant(50))();
   IntColumn get prefetchSegments => integer().withDefault(const Constant(5))();
+  RealColumn get playbackGapSeconds =>
+      real().withDefault(const Constant(0.3))();
   BoolColumn get overwriteCacheWhilePlaying =>
       boolean().withDefault(const Constant(false))();
   BoolColumn get skipPunctuationOnlySegments =>

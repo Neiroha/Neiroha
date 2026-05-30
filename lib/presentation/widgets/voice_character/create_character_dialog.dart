@@ -293,7 +293,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
         _fetchCosyVoiceProfiles();
         return;
       }
-      // VoxCPM2 native exposes registered voices via /voxcpm/voices — same
+      // VoxCPM2 native exposes registered voices via /api/voxcpm/voices — same
       // rationale: clone mode's `voice_id` must match a registered id.
       if (_isVoxCpm2) {
         if (mounted) {
@@ -366,7 +366,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     if (mounted) setState(() => _loadingCosyProfiles = false);
   }
 
-  /// Live-fetch VoxCPM2 registered voices from `/voxcpm/voices`.
+  /// Live-fetch VoxCPM2 registered voices from `/api/voxcpm/voices`.
   Future<void> _fetchVoxCpm2Voices() async {
     if (!_isVoxCpm2) return;
     setState(() {

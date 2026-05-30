@@ -1,11 +1,15 @@
 part of '../../screens/novel_reader_screen.dart';
 
+enum _NovelPlaybackCommand { previous, next, stop }
+
 extension _NovelReaderEditorCache on _NovelReaderEditorState {
   Map<String, _NovelSegmentCacheState> _cacheStatesForSegments(
     db.NovelProject project,
     List<db.NovelSegment> segments,
     List<db.VoiceAsset> bankAssets,
     List<db.TtsProvider> providers,
+    List<NovelTextFilterRule> textFilterRules,
+    String textFilterSignature,
   ) {
     final assets = {for (final asset in bankAssets) asset.id: asset};
     final providerMap = {
@@ -18,6 +22,8 @@ extension _NovelReaderEditorCache on _NovelReaderEditorState {
           segment,
           assets,
           providerMap,
+          textFilterRules,
+          textFilterSignature,
         ),
     };
   }
@@ -27,23 +33,103 @@ extension _NovelReaderEditorCache on _NovelReaderEditorState {
     db.NovelSegment segment,
     Map<String, db.VoiceAsset> assets,
     Map<String, db.TtsProvider> providers,
+    List<NovelTextFilterRule> textFilterRules,
+    String textFilterSignature,
   ) {
-    if (segment.audioPath == null || segment.missing) {
+    if (!_segmentRequiresNovelAudio(project, segment, textFilterRules)) {
       return _NovelSegmentCacheState.none;
     }
-    if (_shouldSkipSegment(project, segment)) {
-      return _NovelSegmentCacheState.none;
-    }
+    if (!_hasUsableNovelAudio(segment)) return _NovelSegmentCacheState.none;
     final voiceId = _voiceForSegment(project, segment);
     final asset = voiceId == null ? null : assets[voiceId];
     final provider = asset == null ? null : providers[asset.providerId];
     if (asset == null || provider == null) {
       return _NovelSegmentCacheState.stale;
     }
-    final currentKey = _cacheKey(project, segment, asset, provider);
-    return segment.audioCacheKey == currentKey
+    return _segmentAudioCacheKeyMatches(
+          project,
+          segment,
+          asset,
+          provider,
+          textFilterSignature,
+        )
         ? _NovelSegmentCacheState.current
         : _NovelSegmentCacheState.stale;
+  }
+
+  bool _segmentRequiresNovelAudio(
+    db.NovelProject project,
+    db.NovelSegment segment,
+    List<NovelTextFilterRule> textFilterRules,
+  ) {
+    return !_shouldSkipSegmentForTts(project, segment, textFilterRules);
+  }
+
+  bool _segmentAudioIsCurrent(
+    db.NovelProject project,
+    db.NovelSegment segment,
+    Map<String, db.VoiceAsset> assets,
+    Map<String, db.TtsProvider> providers,
+    List<NovelTextFilterRule> textFilterRules,
+    String textFilterSignature,
+  ) {
+    if (!_segmentRequiresNovelAudio(project, segment, textFilterRules)) {
+      return true;
+    }
+    if (!_hasUsableNovelAudio(segment)) return false;
+    final voiceId = _voiceForSegment(project, segment);
+    final asset = voiceId == null ? null : assets[voiceId];
+    final provider = asset == null ? null : providers[asset.providerId];
+    if (asset == null || provider == null) return false;
+    return _segmentAudioCacheKeyMatches(
+      project,
+      segment,
+      asset,
+      provider,
+      textFilterSignature,
+    );
+  }
+
+  bool _segmentAudioCacheKeyMatches(
+    db.NovelProject project,
+    db.NovelSegment segment,
+    db.VoiceAsset asset,
+    db.TtsProvider provider,
+    String textFilterSignature,
+  ) {
+    return segment.audioCacheKey ==
+        _cacheKey(
+          project,
+          segment,
+          asset,
+          provider,
+          textFilterSignature: textFilterSignature,
+        );
+  }
+
+  bool _novelCacheComplete(
+    db.NovelProject project,
+    List<db.NovelSegment> segments,
+    List<db.VoiceAsset> bankAssets,
+    List<db.TtsProvider> providers,
+    List<NovelTextFilterRule> textFilterRules,
+    String textFilterSignature,
+  ) {
+    if (segments.isEmpty) return false;
+    final assets = {for (final asset in bankAssets) asset.id: asset};
+    final providerMap = {
+      for (final provider in providers) provider.id: provider,
+    };
+    return segments.every(
+      (segment) => _segmentAudioIsCurrent(
+        project,
+        segment,
+        assets,
+        providerMap,
+        textFilterRules,
+        textFilterSignature,
+      ),
+    );
   }
 
   String? _voiceForSegment(db.NovelProject project, db.NovelSegment segment) {
@@ -57,11 +143,13 @@ extension _NovelReaderEditorCache on _NovelReaderEditorState {
     db.NovelProject project,
     db.NovelSegment segment,
     db.VoiceAsset asset,
-    db.TtsProvider provider,
-  ) {
+    db.TtsProvider provider, {
+    String textFilterSignature = '',
+  }) {
     return [
       'novel-v1',
       segment.segmentText,
+      textFilterSignature,
       segment.segmentType,
       project.autoSliceLongSegments ? 'slice-on' : 'slice-off',
       project.sliceOnlyAtPunctuation ? 'punct-on' : 'punct-off',
@@ -115,6 +203,21 @@ extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {
 
     final ordered = [...allSegments]
       ..sort((a, b) => a.globalIndex.compareTo(b.globalIndex));
+    final textFilterRules = await ref
+        .read(novelTextFilterRulesServiceProvider)
+        .load();
+    final textFilterSignature = NovelTextFilterRulesService.signature(
+      textFilterRules,
+    );
+    final providers = await ref.read(databaseProvider).getAllProviders();
+    final chapters = await ref
+        .read(databaseProvider)
+        .getNovelChapters(project.id);
+    final assetMap = {for (final asset in bankAssets) asset.id: asset};
+    final providerMap = {
+      for (final provider in providers) provider.id: provider,
+    };
+    final chapterMap = {for (final chapter in chapters) chapter.id: chapter};
     final startAt = ordered.indexWhere(
       (segment) => segment.globalIndex >= start.globalIndex,
     );
@@ -134,63 +237,161 @@ extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {
             segment.chapterId != start.chapterId) {
           break;
         }
-        if (_shouldSkipSegment(activeProject, segment)) {
+        if (_shouldSkipSegmentForTts(activeProject, segment, textFilterRules)) {
           continue;
         }
         await _jumpTo(
           activeProject,
           segment,
           syncPage: activeProject.autoTurnPage,
+          persistImmediately: false,
         );
         if (mounted) {
           _updateState(() => _activePlaybackGlobalIndex = segment.globalIndex);
         }
-        final forceCache = activeProject.overwriteCacheWhilePlaying;
+        final cacheOnly = _cacheOnlyPlayback;
+        final forceCache = cacheOnly
+            ? false
+            : activeProject.overwriteCacheWhilePlaying;
         _prefetchRunId++;
-        final audioPath = await _ensureAudioForSegment(
-          activeProject,
-          segment,
-          bankAssets,
-          force: forceCache,
-        );
+        final audioPath = cacheOnly
+            ? _cachedAudioPathForSegment(
+                activeProject,
+                segment,
+                assetMap,
+                providerMap,
+                textFilterRules,
+                textFilterSignature,
+              )
+            : await _ensureAudioForSegment(
+                activeProject,
+                segment,
+                bankAssets,
+                force: forceCache,
+              );
         if (runId != _playRunId || stopCompleter.isCompleted) break;
-        final completed = ref.read(audioPlayerProvider).onPlayerComplete.first;
         await ref
             .read(playbackNotifierProvider.notifier)
             .load(
               audioPath,
               segment.segmentText,
-              subtitle: _segmentSubtitle(segment),
+              subtitle: _segmentSubtitle(
+                segment,
+                chapterMap[segment.chapterId],
+              ),
               sourceTag: _playbackSourceTag,
             );
-        unawaited(
-          _prefetchAfter(
-            activeProject,
-            ordered,
-            i,
-            bankAssets,
-            runId,
-            prefetchRunId: _prefetchRunId,
-            forceCache: forceCache,
-          ),
-        );
-        await Future.any([completed, stopCompleter.future]);
+        final completed = _waitForNovelPlaybackComplete(audioPath);
+        if (!cacheOnly) {
+          unawaited(
+            _prefetchAfter(
+              activeProject,
+              ordered,
+              i,
+              bankAssets,
+              runId,
+              prefetchRunId: _prefetchRunId,
+              forceCache: forceCache,
+            ),
+          );
+        }
+        final commandCompleter = Completer<_NovelPlaybackCommand>();
+        _playbackCommandCompleter = commandCompleter;
+        final result = await Future.any<Object?>([
+          completed.then<Object?>((_) => null),
+          stopCompleter.future.then<Object?>((_) => _NovelPlaybackCommand.stop),
+          commandCompleter.future.then<Object?>((command) => command),
+        ]);
+        if (identical(_playbackCommandCompleter, commandCompleter)) {
+          _playbackCommandCompleter = null;
+        }
+        if (result == _NovelPlaybackCommand.stop) break;
+        if (result == _NovelPlaybackCommand.previous) {
+          await ref
+              .read(playbackNotifierProvider.notifier)
+              .stopIfSourceTag(_playbackSourceTag);
+          i = math.max(startAt - 1, i - 2);
+          continue;
+        }
+        if (result == _NovelPlaybackCommand.next) {
+          await ref
+              .read(playbackNotifierProvider.notifier)
+              .stopIfSourceTag(_playbackSourceTag);
+          continue;
+        }
+        await _waitForSegmentGap(activeProject, runId, stopCompleter);
       }
     } catch (e) {
       if (runId == _playRunId) _snack('Playback stopped: $e');
     } finally {
-      if (runId == _playRunId && mounted) {
-        _updateState(() {
-          _stopCompleter = null;
-          _activePlaybackGlobalIndex = null;
-        });
+      if (runId == _playRunId) {
+        _stopCompleter = null;
+        _playbackCommandCompleter = null;
+        if (mounted) {
+          _updateState(() {
+            _activePlaybackGlobalIndex = null;
+          });
+        }
+        await ref
+            .read(playbackNotifierProvider.notifier)
+            .stopIfSourceTag(_playbackSourceTag);
       }
     }
+  }
+
+  String _cachedAudioPathForSegment(
+    db.NovelProject project,
+    db.NovelSegment segment,
+    Map<String, db.VoiceAsset> assets,
+    Map<String, db.TtsProvider> providers,
+    List<NovelTextFilterRule> textFilterRules,
+    String textFilterSignature,
+  ) {
+    if (_segmentAudioIsCurrent(
+      project,
+      segment,
+      assets,
+      providers,
+      textFilterRules,
+      textFilterSignature,
+    )) {
+      return segment.audioPath!;
+    }
+    throw StateError(
+      'Current cached audio missing for segment ${segment.globalIndex + 1}.',
+    );
+  }
+
+  Future<void> _waitForNovelPlaybackComplete(String audioPath) {
+    return ref.read(audioPlayerProvider).onPlayerComplete.where((_) {
+      final playback = ref.read(playbackNotifierProvider);
+      return playback.audioPath == audioPath &&
+          playback.sourceTag == _playbackSourceTag;
+    }).first;
+  }
+
+  Future<void> _waitForSegmentGap(
+    db.NovelProject project,
+    int runId,
+    Completer<void> stopCompleter,
+  ) async {
+    if (runId != _playRunId || stopCompleter.isCompleted) return;
+    final gapMs = (project.playbackGapSeconds.clamp(0.0, 2.0) * 1000).round();
+    if (gapMs <= 0) return;
+    await Future.any([
+      Future.delayed(Duration(milliseconds: gapMs)),
+      stopCompleter.future,
+    ]);
   }
 
   void _stopNovel({bool updateUi = true}) {
     _playRunId++;
     _prefetchRunId++;
+    final commandCompleter = _playbackCommandCompleter;
+    if (commandCompleter != null && !commandCompleter.isCompleted) {
+      commandCompleter.complete(_NovelPlaybackCommand.stop);
+    }
+    _playbackCommandCompleter = null;
     final completer = _stopCompleter;
     if (completer != null && !completer.isCompleted) {
       completer.complete();
@@ -198,6 +399,12 @@ extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {
     _stopCompleter = null;
     if (updateUi && mounted) {
       _updateState(() => _activePlaybackGlobalIndex = null);
+    }
+    final localIndex = _localCurrentGlobalIndex;
+    if (localIndex != null) {
+      unawaited(
+        _persistNovelProgress(widget.projectId, localIndex, force: true),
+      );
     }
     unawaited(
       ref
@@ -217,6 +424,9 @@ extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {
   }) async {
     final prefetchCount = project.prefetchSegments.clamp(0, 20).toInt();
     if (prefetchCount <= 0) return;
+    final textFilterRules = await ref
+        .read(novelTextFilterRulesServiceProvider)
+        .load();
     final candidates = <db.NovelSegment>[];
     for (
       var i = index + 1;
@@ -229,10 +439,9 @@ extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {
           segment.chapterId != ordered[index].chapterId) {
         break;
       }
-      if (!forceCache && segment.audioPath != null && !segment.missing) {
+      if (_shouldSkipSegmentForTts(project, segment, textFilterRules)) {
         continue;
       }
-      if (_shouldSkipSegment(project, segment)) continue;
       candidates.add(segment);
     }
     if (candidates.isEmpty) return;
@@ -274,21 +483,25 @@ extension _NovelReaderEditorGeneration on _NovelReaderEditorState {
   }) async {
     if (_generatingAll) return;
     _updateState(() => _generatingAll = true);
-    final ordered = [...segments]
-      ..sort((a, b) => a.globalIndex.compareTo(b.globalIndex));
-    final providers = await ref.read(databaseProvider).getAllProviders();
-    final taskFactories = [
-      for (final segment in ordered)
-        if (!_shouldSkipSegment(project, segment))
-          () => _ensureAudioForSegment(
-            project,
-            segment,
-            bankAssets,
-            force: force,
-          ),
-    ];
+    final l10n = AppLocalizations.of(context);
     final failures = <Object>[];
     try {
+      final ordered = [...segments]
+        ..sort((a, b) => a.globalIndex.compareTo(b.globalIndex));
+      final textFilterRules = await ref
+          .read(novelTextFilterRulesServiceProvider)
+          .load();
+      final providers = await ref.read(databaseProvider).getAllProviders();
+      final taskFactories = [
+        for (final segment in ordered)
+          if (!_shouldSkipSegmentForTts(project, segment, textFilterRules))
+            () => _ensureAudioForSegment(
+              project,
+              segment,
+              bankAssets,
+              force: force,
+            ),
+      ];
       await _runNovelGenerationWorkers(
         taskFactories,
         workerCount: _novelGenerationWorkerCount(
@@ -299,14 +512,14 @@ extension _NovelReaderEditorGeneration on _NovelReaderEditorState {
         failures: failures,
       );
       if (failures.isEmpty) {
-        _snack(force ? 'Novel cache overwritten.' : 'Novel cache completed.');
-      } else {
         _snack(
-          'Novel cache completed with ${failures.length} failed segment(s).',
+          force ? l10n.uiNovelCacheOverwritten : l10n.uiNovelCacheCompleted,
         );
+      } else {
+        _snack(l10n.uiNovelCacheCompletedWithFailures(failures.length));
       }
     } catch (e) {
-      _snack('Generate all stopped: $e');
+      _snack(l10n.uiGenerateAllStopped(e));
     } finally {
       if (mounted) _updateState(() => _generatingAll = false);
     }
@@ -384,15 +597,33 @@ extension _NovelReaderEditorGeneration on _NovelReaderEditorState {
         .where((p) => p.id == asset.providerId)
         .firstOrNull;
     if (provider == null) throw StateError('Provider not found for voice.');
+    if (mounted) {
+      warnIfVoiceHealthFailedOnce(context: context, ref: ref, asset: asset);
+    }
 
+    final textFilterRules = await ref
+        .read(novelTextFilterRulesServiceProvider)
+        .load();
+    final textFilterSignature = NovelTextFilterRulesService.signature(
+      textFilterRules,
+    );
+    final cacheKey = _cacheKey(
+      project,
+      segment,
+      asset,
+      provider,
+      textFilterSignature: textFilterSignature,
+    );
     if (!force &&
         segment.audioPath != null &&
         !segment.missing &&
+        segment.audioCacheKey == cacheKey &&
         File(segment.audioPath!).existsSync()) {
       return segment.audioPath!;
     }
 
-    final taskKey = force ? '${segment.id}:force' : segment.id;
+    final taskKey =
+        '${segment.id}:${force ? 'force' : 'normal'}:${_stableHash(cacheKey)}';
     final existingTask = _audioTasks[taskKey];
     if (existingTask != null) return existingTask;
 
@@ -402,6 +633,8 @@ extension _NovelReaderEditorGeneration on _NovelReaderEditorState {
       asset: asset,
       provider: provider,
       force: force,
+      textFilterRules: textFilterRules,
+      textFilterSignature: textFilterSignature,
     );
     _audioTasks[taskKey] = task;
     try {
@@ -419,16 +652,25 @@ extension _NovelReaderEditorGeneration on _NovelReaderEditorState {
     required db.VoiceAsset asset,
     required db.TtsProvider provider,
     required bool force,
+    required List<NovelTextFilterRule> textFilterRules,
+    required String textFilterSignature,
   }) async {
     final dbx = ref.read(databaseProvider);
     final fresh = (await dbx.getNovelSegments(
       project.id,
     )).where((s) => s.id == segment.id).firstOrNull;
     final activeSegment = fresh ?? segment;
-    final activeCacheKey = _cacheKey(project, activeSegment, asset, provider);
+    final activeCacheKey = _cacheKey(
+      project,
+      activeSegment,
+      asset,
+      provider,
+      textFilterSignature: textFilterSignature,
+    );
     if (!force &&
         activeSegment.audioPath != null &&
         !activeSegment.missing &&
+        activeSegment.audioCacheKey == activeCacheKey &&
         File(activeSegment.audioPath!).existsSync()) {
       return activeSegment.audioPath!;
     }
@@ -439,11 +681,20 @@ extension _NovelReaderEditorGeneration on _NovelReaderEditorState {
           .read(storageServiceProvider)
           .ensureNovelProjectSlug(project.id);
       final outDir = await PathService.instance.novelReaderAudioDir(slug);
-      final chunks = _ttsChunksForSegment(project, activeSegment.segmentText);
+      final filteredText = _filteredNovelTextForTts(
+        activeSegment,
+        textFilterRules,
+      );
+      if (filteredText.isEmpty) {
+        throw StateError(
+          'Segment ${activeSegment.globalIndex + 1} is empty after text filters.',
+        );
+      }
+      final chunks = _ttsChunksForSegment(project, filteredText);
       final fileBase =
           'seg_${activeSegment.globalIndex}_${_stableHash(activeCacheKey)}';
       final taskLabel =
-          'Segment ${activeSegment.globalIndex + 1}: ${activeSegment.segmentText}';
+          'Segment ${activeSegment.globalIndex + 1}: $filteredText';
       final result = chunks.length == 1
           ? await _synthesizeNovelChunk(
               text: chunks.first,
@@ -466,11 +717,15 @@ extension _NovelReaderEditorGeneration on _NovelReaderEditorState {
         fileBase: fileBase,
         force: force,
       );
-      final durationSec = await measureAudioDuration(filePath);
+      final durationSec = _stopCompleter == null
+          ? await measureAudioDuration(filePath)
+          : null;
       await dbx.updateNovelSegment(
         activeSegment.copyWith(
           audioPath: Value(filePath),
-          audioDuration: Value(durationSec),
+          audioDuration: durationSec == null
+              ? const Value.absent()
+              : Value(durationSec),
           audioCacheKey: Value(activeCacheKey),
           error: const Value(null),
           missing: false,
@@ -822,36 +1077,66 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
     List<db.NovelSegment> segments,
   ) async {
     _updateState(() => _exporting = true);
+    final l10n = AppLocalizations.of(context);
     try {
       final ordered = [...segments]
         ..sort((a, b) => a.globalIndex.compareTo(b.globalIndex));
-      final inputs = [
+      final textFilterRules = await ref
+          .read(novelTextFilterRulesServiceProvider)
+          .load();
+      final textFilterSignature = NovelTextFilterRulesService.signature(
+        textFilterRules,
+      );
+      final dbx = ref.read(databaseProvider);
+      final members = await dbx.getBankMembers(project.bankId);
+      final allAssets = await dbx.getAllVoiceAssets();
+      final providers = await dbx.getAllProviders();
+      final allAssetMap = {for (final asset in allAssets) asset.id: asset};
+      final bankAssets = {
+        for (final member in members)
+          if (allAssetMap[member.voiceAssetId] != null)
+            member.voiceAssetId: allAssetMap[member.voiceAssetId]!,
+      };
+      final providerMap = {
+        for (final provider in providers) provider.id: provider,
+      };
+      final requiredSegments = [
         for (final segment in ordered)
-          if (segment.audioPath != null &&
-              !segment.missing &&
-              File(segment.audioPath!).existsSync())
+          if (!_shouldSkipSegmentForTts(project, segment, textFilterRules))
+            segment,
+      ];
+      final inputs = [
+        for (final segment in requiredSegments)
+          if (_segmentAudioIsCurrent(
+            project,
+            segment,
+            bankAssets,
+            providerMap,
+            textFilterRules,
+            textFilterSignature,
+          ))
             segment.audioPath!,
       ];
-      if (inputs.length != ordered.length) {
-        _snack('Generate the full book cache before exporting.');
+      if (requiredSegments.isEmpty) {
+        _snack(l10n.uiNoReadableSegmentsToExport);
+        return;
+      }
+      if (inputs.length != requiredSegments.length) {
+        _snack(l10n.uiGenerateFullBookCacheBeforeExporting);
         return;
       }
       final capabilities = ref.read(platformCapabilitiesProvider);
       if (!capabilities.supportsLocalAudioMuxing) {
-        _snack(
-          AppLocalizations.of(
-            context,
-          ).uiFFmpegUnavailableOnPlatform(capabilities.platformLabel),
-        );
+        _snack(l10n.uiFFmpegUnavailableOnPlatform(capabilities.platformLabel));
         return;
       }
       final ffmpeg = ref.read(ffmpegServiceProvider);
       if (!await ffmpeg.isAvailable()) {
-        _snack('FFmpeg is required for export - configure it in Settings.');
+        _snack(l10n.uiFFmpegIsRequiredForExportConfigureItInSettings);
         return;
       }
       var outPath = await FilePicker.platform.saveFile(
-        dialogTitle: 'Export novel audio',
+        dialogTitle: l10n.uiExportNovelAudio,
         fileName:
             '${PathService.sanitizeSegment(project.name)}_${PathService.formatTimestamp()}.wav',
         type: FileType.audio,
@@ -888,16 +1173,16 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
           context: context,
           ffmpegPath: ffmpegPath,
           args: args,
-          totalDurationMs: _totalDurationMs(ordered),
-          taskLabel: 'Exporting novel audio...',
+          totalDurationMs: _totalDurationMs(requiredSegments),
+          taskLabel: l10n.uiExportingNovelAudio,
         );
         if (!mounted) return;
         if (result.success) {
           await showExportSuccessDialog(context: context, filePath: outPath);
         } else if (result.cancelled) {
-          _snack('Export cancelled.');
+          _snack(l10n.uiExportCancelled);
         } else {
-          _snack('Export failed: ${result.stderrTail}');
+          _snack(l10n.uiExportFailed(result.stderrTail));
         }
       } finally {
         try {
@@ -918,9 +1203,12 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
     return total;
   }
 
-  String _segmentSubtitle(db.NovelSegment segment) {
+  String _segmentSubtitle(db.NovelSegment segment, [db.NovelChapter? chapter]) {
     final prefix = segment.segmentType == 'dialogue' ? 'Dialogue' : 'Narrator';
-    return '$prefix · Segment ${segment.globalIndex + 1}';
+    final chapterTitle = chapter?.title.trim();
+    final segmentLabel = '$prefix · Segment ${segment.globalIndex + 1}';
+    if (chapterTitle == null || chapterTitle.isEmpty) return segmentLabel;
+    return '$chapterTitle · $segmentLabel';
   }
 
   String _extensionForContentType(String contentType) {

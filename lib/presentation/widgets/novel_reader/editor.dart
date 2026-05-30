@@ -23,8 +23,15 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
   bool _generatingAll = false;
   bool _exporting = false;
   bool _editing = false;
+  bool _cacheOnlyPlayback = false;
   int? _activePlaybackGlobalIndex;
+  int? _localCurrentGlobalIndex;
+  DateTime? _lastProgressPersistAt;
+  int? _lastPersistedProgressIndex;
+  Future<void> _progressPersistQueue = Future<void>.value();
   int _prefetchRunId = 0;
+  Completer<_NovelPlaybackCommand>? _playbackCommandCompleter;
+  StreamSubscription<String>? _androidMediaControlSub;
   final Set<String> _generatingSegmentIds = <String>{};
   final Map<String, Future<String>> _audioTasks = <String, Future<String>>{};
 
@@ -32,7 +39,17 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
       novelReaderPlaybackSourceFor(widget.projectId);
 
   @override
+  void initState() {
+    super.initState();
+    _androidMediaControlSub = ref
+        .read(androidMediaSessionServiceProvider)
+        .controls
+        .listen(_handleAndroidMediaControl);
+  }
+
+  @override
   void dispose() {
+    unawaited(_androidMediaControlSub?.cancel());
     _stopNovel(updateUi: false);
     super.dispose();
   }
@@ -62,22 +79,34 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     final providers =
         ref.watch(ttsProvidersStreamProvider).valueOrNull ??
         const <db.TtsProvider>[];
+    final textFilterRules =
+        ref.watch(novelTextFilterRulesProvider).valueOrNull ??
+        NovelTextFilterRulesService.builtInRules;
+    final textFilterSignature = NovelTextFilterRulesService.signature(
+      textFilterRules,
+    );
     final assetMap = {for (final a in allAssets) a.id: a};
     final bankAssets = members
         .map((m) => assetMap[m.voiceAssetId])
         .whereType<db.VoiceAsset>()
         .toList();
     final chapterMap = {for (final c in chapters) c.id: c};
-    final segmentCacheStates = _cacheStatesForSegments(
+    final cacheComplete = _novelCacheComplete(
       project,
       segments,
       bankAssets,
       providers,
+      textFilterRules,
+      textFilterSignature,
     );
+    final cacheOnlyPlayback = _cacheOnlyPlayback && cacheComplete;
 
     final currentIndex = segments.isEmpty
         ? 0
-        : project.currentGlobalIndex.clamp(0, segments.length - 1);
+        : (_localCurrentGlobalIndex ?? project.currentGlobalIndex).clamp(
+            0,
+            segments.length - 1,
+          );
     final currentSegment = segments.isEmpty
         ? null
         : segments[currentIndex.toInt()];
@@ -94,6 +123,14 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     final visibleChapter = visibleChapterId == null
         ? null
         : chapterMap[visibleChapterId];
+    final segmentCacheStates = _cacheStatesForSegments(
+      project,
+      chapterSegments,
+      bankAssets,
+      providers,
+      textFilterRules,
+      textFilterSignature,
+    );
 
     return Column(
       children: [
@@ -177,6 +214,8 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
               hasAudio: segments.any((s) => s.audioPath != null && !s.missing),
               generatingAll: _generatingAll,
               editing: _editing,
+              cacheComplete: cacheComplete,
+              cacheOnlyPlayback: cacheOnlyPlayback,
               onNarratorChanged: (id) => _updateProject(
                 project.copyWith(narratorVoiceAssetId: Value(id)),
               ),
@@ -220,12 +259,20 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
                   updatedAt: DateTime.now(),
                 ),
               ),
+              onPlaybackGapChanged: (v) => _updateProject(
+                project.copyWith(
+                  playbackGapSeconds: v,
+                  updatedAt: DateTime.now(),
+                ),
+              ),
               onOverwriteWhilePlayingChanged: (v) => _updateProject(
                 project.copyWith(
                   overwriteCacheWhilePlaying: v,
                   updatedAt: DateTime.now(),
                 ),
               ),
+              onCacheOnlyPlaybackChanged: (v) =>
+                  setState(() => _cacheOnlyPlayback = v),
               onSkipPunctuationOnlyChanged: (v) => _updateProject(
                 project.copyWith(
                   skipPunctuationOnlySegments: v,
@@ -234,6 +281,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
               ),
               onManageDialogueRules: () =>
                   unawaited(_manageDialogueRules(project, segments)),
+              onManageTextFilters: () => unawaited(_manageTextFilterRules()),
               onCacheCurrentColorChanged: (color) => _updateProject(
                 project.copyWith(
                   cacheCurrentColor: color,
@@ -288,5 +336,38 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _handleAndroidMediaControl(String control) {
+    switch (control) {
+      case 'toggle':
+        unawaited(ref.read(playbackNotifierProvider.notifier).togglePlay());
+        break;
+      case 'play':
+        if (!ref.read(playbackNotifierProvider).isPlaying) {
+          unawaited(ref.read(playbackNotifierProvider.notifier).togglePlay());
+        }
+        break;
+      case 'pause':
+        if (ref.read(playbackNotifierProvider).isPlaying) {
+          unawaited(ref.read(playbackNotifierProvider.notifier).togglePlay());
+        }
+        break;
+      case 'previous':
+        _completePlaybackCommand(_NovelPlaybackCommand.previous);
+        break;
+      case 'next':
+        _completePlaybackCommand(_NovelPlaybackCommand.next);
+        break;
+      case 'stop':
+        _stopNovel();
+        break;
+    }
+  }
+
+  void _completePlaybackCommand(_NovelPlaybackCommand command) {
+    final completer = _playbackCommandCompleter;
+    if (completer == null || completer.isCompleted) return;
+    completer.complete(command);
   }
 }

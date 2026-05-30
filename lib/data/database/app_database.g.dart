@@ -5419,6 +5419,18 @@ class $NovelProjectsTable extends NovelProjects
     requiredDuringInsert: false,
     defaultValue: const Constant(5),
   );
+  static const VerificationMeta _playbackGapSecondsMeta =
+      const VerificationMeta('playbackGapSeconds');
+  @override
+  late final GeneratedColumn<double> playbackGapSeconds =
+      GeneratedColumn<double>(
+        'playback_gap_seconds',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0.3),
+      );
   static const VerificationMeta _overwriteCacheWhilePlayingMeta =
       const VerificationMeta('overwriteCacheWhilePlaying');
   @override
@@ -5546,6 +5558,7 @@ class $NovelProjectsTable extends NovelProjects
     sliceOnlyAtPunctuation,
     maxSliceChars,
     prefetchSegments,
+    playbackGapSeconds,
     overwriteCacheWhilePlaying,
     skipPunctuationOnlySegments,
     cacheCurrentColor,
@@ -5679,6 +5692,15 @@ class $NovelProjectsTable extends NovelProjects
         prefetchSegments.isAcceptableOrUnknown(
           data['prefetch_segments']!,
           _prefetchSegmentsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('playback_gap_seconds')) {
+      context.handle(
+        _playbackGapSecondsMeta,
+        playbackGapSeconds.isAcceptableOrUnknown(
+          data['playback_gap_seconds']!,
+          _playbackGapSecondsMeta,
         ),
       );
     }
@@ -5823,6 +5845,10 @@ class $NovelProjectsTable extends NovelProjects
         DriftSqlType.int,
         data['${effectivePrefix}prefetch_segments'],
       )!,
+      playbackGapSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}playback_gap_seconds'],
+      )!,
       overwriteCacheWhilePlaying: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}overwrite_cache_while_playing'],
@@ -5883,6 +5909,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
   final bool sliceOnlyAtPunctuation;
   final int maxSliceChars;
   final int prefetchSegments;
+  final double playbackGapSeconds;
   final bool overwriteCacheWhilePlaying;
   final bool skipPunctuationOnlySegments;
   final String cacheCurrentColor;
@@ -5907,6 +5934,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
     required this.sliceOnlyAtPunctuation,
     required this.maxSliceChars,
     required this.prefetchSegments,
+    required this.playbackGapSeconds,
     required this.overwriteCacheWhilePlaying,
     required this.skipPunctuationOnlySegments,
     required this.cacheCurrentColor,
@@ -5938,6 +5966,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
     map['slice_only_at_punctuation'] = Variable<bool>(sliceOnlyAtPunctuation);
     map['max_slice_chars'] = Variable<int>(maxSliceChars);
     map['prefetch_segments'] = Variable<int>(prefetchSegments);
+    map['playback_gap_seconds'] = Variable<double>(playbackGapSeconds);
     map['overwrite_cache_while_playing'] = Variable<bool>(
       overwriteCacheWhilePlaying,
     );
@@ -5976,6 +6005,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
       sliceOnlyAtPunctuation: Value(sliceOnlyAtPunctuation),
       maxSliceChars: Value(maxSliceChars),
       prefetchSegments: Value(prefetchSegments),
+      playbackGapSeconds: Value(playbackGapSeconds),
       overwriteCacheWhilePlaying: Value(overwriteCacheWhilePlaying),
       skipPunctuationOnlySegments: Value(skipPunctuationOnlySegments),
       cacheCurrentColor: Value(cacheCurrentColor),
@@ -6020,6 +6050,9 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
       ),
       maxSliceChars: serializer.fromJson<int>(json['maxSliceChars']),
       prefetchSegments: serializer.fromJson<int>(json['prefetchSegments']),
+      playbackGapSeconds: serializer.fromJson<double>(
+        json['playbackGapSeconds'],
+      ),
       overwriteCacheWhilePlaying: serializer.fromJson<bool>(
         json['overwriteCacheWhilePlaying'],
       ),
@@ -6055,6 +6088,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
       'sliceOnlyAtPunctuation': serializer.toJson<bool>(sliceOnlyAtPunctuation),
       'maxSliceChars': serializer.toJson<int>(maxSliceChars),
       'prefetchSegments': serializer.toJson<int>(prefetchSegments),
+      'playbackGapSeconds': serializer.toJson<double>(playbackGapSeconds),
       'overwriteCacheWhilePlaying': serializer.toJson<bool>(
         overwriteCacheWhilePlaying,
       ),
@@ -6086,6 +6120,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
     bool? sliceOnlyAtPunctuation,
     int? maxSliceChars,
     int? prefetchSegments,
+    double? playbackGapSeconds,
     bool? overwriteCacheWhilePlaying,
     bool? skipPunctuationOnlySegments,
     String? cacheCurrentColor,
@@ -6115,6 +6150,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
         sliceOnlyAtPunctuation ?? this.sliceOnlyAtPunctuation,
     maxSliceChars: maxSliceChars ?? this.maxSliceChars,
     prefetchSegments: prefetchSegments ?? this.prefetchSegments,
+    playbackGapSeconds: playbackGapSeconds ?? this.playbackGapSeconds,
     overwriteCacheWhilePlaying:
         overwriteCacheWhilePlaying ?? this.overwriteCacheWhilePlaying,
     skipPunctuationOnlySegments:
@@ -6163,6 +6199,9 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
       prefetchSegments: data.prefetchSegments.present
           ? data.prefetchSegments.value
           : this.prefetchSegments,
+      playbackGapSeconds: data.playbackGapSeconds.present
+          ? data.playbackGapSeconds.value
+          : this.playbackGapSeconds,
       overwriteCacheWhilePlaying: data.overwriteCacheWhilePlaying.present
           ? data.overwriteCacheWhilePlaying.value
           : this.overwriteCacheWhilePlaying,
@@ -6206,6 +6245,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
           ..write('sliceOnlyAtPunctuation: $sliceOnlyAtPunctuation, ')
           ..write('maxSliceChars: $maxSliceChars, ')
           ..write('prefetchSegments: $prefetchSegments, ')
+          ..write('playbackGapSeconds: $playbackGapSeconds, ')
           ..write('overwriteCacheWhilePlaying: $overwriteCacheWhilePlaying, ')
           ..write('skipPunctuationOnlySegments: $skipPunctuationOnlySegments, ')
           ..write('cacheCurrentColor: $cacheCurrentColor, ')
@@ -6235,6 +6275,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
     sliceOnlyAtPunctuation,
     maxSliceChars,
     prefetchSegments,
+    playbackGapSeconds,
     overwriteCacheWhilePlaying,
     skipPunctuationOnlySegments,
     cacheCurrentColor,
@@ -6263,6 +6304,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
           other.sliceOnlyAtPunctuation == this.sliceOnlyAtPunctuation &&
           other.maxSliceChars == this.maxSliceChars &&
           other.prefetchSegments == this.prefetchSegments &&
+          other.playbackGapSeconds == this.playbackGapSeconds &&
           other.overwriteCacheWhilePlaying == this.overwriteCacheWhilePlaying &&
           other.skipPunctuationOnlySegments ==
               this.skipPunctuationOnlySegments &&
@@ -6290,6 +6332,7 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
   final Value<bool> sliceOnlyAtPunctuation;
   final Value<int> maxSliceChars;
   final Value<int> prefetchSegments;
+  final Value<double> playbackGapSeconds;
   final Value<bool> overwriteCacheWhilePlaying;
   final Value<bool> skipPunctuationOnlySegments;
   final Value<String> cacheCurrentColor;
@@ -6315,6 +6358,7 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
     this.sliceOnlyAtPunctuation = const Value.absent(),
     this.maxSliceChars = const Value.absent(),
     this.prefetchSegments = const Value.absent(),
+    this.playbackGapSeconds = const Value.absent(),
     this.overwriteCacheWhilePlaying = const Value.absent(),
     this.skipPunctuationOnlySegments = const Value.absent(),
     this.cacheCurrentColor = const Value.absent(),
@@ -6341,6 +6385,7 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
     this.sliceOnlyAtPunctuation = const Value.absent(),
     this.maxSliceChars = const Value.absent(),
     this.prefetchSegments = const Value.absent(),
+    this.playbackGapSeconds = const Value.absent(),
     this.overwriteCacheWhilePlaying = const Value.absent(),
     this.skipPunctuationOnlySegments = const Value.absent(),
     this.cacheCurrentColor = const Value.absent(),
@@ -6371,6 +6416,7 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
     Expression<bool>? sliceOnlyAtPunctuation,
     Expression<int>? maxSliceChars,
     Expression<int>? prefetchSegments,
+    Expression<double>? playbackGapSeconds,
     Expression<bool>? overwriteCacheWhilePlaying,
     Expression<bool>? skipPunctuationOnlySegments,
     Expression<String>? cacheCurrentColor,
@@ -6402,6 +6448,8 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
         'slice_only_at_punctuation': sliceOnlyAtPunctuation,
       if (maxSliceChars != null) 'max_slice_chars': maxSliceChars,
       if (prefetchSegments != null) 'prefetch_segments': prefetchSegments,
+      if (playbackGapSeconds != null)
+        'playback_gap_seconds': playbackGapSeconds,
       if (overwriteCacheWhilePlaying != null)
         'overwrite_cache_while_playing': overwriteCacheWhilePlaying,
       if (skipPunctuationOnlySegments != null)
@@ -6434,6 +6482,7 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
     Value<bool>? sliceOnlyAtPunctuation,
     Value<int>? maxSliceChars,
     Value<int>? prefetchSegments,
+    Value<double>? playbackGapSeconds,
     Value<bool>? overwriteCacheWhilePlaying,
     Value<bool>? skipPunctuationOnlySegments,
     Value<String>? cacheCurrentColor,
@@ -6462,6 +6511,7 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
           sliceOnlyAtPunctuation ?? this.sliceOnlyAtPunctuation,
       maxSliceChars: maxSliceChars ?? this.maxSliceChars,
       prefetchSegments: prefetchSegments ?? this.prefetchSegments,
+      playbackGapSeconds: playbackGapSeconds ?? this.playbackGapSeconds,
       overwriteCacheWhilePlaying:
           overwriteCacheWhilePlaying ?? this.overwriteCacheWhilePlaying,
       skipPunctuationOnlySegments:
@@ -6531,6 +6581,9 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
     if (prefetchSegments.present) {
       map['prefetch_segments'] = Variable<int>(prefetchSegments.value);
     }
+    if (playbackGapSeconds.present) {
+      map['playback_gap_seconds'] = Variable<double>(playbackGapSeconds.value);
+    }
     if (overwriteCacheWhilePlaying.present) {
       map['overwrite_cache_while_playing'] = Variable<bool>(
         overwriteCacheWhilePlaying.value,
@@ -6587,6 +6640,7 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
           ..write('sliceOnlyAtPunctuation: $sliceOnlyAtPunctuation, ')
           ..write('maxSliceChars: $maxSliceChars, ')
           ..write('prefetchSegments: $prefetchSegments, ')
+          ..write('playbackGapSeconds: $playbackGapSeconds, ')
           ..write('overwriteCacheWhilePlaying: $overwriteCacheWhilePlaying, ')
           ..write('skipPunctuationOnlySegments: $skipPunctuationOnlySegments, ')
           ..write('cacheCurrentColor: $cacheCurrentColor, ')
@@ -16121,6 +16175,7 @@ typedef $$NovelProjectsTableCreateCompanionBuilder =
       Value<bool> sliceOnlyAtPunctuation,
       Value<int> maxSliceChars,
       Value<int> prefetchSegments,
+      Value<double> playbackGapSeconds,
       Value<bool> overwriteCacheWhilePlaying,
       Value<bool> skipPunctuationOnlySegments,
       Value<String> cacheCurrentColor,
@@ -16148,6 +16203,7 @@ typedef $$NovelProjectsTableUpdateCompanionBuilder =
       Value<bool> sliceOnlyAtPunctuation,
       Value<int> maxSliceChars,
       Value<int> prefetchSegments,
+      Value<double> playbackGapSeconds,
       Value<bool> overwriteCacheWhilePlaying,
       Value<bool> skipPunctuationOnlySegments,
       Value<String> cacheCurrentColor,
@@ -16301,6 +16357,11 @@ class $$NovelProjectsTableFilterComposer
 
   ColumnFilters<int> get prefetchSegments => $composableBuilder(
     column: $table.prefetchSegments,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get playbackGapSeconds => $composableBuilder(
+    column: $table.playbackGapSeconds,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16497,6 +16558,11 @@ class $$NovelProjectsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get playbackGapSeconds => $composableBuilder(
+    column: $table.playbackGapSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get overwriteCacheWhilePlaying => $composableBuilder(
     column: $table.overwriteCacheWhilePlaying,
     builder: (column) => ColumnOrderings(column),
@@ -16631,6 +16697,11 @@ class $$NovelProjectsTableAnnotationComposer
 
   GeneratedColumn<int> get prefetchSegments => $composableBuilder(
     column: $table.prefetchSegments,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get playbackGapSeconds => $composableBuilder(
+    column: $table.playbackGapSeconds,
     builder: (column) => column,
   );
 
@@ -16795,6 +16866,7 @@ class $$NovelProjectsTableTableManager
                 Value<bool> sliceOnlyAtPunctuation = const Value.absent(),
                 Value<int> maxSliceChars = const Value.absent(),
                 Value<int> prefetchSegments = const Value.absent(),
+                Value<double> playbackGapSeconds = const Value.absent(),
                 Value<bool> overwriteCacheWhilePlaying = const Value.absent(),
                 Value<bool> skipPunctuationOnlySegments = const Value.absent(),
                 Value<String> cacheCurrentColor = const Value.absent(),
@@ -16820,6 +16892,7 @@ class $$NovelProjectsTableTableManager
                 sliceOnlyAtPunctuation: sliceOnlyAtPunctuation,
                 maxSliceChars: maxSliceChars,
                 prefetchSegments: prefetchSegments,
+                playbackGapSeconds: playbackGapSeconds,
                 overwriteCacheWhilePlaying: overwriteCacheWhilePlaying,
                 skipPunctuationOnlySegments: skipPunctuationOnlySegments,
                 cacheCurrentColor: cacheCurrentColor,
@@ -16847,6 +16920,7 @@ class $$NovelProjectsTableTableManager
                 Value<bool> sliceOnlyAtPunctuation = const Value.absent(),
                 Value<int> maxSliceChars = const Value.absent(),
                 Value<int> prefetchSegments = const Value.absent(),
+                Value<double> playbackGapSeconds = const Value.absent(),
                 Value<bool> overwriteCacheWhilePlaying = const Value.absent(),
                 Value<bool> skipPunctuationOnlySegments = const Value.absent(),
                 Value<String> cacheCurrentColor = const Value.absent(),
@@ -16872,6 +16946,7 @@ class $$NovelProjectsTableTableManager
                 sliceOnlyAtPunctuation: sliceOnlyAtPunctuation,
                 maxSliceChars: maxSliceChars,
                 prefetchSegments: prefetchSegments,
+                playbackGapSeconds: playbackGapSeconds,
                 overwriteCacheWhilePlaying: overwriteCacheWhilePlaying,
                 skipPunctuationOnlySegments: skipPunctuationOnlySegments,
                 cacheCurrentColor: cacheCurrentColor,

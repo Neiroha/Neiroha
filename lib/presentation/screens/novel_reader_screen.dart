@@ -12,11 +12,15 @@ import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/storage/novel_dialogue_rules_service.dart';
 import 'package:neiroha/data/storage/novel_import_service.dart';
+import 'package:neiroha/data/storage/novel_text_filter_rules_service.dart';
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/actions/voice_health_warning.dart';
+import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/export_progress.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
+import 'package:neiroha/presentation/widgets/project_settings_dialog.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
@@ -46,15 +50,27 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
   @override
   Widget build(BuildContext context) {
     if (_selectedProjectId == null) return _buildProjectListScreen();
-    return _NovelReaderEditor(
-      key: ValueKey(_selectedProjectId),
-      projectId: _selectedProjectId!,
-      onClose: () => setState(() => _selectedProjectId = null),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          AppBackIntent.markChildHandled();
+          setState(() => _selectedProjectId = null);
+        }
+      },
+      child: _NovelReaderEditor(
+        key: ValueKey(_selectedProjectId),
+        projectId: _selectedProjectId!,
+        onClose: () => setState(() => _selectedProjectId = null),
+      ),
     );
   }
 
   Widget _buildProjectListScreen() {
     final projectsAsync = ref.watch(novelProjectsStreamProvider);
+    final banks =
+        ref.watch(voiceBanksStreamProvider).valueOrNull ??
+        const <db.VoiceBank>[];
     return Column(
       children: [
         _NovelProjectHeader(onCreate: _createProject),
@@ -77,9 +93,12 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
                   ),
               ],
               onOpen: (id) => setState(() => _selectedProjectId = id),
-              onDelete: (id) {
-                ref.read(databaseProvider).deleteNovelProject(id);
-              },
+              onSettings: (card) => unawaited(
+                _showProjectSettings(
+                  projects.where((p) => p.id == card.id).firstOrNull,
+                  banks,
+                ),
+              ),
             ),
           ),
         ),
@@ -91,6 +110,63 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
     final voice = project.narratorVoiceAssetId == null ? 'No narrator' : null;
     if (voice != null) return voice;
     return 'Reading position ${project.currentGlobalIndex + 1}';
+  }
+
+  Future<void> _showProjectSettings(
+    db.NovelProject? project,
+    List<db.VoiceBank> banks,
+  ) async {
+    if (project == null) return;
+    final result = await showProjectSettingsDialog(
+      context: context,
+      projectName: project.name,
+      bankId: project.bankId,
+      banks: banks,
+    );
+    if (result == null) return;
+    final database = ref.read(databaseProvider);
+    if (result.deleteRequested) {
+      await database.deleteNovelProject(project.id);
+      return;
+    }
+    final bankChanged = result.bankId != project.bankId;
+    if (result.name != project.name || bankChanged) {
+      var narratorId = project.narratorVoiceAssetId;
+      var dialogueId = project.dialogueVoiceAssetId;
+      if (bankChanged) {
+        final members = await database.getBankMembers(result.bankId);
+        narratorId = members.isNotEmpty ? members.first.voiceAssetId : null;
+        dialogueId = members.length > 1 ? members[1].voiceAssetId : narratorId;
+      }
+      await database.updateNovelProject(
+        project.copyWith(
+          name: result.name,
+          bankId: result.bankId,
+          narratorVoiceAssetId: Value(narratorId),
+          dialogueVoiceAssetId: Value(dialogueId),
+          updatedAt: DateTime.now(),
+        ),
+      );
+      if (bankChanged) {
+        await _clearNovelProjectAudio(project.id);
+      }
+    }
+  }
+
+  Future<void> _clearNovelProjectAudio(String projectId) async {
+    final database = ref.read(databaseProvider);
+    final segments = await database.getNovelSegments(projectId);
+    for (final segment in segments) {
+      await database.updateNovelSegment(
+        segment.copyWith(
+          audioPath: const Value(null),
+          audioDuration: const Value(null),
+          audioCacheKey: const Value(null),
+          error: const Value(null),
+          missing: false,
+        ),
+      );
+    }
   }
 
   Future<void> _createProject() async {

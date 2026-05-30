@@ -45,7 +45,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 29;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -116,8 +116,513 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(ttsProviders, ttsProviders.tokensPerMinute);
         await m.addColumn(ttsProviders, ttsProviders.tokensPerDay);
       }
+      if (from < 26) {
+        await _repairMissingCurrentSchema(m);
+      }
+      if (from >= 26 && from < 27) {
+        await m.addColumn(novelProjects, novelProjects.playbackGapSeconds);
+      }
+      if (from < 29) {
+        await _migrateDefaultProviderApiContracts();
+      }
+    },
+    beforeOpen: (_) async {
+      await _repairMissingCurrentSchema(Migrator(this));
     },
   );
+
+  Future<void> _repairMissingCurrentSchema(Migrator m) async {
+    await _createTableIfMissing(
+      'app_settings',
+      () => m.createTable(appSettings),
+    );
+    await _createTableIfMissing(
+      'tts_providers',
+      () => m.createTable(ttsProviders),
+    );
+    await _createTableIfMissing(
+      'model_bindings',
+      () => m.createTable(modelBindings),
+    );
+    await _createTableIfMissing(
+      'voice_assets',
+      () => m.createTable(voiceAssets),
+    );
+    await _createTableIfMissing('voice_banks', () => m.createTable(voiceBanks));
+    await _createTableIfMissing(
+      'voice_bank_members',
+      () => m.createTable(voiceBankMembers),
+    );
+    await _createTableIfMissing('tts_jobs', () => m.createTable(ttsJobs));
+    await _createTableIfMissing(
+      'quick_tts_histories',
+      () => m.createTable(quickTtsHistories),
+    );
+    await _createTableIfMissing(
+      'phase_tts_projects',
+      () => m.createTable(phaseTtsProjects),
+    );
+    await _createTableIfMissing(
+      'phase_tts_segments',
+      () => m.createTable(phaseTtsSegments),
+    );
+    await _createTableIfMissing(
+      'novel_projects',
+      () => m.createTable(novelProjects),
+    );
+    await _createTableIfMissing(
+      'novel_chapters',
+      () => m.createTable(novelChapters),
+    );
+    await _createTableIfMissing(
+      'novel_segments',
+      () => m.createTable(novelSegments),
+    );
+    await _createTableIfMissing(
+      'dialog_tts_projects',
+      () => m.createTable(dialogTtsProjects),
+    );
+    await _createTableIfMissing(
+      'dialog_tts_lines',
+      () => m.createTable(dialogTtsLines),
+    );
+    await _createTableIfMissing(
+      'video_dub_projects',
+      () => m.createTable(videoDubProjects),
+    );
+    await _createTableIfMissing(
+      'subtitle_cues',
+      () => m.createTable(subtitleCues),
+    );
+    await _createTableIfMissing(
+      'audio_tracks',
+      () => m.createTable(audioTracks),
+    );
+    await _createTableIfMissing(
+      'timeline_clips',
+      () => m.createTable(timelineClips),
+    );
+
+    await _addColumnIfMissing(
+      tableName: 'tts_providers',
+      columnName: 'max_concurrency',
+      addColumn: () => m.addColumn(ttsProviders, ttsProviders.maxConcurrency),
+    );
+    await _addColumnIfMissing(
+      tableName: 'tts_providers',
+      columnName: 'requests_per_minute',
+      addColumn: () =>
+          m.addColumn(ttsProviders, ttsProviders.requestsPerMinute),
+    );
+    await _addColumnIfMissing(
+      tableName: 'tts_providers',
+      columnName: 'requests_per_day',
+      addColumn: () => m.addColumn(ttsProviders, ttsProviders.requestsPerDay),
+    );
+    await _addColumnIfMissing(
+      tableName: 'tts_providers',
+      columnName: 'tokens_per_minute',
+      addColumn: () => m.addColumn(ttsProviders, ttsProviders.tokensPerMinute),
+    );
+    await _addColumnIfMissing(
+      tableName: 'tts_providers',
+      columnName: 'tokens_per_day',
+      addColumn: () => m.addColumn(ttsProviders, ttsProviders.tokensPerDay),
+    );
+    await _addColumnIfMissing(
+      tableName: 'audio_tracks',
+      columnName: 'missing',
+      addColumn: () => m.addColumn(audioTracks, audioTracks.missing),
+    );
+    await _addColumnIfMissing(
+      tableName: 'voice_assets',
+      columnName: 'folder_slug',
+      addColumn: () => m.addColumn(voiceAssets, voiceAssets.folderSlug),
+    );
+    await _addColumnIfMissing(
+      tableName: 'quick_tts_histories',
+      columnName: 'missing',
+      addColumn: () =>
+          m.addColumn(quickTtsHistories, quickTtsHistories.missing),
+    );
+    await _addColumnIfMissing(
+      tableName: 'phase_tts_projects',
+      columnName: 'folder_slug',
+      addColumn: () =>
+          m.addColumn(phaseTtsProjects, phaseTtsProjects.folderSlug),
+    );
+    await _addColumnIfMissing(
+      tableName: 'phase_tts_segments',
+      columnName: 'speaker_label',
+      addColumn: () =>
+          m.addColumn(phaseTtsSegments, phaseTtsSegments.speakerLabel),
+    );
+    await _addColumnIfMissing(
+      tableName: 'phase_tts_segments',
+      columnName: 'voice_asset_id',
+      addColumn: () =>
+          m.addColumn(phaseTtsSegments, phaseTtsSegments.voiceAssetId),
+    );
+    await _addColumnIfMissing(
+      tableName: 'phase_tts_segments',
+      columnName: 'audio_path',
+      addColumn: () =>
+          m.addColumn(phaseTtsSegments, phaseTtsSegments.audioPath),
+    );
+    await _addColumnIfMissing(
+      tableName: 'phase_tts_segments',
+      columnName: 'audio_duration',
+      addColumn: () =>
+          m.addColumn(phaseTtsSegments, phaseTtsSegments.audioDuration),
+    );
+    await _addColumnIfMissing(
+      tableName: 'phase_tts_segments',
+      columnName: 'error',
+      addColumn: () => m.addColumn(phaseTtsSegments, phaseTtsSegments.error),
+    );
+    await _addColumnIfMissing(
+      tableName: 'phase_tts_segments',
+      columnName: 'missing',
+      addColumn: () => m.addColumn(phaseTtsSegments, phaseTtsSegments.missing),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'narrator_voice_asset_id',
+      addColumn: () =>
+          m.addColumn(novelProjects, novelProjects.narratorVoiceAssetId),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'dialogue_voice_asset_id',
+      addColumn: () =>
+          m.addColumn(novelProjects, novelProjects.dialogueVoiceAssetId),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'reader_theme',
+      addColumn: () => m.addColumn(novelProjects, novelProjects.readerTheme),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'font_size',
+      addColumn: () => m.addColumn(novelProjects, novelProjects.fontSize),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'line_height',
+      addColumn: () => m.addColumn(novelProjects, novelProjects.lineHeight),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'auto_turn_page',
+      addColumn: () => m.addColumn(novelProjects, novelProjects.autoTurnPage),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'auto_advance_chapters',
+      addColumn: () =>
+          m.addColumn(novelProjects, novelProjects.autoAdvanceChapters),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'auto_slice_long_segments',
+      addColumn: () =>
+          m.addColumn(novelProjects, novelProjects.autoSliceLongSegments),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'slice_only_at_punctuation',
+      addColumn: () =>
+          m.addColumn(novelProjects, novelProjects.sliceOnlyAtPunctuation),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'max_slice_chars',
+      addColumn: () => m.addColumn(novelProjects, novelProjects.maxSliceChars),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'prefetch_segments',
+      addColumn: () =>
+          m.addColumn(novelProjects, novelProjects.prefetchSegments),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'playback_gap_seconds',
+      addColumn: () =>
+          m.addColumn(novelProjects, novelProjects.playbackGapSeconds),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'overwrite_cache_while_playing',
+      addColumn: () =>
+          m.addColumn(novelProjects, novelProjects.overwriteCacheWhilePlaying),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'skip_punctuation_only_segments',
+      addColumn: () =>
+          m.addColumn(novelProjects, novelProjects.skipPunctuationOnlySegments),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'cache_current_color',
+      addColumn: () =>
+          m.addColumn(novelProjects, novelProjects.cacheCurrentColor),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'cache_stale_color',
+      addColumn: () =>
+          m.addColumn(novelProjects, novelProjects.cacheStaleColor),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'cache_highlight_opacity',
+      addColumn: () =>
+          m.addColumn(novelProjects, novelProjects.cacheHighlightOpacity),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'current_global_index',
+      addColumn: () =>
+          m.addColumn(novelProjects, novelProjects.currentGlobalIndex),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_projects',
+      columnName: 'folder_slug',
+      addColumn: () => m.addColumn(novelProjects, novelProjects.folderSlug),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_chapters',
+      columnName: 'source_path',
+      addColumn: () => m.addColumn(novelChapters, novelChapters.sourcePath),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_chapters',
+      columnName: 'raw_text',
+      addColumn: () => m.addColumn(novelChapters, novelChapters.rawText),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_segments',
+      columnName: 'segment_type',
+      addColumn: () => m.addColumn(novelSegments, novelSegments.segmentType),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_segments',
+      columnName: 'audio_path',
+      addColumn: () => m.addColumn(novelSegments, novelSegments.audioPath),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_segments',
+      columnName: 'audio_duration',
+      addColumn: () => m.addColumn(novelSegments, novelSegments.audioDuration),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_segments',
+      columnName: 'audio_cache_key',
+      addColumn: () => m.addColumn(novelSegments, novelSegments.audioCacheKey),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_segments',
+      columnName: 'error',
+      addColumn: () => m.addColumn(novelSegments, novelSegments.error),
+    );
+    await _addColumnIfMissing(
+      tableName: 'novel_segments',
+      columnName: 'missing',
+      addColumn: () => m.addColumn(novelSegments, novelSegments.missing),
+    );
+    await _addColumnIfMissing(
+      tableName: 'dialog_tts_projects',
+      columnName: 'folder_slug',
+      addColumn: () =>
+          m.addColumn(dialogTtsProjects, dialogTtsProjects.folderSlug),
+    );
+    await _addColumnIfMissing(
+      tableName: 'dialog_tts_lines',
+      columnName: 'voice_asset_id',
+      addColumn: () => m.addColumn(dialogTtsLines, dialogTtsLines.voiceAssetId),
+    );
+    await _addColumnIfMissing(
+      tableName: 'dialog_tts_lines',
+      columnName: 'audio_path',
+      addColumn: () => m.addColumn(dialogTtsLines, dialogTtsLines.audioPath),
+    );
+    await _addColumnIfMissing(
+      tableName: 'dialog_tts_lines',
+      columnName: 'audio_duration',
+      addColumn: () =>
+          m.addColumn(dialogTtsLines, dialogTtsLines.audioDuration),
+    );
+    await _addColumnIfMissing(
+      tableName: 'dialog_tts_lines',
+      columnName: 'error',
+      addColumn: () => m.addColumn(dialogTtsLines, dialogTtsLines.error),
+    );
+    await _addColumnIfMissing(
+      tableName: 'dialog_tts_lines',
+      columnName: 'missing',
+      addColumn: () => m.addColumn(dialogTtsLines, dialogTtsLines.missing),
+    );
+    await _addColumnIfMissing(
+      tableName: 'video_dub_projects',
+      columnName: 'video_path',
+      addColumn: () =>
+          m.addColumn(videoDubProjects, videoDubProjects.videoPath),
+    );
+    await _addColumnIfMissing(
+      tableName: 'video_dub_projects',
+      columnName: 'video_duration_sec',
+      addColumn: () =>
+          m.addColumn(videoDubProjects, videoDubProjects.videoDurationSec),
+    );
+    await _addColumnIfMissing(
+      tableName: 'video_dub_projects',
+      columnName: 'folder_slug',
+      addColumn: () =>
+          m.addColumn(videoDubProjects, videoDubProjects.folderSlug),
+    );
+    await _addColumnIfMissing(
+      tableName: 'subtitle_cues',
+      columnName: 'voice_asset_id',
+      addColumn: () => m.addColumn(subtitleCues, subtitleCues.voiceAssetId),
+    );
+    await _addColumnIfMissing(
+      tableName: 'subtitle_cues',
+      columnName: 'audio_path',
+      addColumn: () => m.addColumn(subtitleCues, subtitleCues.audioPath),
+    );
+    await _addColumnIfMissing(
+      tableName: 'subtitle_cues',
+      columnName: 'audio_duration',
+      addColumn: () => m.addColumn(subtitleCues, subtitleCues.audioDuration),
+    );
+    await _addColumnIfMissing(
+      tableName: 'subtitle_cues',
+      columnName: 'error',
+      addColumn: () => m.addColumn(subtitleCues, subtitleCues.error),
+    );
+    await _addColumnIfMissing(
+      tableName: 'subtitle_cues',
+      columnName: 'missing',
+      addColumn: () => m.addColumn(subtitleCues, subtitleCues.missing),
+    );
+    await _addColumnIfMissing(
+      tableName: 'timeline_clips',
+      columnName: 'lane_index',
+      addColumn: () => m.addColumn(timelineClips, timelineClips.laneIndex),
+    );
+    await _addColumnIfMissing(
+      tableName: 'timeline_clips',
+      columnName: 'start_time_ms',
+      addColumn: () => m.addColumn(timelineClips, timelineClips.startTimeMs),
+    );
+    await _addColumnIfMissing(
+      tableName: 'timeline_clips',
+      columnName: 'duration_sec',
+      addColumn: () => m.addColumn(timelineClips, timelineClips.durationSec),
+    );
+    await _addColumnIfMissing(
+      tableName: 'timeline_clips',
+      columnName: 'source_type',
+      addColumn: () => m.addColumn(timelineClips, timelineClips.sourceType),
+    );
+    await _addColumnIfMissing(
+      tableName: 'timeline_clips',
+      columnName: 'source_line_id',
+      addColumn: () => m.addColumn(timelineClips, timelineClips.sourceLineId),
+    );
+    await _addColumnIfMissing(
+      tableName: 'timeline_clips',
+      columnName: 'label',
+      addColumn: () => m.addColumn(timelineClips, timelineClips.label),
+    );
+    await _addColumnIfMissing(
+      tableName: 'timeline_clips',
+      columnName: 'missing',
+      addColumn: () => m.addColumn(timelineClips, timelineClips.missing),
+    );
+    await _addColumnIfMissing(
+      tableName: 'timeline_clips',
+      columnName: 'link_group_id',
+      addColumn: () => m.addColumn(timelineClips, timelineClips.linkGroupId),
+    );
+  }
+
+  Future<void> _createTableIfMissing(
+    String tableName,
+    Future<void> Function() createTable,
+  ) async {
+    if (!await _tableExists(tableName)) {
+      await createTable();
+    }
+  }
+
+  Future<void> _addColumnIfMissing({
+    required String tableName,
+    required String columnName,
+    required Future<void> Function() addColumn,
+  }) async {
+    if (await _tableExists(tableName) &&
+        !await _columnExists(tableName, columnName)) {
+      await addColumn();
+    }
+  }
+
+  Future<bool> _tableExists(String tableName) async {
+    final row = await customSelect(
+      'SELECT 1 FROM sqlite_master WHERE type = ? AND name = ? LIMIT 1',
+      variables: [const Variable<String>('table'), Variable(tableName)],
+    ).getSingleOrNull();
+    return row != null;
+  }
+
+  Future<bool> _columnExists(String tableName, String columnName) async {
+    final safeTableName = tableName.replaceAll('"', '""');
+    final rows = await customSelect(
+      'PRAGMA table_info("$safeTableName")',
+    ).get();
+    return rows.any((row) => row.data['name'] == columnName);
+  }
+
+  Future<void> _migrateDefaultProviderApiContracts() async {
+    await customStatement(
+      "UPDATE tts_providers "
+      "SET base_url = 'http://127.0.0.1:9880', "
+      "default_model_name = 'default' "
+      "WHERE id = 'default-gpt-sovits' "
+      "AND adapter_type = 'gptSovits' "
+      "AND base_url IN ("
+      "'http://127.0.0.1:9880', "
+      "'http://localhost:9880', "
+      "'http://127.0.0.1:19880', "
+      "'http://localhost:19880'"
+      ") "
+      "AND default_model_name IN ('', 'default', 'gpt-sovits')",
+    );
+    await customStatement(
+      "UPDATE tts_providers "
+      "SET base_url = 'http://127.0.0.1:9880', "
+      "default_model_name = 'default' "
+      "WHERE id = 'default-cosyvoice' "
+      "AND adapter_type = 'cosyvoice' "
+      "AND base_url IN ("
+      "'http://127.0.0.1:9880', "
+      "'http://localhost:9880', "
+      "'http://127.0.0.1:19890', "
+      "'http://localhost:19890'"
+      ") "
+      "AND default_model_name IN ('', 'default')",
+    );
+    await customStatement(
+      "UPDATE tts_providers "
+      "SET default_model_name = 'default' "
+      "WHERE id = 'default-voxcpm2-native' "
+      "AND adapter_type = 'voxcpm2Native' "
+      "AND default_model_name IN ('', 'default', 'voxcpm2')",
+    );
+  }
 
   /// Populate the database with built-in providers and starter data so new
   /// users can immediately understand the workflow.
@@ -157,7 +662,7 @@ class AppDatabase extends _$AppDatabase {
         name: const Value('CosyVoice3 (Local)'),
         adapterType: const Value('cosyvoice'),
         baseUrl: const Value('http://127.0.0.1:9880'),
-        defaultModelName: const Value(''),
+        defaultModelName: const Value('default'),
         enabled: const Value(false),
         position: const Value(2),
       ),
@@ -170,7 +675,7 @@ class AppDatabase extends _$AppDatabase {
         name: const Value('VoxCPM2 (Local)'),
         adapterType: const Value('voxcpm2Native'),
         baseUrl: const Value('http://127.0.0.1:8000'),
-        defaultModelName: const Value('voxcpm2'),
+        defaultModelName: const Value('default'),
         enabled: const Value(false),
         position: const Value(3),
       ),
@@ -183,7 +688,7 @@ class AppDatabase extends _$AppDatabase {
         name: const Value('GPT-SoVITS V2 Pro (Local)'),
         adapterType: const Value('gptSovits'),
         baseUrl: const Value('http://127.0.0.1:9880'),
-        defaultModelName: const Value('gpt-sovits'),
+        defaultModelName: const Value('default'),
         enabled: const Value(false),
         position: const Value(4),
       ),
@@ -304,6 +809,14 @@ LazyDatabase _openConnection() {
 Future<File> _resolveDatabaseFile(Directory dataDir) async {
   final currentFile = File(p.join(dataDir.path, 'neiroha.db'));
   if (await currentFile.exists()) return currentFile;
+
+  // Portable release folders must start clean. Earlier builds stored the DB
+  // inside the Flutter bundle's `data/` directory and tried to copy legacy
+  // app-support DBs automatically, which made fresh release extractions pick
+  // up local development/user test databases.
+  if (PathService.instance.isPortable) {
+    return currentFile;
+  }
 
   for (final legacyFile in _legacyDatabaseCandidates(dataDir)) {
     if (await legacyFile.exists()) {

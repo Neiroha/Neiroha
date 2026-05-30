@@ -240,6 +240,9 @@ Full CosyVoice feature support with multiple synthesis modes via the native JSON
 | List speakers | `GET` | `/speakers` | **Implemented** |
 | List profiles | `GET` | `/cosyvoice/profiles` | **Implemented** |
 
+Default local launcher URL: `http://127.0.0.1:9880`. Default model name:
+`default`.
+
 **JSON synthesis (`/cosyvoice/speech`):**
 ```json
 {
@@ -309,10 +312,14 @@ speaker profiles and reference-audio clone mode.
 | Operation | Method | Path | Status |
 |---|---|---|---|
 | Synthesize trained speaker | `POST` | `/v1/audio/speech` | **Implemented** |
-| Synthesize clone | `POST` | `/gpt-sovits/clone` | **Implemented** |
+| Synthesize clone | `POST` | `/api/gpt-sovits/clone` | **Implemented** |
 | Health check | `GET` | `/health` | **Implemented** |
-| List native models | `GET` | `/gpt-sovits/models` | **Implemented** |
-| List speakers | `GET` | `/gpt-sovits/voices`, `/v1/audio/voices`, `/speakers` | **Implemented** |
+| List voice-set models | `GET` | `/v1/models` | **Implemented** |
+| List speakers | `GET` | `/api/gpt-sovits/voices`, `/v1/audio/voices`, `/speakers` | **Implemented** |
+
+Default local launcher URL: `http://127.0.0.1:9880`. The OpenAI-compatible
+`model` value is a Neiroha voice set such as `default`; underlying GPT/SoVITS
+weights are exposed as model presets through the native admin/API surface.
 
 **Clone payload:**
 ```json
@@ -382,7 +389,7 @@ Supported adapters:
 | `azureTts` | locales via voice list | yes |
 | `systemTts` | no | yes, Windows only |
 | `cosyvoice` | profiles | profiles |
-| `gptSovits` | native model list | yes |
+| `gptSovits` | voice-set models via `/v1/models` | yes |
 | `geminiTts` | yes, built-in TTS model list | yes, built-in voice list |
 | `voxcpm2Native` | yes | yes |
 
@@ -399,8 +406,8 @@ Supported adapters:
 | `kokoro` | Kokoro-TTS | Preset + voice design modes |
 | `f5Tts` | F5-TTS / E2-TTS | Zero-shot voice clone mode |
 
-See [`research/llm-tts-adapter-guide.md`](research/llm-tts-adapter-guide.md)
-for guidance on wiring a new LLM TTS backend.
+Backend wiring notes live in the project Wiki and local design notes, keeping this
+directory focused on published API references.
 
 ### Missing local server endpoints
 

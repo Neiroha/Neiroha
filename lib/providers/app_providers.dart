@@ -2,12 +2,14 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
+import 'package:neiroha/data/services/android_media_session_service.dart';
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/data/storage/export_prefs.dart';
 import 'package:neiroha/data/storage/ffmpeg_service.dart';
 import 'package:neiroha/data/storage/novel_dialogue_rules_service.dart';
 import 'package:neiroha/data/storage/novel_import_service.dart';
+import 'package:neiroha/data/storage/novel_text_filter_rules_service.dart';
 import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
 import 'package:neiroha/domain/platform/platform_capabilities.dart';
@@ -89,6 +91,16 @@ final novelDialogueRulesProvider = FutureProvider((ref) {
   return ref.watch(novelDialogueRulesServiceProvider).load();
 });
 
+/// Global regex replacements applied to novel text before it is sent to TTS.
+final novelTextFilterRulesServiceProvider =
+    Provider<NovelTextFilterRulesService>((ref) {
+      return NovelTextFilterRulesService(ref.watch(databaseProvider));
+    });
+
+final novelTextFilterRulesProvider = FutureProvider((ref) {
+  return ref.watch(novelTextFilterRulesServiceProvider).load();
+});
+
 /// Per-segment Phase TTS generation overrides, such as one sentence's
 /// temporary instruction/emotion prompt.
 final phaseSegmentSettingsFileServiceProvider =
@@ -106,6 +118,59 @@ final ttsQueueServiceProvider = Provider<TtsQueueService>((ref) {
 final ttsQueueSnapshotProvider = StreamProvider<TtsQueueSnapshot>((ref) {
   return ref.watch(ttsQueueServiceProvider).watchSnapshots();
 });
+
+class HealthCheckSettings {
+  static const timeoutSecondsKey = 'healthCheck.timeoutSeconds';
+  static const defaultTimeoutSeconds = 5;
+
+  const HealthCheckSettings._();
+
+  static int parseTimeoutSeconds(String? raw) {
+    final parsed = int.tryParse(raw ?? '');
+    return (parsed ?? defaultTimeoutSeconds).clamp(1, 60).toInt();
+  }
+}
+
+class VoiceHealthSettings {
+  static const prefix = 'voiceHealth.';
+  static const okValue = 'ok';
+  static const failedValue = 'failed';
+
+  const VoiceHealthSettings._();
+
+  static String keyFor(String assetId) => '$prefix$assetId';
+
+  static String? assetIdFromKey(String key) {
+    if (!key.startsWith(prefix)) return null;
+    return key.substring(prefix.length);
+  }
+}
+
+final voiceHealthStatusProvider = FutureProvider<Map<String, bool>>((
+  ref,
+) async {
+  final rows = await ref
+      .watch(databaseProvider)
+      .getSettingsWithPrefix(VoiceHealthSettings.prefix);
+  final statuses = <String, bool>{};
+  for (final entry in rows.entries) {
+    final assetId = VoiceHealthSettings.assetIdFromKey(entry.key);
+    if (assetId == null) continue;
+    statuses[assetId] = entry.value == VoiceHealthSettings.okValue;
+  }
+  return statuses;
+});
+
+final warnedUnhealthyVoiceIdsProvider = StateProvider<Set<String>>(
+  (ref) => const <String>{},
+);
+
+Future<Duration> readHealthCheckTimeout(WidgetRef ref) async {
+  final stored = await ref
+      .read(databaseProvider)
+      .getSetting(HealthCheckSettings.timeoutSecondsKey);
+  return Duration(seconds: HealthCheckSettings.parseTimeoutSeconds(stored));
+}
 
 /// Probes `ffmpeg -version` once per session. Watch this in the Settings
 /// screen (so the badge updates after the user changes the path) and in
@@ -269,3 +334,12 @@ final audioPlayerProvider = Provider<AudioPlayer>((ref) {
   ref.onDispose(() => player.dispose());
   return player;
 });
+
+/// Android foreground media session for Novel Reader background playback.
+final androidMediaSessionServiceProvider = Provider<AndroidMediaSessionService>(
+  (ref) {
+    final service = AndroidMediaSessionService();
+    ref.onDispose(service.dispose);
+    return service;
+  },
+);

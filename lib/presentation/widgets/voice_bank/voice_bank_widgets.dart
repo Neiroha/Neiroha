@@ -124,6 +124,7 @@ class VoiceBankTile extends StatelessWidget {
 class VoiceBankCharacterTile extends StatelessWidget {
   final db.VoiceAsset asset;
   final bool isSelected;
+  final bool? healthOk;
   final VoidCallback onTap;
   final VoidCallback onRemove;
 
@@ -131,12 +132,14 @@ class VoiceBankCharacterTile extends StatelessWidget {
     super.key,
     required this.asset,
     required this.isSelected,
+    required this.healthOk,
     required this.onTap,
     required this.onRemove,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Material(
@@ -179,13 +182,24 @@ class VoiceBankCharacterTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                Container(
-                  width: 8,
-                  height: 8,
-                  margin: const EdgeInsets.only(right: 4),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: asset.enabled ? Colors.green : Colors.grey,
+                Tooltip(
+                  message: healthOk == false
+                      ? l10n.healthCheckFailedTooltip
+                      : asset.enabled
+                      ? l10n.uiEnabled
+                      : l10n.uiDisabled,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    margin: const EdgeInsets.only(right: 4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: healthOk == false
+                          ? Colors.redAccent
+                          : asset.enabled
+                          ? Colors.green
+                          : Colors.grey,
+                    ),
                   ),
                 ),
                 IconButton(

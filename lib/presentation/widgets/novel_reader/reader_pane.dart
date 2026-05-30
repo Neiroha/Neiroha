@@ -12,18 +12,52 @@ class _ReaderPagePiece {
   });
 }
 
-class _ReaderPageHit {
-  final int pageIndex;
-  final int textLength;
+enum _NovelSegmentCacheState { none, current, stale }
 
-  const _ReaderPageHit({required this.pageIndex, required this.textLength});
+const int _readerPagesCacheLimit = 12;
+final Map<String, _ReaderPagesLayout> _readerPagesCache = {};
+
+void _clearReaderPagesCache() {
+  _readerPagesCache.clear();
 }
 
-enum _NovelSegmentCacheState { none, current, stale }
+class _ReaderPagesLayout {
+  final List<List<_ReaderPagePiece>> pages;
+  final Map<int, int> pageByGlobalIndex;
+
+  const _ReaderPagesLayout({
+    required this.pages,
+    required this.pageByGlobalIndex,
+  });
+}
 
 bool _shouldSkipSegment(db.NovelProject project, db.NovelSegment segment) {
   return project.skipPunctuationOnlySegments &&
       isNovelPunctuationOnly(segment.segmentText);
+}
+
+String _filteredNovelTextForTts(
+  db.NovelSegment segment,
+  List<NovelTextFilterRule> textFilterRules,
+) {
+  return NovelTextFilterRulesService.applyFilters(
+    segment.segmentText,
+    textFilterRules,
+  ).trim();
+}
+
+bool _shouldSkipSegmentForTts(
+  db.NovelProject project,
+  db.NovelSegment segment,
+  List<NovelTextFilterRule> textFilterRules,
+) {
+  return _shouldSkipSegment(project, segment) ||
+      _filteredNovelTextForTts(segment, textFilterRules).isEmpty;
+}
+
+bool _hasUsableNovelAudio(db.NovelSegment segment) {
+  final path = segment.audioPath;
+  return path != null && !segment.missing && File(path).existsSync();
 }
 
 Color _colorFromHex(String raw, Color fallback) {
@@ -98,18 +132,24 @@ class _ReaderPane extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = _readerColors(project.readerTheme);
-    final playback = ref.watch(playbackNotifierProvider);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final pages = _buildPages(
+        final layout = _buildPages(
+          cacheKey: _readerPagesCacheKey(
+            constraints: constraints,
+            segments: segments,
+            fontSize: project.fontSize,
+            lineHeight: project.lineHeight,
+          ),
           constraints: constraints,
           colors: colors,
           segments: segments,
           fontSize: project.fontSize,
           lineHeight: project.lineHeight,
         );
+        final pages = layout.pages;
         final pageCount = math.max(1, pages.length);
-        final activePage = _pageForCurrentSegment(pages, playback);
+        final activePage = _pageForCurrentSegment(layout);
         final pageIndex = (requestedPageIndex ?? activePage)
             .clamp(0, pageCount - 1)
             .toInt();
@@ -250,57 +290,27 @@ class _ReaderPane extends ConsumerWidget {
     );
   }
 
-  int _pageForCurrentSegment(
-    List<List<_ReaderPagePiece>> pages,
-    PlaybackState playback,
-  ) {
+  int _pageForCurrentSegment(_ReaderPagesLayout layout) {
     final current = currentGlobalIndex;
     if (current == null) return 0;
-    final hits = <_ReaderPageHit>[];
-    for (var pageIndex = 0; pageIndex < pages.length; pageIndex++) {
-      for (final piece in pages[pageIndex]) {
-        if (piece.segment.globalIndex == current) {
-          hits.add(
-            _ReaderPageHit(pageIndex: pageIndex, textLength: piece.text.length),
-          );
-        }
-      }
-    }
-    if (hits.isEmpty) return 0;
-    if (hits.length == 1) return hits.first.pageIndex;
-    if (!project.autoTurnPage ||
-        playback.sourceTag != playbackSourceTag ||
-        playback.duration.inMilliseconds <= 0) {
-      return hits.first.pageIndex;
-    }
-
-    final totalTextLength = hits.fold<int>(
-      0,
-      (sum, hit) => sum + math.max(1, hit.textLength),
-    );
-    final fraction =
-        playback.position.inMilliseconds /
-        math.max(1, playback.duration.inMilliseconds);
-    final target = (totalTextLength * fraction.clamp(0.0, 0.999)).floor();
-    var cursor = 0;
-    for (final hit in hits) {
-      cursor += math.max(1, hit.textLength);
-      if (target < cursor) return hit.pageIndex;
-    }
-    return hits.last.pageIndex;
+    return layout.pageByGlobalIndex[current] ?? 0;
   }
 
-  List<List<_ReaderPagePiece>> _buildPages({
+  _ReaderPagesLayout _buildPages({
+    required String cacheKey,
     required BoxConstraints constraints,
     required _ReaderColors colors,
     required List<db.NovelSegment> segments,
     required double fontSize,
     required double lineHeight,
   }) {
+    final cached = _readerPagesCache[cacheKey];
+    if (cached != null) return cached;
+
     if (segments.isEmpty ||
         constraints.maxWidth <= 0 ||
         constraints.maxHeight <= 0) {
-      return const [];
+      return const _ReaderPagesLayout(pages: [], pageByGlobalIndex: {});
     }
     final textStyle = TextStyle(
       color: colors.text,
@@ -367,7 +377,62 @@ class _ReaderPane extends ConsumerWidget {
       }
     }
     if (currentPage.isNotEmpty) pages.add(currentPage);
-    return pages;
+    final layout = _ReaderPagesLayout(
+      pages: pages,
+      pageByGlobalIndex: _buildPageIndex(pages),
+    );
+    _readerPagesCache[cacheKey] = layout;
+    if (_readerPagesCache.length > _readerPagesCacheLimit) {
+      _readerPagesCache.remove(_readerPagesCache.keys.first);
+    }
+    return layout;
+  }
+
+  Map<int, int> _buildPageIndex(List<List<_ReaderPagePiece>> pages) {
+    final pageByGlobalIndex = <int, int>{};
+    for (var pageIndex = 0; pageIndex < pages.length; pageIndex++) {
+      for (final piece in pages[pageIndex]) {
+        pageByGlobalIndex.putIfAbsent(
+          piece.segment.globalIndex,
+          () => pageIndex,
+        );
+      }
+    }
+    return pageByGlobalIndex;
+  }
+
+  String _readerPagesCacheKey({
+    required BoxConstraints constraints,
+    required List<db.NovelSegment> segments,
+    required double fontSize,
+    required double lineHeight,
+  }) {
+    final first = segments.firstOrNull;
+    final last = segments.lastOrNull;
+    var revision = 0x811c9dc5;
+    for (final segment in segments) {
+      revision = _combineReaderRevision(revision, segment.id.hashCode);
+      revision = _combineReaderRevision(revision, segment.globalIndex);
+      revision = _combineReaderRevision(revision, segment.orderIndex);
+      revision = _combineReaderRevision(revision, segment.segmentText.length);
+      revision = _combineReaderRevision(revision, segment.segmentType.hashCode);
+    }
+    return [
+      constraints.maxWidth.round(),
+      constraints.maxHeight.round(),
+      fontSize.toStringAsFixed(2),
+      lineHeight.toStringAsFixed(2),
+      segments.length,
+      revision,
+      first?.id ?? '',
+      first?.globalIndex ?? 0,
+      last?.id ?? '',
+      last?.globalIndex ?? 0,
+    ].join('|');
+  }
+
+  int _combineReaderRevision(int hash, int value) {
+    return 0x1fffffff & ((hash ^ value) * 16777619);
   }
 
   double _measureTextHeight(String text, TextStyle style, double width) {

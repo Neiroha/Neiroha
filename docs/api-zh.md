@@ -237,6 +237,9 @@ Provider 与媒体能力会按当前运行平台过滤：
 | 列出说话人 | `GET` | `/speakers` | **已实现** |
 | 列出服务端 profile | `GET` | `/cosyvoice/profiles` | **已实现** |
 
+默认本地 launcher 地址：`http://127.0.0.1:9880`。默认模型名：
+`default`。
+
 **JSON 合成（`/cosyvoice/speech`）：**
 ```json
 {
@@ -276,10 +279,14 @@ Provider 与媒体能力会按当前运行平台过滤：
 | 操作 | 方法 | 路径 | 状态 |
 |---|---|---|---|
 | 已训练说话人合成 | `POST` | `/v1/audio/speech` | **已实现** |
-| 克隆合成 | `POST` | `/gpt-sovits/clone` | **已实现** |
+| 克隆合成 | `POST` | `/api/gpt-sovits/clone` | **已实现** |
 | 健康检查 | `GET` | `/health` | **已实现** |
-| 列出原生模型 | `GET` | `/gpt-sovits/models` | **已实现** |
-| 列出说话人 | `GET` | `/gpt-sovits/voices`、`/v1/audio/voices`、`/speakers` | **已实现** |
+| 列出 voice-set 模型 | `GET` | `/v1/models` | **已实现** |
+| 列出说话人 | `GET` | `/api/gpt-sovits/voices`、`/v1/audio/voices`、`/speakers` | **已实现** |
+
+默认本地 launcher 地址：`http://127.0.0.1:9880`。OpenAI 兼容接口里的
+`model` 是 Neiroha voice set，例如 `default`；底层 GPT/SoVITS 权重作为
+model preset 由原生 Admin/API 管理。
 
 **克隆请求体：**
 ```json
@@ -351,7 +358,7 @@ TTS 后端在真正实现原生平台适配器前保持隐藏。
 | `azureTts` | 通过语音列表返回 locale | 是 |
 | `systemTts` | 否 | 是，仅 Windows |
 | `cosyvoice` | profile | profile |
-| `gptSovits` | 原生模型列表 | 是 |
+| `gptSovits` | 通过 `/v1/models` 查询 voice-set 模型 | 是 |
 | `geminiTts` | 是，内置 TTS 模型列表 | 是，内置声音列表 |
 | `voxcpm2Native` | 是 | 是 |
 

@@ -33,7 +33,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              '$voiceCount voices',
+              AppLocalizations.of(context).uiVoiceCount(voiceCount),
               style: TextStyle(
                 fontSize: 11,
                 color: Colors.white.withValues(alpha: 0.5),
@@ -67,7 +67,11 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.file_download_outlined, size: 16),
-              label: Text(_exporting ? 'Exporting...' : 'Export Video'),
+              label: Text(
+                _exporting
+                    ? AppLocalizations.of(context).uiExporting
+                    : AppLocalizations.of(context).uiExportVideo,
+              ),
             ),
             SizedBox(width: 8),
           ],

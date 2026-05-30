@@ -298,7 +298,11 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final playback = ref.watch(playbackNotifierProvider);
+    final playback = ref.watch(
+      playbackNotifierProvider.select(
+        (state) => (audioPath: state.audioPath, isPlaying: state.isPlaying),
+      ),
+    );
     final isPlaying =
         path != null && playback.audioPath == path && playback.isPlaying;
     return GestureDetector(

@@ -53,7 +53,7 @@
   "keepTtsRunningSubtitle": "Useful for reading with Novel Reader while checking task progress or settings.",
   "keepTtsRunningEnabled": "TTS will continue when switching screens.",
   "keepTtsRunningDisabled": "Novel playback will stop when leaving the reader.",
-  "aboutSubtitle": "v0.1.0 - AI Audio Middleware & Dubbing Workstation",
+  "aboutSubtitle": "v0.3.0 - AI Audio Middleware & Dubbing Workstation",
   "uiUnassigned": "-- Unassigned --",
   "uiOrUploadANewFile": "— or upload a new file —",
   "uiWillBeRemoved": "\"{name}\" will be removed.",
@@ -277,7 +277,9 @@
   },
   "uiExecutablePath": "Executable Path",
   "uiExportAudio": "Export Audio",
+  "uiExportVideo": "Export Video",
   "uiExportBook": "Export Book",
+  "uiExportNovelAudio": "Export novel audio",
   "uiExportCancelled": "Export cancelled",
   "uiExportDefaults": "Export Defaults",
   "uiExportDubbedAudio": "Export dubbed audio",
@@ -292,7 +294,9 @@
   "uiExportMergedAudio": "Export merged audio",
   "uiExportSubtitlesSingleTTSAudio": "Export subtitles + Single TTS audio",
   "uiExportSuccessful": "Export successful",
+  "uiExporting": "Exporting…",
   "uiExportingAudio": "Exporting audio…",
+  "uiExportingNovelAudio": "Exporting novel audio…",
   "uiExportingVideo": "Exporting video…",
   "uiFailed": "Failed",
   "uiFailedToDeleteCharacter": "Failed to delete character: {error}",
@@ -340,7 +344,27 @@
   },
   "uiGenerateAllCues": "Generate all cues",
   "uiGenerateBook": "Generate Book",
+  "uiGenerateFullBookCacheBeforeExporting": "Generate the full book cache before exporting.",
+  "uiGenerateAllStopped": "Generate all stopped: {error}",
+  "@uiGenerateAllStopped": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "uiGenerated": "Generated",
+  "uiGeneratedCues": "Generated {done} cue(s)",
+  "@uiGeneratedCues": {
+    "placeholders": {
+      "done": {}
+    }
+  },
+  "uiGeneratedCuesWithFailures": "Generated {done} cue(s), {failed} failed",
+  "@uiGeneratedCuesWithFailures": {
+    "placeholders": {
+      "done": {},
+      "failed": {}
+    }
+  },
   "uiGenerating": "Generating…",
   "uiGENERATION": "GENERATION",
   "uiGPTSoVITSCloneModeNeedsPromptText": "GPT-SoVITS clone mode needs Prompt Text",
@@ -432,11 +456,13 @@
   "uiNoBanksYet": "No banks yet",
   "uiNoCharactersInThisBankYet": "No characters in this bank yet",
   "uiNoCuesFoundInFile": "No cues found in file",
+  "uiNoCuesToGenerateAssignVoiceFirst": "No cues to generate — assign a voice first",
   "uiNoCuesYetImportAnSRTLRCFileOrAddOneManually": "No cues yet.\nImport an SRT/LRC file or add one manually.",
   "uiNoDialogProjectsYet": "No dialog projects yet",
   "uiNoGeneratedSegmentsToMerge": "No generated segments to merge.",
   "uiNoMatches": "No matches",
   "uiNoModelsOrVoicesYetUseFetchAllOrAddManually": "No models or voices yet. Use \"Fetch All\" or add manually.",
+  "uiNoReadableSegmentsToExport": "No readable segments to export.",
   "uiNoPerSentenceStyleControls": "No per-sentence style controls",
   "uiNoProjectsYet": "No projects yet",
   "uiNoProvidersAvailable": "No providers available",
@@ -454,6 +480,14 @@
   "uiNotFoundInstallFfmpegOrSetAPathBelowTheAppWorks": "Not found. Install ffmpeg (or set a path below) — the app works without it, but waveforms and media probing will be skipped.",
   "uiNothingToExportNoGeneratedTTSA3AudioOrUnmutedV1": "Nothing to export — no generated TTS, A3 audio, or unmuted V1",
   "uiNovelLongFormNarration": "Novel & long-form narration",
+  "uiNovelCacheCompleted": "Novel cache completed.",
+  "uiNovelCacheCompletedWithFailures": "Novel cache completed with {failed} failed segment(s).",
+  "@uiNovelCacheCompletedWithFailures": {
+    "placeholders": {
+      "failed": {}
+    }
+  },
+  "uiNovelCacheOverwritten": "Novel cache overwritten.",
   "uiOK": "OK",
   "uiOnlyPending": "Only pending",
   "uiOpenFolder": "Open folder",
@@ -485,6 +519,7 @@
   "uiPreviousVoice": "Previous voice",
   "uiProbing": "Probing…",
   "uiProjectName": "Project name",
+  "uiProjectSettings": "Project Settings",
   "uiPromptLanguage": "Prompt Language",
   "uiPromptTextSpokenInRefAudio": "Prompt Text (spoken in ref audio)",
   "uiPromptTextSpokenInRefAudio2": "Prompt Text (spoken in ref audio) *",
@@ -575,6 +610,7 @@
   "uiSelectOrEnterAGPTSoVITSSpeaker": "Select or enter a GPT-SoVITS speaker",
   "uiSelectSpeaker": "Select Speaker",
   "uiSelectVoice": "Select Voice",
+  "uiDontSave": "Don''t save",
   "uiSendFailed": "Send failed: {error}",
   "@uiSendFailed": {
     "placeholders": {
@@ -596,6 +632,9 @@
   "uiSplitAtBlankLines": "Split at blank lines",
   "uiSplitAtRegexMatch": "Split at regex match",
   "uiSplitRules": "Split Rules",
+  "splitRuleNewlineName": "By paragraph (blank line)",
+  "splitRuleSentenceName": "By sentence punctuation (Chinese / English)",
+  "splitRuleQuotesName": "By closing quote (Chinese / English)",
   "uiStart": "Start",
   "uiStartMmSsMs": "Start (mm:ss.ms)",
   "uiSTATS": "STATS",
@@ -660,6 +699,12 @@
   "uiVoiceInstruction": "Voice Instruction",
   "uiVoiceName": "Voice Name",
   "uiVoiceSettings": "Voice settings",
+  "uiVoiceCount": "{count} voices",
+  "@uiVoiceCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
   "uiVOICES": "VOICES",
   "uiVOICESINBANK": "VOICES IN BANK",
   "uiWaiting": "Waiting",
@@ -716,6 +761,58 @@
       }
     }
   },
+  "healthCheckTimeoutTitle": "Health Check Timeout",
+  "healthCheckTimeoutSubtitle": "Stop provider and voice-bank checks that hang too long.",
+  "healthCheckTimeoutSaved": "Health check timeout saved: {seconds}s",
+  "@healthCheckTimeoutSaved": {
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "healthCheckFailedTooltip": "Health check failed",
+  "uiDisabled": "Disabled",
+  "uiProviderMissing": "Provider missing",
+  "uiReachable": "Reachable",
+  "uiUnreachable": "Unreachable",
+  "uiNoHealthCheckResults": "No health check results.",
+  "unhealthyVoiceWarning": "Health check failed for {voice}. Generation may fail.",
+  "@unhealthyVoiceWarning": {
+    "placeholders": {
+      "voice": {
+        "type": "String",
+        "example": "Narrator"
+      }
+    }
+  },
+  "novelPureReadingMode": "Pure reading mode",
+  "novelPlaybackGap": "Gap",
+  "novelTextFilters": "Text Filters",
+  "novelTextFilterRules": "Text Filter Rules",
+  "novelNewTextFilterRule": "New Text Filter Rule",
+  "novelEditTextFilterRule": "Edit Text Filter Rule",
+  "novelReplacement": "Replacement",
+  "novelReplacementHint": "Leave empty to remove matched text.",
+  "novelPatternRequired": "Pattern is required",
+  "novelSaveApply": "Save & Apply",
+  "pressBackAgainToExit": "Press Back again to exit.",
+  "uiVideoDubMissingVoiceSkippedText": "{missingVoice} without a voice will be skipped. ",
+  "@uiVideoDubMissingVoiceSkippedText": {
+    "placeholders": {
+      "missingVoice": {}
+    }
+  },
+  "uiVideoDubRegenerateExistingCuesPrompt": "{alreadyDone} cue(s) already have audio. {pending} pending. {missingVoiceText}Regenerate the existing ones too, or only fill in the gaps?",
+  "@uiVideoDubRegenerateExistingCuesPrompt": {
+    "placeholders": {
+      "alreadyDone": {},
+      "pending": {},
+      "missingVoiceText": {}
+    }
+  },
+  "uiAutoTtsSkippedNoVoices": "Auto-TTS skipped — bank has no voices",
   "uiVideoDubUnavailableOnAndroidPhone": "Video Dub is disabled on Android phones",
   "uiVideoDubUnavailableOnAndroidPhoneDescription": "Video editing needs more horizontal space than tall phone screens can provide. Use a tablet, foldable wide layout, or desktop to edit video dubbing projects.",
   "uiDetails": "Details"

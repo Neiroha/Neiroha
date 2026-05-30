@@ -115,7 +115,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get keepTtsRunningDisabled => '离开小说阅读器时会停止播放。';
 
   @override
-  String get aboutSubtitle => 'v0.1.0 - AI 音频中间件与配音工作站';
+  String get aboutSubtitle => 'v0.3.0 - AI 音频中间件与配音工作站';
 
   @override
   String get uiUnassigned => '-- 未分配 --';
@@ -691,7 +691,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get uiExportAudio => '导出音频';
 
   @override
+  String get uiExportVideo => '导出视频';
+
+  @override
   String get uiExportBook => '导出整本书';
+
+  @override
+  String get uiExportNovelAudio => '导出小说音频';
 
   @override
   String get uiExportCancelled => '导出已取消';
@@ -723,7 +729,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get uiExportSuccessful => '导出成功';
 
   @override
+  String get uiExporting => '正在导出…';
+
+  @override
   String get uiExportingAudio => '正在导出音频…';
+
+  @override
+  String get uiExportingNovelAudio => '正在导出小说音频…';
 
   @override
   String get uiExportingVideo => '正在导出视频…';
@@ -798,7 +810,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get uiGenerateBook => '生成整本书';
 
   @override
+  String get uiGenerateFullBookCacheBeforeExporting => '请先生成整本书缓存再导出。';
+
+  @override
+  String uiGenerateAllStopped(Object error) {
+    return '全部生成已停止：$error';
+  }
+
+  @override
   String get uiGenerated => '已生成';
+
+  @override
+  String uiGeneratedCues(Object done) {
+    return '已生成 $done 个片段';
+  }
+
+  @override
+  String uiGeneratedCuesWithFailures(Object done, Object failed) {
+    return '已生成 $done 个片段，$failed 个失败';
+  }
 
   @override
   String get uiGenerating => '生成中…';
@@ -1015,6 +1045,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get uiNoCuesFoundInFile => '文件中没有找到片段';
 
   @override
+  String get uiNoCuesToGenerateAssignVoiceFirst => '没有可生成的片段，请先分配音色';
+
+  @override
   String get uiNoCuesYetImportAnSRTLRCFileOrAddOneManually =>
       '还没有片段。\n请导入 SRT/LRC 文件或手动添加。';
 
@@ -1030,6 +1063,9 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get uiNoModelsOrVoicesYetUseFetchAllOrAddManually =>
       '还没有模型或音色。请使用“全部获取”或手动添加。';
+
+  @override
+  String get uiNoReadableSegmentsToExport => '没有可导出的可读分段。';
 
   @override
   String get uiNoPerSentenceStyleControls => '没有逐句风格控制';
@@ -1085,6 +1121,17 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get uiNovelLongFormNarration => '小说与长篇旁白';
+
+  @override
+  String get uiNovelCacheCompleted => '小说缓存已完成。';
+
+  @override
+  String uiNovelCacheCompletedWithFailures(Object failed) {
+    return '小说缓存已完成，$failed 个分段失败。';
+  }
+
+  @override
+  String get uiNovelCacheOverwritten => '小说缓存已覆盖。';
 
   @override
   String get uiOK => '确定';
@@ -1167,6 +1214,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get uiProjectName => '项目名称';
+
+  @override
+  String get uiProjectSettings => '项目设置';
 
   @override
   String get uiPromptLanguage => '提示文本语言';
@@ -1391,6 +1441,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get uiSelectVoice => '选择音色';
 
   @override
+  String get uiDontSave => '不保存';
+
+  @override
   String uiSendFailed(Object error) {
     return '发送失败：$error';
   }
@@ -1439,6 +1492,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get uiSplitRules => '拆分规则';
+
+  @override
+  String get splitRuleNewlineName => '按段落（空行分隔）';
+
+  @override
+  String get splitRuleSentenceName => '按句号（中英文）';
+
+  @override
+  String get splitRuleQuotesName => '按引号（中英文）';
 
   @override
   String get uiStart => '开始';
@@ -1616,6 +1678,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get uiVoiceSettings => '音色设置';
 
   @override
+  String uiVoiceCount(Object count) {
+    return '$count 个音色';
+  }
+
+  @override
   String get uiVOICES => '音色';
 
   @override
@@ -1691,6 +1758,90 @@ class AppLocalizationsZh extends AppLocalizations {
   String fontModeSaved(String font) {
     return '字体已设为 $font。';
   }
+
+  @override
+  String get healthCheckTimeoutTitle => '健康检查超时';
+
+  @override
+  String get healthCheckTimeoutSubtitle => '超过时限就停止服务商和语音库健康检查。';
+
+  @override
+  String healthCheckTimeoutSaved(int seconds) {
+    return '健康检查超时已保存：$seconds 秒';
+  }
+
+  @override
+  String get healthCheckFailedTooltip => '健康检查失败';
+
+  @override
+  String get uiDisabled => '已禁用';
+
+  @override
+  String get uiProviderMissing => '服务商缺失';
+
+  @override
+  String get uiReachable => '可访问';
+
+  @override
+  String get uiUnreachable => '不可访问';
+
+  @override
+  String get uiNoHealthCheckResults => '没有健康检查结果。';
+
+  @override
+  String unhealthyVoiceWarning(String voice) {
+    return '$voice 的健康检查失败，生成可能会失败。';
+  }
+
+  @override
+  String get novelPureReadingMode => '纯阅读模式';
+
+  @override
+  String get novelPlaybackGap => '停顿';
+
+  @override
+  String get novelTextFilters => '文本过滤';
+
+  @override
+  String get novelTextFilterRules => '文本过滤规则';
+
+  @override
+  String get novelNewTextFilterRule => '新建文本过滤规则';
+
+  @override
+  String get novelEditTextFilterRule => '编辑文本过滤规则';
+
+  @override
+  String get novelReplacement => '替换为';
+
+  @override
+  String get novelReplacementHint => '留空则删除匹配文本。';
+
+  @override
+  String get novelPatternRequired => '正则不能为空';
+
+  @override
+  String get novelSaveApply => '保存并应用';
+
+  @override
+  String get pressBackAgainToExit => '再按一次返回键退出。';
+
+  @override
+  String uiVideoDubMissingVoiceSkippedText(Object missingVoice) {
+    return '$missingVoice 个未分配音色的片段会被跳过。';
+  }
+
+  @override
+  String uiVideoDubRegenerateExistingCuesPrompt(
+    Object alreadyDone,
+    Object pending,
+    Object missingVoiceText,
+  ) {
+    return '$alreadyDone 个片段已有音频，$pending 个待生成。$missingVoiceText是否也重新生成已有音频，还是只补齐缺口？';
+  }
+
+  @override
+  String get uiAutoTtsSkippedNoVoices => '自动 TTS 已跳过，语音库中没有音色';
 
   @override
   String get uiVideoDubUnavailableOnAndroidPhone => 'Android 手机端已禁用视频配音';

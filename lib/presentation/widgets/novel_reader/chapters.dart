@@ -5,15 +5,49 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     db.NovelProject project,
     db.NovelSegment segment, {
     required bool syncPage,
+    bool persistImmediately = true,
   }) async {
-    await ref
-        .read(databaseProvider)
-        .markNovelProgress(project.id, segment.globalIndex);
-    if (!syncPage || !mounted) return;
-    _updateState(() {
-      _manualChapterId = segment.chapterId;
-      _manualPageIndex = null;
+    if (mounted) {
+      _updateState(() {
+        _localCurrentGlobalIndex = segment.globalIndex;
+        if (syncPage) {
+          _manualChapterId = segment.chapterId;
+          _manualPageIndex = null;
+        }
+      });
+    }
+    if (persistImmediately) {
+      await _persistNovelProgress(project.id, segment.globalIndex, force: true);
+    } else {
+      unawaited(_persistNovelProgress(project.id, segment.globalIndex));
+    }
+  }
+
+  Future<void> _persistNovelProgress(
+    String projectId,
+    int globalIndex, {
+    bool force = false,
+  }) async {
+    final now = DateTime.now();
+    if (!force &&
+        _lastPersistedProgressIndex == globalIndex &&
+        _lastProgressPersistAt != null &&
+        now.difference(_lastProgressPersistAt!) < const Duration(seconds: 8)) {
+      return;
+    }
+    if (!force &&
+        _lastProgressPersistAt != null &&
+        now.difference(_lastProgressPersistAt!) < const Duration(seconds: 8)) {
+      return;
+    }
+    _lastProgressPersistAt = now;
+    _lastPersistedProgressIndex = globalIndex;
+    final dbx = ref.read(databaseProvider);
+    final write = _progressPersistQueue.catchError((_) {}).then((_) async {
+      await dbx.markNovelProgress(projectId, globalIndex);
     });
+    _progressPersistQueue = write;
+    await write;
   }
 
   Future<void> _selectChapter(
@@ -31,6 +65,9 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     }
     if (!mounted) return;
     _updateState(() {
+      if (firstSegment.isNotEmpty) {
+        _localCurrentGlobalIndex = firstSegment.first.globalIndex;
+      }
       _manualChapterId = chapterId;
       _manualPageIndex = 0;
     });
@@ -76,6 +113,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     _updateState(() => _importing = true);
     try {
       _stopNovel();
+      _clearReaderPagesCache();
       final report = await run();
       _updateState(() {
         _manualChapterId = null;
@@ -104,6 +142,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     if (cleaned == segment.segmentText) return;
 
     _stopNovel();
+    _clearReaderPagesCache();
     await _deleteAudioPath(segment.audioPath);
     final dbx = ref.read(databaseProvider);
     await dbx.updateNovelSegment(
@@ -126,6 +165,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     db.NovelSegment segment,
   ) async {
     _stopNovel();
+    _clearReaderPagesCache();
     await _deleteAudioPath(segment.audioPath);
     final dbx = ref.read(databaseProvider);
     await dbx.deleteNovelSegment(project.id, segment.id);
@@ -161,6 +201,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     if (result == null) return;
 
     _stopNovel();
+    _clearReaderPagesCache();
     final dialogueRules = await ref
         .read(novelImportServiceProvider)
         .loadDialogueRules();
@@ -239,6 +280,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     if (!ok) return;
 
     _stopNovel();
+    _clearReaderPagesCache();
     final dbx = ref.read(databaseProvider);
     final oldSegments = await dbx.getNovelSegmentsForChapter(chapter.id);
     await _deleteSegmentAudioFiles(oldSegments);
@@ -277,6 +319,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     final rules = await ref.read(novelDialogueRulesServiceProvider).load();
     final dbx = ref.read(databaseProvider);
     final chapters = await dbx.getNovelChapters(project.id);
+    _clearReaderPagesCache();
     var rebuilt = 0;
     for (final chapter in chapters) {
       final currentSegments = segments
@@ -301,6 +344,17 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     ref.invalidate(novelDialogueRulesProvider);
     if (!mounted) return;
     _snack('Dialogue rules saved; rebuilt $rebuilt segment(s).');
+  }
+
+  Future<void> _manageTextFilterRules() async {
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _NovelTextFilterRulesDialog(),
+    );
+    if (changed != true) return;
+    ref.invalidate(novelTextFilterRulesProvider);
+    if (!mounted) return;
+    _snack('Text filters saved. Stale novel audio will regenerate on demand.');
   }
 
   Future<void> _deleteSegmentAudioFiles(

@@ -9,6 +9,8 @@ import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/presentation/navigation/app_navigation.dart';
+import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/chat_list_view.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/create_project_dialog.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/editor_project_bar.dart';
@@ -17,6 +19,7 @@ import 'package:neiroha/presentation/widgets/dialog_tts/project_list_header.dart
 import 'package:neiroha/presentation/widgets/dialog_tts/settings_panel.dart';
 import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
+import 'package:neiroha/presentation/widgets/project_settings_dialog.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
@@ -44,7 +47,10 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) setState(() => _selectedProjectId = null);
+        if (!didPop) {
+          AppBackIntent.markChildHandled();
+          setState(() => _selectedProjectId = null);
+        }
       },
       child: _DialogTtsEditor(
         key: ValueKey(_selectedProjectId),
@@ -58,6 +64,9 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
 
   Widget _buildProjectListScreen() {
     final projectsAsync = ref.watch(dialogTtsProjectsStreamProvider);
+    final banks =
+        ref.watch(voiceBanksStreamProvider).valueOrNull ??
+        const <db.VoiceBank>[];
     return Column(
       children: [
         ProjectListHeader(onCreate: _createProject),
@@ -79,14 +88,65 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
                   ),
               ],
               onOpen: (id) => setState(() => _selectedProjectId = id),
-              onDelete: (id) {
-                ref.read(databaseProvider).deleteDialogTtsProject(id);
-              },
+              onSettings: (card) => unawaited(
+                _showProjectSettings(
+                  projects.where((p) => p.id == card.id).firstOrNull,
+                  banks,
+                ),
+              ),
             ),
           ),
         ),
       ],
     );
+  }
+
+  Future<void> _showProjectSettings(
+    db.DialogTtsProject? project,
+    List<db.VoiceBank> banks,
+  ) async {
+    if (project == null) return;
+    final result = await showProjectSettingsDialog(
+      context: context,
+      projectName: project.name,
+      bankId: project.bankId,
+      banks: banks,
+    );
+    if (result == null) return;
+    final database = ref.read(databaseProvider);
+    if (result.deleteRequested) {
+      await database.deleteDialogTtsProject(project.id);
+      return;
+    }
+    final bankChanged = result.bankId != project.bankId;
+    if (result.name != project.name || bankChanged) {
+      await database.updateDialogTtsProject(
+        project.copyWith(
+          name: result.name,
+          bankId: result.bankId,
+          updatedAt: DateTime.now(),
+        ),
+      );
+      if (bankChanged) {
+        await _clearDialogProjectVoiceAssignments(project.id);
+      }
+    }
+  }
+
+  Future<void> _clearDialogProjectVoiceAssignments(String projectId) async {
+    final database = ref.read(databaseProvider);
+    final lines = await database.getDialogTtsLines(projectId);
+    for (final line in lines) {
+      await database.updateDialogTtsLine(
+        line.copyWith(
+          voiceAssetId: const Value(null),
+          audioPath: const Value(null),
+          audioDuration: const Value(null),
+          error: const Value(null),
+          missing: false,
+        ),
+      );
+    }
   }
 
   Future<void> _createProject() async {
@@ -400,6 +460,9 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
       if (asset == null) return;
       final provider = providerMap[asset.providerId];
       if (provider == null) return;
+      if (mounted) {
+        warnIfVoiceHealthFailedOnce(context: context, ref: ref, asset: asset);
+      }
 
       final slug = await ref
           .read(storageServiceProvider)

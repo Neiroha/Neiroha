@@ -63,7 +63,7 @@ class EditorProjectBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              '$voiceCount voices',
+              AppLocalizations.of(context).uiVoiceCount(voiceCount),
               style: TextStyle(
                 fontSize: 11,
                 color: Colors.white.withValues(alpha: 0.5),

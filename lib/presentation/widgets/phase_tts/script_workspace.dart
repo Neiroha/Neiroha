@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/phase_tts/split_rule_labels.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/split_rules_dialog.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
@@ -149,7 +150,7 @@ class _SplitToolbar extends StatelessWidget {
                   DropdownMenuItem(
                     value: rule.id,
                     child: Text(
-                      rule.name,
+                      localizedSplitRuleName(context, rule),
                       style: const TextStyle(fontSize: 12),
                       overflow: TextOverflow.ellipsis,
                     ),

@@ -75,24 +75,31 @@ jobs:
           fi
           echo "BUILD_NAME=$version" >> "$GITHUB_ENV"
           echo "BUILD_NUMBER=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+          echo "ASSET_VERSION=v$version" >> "$GITHUB_ENV"
 
-      - name: Build APK
+      - name: Build universal APK
         run: flutter build apk --release --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER"
+
+      - name: Build split APKs
+        run: flutter build apk --release --split-per-abi --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER"
 
       - name: Package APK
         run: |
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk "dist/neiroha-${RELEASE_TAG}-android-release.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/neiroha-Android-Universal-${ASSET_VERSION}.apk"
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "dist/neiroha-Android-ARM64-${ASSET_VERSION}.apk"
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk "dist/neiroha-Android-ARMv7-${ASSET_VERSION}.apk"
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk "dist/neiroha-Android-AMD64-${ASSET_VERSION}.apk"
 
       - name: Attest APK provenance
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: dist/neiroha-*-android-release.apk
+          subject-path: dist/neiroha-Android-*.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: neiroha-android-release-apk
+          name: neiroha-Android-release-apk
           path: dist/**
           if-no-files-found: error
 
@@ -165,6 +172,7 @@ jobs:
           fi
           echo "BUILD_NAME=$version" >> "$GITHUB_ENV"
           echo "BUILD_NUMBER=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+          echo "ASSET_VERSION=v$version" >> "$GITHUB_ENV"
 
       - name: Build Linux
         run: flutter build linux --release --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER"
@@ -182,17 +190,17 @@ jobs:
       - name: Package Linux bundle
         run: |
           mkdir -p dist
-          tar -C build/linux/x64/release/bundle -czf "dist/neiroha-${RELEASE_TAG}-linux-x64-release.tar.gz" .
+          tar -C build/linux/x64/release/bundle -czf "dist/neiroha-Linux-AMD64-${ASSET_VERSION}.tar.gz" .
 
       - name: Attest Linux provenance
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: dist/neiroha-*-linux-x64-release.tar.gz
+          subject-path: dist/neiroha-Linux-AMD64-*.tar.gz
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
-          name: neiroha-linux-x64-release
+          name: neiroha-Linux-AMD64-release
           path: dist/**
           if-no-files-found: error
 
@@ -236,6 +244,7 @@ jobs:
           }
           "BUILD_NAME=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "BUILD_NUMBER=$env:GITHUB_RUN_NUMBER" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "ASSET_VERSION=v$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Build Windows
         run: flutter build windows --release --build-name "$env:BUILD_NAME" --build-number "$env:BUILD_NUMBER"
@@ -251,19 +260,19 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          $zipName = "neiroha-${env:RELEASE_TAG}-windows-x64-release.zip"
+          $zipName = "neiroha-Windows-AMD64-${env:ASSET_VERSION}.zip"
           $zip = "dist/$zipName"
           Compress-Archive -Path "build/windows/x64/runner/Release/*" -DestinationPath $zip -Force
 
       - name: Attest Windows provenance
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: dist/neiroha-*-windows-x64-release.zip
+          subject-path: dist/neiroha-Windows-AMD64-*.zip
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: neiroha-windows-x64-release
+          name: neiroha-Windows-AMD64-release
           path: dist/**
           if-no-files-found: error
 

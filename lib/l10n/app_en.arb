@@ -53,7 +53,7 @@
   "keepTtsRunningSubtitle": "Useful for reading with Novel Reader while checking task progress or settings.",
   "keepTtsRunningEnabled": "TTS will continue when switching screens.",
   "keepTtsRunningDisabled": "Novel playback will stop when leaving the reader.",
-  "aboutSubtitle": "v0.3.1 - AI Audio Middleware & Dubbing Workstation",
+  "aboutSubtitle": "v0.4.0 - AI Audio Middleware & Dubbing Workstation",
   "uiUnassigned": "-- Unassigned --",
   "uiOrUploadANewFile": "— or upload a new file —",
   "uiWillBeRemoved": "\"{name}\" will be removed.",
@@ -815,5 +815,23 @@
   "uiAutoTtsSkippedNoVoices": "Auto-TTS skipped — bank has no voices",
   "uiVideoDubUnavailableOnAndroidPhone": "Video Dub is disabled on Android phones",
   "uiVideoDubUnavailableOnAndroidPhoneDescription": "Video editing needs more horizontal space than tall phone screens can provide. Use a tablet, foldable wide layout, or desktop to edit video dubbing projects.",
-  "uiDetails": "Details"
+  "uiDetails": "Details",
+  "uiVoiceForImportedCues": "Voice for imported cues",
+  "uiVoiceForImportedCuesHint": "Pick a character from the voice bank of this project, or leave cues unassigned and cast them one by one.",
+  "uiLeaveUnassigned": "Leave unassigned",
+  "uiCloudVoiceCloneHint": "Pick a voice above, or add a reference audio to clone a new voice on the provider account when saving.",
+  "uiCloudVoiceCloneFailed": "Voice clone failed: {error}",
+  "@uiCloudVoiceCloneFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "uiIndexTtsEmotionHint": "Optional emotion description (needs the experimental emotion mode of the WebUI)",
+  "uiMcpEndpoint": "MCP server for AI agents",
+  "uiMcpEndpointDescription": "Lets agents manage providers, voices and dubbing jobs at {url} (streamable HTTP). Uses the API key above when set.",
+  "@uiMcpEndpointDescription": {
+    "placeholders": {
+      "url": {}
+    }
+  }
 }

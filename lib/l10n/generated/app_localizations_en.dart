@@ -123,7 +123,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutSubtitle =>
-      'v0.3.1 - AI Audio Middleware & Dubbing Workstation';
+      'v0.4.0 - AI Audio Middleware & Dubbing Workstation';
 
   @override
   String get uiUnassigned => '-- Unassigned --';
@@ -1904,4 +1904,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get uiDetails => 'Details';
+
+  @override
+  String get uiVoiceForImportedCues => 'Voice for imported cues';
+
+  @override
+  String get uiVoiceForImportedCuesHint =>
+      'Pick a character from the voice bank of this project, or leave cues unassigned and cast them one by one.';
+
+  @override
+  String get uiLeaveUnassigned => 'Leave unassigned';
+
+  @override
+  String get uiCloudVoiceCloneHint =>
+      'Pick a voice above, or add a reference audio to clone a new voice on the provider account when saving.';
+
+  @override
+  String uiCloudVoiceCloneFailed(Object error) {
+    return 'Voice clone failed: $error';
+  }
+
+  @override
+  String get uiIndexTtsEmotionHint =>
+      'Optional emotion description (needs the experimental emotion mode of the WebUI)';
+
+  @override
+  String get uiMcpEndpoint => 'MCP server for AI agents';
+
+  @override
+  String uiMcpEndpointDescription(Object url) {
+    return 'Lets agents manage providers, voices and dubbing jobs at $url (streamable HTTP). Uses the API key above when set.';
+  }
 }

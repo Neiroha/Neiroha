@@ -396,6 +396,9 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
       'cosyvoice' => true,
       'voxcpm2Native' => true,
       'geminiTts' => true,
+      'elevenLabs' => true,
+      'minimaxTts' => true,
+      'indexTts' => true,
       _ => false,
     };
   }

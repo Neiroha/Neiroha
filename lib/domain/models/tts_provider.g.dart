@@ -35,4 +35,7 @@ const _$AdapterTypeEnumMap = {
   AdapterType.azureTts: 'azureTts',
   AdapterType.systemTts: 'systemTts',
   AdapterType.geminiTts: 'geminiTts',
+  AdapterType.elevenLabs: 'elevenLabs',
+  AdapterType.minimaxTts: 'minimaxTts',
+  AdapterType.indexTts: 'indexTts',
 };

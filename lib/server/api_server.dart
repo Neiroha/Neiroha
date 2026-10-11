@@ -10,6 +10,12 @@ import 'package:shelf_router/shelf_router.dart';
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
+import 'package:neiroha/server/mcp/mcp_server.dart';
+import 'package:neiroha/server/mcp/neiroha_mcp_tools.dart';
+
+/// Reported to MCP clients in `serverInfo.version`; keep in sync with the
+/// pubspec version.
+const String neirohaMcpServerVersion = '0.4.0';
 
 /// Persistent KV keys backing [ApiServerConfig]. Mirror [ApiServerConfig.load]
 /// when adding fields.
@@ -21,6 +27,7 @@ class _SettingsKeys {
   static const rateLimitPerMin = 'api.rateLimitPerMin';
   static const maxBodyBytes = 'api.maxBodyBytes';
   static const apiLogEnabled = 'api.logEnabled';
+  static const mcpEnabled = 'api.mcpEnabled';
 }
 
 /// Snapshot of the security/network knobs that gate the local API. Loaded from
@@ -51,6 +58,10 @@ class ApiServerConfig {
   /// panel. Bodies and auth headers are intentionally never captured.
   final bool apiLogEnabled;
 
+  /// Serve the MCP endpoint (`/mcp`) for AI agents. Defaults to on; the
+  /// endpoint still refuses to run unauthenticated on a non-loopback bind.
+  final bool mcpEnabled;
+
   const ApiServerConfig({
     this.bindHost = '127.0.0.1',
     this.port = 8976,
@@ -59,6 +70,7 @@ class ApiServerConfig {
     this.rateLimitPerMin = 60,
     this.maxBodyBytes = 1048576,
     this.apiLogEnabled = false,
+    this.mcpEnabled = true,
   });
 
   static Future<ApiServerConfig> load(AppDatabase db) async {
@@ -73,6 +85,7 @@ class ApiServerConfig {
       await db.getSetting(_SettingsKeys.maxBodyBytes) ?? '',
     );
     final apiLogEnabled = await db.getSetting(_SettingsKeys.apiLogEnabled);
+    final mcpEnabled = await db.getSetting(_SettingsKeys.mcpEnabled);
 
     return ApiServerConfig(
       bindHost: (host == null || host.isEmpty) ? '127.0.0.1' : host,
@@ -88,6 +101,9 @@ class ApiServerConfig {
       rateLimitPerMin: rate ?? 60,
       maxBodyBytes: body ?? 1048576,
       apiLogEnabled: _parseBool(apiLogEnabled),
+      mcpEnabled: mcpEnabled == null || mcpEnabled.isEmpty
+          ? true
+          : _parseBool(mcpEnabled),
     );
   }
 
@@ -102,6 +118,10 @@ class ApiServerConfig {
     );
     await db.setSetting(_SettingsKeys.maxBodyBytes, '${cfg.maxBodyBytes}');
     await saveLogEnabled(db, cfg.apiLogEnabled);
+    await db.setSetting(
+      _SettingsKeys.mcpEnabled,
+      cfg.mcpEnabled ? 'true' : 'false',
+    );
   }
 
   static Future<void> saveLogEnabled(AppDatabase db, bool enabled) {
@@ -116,6 +136,7 @@ class ApiServerConfig {
     int? rateLimitPerMin,
     int? maxBodyBytes,
     bool? apiLogEnabled,
+    bool? mcpEnabled,
   }) {
     return ApiServerConfig(
       bindHost: bindHost ?? this.bindHost,
@@ -125,6 +146,7 @@ class ApiServerConfig {
       rateLimitPerMin: rateLimitPerMin ?? this.rateLimitPerMin,
       maxBodyBytes: maxBodyBytes ?? this.maxBodyBytes,
       apiLogEnabled: apiLogEnabled ?? this.apiLogEnabled,
+      mcpEnabled: mcpEnabled ?? this.mcpEnabled,
     );
   }
 
@@ -199,7 +221,8 @@ class ApiServer {
       ..get('/v1/audio/voices', _handleListVoices)
       ..get('/v1/models', _handleListModels)
       ..get('/speakers', _handleSpeakers)
-      ..get('/health', _handleHealth);
+      ..get('/health', _handleHealth)
+      ..all('/mcp', _handleMcp);
 
     final handler = const Pipeline()
         .addMiddleware(_bodyLimitMiddleware(_config.maxBodyBytes))
@@ -221,6 +244,7 @@ class ApiServer {
   Future<void> stop() async {
     await _server?.close(force: true);
     _server = null;
+    _mcp = null; // rebuilt with the next config (CORS origins)
   }
 
   Future<void> restart({ApiServerConfig? config}) async {
@@ -547,6 +571,35 @@ class ApiServer {
       jsonEncode(speakers),
       headers: {'content-type': 'application/json'},
     );
+  }
+
+  // ────────────── /mcp (Model Context Protocol) ──────────────
+
+  McpServer? _mcp;
+
+  Future<Response> _handleMcp(Request request) async {
+    if (!_config.mcpEnabled) {
+      return _jsonError(404, 'MCP endpoint is disabled in Settings');
+    }
+    final host = _config.bindHost;
+    final loopback =
+        host == 'localhost' ||
+        (InternetAddress.tryParse(host)?.isLoopback ?? false);
+    if (!loopback && _config.apiKey == null) {
+      // MCP can create providers, read local files and write outputs —
+      // never expose it to the LAN without authentication.
+      return _jsonError(
+        403,
+        'MCP on a non-loopback bind host requires an API key',
+      );
+    }
+    final mcp = _mcp ??= McpServer(
+      tools: NeirohaMcpTools(db).build(),
+      serverVersion: neirohaMcpServerVersion,
+      instructions: NeirohaMcpTools.serverInstructions,
+      allowedOrigins: _config.corsOrigins,
+    );
+    return mcp.handle(request);
   }
 
   // ────────────── GET /health ──────────────

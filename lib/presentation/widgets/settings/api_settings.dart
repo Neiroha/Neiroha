@@ -27,6 +27,7 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
   bool _hydrated = false;
   bool _showKey = false;
   bool _apiLogEnabled = false;
+  bool _mcpEnabled = true;
 
   @override
   void dispose() {
@@ -48,6 +49,7 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
       _corsCtrl.text = cfg.corsOrigins.join(', ');
       _rateCtrl.text = '${cfg.rateLimitPerMin}';
       _apiLogEnabled = cfg.apiLogEnabled;
+      _mcpEnabled = cfg.mcpEnabled;
       _hydrated = true;
     });
   }
@@ -66,6 +68,7 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
           .toList(),
       rateLimitPerMin: int.tryParse(_rateCtrl.text.trim()) ?? 60,
       apiLogEnabled: _apiLogEnabled,
+      mcpEnabled: _mcpEnabled,
     );
   }
 
@@ -81,6 +84,11 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppLocalizations.of(context).uiAPIConfigSaved)),
     );
+  }
+
+  String _mcpDisplayHost() {
+    final host = _hostCtrl.text.trim();
+    return host.isEmpty || host == '0.0.0.0' ? '127.0.0.1' : host;
   }
 
   Future<void> _setApiLogEnabled(bool enabled) async {
@@ -280,6 +288,23 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
                   ],
                 );
               },
+            ),
+            const Divider(),
+            SettingsRow(
+              icon: Icons.smart_toy_outlined,
+              title: AppLocalizations.of(context).uiMcpEndpoint,
+              subtitle: AppLocalizations.of(context).uiMcpEndpointDescription(
+                'http://${_mcpDisplayHost()}:${_portCtrl.text.trim()}/mcp',
+              ),
+              trailing: Switch(
+                value: _mcpEnabled,
+                onChanged: _hydrated
+                    ? (v) async {
+                        setState(() => _mcpEnabled = v);
+                        await _apply();
+                      }
+                    : null,
+              ),
             ),
             const Divider(),
             SettingsRow(

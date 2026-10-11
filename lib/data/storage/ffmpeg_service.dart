@@ -325,7 +325,7 @@ class FFmpegService {
       // Common failure: stream-copy across mismatched codecs/sample-rates.
       // Retry once with re-encoding before giving up.
       if (!reEncode) {
-        return concatAudio(
+        return await concatAudio(
           inputPaths: inputPaths,
           outputPath: outputPath,
           reEncode: true,

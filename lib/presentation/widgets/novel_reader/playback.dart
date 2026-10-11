@@ -175,6 +175,9 @@ extension _NovelReaderEditorCache on _NovelReaderEditorState {
       'cosyvoice' => true,
       'voxcpm2Native' => true,
       'geminiTts' => true,
+      'elevenLabs' => true,
+      'minimaxTts' => true,
+      'indexTts' => true,
       _ => false,
     };
   }

@@ -4,7 +4,7 @@
 
 Neiroha exposes audio APIs at two levels:
 
-1. **Local API Server** (`lib/server/api_server.dart`) — an OpenAI-compatible HTTP server that proxies TTS requests through configured voice characters, scoped by active voice banks
+1. **Local API Server** (`lib/server/api_server.dart`) — an OpenAI-compatible HTTP server that proxies TTS requests through configured voice characters, scoped by active voice banks, plus an MCP endpoint for AI agents (`lib/server/mcp/`)
 2. **Upstream Adapter Layer** (`lib/data/adapters/`) — client-side adapters that talk to external TTS backends
 
 ---
@@ -49,6 +49,7 @@ The API uses **voice banks** as the `model` abstraction:
 | `GET` | `/v1/models` | List active voice banks as models | **Implemented** |
 | `GET` | `/speakers` | List voices from active banks (SillyTavern format) | **Implemented** |
 | `GET` | `/health` | Server health check | **Implemented** |
+| `POST` | `/mcp` | Model Context Protocol endpoint for AI agents | **Implemented** |
 
 ### `POST /v1/audio/speech`
 
@@ -147,6 +148,41 @@ Simple health check.
 }
 ```
 
+### MCP endpoint (`/mcp`) for AI agents
+
+The same server also speaks the [Model Context Protocol](https://modelcontextprotocol.io)
+over Streamable HTTP at `POST /mcp` (stateless; every response is plain
+`application/json`, no SSE stream or session id). Agents can manage providers,
+voice banks, the reference-audio library and voice characters, synthesize
+speech, and run complete video-dub jobs (import subtitles → cast cues →
+generate → export).
+
+| Setting | Default | Notes |
+|---|---|---|
+| MCP server for AI agents | on | Settings → API Server; persisted as `api.mcpEnabled` |
+| Auth | API key above | `Authorization: Bearer <key>` / `X-API-Key` when a key is set |
+| LAN safety | — | On a non-loopback bind host `/mcp` returns `403` unless an API key is configured |
+| Browser origins | denied | Requests with an `Origin` header must match the CORS allow-list |
+
+```bash
+claude mcp add --transport http neiroha http://127.0.0.1:8976/mcp
+```
+
+Tools: `get_overview`, `list_adapter_types`, `list_providers`,
+`create_provider`, `update_provider`, `delete_provider`, `check_provider`,
+`list_provider_models`, `list_provider_voices`, `list_voice_banks`,
+`create_voice_bank`, `update_voice_bank`, `delete_voice_bank`,
+`add_characters_to_bank`, `remove_characters_from_bank`, `list_audio_tracks`,
+`import_audio_track`, `delete_audio_track`, `list_voice_characters`,
+`create_voice_character`, `update_voice_character`, `delete_voice_character`,
+`synthesize_speech`, `list_video_dub_projects`, `create_video_dub_project`,
+`attach_video_to_dub_project`, `import_subtitles`, `list_subtitle_cues`,
+`add_subtitle_cues`, `update_subtitle_cues`, `delete_subtitle_cues`,
+`generate_video_dub_audio`, `export_video_dub`, `delete_video_dub_project`.
+
+Provider API keys are write-only through MCP (`list_providers` returns
+`has_api_key`). A ready-made agent skill lives in
+[`skills/neiroha-dubbing/SKILL.md`](../skills/neiroha-dubbing/SKILL.md).
 ---
 
 ## 2. Upstream Adapter Layer
@@ -369,6 +405,74 @@ implemented.
 
 **Configuration:** No base URL or API key needed. Voice selection via `presetVoiceName` (matched to installed SAPI voice name). Speed is mapped from 0.5–2.0 range to SAPI's -10..10 rate scale. Output is always WAV.
 
+### 2.7 Google Gemini TTS (`geminiTts`)
+
+| Operation | Method | Path | Status |
+|---|---|---|---|
+| Synthesize (Gemini 3.8+) | `POST` | `/v1beta/interactions` | **Implemented** |
+| Synthesize (2.5 / 3.1 preview) | `POST` | `/v1beta/models/{model}:generateContent` | **Implemented** |
+| List voices | `GET` | `/v1beta/voices` (+ 30 built-in prebuilt voices) | **Implemented** |
+| Health check | `GET` | `/v1beta/models` | **Implemented** |
+
+Models: `gemini-3.8-flash-tts` (default), `gemini-3.8-flash-lite-tts`,
+`gemini-3.1-flash-tts-preview`, `gemini-2.5-flash-preview-tts`,
+`gemini-2.5-pro-preview-tts`. For Interactions requests the text is read
+verbatim and the character instruction is sent as
+`speech_metadata.style`; legacy models still get the instruction prepended.
+Interactions returns WAV directly; legacy PCM is wrapped in a WAV header.
+A 404 from `/interactions` falls back to `generateContent`.
+
+### 2.8 ElevenLabs (`elevenLabs`)
+
+| Operation | Method | Path | Status |
+|---|---|---|---|
+| Synthesize | `POST` | `/v1/text-to-speech/{voice_id}?output_format=mp3_44100_128` | **Implemented** |
+| List models / health | `GET` | `/v1/models` | **Implemented** |
+| List voices | `GET` | `/v2/voices` (paginated) | **Implemented** |
+| Instant voice clone | `POST` | `/v1/voices/add` (multipart) | **Implemented** |
+
+Header `xi-api-key`. Models: `eleven_v4` (default), `eleven_v4_turbo`,
+`eleven_v3`, `eleven_multilingual_v2`, `eleven_flash_v2_5`,
+`eleven_flash_v2`. Voices are shown as `Name [voice_id]`. On v3/v4 the
+instruction becomes a leading audio tag (`[whispers] …`). Speed maps to
+`voice_settings.speed` (0.7–1.2).
+
+### 2.9 MiniMax Speech (`minimaxTts`)
+
+| Operation | Method | Path | Status |
+|---|---|---|---|
+| Synthesize | `POST` | `/v1/t2a_v2` (hex audio) | **Implemented** |
+| List voices / health | `POST` | `/v1/get_voice` | **Implemented** |
+| Voice clone | `POST` | `/v1/files/upload` (`purpose=voice_clone`) → `/v1/voice_clone` | **Implemented** |
+
+Base URL `https://api.minimax.io` (mainland China: `https://api.minimaxi.com`),
+`Authorization: Bearer`. Models: `speech-2.8-hd` (default), `speech-2.8-turbo`,
+`speech-2.6-hd/turbo`, `speech-02-hd/turbo`. A character instruction equal to
+one of `happy, sad, angry, fearful, disgusted, surprised, calm, fluent,
+whisper` is sent as `voice_setting.emotion`. `base_resp.status_code != 0`
+is treated as an error. Cloned voices unused for 7 days are deleted upstream.
+
+### 2.10 IndexTTS 2.5 WebUI (`indexTts`)
+
+Neiroha does not ship an IndexTTS launcher yet; this adapter drives the
+official Gradio WebUI (`webui.py`) that community one-click packages start
+(e.g. `opc-run/tts-index-tts-bundle` → `start-webui.bat`, default
+`http://127.0.0.1:7860`).
+
+| Operation | Method | Path | Status |
+|---|---|---|---|
+| Endpoint schema / health | `GET` | `/gradio_api/info` | **Implemented** |
+| Upload reference audio | `POST` | `/gradio_api/upload` | **Implemented** |
+| Generate | `POST` + `GET` (SSE) | `/gradio_api/call/gen_single[/{event_id}]` | **Implemented** |
+| Download result | `GET` | `/gradio_api/file={path}` | **Implemented** |
+
+Gradio 4 servers without the `/gradio_api` prefix are detected
+automatically. Arguments are filled by parameter name from `/info` (unknown
+sampling knobs keep the WebUI defaults). Characters always clone from their
+reference audio. `modelName` holds the output language (`auto`, `ZH`, `EN`,
+`JA`, `AR`, `ES`; `auto` detects from the text). Speed maps to the 2.5
+`duration_factor` (`1 / speed`). The instruction is sent as emotion text
+only when the WebUI exposes the experimental emotion-text mode.
 ---
 
 ## 3. Model Management
@@ -390,7 +494,10 @@ Supported adapters:
 | `systemTts` | no | yes, Windows only |
 | `cosyvoice` | profiles | profiles |
 | `gptSovits` | voice-set models via `/v1/models` | yes |
-| `geminiTts` | yes, built-in TTS model list | yes, built-in voice list |
+| `geminiTts` | yes, built-in TTS model list | yes, prebuilt + voice library |
+| `elevenLabs` | yes, `/v1/models` | yes, `/v2/voices` |
+| `minimaxTts` | yes, built-in list | yes, `/v1/get_voice` |
+| `indexTts` | output languages | no (reference audio only) |
 | `voxcpm2Native` | yes | yes |
 
 ---

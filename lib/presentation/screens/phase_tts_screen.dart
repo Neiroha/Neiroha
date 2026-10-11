@@ -644,6 +644,9 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
       'cosyvoice' => true,
       'voxcpm2Native' => true,
       'geminiTts' => true,
+      'elevenLabs' => true,
+      'minimaxTts' => true,
+      'indexTts' => true,
       _ => false,
     };
   }

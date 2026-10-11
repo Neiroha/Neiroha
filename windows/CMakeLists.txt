@@ -31,6 +31,10 @@ set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE}")
 
 # Use Unicode for all projects.
 add_definitions(-DUNICODE -D_UNICODE)
+# MSVC 14.51+ (VS 2026) turns <experimental/coroutine> into a hard error
+# (STL1011). audioplayers_windows still builds with /await; keep it compiling
+# until the plugin moves to C++20 <coroutine>.
+add_definitions(-D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
 
 # Compilation settings that should be applied to most targets.
 #

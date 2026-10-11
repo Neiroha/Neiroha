@@ -18,6 +18,9 @@ Prerequisites, all done by the user inside Neiroha:
 
 1. Neiroha is running.
 2. **Settings → API Server** is switched on (default bind `127.0.0.1:8976`).
+   Recommend turning on **Start API server on launch** in the same card, so
+   the endpoint is up every time Neiroha opens. The server cannot be started
+   through MCP itself.
 3. **MCP server for AI agents** is switched on (on by default).
 
 The endpoint is `http://127.0.0.1:8976/mcp` (Streamable HTTP, stateless JSON).
@@ -67,13 +70,44 @@ creating or changing a provider.
 
 ## 3. Collect reference audio (for cloned voices)
 
+Voice cloning works from three inputs:
+
+1. **Reference audio**: a short clip of the target voice.
+2. **Reference text**: the *exact* transcript of that clip, word for word, in
+   the clip's language. A transcript that does not match the audio makes the
+   clone mispronounce or drift.
+3. **Target text**: the new line to speak. Every synthesis call produces a new
+   audio file in the cloned voice.
+
+Store the reference text on the clip (`ref_text` / `ref_lang` in
+`import_audio_track`). `create_voice_character` copies it to the character as
+`prompt_text` / `prompt_lang`. Provide it even when the engine can work without
+it (MiMo voiceclone and IndexTTS clone from audio alone), because it keeps the
+character portable to engines that require it (CosyVoice zero_shot,
+GPT-SoVITS clone, VoxCPM2 ultimate_clone).
+
 A good cloning reference:
 
 - 5 to 15 s of a single speaker (MiniMax needs at least 10 s), with no music,
   SFX, laughter, crosstalk or reverb.
 - Natural, mid-energy speech in the target language, if possible.
-- An exact transcript, passed as `ref_text`. Some engines (CosyVoice
-  zero_shot, GPT-SoVITS, VoxCPM2 ultimate_clone) need it.
+- **Short internal pauses.** Cloned voices copy the reference's pacing: a
+  dramatic clip with 1–2 s gaps produces 2 s gaps inside every generated line.
+  Compress pauses longer than ~0.3 s before importing, for example:
+  `ffmpeg -i in.wav -af "silenceremove=start_periods=1:start_threshold=-40dB:stop_periods=-1:stop_duration=0.3:stop_threshold=-40dB:stop_silence=0.3" out.wav`.
+  Never cut through a word: put cut points inside silences (find them with
+  `-af silencedetect=n=-40dB:d=0.3`).
+
+Getting the reference text:
+
+- Use the official script or transcript when the source publishes one, but make
+  sure it is the line in the clip's language. Fan wikis often show only a
+  translation.
+- Otherwise transcribe the clip with a speech-to-text service the user already
+  has access to, in the clip's language. Then fix proper nouns and archaic or
+  character-specific words by hand, using the known meaning of the line as a
+  cross-check. ASR routinely mishears names and stylised speech.
+- If you cannot produce a trustworthy transcript, say so instead of guessing.
 
 Sources, best first: clips the user provides; the source video itself (cut a
 clean line from it); clips you find online. When you search online, prefer
@@ -97,8 +131,11 @@ For each character, call `create_voice_character` with the following inputs.
 
 - Preset voice: `provider_id`, `model`, `voice`. Find voices with
   `list_provider_voices` (use `query` to filter).
-- Cloned voice: `provider_id` + `audio_track_id` (+ `prompt_text` /
-  `prompt_lang` when the engine needs them).
+- Cloned voice: `provider_id` + `audio_track_id`. The clip's reference text
+  becomes `prompt_text` / `prompt_lang`; override them only to fix the
+  transcript.
+  - MiMo (`chatCompletionsTts`): set `model` to the voice-clone model (for
+    example `mimo-v2.5-tts-voiceclone`) and `task_mode: cloneWithPrompt`.
   - ElevenLabs / MiniMax: leave `voice` empty. Neiroha clones the clip into a
     reusable account voice and stores its id.
   - IndexTTS: `model` is the output language (`auto`, `ZH`, `EN`, `JA`, `AR`,
@@ -107,7 +144,17 @@ For each character, call `create_voice_character` with the following inputs.
 - `bank_ids`: put the whole cast into one bank (`create_voice_bank` first).
 
 Audition every character with `synthesize_speech` and one representative
-line before the full run. If it sounds wrong, try another reference clip, then
+line before the full run. Check the audition objectively, not only by ear:
+
+- **Duration:** roughly 0.12–0.2 s per Japanese/Chinese character, or 2.5–3
+  English words per second. A short line that comes back several times longer
+  usually means long copied pauses (fix the reference, see section 3) or a
+  repeated phrase.
+- **Content:** run the clip through speech-to-text and compare it with the
+  target text. Expect the recogniser to miss names and archaic words; whole
+  missing or extra phrases mean a bad take.
+
+If it sounds wrong, try another or a tighter reference clip, then
 `update_voice_character` (for example a new `audio_track_id`, `instruction` or
 `speed`).
 
@@ -146,6 +193,23 @@ line before the full run. If it sounds wrong, try another reference clip, then
 Call `synthesize_speech` per line with `output_path` set to name the files.
 The results also appear in the Quick TTS history of the app.
 
+### Lyrics / subtitle file (LRC or SRT) for a multi-line take
+
+Synthesize **one call per line**, never the whole script in one call, so that
+each line's timing is measured rather than guessed:
+
+1. For each line *i*, call `synthesize_speech` and keep `duration_sec`.
+2. Join the clips in order with a fixed gap (0.4–0.8 s), for example with
+   ffmpeg `apad=pad_dur=<gap>` per input followed by `concat`.
+3. Line *i* starts at `sum(duration + gap)` of the previous lines. Add the
+   clip's leading silence (`silencedetect`) so the timestamp lands on the first
+   word.
+4. Write `[mm:ss.xx]<text>` per line (LRC) or `HH:MM:SS,mmm --> …` blocks
+   (SRT). End the LRC with a bare timestamp at the total length.
+
+For a video project, use `export_video_dub` with `kind: srt` instead; its cue
+timings already come from the project.
+
 ## Troubleshooting
 
 | Symptom | Fix |
@@ -158,6 +222,9 @@ The results also appear in the Quick TTS history of the app.
 | `ffmpeg is required` | the user must install ffmpeg or set its path in Neiroha Settings |
 | IndexTTS ignores `instruction` | the WebUI did not load its experimental emotion model; that is expected |
 | `delete_voice_bank` fails | a project still uses the bank; delete or rebind the project first |
+| HTTP 402 / `insufficient_balance` | the provider account is out of credit for that model. Paid add-ons such as ASR can fail while TTS still works; tell the user instead of retrying |
+| Connection refused on `:8976` | the API server is off; ask the user to switch it on or enable **Start API server on launch** |
+| Cloned lines have long silent gaps | the reference clip has long pauses; compress them (section 3) and update the character's `audio_track_id` |
 
 ## Tool reference
 

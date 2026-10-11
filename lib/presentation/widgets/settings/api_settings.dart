@@ -28,6 +28,7 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
   bool _showKey = false;
   bool _apiLogEnabled = false;
   bool _mcpEnabled = true;
+  bool _autoStart = false;
 
   @override
   void dispose() {
@@ -50,6 +51,7 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
       _rateCtrl.text = '${cfg.rateLimitPerMin}';
       _apiLogEnabled = cfg.apiLogEnabled;
       _mcpEnabled = cfg.mcpEnabled;
+      _autoStart = cfg.autoStart;
       _hydrated = true;
     });
   }
@@ -69,6 +71,7 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
       rateLimitPerMin: int.tryParse(_rateCtrl.text.trim()) ?? 60,
       apiLogEnabled: _apiLogEnabled,
       mcpEnabled: _mcpEnabled,
+      autoStart: _autoStart,
     );
   }
 
@@ -288,6 +291,24 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
                   ],
                 );
               },
+            ),
+            const Divider(),
+            SettingsRow(
+              icon: Icons.play_circle_outline_rounded,
+              title: AppLocalizations.of(context).uiApiAutoStart,
+              subtitle: AppLocalizations.of(context).uiApiAutoStartDescription,
+              trailing: Switch(
+                value: _autoStart,
+                onChanged: _hydrated
+                    ? (v) async {
+                        setState(() => _autoStart = v);
+                        await ApiServerConfig.saveAutoStart(
+                          ref.read(databaseProvider),
+                          v,
+                        );
+                      }
+                    : null,
+              ),
             ),
             const Divider(),
             SettingsRow(

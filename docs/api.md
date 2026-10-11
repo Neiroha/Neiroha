@@ -160,6 +160,7 @@ generate → export).
 | Setting | Default | Notes |
 |---|---|---|
 | MCP server for AI agents | on | Settings → API Server; persisted as `api.mcpEnabled` |
+| Start API server on launch | off | Starts the API + MCP server when the app opens; persisted as `api.autoStart` |
 | Auth | API key above | `Authorization: Bearer <key>` / `X-API-Key` when a key is set |
 | LAN safety | — | On a non-loopback bind host `/mcp` returns `403` unless an API key is configured |
 | Browser origins | denied | Requests with an `Origin` header must match the CORS allow-list |

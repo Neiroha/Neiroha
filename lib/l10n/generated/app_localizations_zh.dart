@@ -1874,6 +1874,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get uiIndexTtsEmotionHint => '可选的情感描述（需 WebUI 开启实验性情感模式）';
 
   @override
+  String get uiApiAutoStart => '启动时自动开启 API 服务';
+
+  @override
+  String get uiApiAutoStartDescription =>
+      'Neiroha 打开时自动启动本地 API 与 MCP 服务，Agent 无需手动开启即可连接。';
+
+  @override
   String get uiMcpEndpoint => '供 AI Agent 使用的 MCP 服务';
 
   @override

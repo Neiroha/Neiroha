@@ -154,6 +154,7 @@ API 以**音色库（Voice Bank）**作为 `model` 的抽象层：
 | 设置 | 默认 | 说明 |
 |---|---|---|
 | 供 AI Agent 使用的 MCP 服务 | 开启 | 设置 → API 服务器；保存为 `api.mcpEnabled` |
+| 启动时自动开启 API 服务 | 关闭 | 应用打开时自动启动 API 与 MCP 服务；保存为 `api.autoStart` |
 | 鉴权 | 沿用上方 API Key | 设置 Key 后需携带 `Authorization: Bearer <key>` 或 `X-API-Key` |
 | 局域网安全 | — | 绑定非回环地址且未设置 API Key 时，`/mcp` 返回 `403` |
 | 浏览器来源 | 拒绝 | 带 `Origin` 头的请求必须命中 CORS 白名单 |

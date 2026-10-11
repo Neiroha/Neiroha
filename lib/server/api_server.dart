@@ -28,6 +28,7 @@ class _SettingsKeys {
   static const maxBodyBytes = 'api.maxBodyBytes';
   static const apiLogEnabled = 'api.logEnabled';
   static const mcpEnabled = 'api.mcpEnabled';
+  static const autoStart = 'api.autoStart';
 }
 
 /// Snapshot of the security/network knobs that gate the local API. Loaded from
@@ -62,6 +63,10 @@ class ApiServerConfig {
   /// endpoint still refuses to run unauthenticated on a non-loopback bind.
   final bool mcpEnabled;
 
+  /// Start the local API (and MCP) server automatically when the app
+  /// launches. Off by default.
+  final bool autoStart;
+
   const ApiServerConfig({
     this.bindHost = '127.0.0.1',
     this.port = 8976,
@@ -71,6 +76,7 @@ class ApiServerConfig {
     this.maxBodyBytes = 1048576,
     this.apiLogEnabled = false,
     this.mcpEnabled = true,
+    this.autoStart = false,
   });
 
   static Future<ApiServerConfig> load(AppDatabase db) async {
@@ -86,6 +92,7 @@ class ApiServerConfig {
     );
     final apiLogEnabled = await db.getSetting(_SettingsKeys.apiLogEnabled);
     final mcpEnabled = await db.getSetting(_SettingsKeys.mcpEnabled);
+    final autoStart = await db.getSetting(_SettingsKeys.autoStart);
 
     return ApiServerConfig(
       bindHost: (host == null || host.isEmpty) ? '127.0.0.1' : host,
@@ -104,6 +111,7 @@ class ApiServerConfig {
       mcpEnabled: mcpEnabled == null || mcpEnabled.isEmpty
           ? true
           : _parseBool(mcpEnabled),
+      autoStart: _parseBool(autoStart),
     );
   }
 
@@ -122,6 +130,11 @@ class ApiServerConfig {
       _SettingsKeys.mcpEnabled,
       cfg.mcpEnabled ? 'true' : 'false',
     );
+    await saveAutoStart(db, cfg.autoStart);
+  }
+
+  static Future<void> saveAutoStart(AppDatabase db, bool enabled) {
+    return db.setSetting(_SettingsKeys.autoStart, enabled ? 'true' : '');
   }
 
   static Future<void> saveLogEnabled(AppDatabase db, bool enabled) {
@@ -137,6 +150,7 @@ class ApiServerConfig {
     int? maxBodyBytes,
     bool? apiLogEnabled,
     bool? mcpEnabled,
+    bool? autoStart,
   }) {
     return ApiServerConfig(
       bindHost: bindHost ?? this.bindHost,
@@ -147,6 +161,7 @@ class ApiServerConfig {
       maxBodyBytes: maxBodyBytes ?? this.maxBodyBytes,
       apiLogEnabled: apiLogEnabled ?? this.apiLogEnabled,
       mcpEnabled: mcpEnabled ?? this.mcpEnabled,
+      autoStart: autoStart ?? this.autoStart,
     );
   }
 

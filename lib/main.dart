@@ -14,6 +14,7 @@ import 'presentation/screens/app_shell.dart';
 import 'presentation/theme/app_font.dart';
 import 'presentation/theme/app_theme.dart';
 import 'providers/app_providers.dart';
+import 'server/api_server.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +56,23 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
   void initState() {
     super.initState();
     Future.microtask(_loadAppSettings);
+    Future.microtask(_autoStartApiServer);
+  }
+
+  /// Honour Settings → API Server → "Start on launch" so agents can reach
+  /// the local API / MCP endpoint without a manual toggle.
+  Future<void> _autoStartApiServer() async {
+    final db = ref.read(databaseProvider);
+    final config = await ApiServerConfig.load(db);
+    if (!config.autoStart) return;
+    try {
+      await ref.read(apiServerProvider).start(config: config);
+      if (!mounted) return;
+      ref.read(serverRunningProvider.notifier).state = true;
+    } catch (e) {
+      // e.g. the port is already taken; the user can still start it manually.
+      debugPrint('API server auto-start failed: $e');
+    }
   }
 
   Future<void> _loadAppSettings() async {

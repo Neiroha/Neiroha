@@ -572,6 +572,8 @@
   "uiCloudVoiceCloneHint": "请在上方选择音色，或添加参考音频，保存时在服务商账号上克隆新音色。",
   "uiCloudVoiceCloneFailed": "音色克隆失败：{error}",
   "uiIndexTtsEmotionHint": "可选的情感描述（需 WebUI 开启实验性情感模式）",
+  "uiApiAutoStart": "启动时自动开启 API 服务",
+  "uiApiAutoStartDescription": "Neiroha 打开时自动启动本地 API 与 MCP 服务，Agent 无需手动开启即可连接。",
   "uiMcpEndpoint": "供 AI Agent 使用的 MCP 服务",
   "uiMcpEndpointDescription": "允许 Agent 通过 {url}（Streamable HTTP）管理服务商、音色与配音任务。若上方设置了 API Key 则需携带。"
 }

@@ -3513,6 +3513,18 @@ abstract class AppLocalizations {
   /// **'Optional emotion description (needs the experimental emotion mode of the WebUI)'**
   String get uiIndexTtsEmotionHint;
 
+  /// No description provided for @uiApiAutoStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start API server on launch'**
+  String get uiApiAutoStart;
+
+  /// No description provided for @uiApiAutoStartDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Start the local API and MCP server automatically when Neiroha opens, so agents can connect without a manual toggle.'**
+  String get uiApiAutoStartDescription;
+
   /// No description provided for @uiMcpEndpoint.
   ///
   /// In en, this message translates to:

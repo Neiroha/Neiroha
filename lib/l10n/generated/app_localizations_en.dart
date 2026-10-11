@@ -1929,6 +1929,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Optional emotion description (needs the experimental emotion mode of the WebUI)';
 
   @override
+  String get uiApiAutoStart => 'Start API server on launch';
+
+  @override
+  String get uiApiAutoStartDescription =>
+      'Start the local API and MCP server automatically when Neiroha opens, so agents can connect without a manual toggle.';
+
+  @override
   String get uiMcpEndpoint => 'MCP server for AI agents';
 
   @override

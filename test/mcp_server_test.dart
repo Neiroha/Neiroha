@@ -138,6 +138,23 @@ void main() {
     expect(jsonDecode(body)['result'], isEmpty);
   });
 
+  test('API auto-start and MCP flags persist and default sensibly', () async {
+    final fresh = await ApiServerConfig.load(database);
+    expect(fresh.autoStart, isFalse);
+    expect(fresh.mcpEnabled, isTrue);
+
+    await ApiServerConfig.save(
+      database,
+      fresh.copyWith(autoStart: true, mcpEnabled: false),
+    );
+    final saved = await ApiServerConfig.load(database);
+    expect(saved.autoStart, isTrue);
+    expect(saved.mcpEnabled, isFalse);
+
+    await ApiServerConfig.saveAutoStart(database, false);
+    expect((await ApiServerConfig.load(database)).autoStart, isFalse);
+  });
+
   test('MCP refuses an unauthenticated LAN bind', () async {
     final port = await freePort();
     final server = ApiServer(db: database);

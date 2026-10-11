@@ -827,6 +827,8 @@
     }
   },
   "uiIndexTtsEmotionHint": "Optional emotion description (needs the experimental emotion mode of the WebUI)",
+  "uiApiAutoStart": "Start API server on launch",
+  "uiApiAutoStartDescription": "Start the local API and MCP server automatically when Neiroha opens, so agents can connect without a manual toggle.",
   "uiMcpEndpoint": "MCP server for AI agents",
   "uiMcpEndpointDescription": "Lets agents manage providers, voices and dubbing jobs at {url} (streamable HTTP). Uses the API key above when set.",
   "@uiMcpEndpointDescription": {

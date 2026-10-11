@@ -15,7 +15,7 @@ import 'package:neiroha/server/mcp/neiroha_mcp_tools.dart';
 
 /// Reported to MCP clients in `serverInfo.version`; keep in sync with the
 /// pubspec version.
-const String neirohaMcpServerVersion = '0.4.0';
+const String neirohaMcpServerVersion = '0.4.1';
 
 /// Persistent KV keys backing [ApiServerConfig]. Mirror [ApiServerConfig.load]
 /// when adding fields.

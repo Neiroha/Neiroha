@@ -136,8 +136,7 @@ class _ProviderListPane extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     buildDefaultDragHandles: false,
                     itemCount: providers.length,
-                    onReorder: (oldIndex, newIndex) async {
-                      if (newIndex > oldIndex) newIndex -= 1;
+                    onReorderItem: (oldIndex, newIndex) async {
                       final list = [...providers];
                       final item = list.removeAt(oldIndex);
                       list.insert(newIndex, item);

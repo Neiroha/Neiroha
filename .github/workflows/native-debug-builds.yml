@@ -56,19 +56,31 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK
+      - name: Resolve package version
+        shell: bash
+        run: |
+          version="$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)"
+          echo "BUILD_VERSION=v${version}" >> "$GITHUB_ENV"
+
+      - name: Build universal APK
         run: flutter build apk --debug
+
+      - name: Build split APKs
+        run: flutter build apk --debug --split-per-abi
 
       - name: Package APK
         run: |
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-debug.apk dist/neiroha-android-debug.apk
-          (cd dist && sha256sum neiroha-android-debug.apk > SHA256SUMS-android-debug.txt)
+          cp build/app/outputs/flutter-apk/app-debug.apk "dist/neiroha-Android-Universal-${BUILD_VERSION}.apk"
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-debug.apk "dist/neiroha-Android-ARM64-${BUILD_VERSION}.apk"
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-debug.apk "dist/neiroha-Android-ARMv7-${BUILD_VERSION}.apk"
+          cp build/app/outputs/flutter-apk/app-x86_64-debug.apk "dist/neiroha-Android-AMD64-${BUILD_VERSION}.apk"
+          (cd dist && sha256sum neiroha-Android-*.apk > SHA256SUMS-Android-debug.txt)
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: neiroha-android-debug-apk
+          name: neiroha-Android-debug-apk
           path: dist/**
           if-no-files-found: error
 
@@ -132,6 +144,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Resolve package version
+        shell: bash
+        run: |
+          version="$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)"
+          echo "BUILD_VERSION=v${version}" >> "$GITHUB_ENV"
+
       - name: Build Linux
         run: flutter build linux --debug
 
@@ -148,13 +166,13 @@ jobs:
       - name: Package Linux bundle
         run: |
           mkdir -p dist
-          tar -C build/linux/x64/debug/bundle -czf dist/neiroha-linux-x64-debug.tar.gz .
-          (cd dist && sha256sum neiroha-linux-x64-debug.tar.gz > SHA256SUMS-linux-debug.txt)
+          tar -C build/linux/x64/debug/bundle -czf "dist/neiroha-Linux-AMD64-${BUILD_VERSION}.tar.gz" .
+          (cd dist && sha256sum neiroha-Linux-AMD64-*.tar.gz > SHA256SUMS-Linux-debug.txt)
 
       - name: Upload Linux bundle
         uses: actions/upload-artifact@v4
         with:
-          name: neiroha-linux-x64-debug
+          name: neiroha-Linux-AMD64-debug
           path: dist/**
           if-no-files-found: error
 
@@ -189,6 +207,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Resolve package version
+        shell: pwsh
+        run: |
+          $versionLine = Select-String -Path pubspec.yaml -Pattern '^version:\s*(.+)$'
+          $version = $versionLine.Matches[0].Groups[1].Value.Split('+')[0].Trim()
+          "BUILD_VERSION=v$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
       - name: Build Windows
         run: flutter build windows --debug
 
@@ -203,14 +228,15 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          $zip = "dist/neiroha-windows-x64-debug.zip"
+          $zipName = "neiroha-Windows-AMD64-${env:BUILD_VERSION}.zip"
+          $zip = "dist/$zipName"
           Compress-Archive -Path "build/windows/x64/runner/Debug/*" -DestinationPath $zip -Force
           $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
-          "$hash  neiroha-windows-x64-debug.zip" | Out-File -FilePath "dist/SHA256SUMS-windows-debug.txt" -Encoding ascii
+          "$hash  $zipName" | Out-File -FilePath "dist/SHA256SUMS-Windows-debug.txt" -Encoding ascii
 
       - name: Upload Windows bundle
         uses: actions/upload-artifact@v4
         with:
-          name: neiroha-windows-x64-debug
+          name: neiroha-Windows-AMD64-debug
           path: dist/**
           if-no-files-found: error

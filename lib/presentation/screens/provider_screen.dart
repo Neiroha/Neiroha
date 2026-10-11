@@ -1454,9 +1454,10 @@ class _HealthBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final color = ok ? Colors.green : Colors.redAccent;
     return Tooltip(
-      message: ok ? 'Endpoint reachable' : (errorMessage ?? 'Unreachable'),
+      message: ok ? l10n.uiReachable : (errorMessage ?? l10n.uiUnreachable),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
@@ -1474,7 +1475,7 @@ class _HealthBadge extends StatelessWidget {
             ),
             SizedBox(width: 6),
             Text(
-              ok ? 'Healthy' : 'Failed',
+              ok ? l10n.uiReachable : l10n.uiFailed,
               style: TextStyle(
                 fontSize: 12,
                 color: color,

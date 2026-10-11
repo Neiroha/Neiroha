@@ -10,6 +10,7 @@ import 'package:neiroha/data/adapters/cosyvoice_adapter.dart';
 import 'package:neiroha/data/adapters/chat_completions_tts_adapter.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/adapters/voxcpm2_native_adapter.dart';
+import 'package:neiroha/data/adapters/minimax_tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
@@ -136,8 +137,22 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       _adapterType == 'openaiCompatible' ||
       _adapterType == 'azureTts' ||
       _adapterType == 'systemTts' ||
-      _adapterType == 'geminiTts';
+      _adapterType == 'geminiTts' ||
+      _isCloudCloneProvider;
   bool get _isGeminiTts => _adapterType == 'geminiTts';
+  bool get _isIndexTts => _adapterType == 'indexTts';
+
+  /// ElevenLabs / MiniMax: preset voices plus optional server-side cloning
+  /// that registers a reusable voice id on the user's account.
+  bool get _isCloudCloneProvider =>
+      _adapterType == 'elevenLabs' || _adapterType == 'minimaxTts';
+
+  /// Providers whose characters pick a model first, then a voice.
+  bool get _usesModelThenVoice =>
+      _adapterType == 'openaiCompatible' ||
+      _adapterType == 'chatCompletionsTts' ||
+      _isGeminiTts ||
+      _isCloudCloneProvider;
 
   /// Whether a model key is a TTS model (not LLM/multimodal).
   /// Used to filter the model picker in the voice character dialog.
@@ -149,6 +164,8 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
         k.contains('speech-synthesis') ||
         k.contains('voiceclone') ||
         k.contains('voicedesign') ||
+        k.startsWith('eleven_') ||
+        k.startsWith('speech-') ||
         k.endsWith('-voice');
   }
 
@@ -701,9 +718,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
                   // ── ADAPTER-SPECIFIC OPTIONS ──
                   if (_isPresetVoiceProvider) ...[
-                    if (_adapterType == 'openaiCompatible' ||
-                        _adapterType == 'chatCompletionsTts' ||
-                        _isGeminiTts) ...[
+                    if (_usesModelThenVoice) ...[
                       // ── Step 1: Select Model ──
                       VoiceCharacterSectionLabel('MODEL'),
                       SizedBox(height: 8),
@@ -816,7 +831,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                             ),
                             onChanged: (_) => _autoFillName(),
                           ),
-                          if (_isGeminiTts) ...[
+                          if (_isGeminiTts || _isCloudCloneProvider) ...[
                             SizedBox(height: 16),
                             VoiceCharacterSectionLabel(
                               'STYLE INSTRUCTION (optional)',
@@ -824,16 +839,38 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                             SizedBox(height: 8),
                             TextField(
                               controller: _instructionCtrl,
-                              maxLines: 3,
+                              maxLines: _adapterType == 'minimaxTts' ? 1 : 3,
                               decoration: InputDecoration(
                                 labelText: AppLocalizations.of(
                                   context,
                                 ).uiStyleInstruction,
-                                hintText: AppLocalizations.of(
-                                  context,
-                                ).uiEGSpeakSoftlyAndSlowlyPrependedToTheText,
+                                hintText: _adapterType == 'minimaxTts'
+                                    ? MiniMaxTtsAdapter.kEmotions.join(' / ')
+                                    : _adapterType == 'elevenLabs'
+                                    ? 'e.g. whispers, excited (v3 / v4 audio tag)'
+                                    : AppLocalizations.of(
+                                        context,
+                                      ).uiEGSpeakSoftlyAndSlowlyPrependedToTheText,
                               ),
                             ),
+                          ],
+                          if (_isCloudCloneProvider) ...[
+                            SizedBox(height: 16),
+                            VoiceCharacterSectionLabel(
+                              'CLONE A NEW VOICE (optional)',
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              AppLocalizations.of(
+                                context,
+                              ).uiCloudVoiceCloneHint,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withValues(alpha: 0.4),
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            ..._buildRefAudioPicker(),
                           ],
                         ],
 
@@ -1336,6 +1373,31 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         ),
                       ),
                     ],
+                  ] else if (_isIndexTts) ...[
+                    // ── IndexTTS: zero-shot clone from reference audio ──
+                    ..._buildRefAudioPicker(),
+                    TextField(
+                      controller: _textLangCtrl,
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(
+                          context,
+                        ).uiTextLanguageSynthesisOutput,
+                        hintText: 'auto / ZH / EN / JA / AR / ES',
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    TextField(
+                      controller: _instructionCtrl,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(
+                          context,
+                        ).uiStyleInstruction,
+                        hintText: AppLocalizations.of(
+                          context,
+                        ).uiIndexTtsEmotionHint,
+                      ),
+                    ),
                   ] else ...[
                     // ── Fallback for other adapters (qwen3, etc.) ──
                     VoiceCharacterSectionLabel('VOICE'),
@@ -1411,6 +1473,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     final chatCloneNeedsAudio =
         _isPresetVoiceProvider && _ttsModelType == 'clone';
     final needsRefAudio =
+        _isIndexTts ||
         (_isGptSovits && _gptSovitsMode == 'clone') ||
         (_isCosyVoice && _cosyVoiceMode == 'zero_shot') ||
         (_isCosyVoice &&
@@ -1501,11 +1564,55 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       return;
     }
 
+    final cloudClone = _isCloudCloneProvider && refAudio != null;
+    if (_isCloudCloneProvider &&
+        !cloudClone &&
+        _voiceNameCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).uiCloudVoiceCloneHint),
+        ),
+      );
+      return;
+    }
+
     setState(() => _saving = true);
+
+    // ElevenLabs / MiniMax: register the reference audio as a reusable
+    // voice upstream, then store the returned id as the preset voice.
+    if (cloudClone) {
+      try {
+        final adapter = createAdapter(_selectedProvider);
+        if (adapter is! VoiceCloneCapable) {
+          throw Exception('Provider does not support voice cloning');
+        }
+        final cloned = await (adapter as VoiceCloneCapable).cloneVoice(
+          name: name,
+          audioPath: refAudio,
+          promptText: _promptTextCtrl.text.trim(),
+          description: _descCtrl.text.trim(),
+        );
+        _voiceNameCtrl.text = cloned;
+      } catch (e) {
+        if (mounted) {
+          setState(() => _saving = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context).uiCloudVoiceCloneFailed('$e'),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+    }
 
     // Determine task mode
     TaskMode effectiveMode;
-    if (_isPresetVoiceProvider) {
+    if (_isIndexTts) {
+      effectiveMode = TaskMode.cloneWithPrompt;
+    } else if (_isPresetVoiceProvider) {
       if (_ttsModelType == 'clone') {
         effectiveMode = TaskMode.cloneWithPrompt;
       } else if (_ttsModelType == 'design') {
@@ -1580,13 +1687,11 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
         providerId: Value(_selectedProviderId),
         modelBindingId: const Value(null),
         modelName: Value(
-          _isGptSovits
+          (_isGptSovits || _isIndexTts)
               ? (_textLangCtrl.text.trim().isEmpty
                     ? null
                     : _textLangCtrl.text.trim())
-              : (_adapterType == 'openaiCompatible' ||
-                    _adapterType == 'chatCompletionsTts' ||
-                    _isGeminiTts)
+              : _usesModelThenVoice
               ? (_modelNameCtrl.text.trim().isEmpty
                     ? null
                     : _modelNameCtrl.text.trim())
@@ -1601,7 +1706,8 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
               : null,
         ),
         taskMode: Value(effectiveMode.name),
-        refAudioPath: Value(refAudio),
+        // Cloud clones live upstream; the sample stays in the audio library.
+        refAudioPath: Value(cloudClone ? null : refAudio),
         refAudioTrimStart: const Value(null),
         refAudioTrimEnd: const Value(null),
         promptText: Value(

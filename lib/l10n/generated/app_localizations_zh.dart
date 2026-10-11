@@ -1852,4 +1852,32 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get uiDetails => '详情';
+
+  @override
+  String get uiVoiceForImportedCues => '导入片段使用的音色';
+
+  @override
+  String get uiVoiceForImportedCuesHint => '从本项目语音库中选择角色，或保持未分配，稍后逐条指定。';
+
+  @override
+  String get uiLeaveUnassigned => '暂不分配';
+
+  @override
+  String get uiCloudVoiceCloneHint => '请在上方选择音色，或添加参考音频，保存时在服务商账号上克隆新音色。';
+
+  @override
+  String uiCloudVoiceCloneFailed(Object error) {
+    return '音色克隆失败：$error';
+  }
+
+  @override
+  String get uiIndexTtsEmotionHint => '可选的情感描述（需 WebUI 开启实验性情感模式）';
+
+  @override
+  String get uiMcpEndpoint => '供 AI Agent 使用的 MCP 服务';
+
+  @override
+  String uiMcpEndpointDescription(Object url) {
+    return '允许 Agent 通过 $url（Streamable HTTP）管理服务商、音色与配音任务。若上方设置了 API Key 则需携带。';
+  }
 }

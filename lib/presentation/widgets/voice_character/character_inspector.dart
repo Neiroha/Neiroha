@@ -116,16 +116,24 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         t == 'openaiCompatible' ||
         t == 'chatCompletionsTts' ||
         t == 'gptSovits' ||
-        t == 'geminiTts';
+        t == 'geminiTts' ||
+        t == 'elevenLabs' ||
+        t == 'minimaxTts';
   }
 
   bool get _isGptSovits => _selectedProvider?.adapterType == 'gptSovits';
+
+  /// Adapters that store the synthesis language in modelName.
+  bool get _usesTextLang =>
+      _isGptSovits || _selectedProvider?.adapterType == 'indexTts';
 
   bool get _hasModelField {
     final t = _selectedProvider?.adapterType ?? '';
     return t == 'openaiCompatible' ||
         t == 'chatCompletionsTts' ||
-        t == 'geminiTts';
+        t == 'geminiTts' ||
+        t == 'elevenLabs' ||
+        t == 'minimaxTts';
   }
 
   Future<void> _fetchSpeakers() async {
@@ -359,9 +367,12 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
               controller: _modelNameCtrl,
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context).uiModelName,
-                hintText: _selectedProvider?.adapterType == 'geminiTts'
-                    ? 'e.g. gemini-2.5-flash-preview-tts'
-                    : 'e.g. tts-1',
+                hintText: switch (_selectedProvider?.adapterType) {
+                  'geminiTts' => 'e.g. gemini-3.8-flash-tts',
+                  'elevenLabs' => 'e.g. eleven_v4',
+                  'minimaxTts' => 'e.g. speech-2.8-hd',
+                  _ => 'e.g. tts-1',
+                },
               ),
             ),
           ],
@@ -375,7 +386,11 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
               ),
             ),
           ],
-          if (_selectedProvider?.adapterType == 'geminiTts') ...[
+          if (const {
+            'geminiTts',
+            'elevenLabs',
+            'minimaxTts',
+          }.contains(_selectedProvider?.adapterType)) ...[
             SizedBox(height: 12),
             TextField(
               controller: _instructionCtrl,
@@ -498,7 +513,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
               labelText: AppLocalizations.of(context).uiLanguageCode,
             ),
           ),
-          if (_isGptSovits) ...[
+          if (_usesTextLang) ...[
             SizedBox(height: 10),
             TextField(
               controller: _textLangCtrl,
@@ -652,7 +667,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
     final textLang = _textLangCtrl.text.trim();
 
     String? modelName;
-    if (_isGptSovits) {
+    if (_usesTextLang) {
       modelName = textLang.isEmpty ? null : textLang;
     } else if (_hasModelField) {
       final v = _modelNameCtrl.text.trim();

@@ -3476,6 +3476,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Details'**
   String get uiDetails;
+
+  /// No description provided for @uiVoiceForImportedCues.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice for imported cues'**
+  String get uiVoiceForImportedCues;
+
+  /// No description provided for @uiVoiceForImportedCuesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a character from the voice bank of this project, or leave cues unassigned and cast them one by one.'**
+  String get uiVoiceForImportedCuesHint;
+
+  /// No description provided for @uiLeaveUnassigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave unassigned'**
+  String get uiLeaveUnassigned;
+
+  /// No description provided for @uiCloudVoiceCloneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a voice above, or add a reference audio to clone a new voice on the provider account when saving.'**
+  String get uiCloudVoiceCloneHint;
+
+  /// No description provided for @uiCloudVoiceCloneFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice clone failed: {error}'**
+  String uiCloudVoiceCloneFailed(Object error);
+
+  /// No description provided for @uiIndexTtsEmotionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional emotion description (needs the experimental emotion mode of the WebUI)'**
+  String get uiIndexTtsEmotionHint;
+
+  /// No description provided for @uiMcpEndpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'MCP server for AI agents'**
+  String get uiMcpEndpoint;
+
+  /// No description provided for @uiMcpEndpointDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Lets agents manage providers, voices and dubbing jobs at {url} (streamable HTTP). Uses the API key above when set.'**
+  String uiMcpEndpointDescription(Object url);
 }
 
 class _AppLocalizationsDelegate

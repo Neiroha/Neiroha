@@ -91,6 +91,8 @@ class _VideoDubEditorState extends ConsumerState<VideoDubEditor> {
   // editor session so the user doesn't have to re-toggle each time.
   bool _autoTtsAfterImport = false;
   bool _autoSyncAfterImport = false;
+  // Voice picked in the last subtitle import dialog (null = unassigned).
+  String? _lastImportVoiceId;
 
   // True after the user makes any change that hasn't been confirmed via
   // the Save button. All edits also persist to the database immediately,

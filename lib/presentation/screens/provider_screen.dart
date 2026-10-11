@@ -669,6 +669,11 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     AdapterType.gptSovits => 'http://127.0.0.1:9880',
     AdapterType.cosyvoice => 'http://127.0.0.1:9880',
     AdapterType.voxcpm2Native => 'http://127.0.0.1:8000',
+    AdapterType.geminiTts => 'https://generativelanguage.googleapis.com',
+    AdapterType.elevenLabs => 'https://api.elevenlabs.io',
+    AdapterType.minimaxTts =>
+      'https://api.minimax.io  (China: https://api.minimaxi.com)',
+    AdapterType.indexTts => 'http://127.0.0.1:7860  (IndexTTS WebUI)',
     _ => 'https://api.openai.com/v1',
   };
 

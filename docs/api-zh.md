@@ -47,6 +47,7 @@ API 以**音色库（Voice Bank）**作为 `model` 的抽象层：
 | `GET` | `/v1/models` | 将激活的音色库列为模型 | **已实现** |
 | `GET` | `/speakers` | 列出激活音色库中的声音（SillyTavern 格式） | **已实现** |
 | `GET` | `/health` | 服务器健康检查 | **已实现** |
+| `POST` | `/mcp` | 供 AI Agent 使用的 MCP 端点 | **已实现** |
 
 ### `POST /v1/audio/speech`
 
@@ -145,6 +146,23 @@ API 以**音色库（Voice Bank）**作为 `model` 的抽象层：
 }
 ```
 
+### 供 AI Agent 使用的 MCP 端点（`/mcp`）
+
+同一服务器在 `POST /mcp` 上以 Streamable HTTP 方式提供 [Model Context Protocol](https://modelcontextprotocol.io)
+（无状态；所有响应均为普通 `application/json`，不使用 SSE 流与会话 ID）。Agent 可借此管理服务商、音色库、参考音频库与语音角色，合成语音，并完整执行视频配音任务（导入字幕 → 分配角色 → 生成 → 导出）。
+
+| 设置 | 默认 | 说明 |
+|---|---|---|
+| 供 AI Agent 使用的 MCP 服务 | 开启 | 设置 → API 服务器；保存为 `api.mcpEnabled` |
+| 鉴权 | 沿用上方 API Key | 设置 Key 后需携带 `Authorization: Bearer <key>` 或 `X-API-Key` |
+| 局域网安全 | — | 绑定非回环地址且未设置 API Key 时，`/mcp` 返回 `403` |
+| 浏览器来源 | 拒绝 | 带 `Origin` 头的请求必须命中 CORS 白名单 |
+
+```bash
+claude mcp add --transport http neiroha http://127.0.0.1:8976/mcp
+```
+
+工具列表与英文文档一致（`get_overview`、`create_provider`、`create_voice_character`、`import_audio_track`、`synthesize_speech`、`import_subtitles`、`update_subtitle_cues`、`generate_video_dub_audio`、`export_video_dub` 等共 34 个）。服务商 API Key 通过 MCP 只写不读（`list_providers` 仅返回 `has_api_key`）。配套的英文 Agent 技能见 [`skills/neiroha-dubbing/SKILL.md`](../skills/neiroha-dubbing/SKILL.md)。
 ---
 
 ## 2. 上游适配器层
@@ -336,6 +354,34 @@ TTS 后端在真正实现原生平台适配器前保持隐藏。
 
 **配置：** 无需 base URL 或 API Key。通过 `presetVoiceName` 选择语音（匹配已安装的 SAPI 语音名称）。速度从 0.5–2.0 范围映射到 SAPI 的 -10..10 速率刻度。输出始终为 WAV。
 
+### 2.7 Google Gemini TTS（`geminiTts`）
+
+- Gemini 3.8 及更新模型走 `POST /v1beta/interactions`；2.5 / 3.1 预览模型仍走 `POST /v1beta/models/{model}:generateContent`。`/interactions` 返回 404 时自动回退。
+- 模型：`gemini-3.8-flash-tts`（默认）、`gemini-3.8-flash-lite-tts`、`gemini-3.1-flash-tts-preview`、`gemini-2.5-flash-preview-tts`、`gemini-2.5-pro-preview-tts`。
+- 音色：30 个预置音色 + `GET /v1beta/voices` 扩展音色库。Interactions 模式下文本逐字朗读，角色指令作为 `speech_metadata.style` 发送。
+
+### 2.8 ElevenLabs（`elevenLabs`）
+
+- 合成：`POST /v1/text-to-speech/{voice_id}?output_format=mp3_44100_128`，请求头 `xi-api-key`。
+- 模型：`eleven_v4`（默认）、`eleven_v4_turbo`、`eleven_v3`、`eleven_multilingual_v2`、`eleven_flash_v2_5`、`eleven_flash_v2`；音色列表 `GET /v2/voices`，显示为 `名称 [voice_id]`。
+- 克隆：`POST /v1/voices/add`（multipart），在账号上生成可复用音色。v3 / v4 模型会把指令转为音频标签（如 `[whispers]`）。
+
+### 2.9 MiniMax Speech（`minimaxTts`）
+
+- 合成：`POST /v1/t2a_v2`（音频以 hex 返回），`Authorization: Bearer`；国内账号使用 `https://api.minimaxi.com`。
+- 模型：`speech-2.8-hd`（默认）、`speech-2.8-turbo`、`speech-2.6-hd/turbo`、`speech-02-hd/turbo`；音色列表 `POST /v1/get_voice`。
+- 指令若为 `happy / sad / angry / fearful / disgusted / surprised / calm / fluent / whisper` 之一，则作为 `voice_setting.emotion` 发送。
+- 克隆：`/v1/files/upload`（`purpose=voice_clone`）→ `/v1/voice_clone`。7 天未使用的克隆音色会被上游删除。
+
+### 2.10 IndexTTS 2.5 WebUI（`indexTts`）
+
+Neiroha 暂未发布 IndexTTS 一键包，本适配器对接社区一键整合包启动的官方 Gradio WebUI（如 `opc-run/tts-index-tts-bundle` 的 `start-webui.bat`，默认 `http://127.0.0.1:7860`），调用其 `/gen_single` 接口：
+
+`GET /gradio_api/info` → `POST /gradio_api/upload` → `POST /gradio_api/call/gen_single` → `GET /gradio_api/call/gen_single/{event_id}`（SSE）→ `GET /gradio_api/file={path}`。
+
+- 自动兼容无 `/gradio_api` 前缀的 Gradio 4。参数按名称填充，未知采样参数保留 WebUI 默认值。
+- 角色每次都基于参考音频零样本克隆；`modelName` 存放输出语言（`auto`、`ZH`、`EN`、`JA`、`AR`、`ES`）。
+- 语速映射为 2.5 的 `duration_factor`（`1 / speed`）；仅当 WebUI 开启实验性情感文本模式时，指令才作为情感描述发送。
 ---
 
 ## 3. 模型管理
@@ -359,7 +405,10 @@ TTS 后端在真正实现原生平台适配器前保持隐藏。
 | `systemTts` | 否 | 是，仅 Windows |
 | `cosyvoice` | profile | profile |
 | `gptSovits` | 通过 `/v1/models` 查询 voice-set 模型 | 是 |
-| `geminiTts` | 是，内置 TTS 模型列表 | 是，内置声音列表 |
+| `geminiTts` | 是，内置 TTS 模型列表 | 是，预置音色 + 音色库 |
+| `elevenLabs` | 是，`/v1/models` | 是，`/v2/voices` |
+| `minimaxTts` | 是，内置列表 | 是，`/v1/get_voice` |
+| `indexTts` | 输出语言 | 否（仅参考音频） |
 | `voxcpm2Native` | 是 | 是 |
 
 ---

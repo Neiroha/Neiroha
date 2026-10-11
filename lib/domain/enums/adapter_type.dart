@@ -6,7 +6,10 @@ enum AdapterType {
   chatCompletionsTts,
   azureTts,
   systemTts,
-  geminiTts;
+  geminiTts,
+  elevenLabs,
+  minimaxTts,
+  indexTts;
 
   String get displayName => switch (this) {
     openaiCompatible => 'OpenAI TTS API Compatible',
@@ -17,6 +20,9 @@ enum AdapterType {
     azureTts => 'Azure Speech Service',
     systemTts => 'Windows System TTS',
     geminiTts => 'Google Gemini TTS',
+    elevenLabs => 'ElevenLabs',
+    minimaxTts => 'MiniMax Speech',
+    indexTts => 'IndexTTS 2.5 (WebUI)',
   };
 
   String get defaultModel => switch (this) {
@@ -27,7 +33,10 @@ enum AdapterType {
     chatCompletionsTts => 'mimo-v2-tts',
     azureTts => '',
     systemTts => '',
-    geminiTts => 'gemini-2.5-flash-preview-tts',
+    geminiTts => 'gemini-3.8-flash-tts',
+    elevenLabs => 'eleven_v4',
+    minimaxTts => 'speech-2.8-hd',
+    indexTts => 'auto',
   };
 
   /// Whether this adapter type fetches models (synthesis engines) from the API.
@@ -35,9 +44,11 @@ enum AdapterType {
     openaiCompatible => true,
     chatCompletionsTts => true,
     gptSovits => true,
-    // Gemini has only 2 free TTS models — the adapter returns them from
-    // a hard-coded list, so we still want the picker UI to show them.
+    // Gemini / MiniMax publish no model-list endpoint for TTS — the
+    // adapters return a curated list so the picker UI still shows them.
     geminiTts => true,
+    elevenLabs => true,
+    minimaxTts => true,
     _ => false,
   };
 
@@ -49,6 +60,8 @@ enum AdapterType {
     chatCompletionsTts => true,
     gptSovits => true,
     geminiTts => true,
+    elevenLabs => true,
+    minimaxTts => true,
     _ => false,
   };
 
@@ -60,6 +73,23 @@ enum AdapterType {
     chatCompletionsTts => true,
     gptSovits => true,
     geminiTts => true,
+    elevenLabs => true,
+    minimaxTts => true,
+    _ => false,
+  };
+
+  /// Whether the upstream can register a reusable cloned voice from a
+  /// reference recording (see `VoiceCloneCapable`).
+  bool get supportsCloudVoiceClone => switch (this) {
+    elevenLabs => true,
+    minimaxTts => true,
+    _ => false,
+  };
+
+  /// Zero-shot engines that clone from the character's reference audio on
+  /// every request (no preset voices).
+  bool get requiresReferenceAudio => switch (this) {
+    indexTts => true,
     _ => false,
   };
 
@@ -70,6 +100,8 @@ enum AdapterType {
     azureTts => false,
     systemTts => false,
     geminiTts => false,
+    elevenLabs => false,
+    minimaxTts => false,
     _ => true,
   };
 }

@@ -219,8 +219,15 @@ Future<CueEdit?> showCueEditDialog({
 
 /// SRT/LRC bulk-import options dialog. The caller passes the discovered
 /// cue counts and the current sticky preferences; the result tells the
-/// caller whether to replace, plus the (possibly updated) auto-flow flags.
-typedef ImportSubtitlesChoice = ({bool replace, bool autoTts, bool autoSync});
+/// caller whether to replace, plus the (possibly updated) auto-flow flags
+/// and the bank voice to assign to every imported cue (`null` = leave the
+/// cues unassigned so the user can pick voices per cue later).
+typedef ImportSubtitlesChoice = ({
+  bool replace,
+  bool autoTts,
+  bool autoSync,
+  String? voiceAssetId,
+});
 
 Future<ImportSubtitlesChoice?> showImportSubtitlesDialog({
   required BuildContext context,
@@ -228,59 +235,108 @@ Future<ImportSubtitlesChoice?> showImportSubtitlesDialog({
   required int existingCount,
   required bool initialAutoTts,
   required bool initialAutoSync,
+  List<db.VoiceAsset> voiceAssets = const [],
+  String? initialVoiceId,
 }) {
   var autoTts = initialAutoTts;
   var autoSync = initialAutoSync;
+  String? selectedVoiceId =
+      initialVoiceId != null && voiceAssets.any((v) => v.id == initialVoiceId)
+      ? initialVoiceId
+      : null;
+  ImportSubtitlesChoice result(bool replace) => (
+    replace: replace,
+    autoTts: autoTts,
+    autoSync: autoSync,
+    voiceAssetId: selectedVoiceId,
+  );
   return showDialog<ImportSubtitlesChoice>(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setDialogState) => AlertDialog(
         title: Text(AppLocalizations.of(context).uiImportCues(cueCount)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              existingCount == 0
-                  ? AppLocalizations.of(context).uiCuesWillBeAddedToThisProject
-                  : AppLocalizations.of(
-                      context,
-                    ).uiThisProjectAlreadyHasCuesReplaceThemOrAppendTheNewCues(
-                      existingCount,
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                existingCount == 0
+                    ? AppLocalizations.of(
+                        context,
+                      ).uiCuesWillBeAddedToThisProject
+                    : AppLocalizations.of(
+                        context,
+                      ).uiThisProjectAlreadyHasCuesReplaceThemOrAppendTheNewCues(
+                        existingCount,
+                      ),
+              ),
+              SizedBox(height: 16),
+              DropdownButtonFormField<String?>(
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(
+                    context,
+                  ).uiVoiceForImportedCues,
+                  helperText: voiceAssets.isEmpty
+                      ? AppLocalizations.of(context).uiAutoTtsSkippedNoVoices
+                      : AppLocalizations.of(context).uiVoiceForImportedCuesHint,
+                  helperMaxLines: 2,
+                  isDense: true,
+                ),
+                isExpanded: true,
+                initialValue: selectedVoiceId,
+                items: [
+                  DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text(
+                      AppLocalizations.of(context).uiLeaveUnassigned,
+                      style: const TextStyle(fontStyle: FontStyle.italic),
                     ),
-            ),
-            SizedBox(height: 16),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              title: Text(
-                AppLocalizations.of(context).uiAutoGenerateTTSAfterImport,
+                  ),
+                  for (final a in voiceAssets)
+                    DropdownMenuItem<String?>(
+                      value: a.id,
+                      child: Text(a.name, overflow: TextOverflow.ellipsis),
+                    ),
+                ],
+                onChanged: voiceAssets.isEmpty
+                    ? null
+                    : (v) => setDialogState(() => selectedVoiceId = v),
               ),
-              subtitle: Text(
-                AppLocalizations.of(
-                  context,
-                ).uiRunGenerateAllImmediatelyCuesWithoutAVoiceAreSkipped,
-                style: TextStyle(fontSize: 11),
+              SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                title: Text(
+                  AppLocalizations.of(context).uiAutoGenerateTTSAfterImport,
+                ),
+                subtitle: Text(
+                  AppLocalizations.of(
+                    context,
+                  ).uiRunGenerateAllImmediatelyCuesWithoutAVoiceAreSkipped,
+                  style: TextStyle(fontSize: 11),
+                ),
+                value: autoTts,
+                onChanged: (v) => setDialogState(() => autoTts = v),
               ),
-              value: autoTts,
-              onChanged: (v) => setDialogState(() => autoTts = v),
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              title: Text(
-                AppLocalizations.of(context).uiAutoSyncCueLengthsToAudio,
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                title: Text(
+                  AppLocalizations.of(context).uiAutoSyncCueLengthsToAudio,
+                ),
+                subtitle: Text(
+                  AppLocalizations.of(
+                    context,
+                  ).uiAfterGeneratingSnapEachCueEndToItsTTSLength,
+                  style: TextStyle(fontSize: 11),
+                ),
+                value: autoSync,
+                onChanged: (v) => setDialogState(() => autoSync = v),
               ),
-              subtitle: Text(
-                AppLocalizations.of(
-                  context,
-                ).uiAfterGeneratingSnapEachCueEndToItsTTSLength,
-                style: TextStyle(fontSize: 11),
-              ),
-              value: autoSync,
-              onChanged: (v) => setDialogState(() => autoSync = v),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -289,19 +345,11 @@ Future<ImportSubtitlesChoice?> showImportSubtitlesDialog({
           ),
           if (existingCount > 0)
             TextButton(
-              onPressed: () => Navigator.pop(ctx, (
-                replace: false,
-                autoTts: autoTts,
-                autoSync: autoSync,
-              )),
+              onPressed: () => Navigator.pop(ctx, result(false)),
               child: Text(AppLocalizations.of(context).uiAppend),
             ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, (
-              replace: true,
-              autoTts: autoTts,
-              autoSync: autoSync,
-            )),
+            onPressed: () => Navigator.pop(ctx, result(true)),
             child: Text(
               existingCount == 0
                   ? AppLocalizations.of(context).uiImport

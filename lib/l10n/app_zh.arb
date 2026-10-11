@@ -565,5 +565,13 @@
   "uiAutoTtsSkippedNoVoices": "自动 TTS 已跳过，语音库中没有音色",
   "uiVideoDubUnavailableOnAndroidPhone": "Android 手机端已禁用视频配音",
   "uiVideoDubUnavailableOnAndroidPhoneDescription": "视频剪辑需要比长屏手机更多的横向空间。请使用平板、折叠屏宽屏布局或桌面端编辑视频配音项目。",
-  "uiDetails": "详情"
+  "uiDetails": "详情",
+  "uiVoiceForImportedCues": "导入片段使用的音色",
+  "uiVoiceForImportedCuesHint": "从本项目语音库中选择角色，或保持未分配，稍后逐条指定。",
+  "uiLeaveUnassigned": "暂不分配",
+  "uiCloudVoiceCloneHint": "请在上方选择音色，或添加参考音频，保存时在服务商账号上克隆新音色。",
+  "uiCloudVoiceCloneFailed": "音色克隆失败：{error}",
+  "uiIndexTtsEmotionHint": "可选的情感描述（需 WebUI 开启实验性情感模式）",
+  "uiMcpEndpoint": "供 AI Agent 使用的 MCP 服务",
+  "uiMcpEndpointDescription": "允许 Agent 通过 {url}（Streamable HTTP）管理服务商、音色与配音任务。若上方设置了 API Key 则需携带。"
 }

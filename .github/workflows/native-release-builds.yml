@@ -17,7 +17,7 @@ permissions:
   attestations: write
 
 env:
-  FLUTTER_VERSION: "3.41.6"
+  FLUTTER_VERSION: "3.47.7"
   PUB_CACHE: ${{ github.workspace }}/.pub-cache
   RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
 

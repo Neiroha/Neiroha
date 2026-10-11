@@ -8,7 +8,7 @@
 
 [![Language](https://img.shields.io/badge/language-Dart%20%2F%20Flutter-0553B1?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
-[![Version](https://img.shields.io/badge/version-v0.3.0-blue)](https://github.com/Neiroha/Neiroha/releases)
+[![Version](https://img.shields.io/badge/version-v0.4.0-blue)](https://github.com/Neiroha/Neiroha/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Neiroha/Neiroha?style=social)](https://github.com/Neiroha/Neiroha/stargazers)
 

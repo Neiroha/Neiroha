@@ -5,7 +5,7 @@ part 'tts_job.freezed.dart';
 part 'tts_job.g.dart';
 
 @freezed
-class TtsJob with _$TtsJob {
+abstract class TtsJob with _$TtsJob {
   const factory TtsJob({
     required String id,
     required String voiceAssetId,

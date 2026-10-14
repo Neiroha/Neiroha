@@ -6,23 +6,22 @@ part of 'voice_asset.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$VoiceAssetImpl _$$VoiceAssetImplFromJson(Map<String, dynamic> json) =>
-    _$VoiceAssetImpl(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      providerId: json['providerId'] as String,
-      modelBindingId: json['modelBindingId'] as String,
-      taskMode: $enumDecode(_$TaskModeEnumMap, json['taskMode']),
-      refAudioPath: json['refAudioPath'] as String?,
-      promptText: json['promptText'] as String?,
-      promptLang: json['promptLang'] as String?,
-      voiceInstruction: json['voiceInstruction'] as String?,
-      presetVoiceName: json['presetVoiceName'] as String?,
-      speed: (json['speed'] as num?)?.toDouble() ?? 1.0,
-      enabled: json['enabled'] as bool? ?? true,
-    );
+_VoiceAsset _$VoiceAssetFromJson(Map<String, dynamic> json) => _VoiceAsset(
+  id: json['id'] as String,
+  name: json['name'] as String,
+  providerId: json['providerId'] as String,
+  modelBindingId: json['modelBindingId'] as String,
+  taskMode: $enumDecode(_$TaskModeEnumMap, json['taskMode']),
+  refAudioPath: json['refAudioPath'] as String?,
+  promptText: json['promptText'] as String?,
+  promptLang: json['promptLang'] as String?,
+  voiceInstruction: json['voiceInstruction'] as String?,
+  presetVoiceName: json['presetVoiceName'] as String?,
+  speed: (json['speed'] as num?)?.toDouble() ?? 1.0,
+  enabled: json['enabled'] as bool? ?? true,
+);
 
-Map<String, dynamic> _$$VoiceAssetImplToJson(_$VoiceAssetImpl instance) =>
+Map<String, dynamic> _$VoiceAssetToJson(_VoiceAsset instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,

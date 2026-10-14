@@ -6,7 +6,7 @@ part of 'tts_job.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$TtsJobImpl _$$TtsJobImplFromJson(Map<String, dynamic> json) => _$TtsJobImpl(
+_TtsJob _$TtsJobFromJson(Map<String, dynamic> json) => _TtsJob(
   id: json['id'] as String,
   voiceAssetId: json['voiceAssetId'] as String,
   inputText: json['inputText'] as String,
@@ -19,17 +19,16 @@ _$TtsJobImpl _$$TtsJobImplFromJson(Map<String, dynamic> json) => _$TtsJobImpl(
       : DateTime.parse(json['completedAt'] as String),
 );
 
-Map<String, dynamic> _$$TtsJobImplToJson(_$TtsJobImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'voiceAssetId': instance.voiceAssetId,
-      'inputText': instance.inputText,
-      'status': _$JobStatusEnumMap[instance.status]!,
-      'outputPath': instance.outputPath,
-      'errorMessage': instance.errorMessage,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'completedAt': instance.completedAt?.toIso8601String(),
-    };
+Map<String, dynamic> _$TtsJobToJson(_TtsJob instance) => <String, dynamic>{
+  'id': instance.id,
+  'voiceAssetId': instance.voiceAssetId,
+  'inputText': instance.inputText,
+  'status': _$JobStatusEnumMap[instance.status]!,
+  'outputPath': instance.outputPath,
+  'errorMessage': instance.errorMessage,
+  'createdAt': instance.createdAt.toIso8601String(),
+  'completedAt': instance.completedAt?.toIso8601String(),
+};
 
 const _$JobStatusEnumMap = {
   JobStatus.pending: 'pending',

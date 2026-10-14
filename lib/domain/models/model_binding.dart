@@ -5,7 +5,7 @@ part 'model_binding.freezed.dart';
 part 'model_binding.g.dart';
 
 @freezed
-class ModelBinding with _$ModelBinding {
+abstract class ModelBinding with _$ModelBinding {
   const factory ModelBinding({
     required String id,
     required String providerId,

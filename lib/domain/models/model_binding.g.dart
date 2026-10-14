@@ -6,8 +6,8 @@ part of 'model_binding.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$ModelBindingImpl _$$ModelBindingImplFromJson(Map<String, dynamic> json) =>
-    _$ModelBindingImpl(
+_ModelBinding _$ModelBindingFromJson(Map<String, dynamic> json) =>
+    _ModelBinding(
       id: json['id'] as String,
       providerId: json['providerId'] as String,
       modelKey: json['modelKey'] as String,
@@ -18,7 +18,7 @@ _$ModelBindingImpl _$$ModelBindingImplFromJson(Map<String, dynamic> json) =>
           const [],
     );
 
-Map<String, dynamic> _$$ModelBindingImplToJson(_$ModelBindingImpl instance) =>
+Map<String, dynamic> _$ModelBindingToJson(_ModelBinding instance) =>
     <String, dynamic>{
       'id': instance.id,
       'providerId': instance.providerId,

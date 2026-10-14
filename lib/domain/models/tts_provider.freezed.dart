@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'tts_provider.dart';
@@ -9,6 +9,7 @@ part of 'tts_provider.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $TtsProviderCopyWith<TtsProvider> get copyWith => _$TtsProviderCopyWithImpl<TtsP
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TtsProvider&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.adapterType, adapterType) || other.adapterType == adapterType)&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.apiKey, apiKey) || other.apiKey == apiKey)&&(identical(other.enabled, enabled) || other.enabled == enabled));
+  final _this = this as TtsProvider;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TtsProvider&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.adapterType, _this.adapterType) || other.adapterType == _this.adapterType)&&(identical(other.baseUrl, _this.baseUrl) || other.baseUrl == _this.baseUrl)&&(identical(other.apiKey, _this.apiKey) || other.apiKey == _this.apiKey)&&(identical(other.enabled, _this.enabled) || other.enabled == _this.enabled));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,adapterType,baseUrl,apiKey,enabled);
+int get hashCode {
+  final _this = this as TtsProvider;
+  return Object.hash(runtimeType,_this.id,_this.name,_this.adapterType,_this.baseUrl,_this.apiKey,_this.enabled);
+}
 
 @override
 String toString() {
-  return 'TtsProvider(id: $id, name: $name, adapterType: $adapterType, baseUrl: $baseUrl, apiKey: $apiKey, enabled: $enabled)';
+  final _this = this as TtsProvider;
+  return 'TtsProvider(id: ${_this.id}, name: ${_this.name}, adapterType: ${_this.adapterType}, baseUrl: ${_this.baseUrl}, apiKey: ${_this.apiKey}, enabled: ${_this.enabled})';
 }
 
 
@@ -66,7 +72,7 @@ class _$TtsProviderCopyWithImpl<$Res>
 /// Create a copy of TtsProvider
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? adapterType = null,Object? baseUrl = null,Object? apiKey = null,Object? enabled = null,}) {
-  return _then(_self.copyWith(
+  return _then(TtsProvider(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,adapterType: null == adapterType ? _self.adapterType : adapterType // ignore: cast_nullable_to_non_nullable
@@ -237,16 +243,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TtsProvider&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.adapterType, adapterType) || other.adapterType == adapterType)&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.apiKey, apiKey) || other.apiKey == apiKey)&&(identical(other.enabled, enabled) || other.enabled == enabled));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TtsProvider&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.adapterType, adapterType) || other.adapterType == adapterType)&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.apiKey, apiKey) || other.apiKey == apiKey)&&(identical(other.enabled, enabled) || other.enabled == enabled));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,adapterType,baseUrl,apiKey,enabled);
+int get hashCode {
+    return Object.hash(runtimeType,id,name,adapterType,baseUrl,apiKey,enabled);
+}
 
 @override
 String toString() {
-  return 'TtsProvider(id: $id, name: $name, adapterType: $adapterType, baseUrl: $baseUrl, apiKey: $apiKey, enabled: $enabled)';
+    return 'TtsProvider(id: $id, name: $name, adapterType: $adapterType, baseUrl: $baseUrl, apiKey: $apiKey, enabled: $enabled)';
 }
 
 

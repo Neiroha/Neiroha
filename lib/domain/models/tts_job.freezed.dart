@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'tts_job.dart';
@@ -9,6 +9,7 @@ part of 'tts_job.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $TtsJobCopyWith<TtsJob> get copyWith => _$TtsJobCopyWithImpl<TtsJob>(this as Tts
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TtsJob&&(identical(other.id, id) || other.id == id)&&(identical(other.voiceAssetId, voiceAssetId) || other.voiceAssetId == voiceAssetId)&&(identical(other.inputText, inputText) || other.inputText == inputText)&&(identical(other.status, status) || other.status == status)&&(identical(other.outputPath, outputPath) || other.outputPath == outputPath)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.completedAt, completedAt) || other.completedAt == completedAt));
+  final _this = this as TtsJob;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TtsJob&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.voiceAssetId, _this.voiceAssetId) || other.voiceAssetId == _this.voiceAssetId)&&(identical(other.inputText, _this.inputText) || other.inputText == _this.inputText)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.outputPath, _this.outputPath) || other.outputPath == _this.outputPath)&&(identical(other.errorMessage, _this.errorMessage) || other.errorMessage == _this.errorMessage)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.completedAt, _this.completedAt) || other.completedAt == _this.completedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,voiceAssetId,inputText,status,outputPath,errorMessage,createdAt,completedAt);
+int get hashCode {
+  final _this = this as TtsJob;
+  return Object.hash(runtimeType,_this.id,_this.voiceAssetId,_this.inputText,_this.status,_this.outputPath,_this.errorMessage,_this.createdAt,_this.completedAt);
+}
 
 @override
 String toString() {
-  return 'TtsJob(id: $id, voiceAssetId: $voiceAssetId, inputText: $inputText, status: $status, outputPath: $outputPath, errorMessage: $errorMessage, createdAt: $createdAt, completedAt: $completedAt)';
+  final _this = this as TtsJob;
+  return 'TtsJob(id: ${_this.id}, voiceAssetId: ${_this.voiceAssetId}, inputText: ${_this.inputText}, status: ${_this.status}, outputPath: ${_this.outputPath}, errorMessage: ${_this.errorMessage}, createdAt: ${_this.createdAt}, completedAt: ${_this.completedAt})';
 }
 
 
@@ -66,7 +72,7 @@ class _$TtsJobCopyWithImpl<$Res>
 /// Create a copy of TtsJob
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? voiceAssetId = null,Object? inputText = null,Object? status = null,Object? outputPath = freezed,Object? errorMessage = freezed,Object? createdAt = null,Object? completedAt = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(TtsJob(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,voiceAssetId: null == voiceAssetId ? _self.voiceAssetId : voiceAssetId // ignore: cast_nullable_to_non_nullable
 as String,inputText: null == inputText ? _self.inputText : inputText // ignore: cast_nullable_to_non_nullable
@@ -241,16 +247,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TtsJob&&(identical(other.id, id) || other.id == id)&&(identical(other.voiceAssetId, voiceAssetId) || other.voiceAssetId == voiceAssetId)&&(identical(other.inputText, inputText) || other.inputText == inputText)&&(identical(other.status, status) || other.status == status)&&(identical(other.outputPath, outputPath) || other.outputPath == outputPath)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.completedAt, completedAt) || other.completedAt == completedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TtsJob&&(identical(other.id, id) || other.id == id)&&(identical(other.voiceAssetId, voiceAssetId) || other.voiceAssetId == voiceAssetId)&&(identical(other.inputText, inputText) || other.inputText == inputText)&&(identical(other.status, status) || other.status == status)&&(identical(other.outputPath, outputPath) || other.outputPath == outputPath)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.completedAt, completedAt) || other.completedAt == completedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,voiceAssetId,inputText,status,outputPath,errorMessage,createdAt,completedAt);
+int get hashCode {
+    return Object.hash(runtimeType,id,voiceAssetId,inputText,status,outputPath,errorMessage,createdAt,completedAt);
+}
 
 @override
 String toString() {
-  return 'TtsJob(id: $id, voiceAssetId: $voiceAssetId, inputText: $inputText, status: $status, outputPath: $outputPath, errorMessage: $errorMessage, createdAt: $createdAt, completedAt: $completedAt)';
+    return 'TtsJob(id: $id, voiceAssetId: $voiceAssetId, inputText: $inputText, status: $status, outputPath: $outputPath, errorMessage: $errorMessage, createdAt: $createdAt, completedAt: $completedAt)';
 }
 
 

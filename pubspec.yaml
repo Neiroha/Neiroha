@@ -12,15 +12,13 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  cupertino_icons: ^1.0.8
+  cupertino_icons: ^2.0.0
 
   # State management
   flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
 
   # Local database (Drift = type-safe SQLite)
-  drift: ^2.25.0
-  sqlite3_flutter_libs: ^0.5.28
+  drift: ^2.35.0
 
   # Local HTTP server
   shelf: ^1.4.2
@@ -31,22 +29,22 @@ dependencies:
 
   # Data classes
   freezed_annotation: ^3.1.0
-  json_annotation: ^4.9.0
+  json_annotation: ^4.12.0
 
   # Audio playback
   audioplayers: ^6.0.0
 
   # Windows microphone recording (MediaFoundation, without federated record pkg)
-  record_platform_interface: ^1.5.0
-  record_windows: ^1.0.7
+  record_platform_interface: ^2.1.0
+  record_windows: ^2.3.0
 
   # Video playback (libmpv-based — desktop-capable across Win/macOS/Linux)
   media_kit: ^1.1.11
-  media_kit_video: ^1.2.5
+  media_kit_video: ^2.0.1
   media_kit_libs_video: ^1.0.5
 
   # File picker for ref audio upload
-  file_picker: ^8.0.0
+  file_picker: ^13.1.0
 
   # Utilities
   intl: any
@@ -62,10 +60,10 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
   # Code generation
-  build_runner: ^2.10.0
-  freezed: ^3.2.0
-  json_serializable: ^6.11.0
-  drift_dev: ^2.25.0
+  build_runner: ^2.16.0
+  freezed: ^4.0.0
+  json_serializable: ^6.14.0
+  drift_dev: ^2.35.0
 
 flutter:
   generate: true

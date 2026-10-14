@@ -74,7 +74,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
   }
 
   Future<void> _importFiles(db.NovelProject project) async {
-    final picked = await FilePicker.platform.pickFiles(
+    final picked = await pickFiles(
       allowMultiple: true,
       type: FileType.custom,
       allowedExtensions: const ['txt', 'text', 'md', 'epub'],
@@ -96,7 +96,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
   }
 
   Future<void> _importFolder(db.NovelProject project) async {
-    final path = await FilePicker.platform.getDirectoryPath(
+    final path = await FilePicker.getDirectoryPath(
       dialogTitle: AppLocalizations.of(context).novelImportFolderTitle,
     );
     if (path == null || path.isEmpty) return;

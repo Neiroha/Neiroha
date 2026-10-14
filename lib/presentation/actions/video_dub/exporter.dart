@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/video_dub_mix.dart';
@@ -73,7 +74,7 @@ Future<void> exportVideoDubVideo({
   final defaultName = '${safeFileStem(project.name)}_dubbed.mp4';
   String? outPath;
   try {
-    outPath = await FilePicker.platform.saveFile(
+    outPath = await pickSavePath(
       dialogTitle: exportDubbedVideoTitle,
       fileName: defaultName,
       type: FileType.video,
@@ -81,7 +82,7 @@ Future<void> exportVideoDubVideo({
   } catch (_) {
     // Some platforms don't implement saveFile — fall back to picking a
     // directory and synthesising the filename ourselves.
-    final dir = await FilePicker.platform.getDirectoryPath(
+    final dir = await FilePicker.getDirectoryPath(
       dialogTitle: chooseExportFolderTitle,
     );
     if (dir != null && dir.isNotEmpty) {
@@ -229,13 +230,13 @@ Future<void> exportVideoDubAudio({
   final defaultName = '${safeFileStem(project.name)}_dub$ext';
   String? outPath;
   try {
-    outPath = await FilePicker.platform.saveFile(
+    outPath = await pickSavePath(
       dialogTitle: exportDubbedAudioTitle,
       fileName: defaultName,
       type: FileType.audio,
     );
   } catch (_) {
-    final dir = await FilePicker.platform.getDirectoryPath(
+    final dir = await FilePicker.getDirectoryPath(
       dialogTitle: chooseExportFolderTitle,
     );
     if (dir != null && dir.isNotEmpty) outPath = p.join(dir, defaultName);
@@ -296,7 +297,7 @@ Future<void> exportVideoDubSubtitlesAndTts({
   required List<db.SubtitleCue> cues,
 }) async {
   if (cues.isEmpty) return;
-  final dir = await FilePicker.platform.getDirectoryPath(
+  final dir = await FilePicker.getDirectoryPath(
     dialogTitle: AppLocalizations.of(
       context,
     ).uiChooseExportFolderForSubtitlesTTSFiles,

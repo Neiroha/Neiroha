@@ -1148,7 +1148,7 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
         _snack(l10n.uiFFmpegIsRequiredForExportConfigureItInSettings);
         return;
       }
-      var outPath = await FilePicker.platform.saveFile(
+      var outPath = await pickSavePath(
         dialogTitle: l10n.uiExportNovelAudio,
         fileName:
             '${PathService.sanitizeSegment(project.name)}_${PathService.formatTimestamp()}.wav',

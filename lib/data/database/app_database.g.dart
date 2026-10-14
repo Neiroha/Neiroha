@@ -12087,7 +12087,16 @@ class $$AppSettingsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$AppSettingsTable, AppSetting>(table),
+                  BaseReferences<_$AppDatabase, $AppSettingsTable, AppSetting>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -12153,10 +12162,7 @@ final class $$TtsProvidersTableReferences
   static MultiTypedResultKey<$ModelBindingsTable, List<ModelBinding>>
   _modelBindingsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.modelBindings,
-    aliasName: $_aliasNameGenerator(
-      db.ttsProviders.id,
-      db.modelBindings.providerId,
-    ),
+    aliasName: 'tts_providers__id__model_bindings__provider_id',
   );
 
   $$ModelBindingsTableProcessedTableManager get modelBindingsRefs {
@@ -12174,10 +12180,7 @@ final class $$TtsProvidersTableReferences
   static MultiTypedResultKey<$VoiceAssetsTable, List<VoiceAsset>>
   _voiceAssetsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.voiceAssets,
-    aliasName: $_aliasNameGenerator(
-      db.ttsProviders.id,
-      db.voiceAssets.providerId,
-    ),
+    aliasName: 'tts_providers__id__voice_assets__provider_id',
   );
 
   $$VoiceAssetsTableProcessedTableManager get voiceAssetsRefs {
@@ -12599,7 +12602,7 @@ class $$TtsProvidersTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$TtsProvidersTable, TtsProvider>(table),
                   $$TtsProvidersTableReferences(db, table, e),
                 ),
               )
@@ -12704,10 +12707,9 @@ final class $$ModelBindingsTableReferences
     super.$_typedResult,
   );
 
-  static $TtsProvidersTable _providerIdTable(_$AppDatabase db) =>
-      db.ttsProviders.createAlias(
-        $_aliasNameGenerator(db.modelBindings.providerId, db.ttsProviders.id),
-      );
+  static $TtsProvidersTable _providerIdTable(_$AppDatabase db) => db
+      .ttsProviders
+      .createAlias('model_bindings__provider_id__tts_providers__id');
 
   $$TtsProvidersTableProcessedTableManager get providerId {
     final $_column = $_itemColumn<String>('provider_id')!;
@@ -12921,7 +12923,7 @@ class $$ModelBindingsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ModelBindingsTable, ModelBinding>(table),
                   $$ModelBindingsTableReferences(db, table, e),
                 ),
               )
@@ -13036,10 +13038,9 @@ final class $$VoiceAssetsTableReferences
     extends BaseReferences<_$AppDatabase, $VoiceAssetsTable, VoiceAsset> {
   $$VoiceAssetsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $TtsProvidersTable _providerIdTable(_$AppDatabase db) =>
-      db.ttsProviders.createAlias(
-        $_aliasNameGenerator(db.voiceAssets.providerId, db.ttsProviders.id),
-      );
+  static $TtsProvidersTable _providerIdTable(_$AppDatabase db) => db
+      .ttsProviders
+      .createAlias('voice_assets__provider_id__tts_providers__id');
 
   $$TtsProvidersTableProcessedTableManager get providerId {
     final $_column = $_itemColumn<String>('provider_id')!;
@@ -13058,10 +13059,7 @@ final class $$VoiceAssetsTableReferences
   static MultiTypedResultKey<$VoiceBankMembersTable, List<VoiceBankMember>>
   _voiceBankMembersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.voiceBankMembers,
-    aliasName: $_aliasNameGenerator(
-      db.voiceAssets.id,
-      db.voiceBankMembers.voiceAssetId,
-    ),
+    aliasName: 'voice_assets__id__voice_bank_members__voice_asset_id',
   );
 
   $$VoiceBankMembersTableProcessedTableManager get voiceBankMembersRefs {
@@ -13082,7 +13080,7 @@ final class $$VoiceAssetsTableReferences
     _$AppDatabase db,
   ) => MultiTypedResultKey.fromTable(
     db.ttsJobs,
-    aliasName: $_aliasNameGenerator(db.voiceAssets.id, db.ttsJobs.voiceAssetId),
+    aliasName: 'voice_assets__id__tts_jobs__voice_asset_id',
   );
 
   $$TtsJobsTableProcessedTableManager get ttsJobsRefs {
@@ -13101,10 +13099,7 @@ final class $$VoiceAssetsTableReferences
   _quickTtsHistoriesRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.quickTtsHistories,
-        aliasName: $_aliasNameGenerator(
-          db.voiceAssets.id,
-          db.quickTtsHistories.voiceAssetId,
-        ),
+        aliasName: 'voice_assets__id__quick_tts_histories__voice_asset_id',
       );
 
   $$QuickTtsHistoriesTableProcessedTableManager get quickTtsHistoriesRefs {
@@ -13752,7 +13747,7 @@ class $$VoiceAssetsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$VoiceAssetsTable, VoiceAsset>(table),
                   $$VoiceAssetsTableReferences(db, table, e),
                 ),
               )
@@ -13925,10 +13920,7 @@ final class $$VoiceBanksTableReferences
   static MultiTypedResultKey<$VoiceBankMembersTable, List<VoiceBankMember>>
   _voiceBankMembersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.voiceBankMembers,
-    aliasName: $_aliasNameGenerator(
-      db.voiceBanks.id,
-      db.voiceBankMembers.bankId,
-    ),
+    aliasName: 'voice_banks__id__voice_bank_members__bank_id',
   );
 
   $$VoiceBankMembersTableProcessedTableManager get voiceBankMembersRefs {
@@ -13948,10 +13940,7 @@ final class $$VoiceBanksTableReferences
   static MultiTypedResultKey<$PhaseTtsProjectsTable, List<PhaseTtsProject>>
   _phaseTtsProjectsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.phaseTtsProjects,
-    aliasName: $_aliasNameGenerator(
-      db.voiceBanks.id,
-      db.phaseTtsProjects.bankId,
-    ),
+    aliasName: 'voice_banks__id__phase_tts_projects__bank_id',
   );
 
   $$PhaseTtsProjectsTableProcessedTableManager get phaseTtsProjectsRefs {
@@ -13971,7 +13960,7 @@ final class $$VoiceBanksTableReferences
   static MultiTypedResultKey<$NovelProjectsTable, List<NovelProject>>
   _novelProjectsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.novelProjects,
-    aliasName: $_aliasNameGenerator(db.voiceBanks.id, db.novelProjects.bankId),
+    aliasName: 'voice_banks__id__novel_projects__bank_id',
   );
 
   $$NovelProjectsTableProcessedTableManager get novelProjectsRefs {
@@ -13990,10 +13979,7 @@ final class $$VoiceBanksTableReferences
   _dialogTtsProjectsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.dialogTtsProjects,
-        aliasName: $_aliasNameGenerator(
-          db.voiceBanks.id,
-          db.dialogTtsProjects.bankId,
-        ),
+        aliasName: 'voice_banks__id__dialog_tts_projects__bank_id',
       );
 
   $$DialogTtsProjectsTableProcessedTableManager get dialogTtsProjectsRefs {
@@ -14013,10 +13999,7 @@ final class $$VoiceBanksTableReferences
   static MultiTypedResultKey<$VideoDubProjectsTable, List<VideoDubProject>>
   _videoDubProjectsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.videoDubProjects,
-    aliasName: $_aliasNameGenerator(
-      db.voiceBanks.id,
-      db.videoDubProjects.bankId,
-    ),
+    aliasName: 'voice_banks__id__video_dub_projects__bank_id',
   );
 
   $$VideoDubProjectsTableProcessedTableManager get videoDubProjectsRefs {
@@ -14468,7 +14451,7 @@ class $$VoiceBanksTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$VoiceBanksTable, VoiceBank>(table),
                   $$VoiceBanksTableReferences(db, table, e),
                 ),
               )
@@ -14651,9 +14634,7 @@ final class $$VoiceBankMembersTableReferences
   );
 
   static $VoiceBanksTable _bankIdTable(_$AppDatabase db) =>
-      db.voiceBanks.createAlias(
-        $_aliasNameGenerator(db.voiceBankMembers.bankId, db.voiceBanks.id),
-      );
+      db.voiceBanks.createAlias('voice_bank_members__bank_id__voice_banks__id');
 
   $$VoiceBanksTableProcessedTableManager get bankId {
     final $_column = $_itemColumn<String>('bank_id')!;
@@ -14669,13 +14650,9 @@ final class $$VoiceBankMembersTableReferences
     );
   }
 
-  static $VoiceAssetsTable _voiceAssetIdTable(_$AppDatabase db) =>
-      db.voiceAssets.createAlias(
-        $_aliasNameGenerator(
-          db.voiceBankMembers.voiceAssetId,
-          db.voiceAssets.id,
-        ),
-      );
+  static $VoiceAssetsTable _voiceAssetIdTable(_$AppDatabase db) => db
+      .voiceAssets
+      .createAlias('voice_bank_members__voice_asset_id__voice_assets__id');
 
   $$VoiceAssetsTableProcessedTableManager get voiceAssetId {
     final $_column = $_itemColumn<String>('voice_asset_id')!;
@@ -14928,7 +14905,7 @@ class $$VoiceBankMembersTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$VoiceBankMembersTable, VoiceBankMember>(table),
                   $$VoiceBankMembersTableReferences(db, table, e),
                 ),
               )
@@ -15039,9 +15016,7 @@ final class $$TtsJobsTableReferences
   $$TtsJobsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $VoiceAssetsTable _voiceAssetIdTable(_$AppDatabase db) =>
-      db.voiceAssets.createAlias(
-        $_aliasNameGenerator(db.ttsJobs.voiceAssetId, db.voiceAssets.id),
-      );
+      db.voiceAssets.createAlias('tts_jobs__voice_asset_id__voice_assets__id');
 
   $$VoiceAssetsTableProcessedTableManager get voiceAssetId {
     final $_column = $_itemColumn<String>('voice_asset_id')!;
@@ -15327,7 +15302,7 @@ class $$TtsJobsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$TtsJobsTable, TtsJob>(table),
                   $$TtsJobsTableReferences(db, table, e),
                 ),
               )
@@ -15431,13 +15406,9 @@ final class $$QuickTtsHistoriesTableReferences
     super.$_typedResult,
   );
 
-  static $VoiceAssetsTable _voiceAssetIdTable(_$AppDatabase db) =>
-      db.voiceAssets.createAlias(
-        $_aliasNameGenerator(
-          db.quickTtsHistories.voiceAssetId,
-          db.voiceAssets.id,
-        ),
-      );
+  static $VoiceAssetsTable _voiceAssetIdTable(_$AppDatabase db) => db
+      .voiceAssets
+      .createAlias('quick_tts_histories__voice_asset_id__voice_assets__id');
 
   $$VoiceAssetsTableProcessedTableManager get voiceAssetId {
     final $_column = $_itemColumn<String>('voice_asset_id')!;
@@ -15741,7 +15712,7 @@ class $$QuickTtsHistoriesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$QuickTtsHistoriesTable, QuickTtsHistory>(table),
                   $$QuickTtsHistoriesTableReferences(db, table, e),
                 ),
               )
@@ -15848,9 +15819,7 @@ final class $$PhaseTtsProjectsTableReferences
   );
 
   static $VoiceBanksTable _bankIdTable(_$AppDatabase db) =>
-      db.voiceBanks.createAlias(
-        $_aliasNameGenerator(db.phaseTtsProjects.bankId, db.voiceBanks.id),
-      );
+      db.voiceBanks.createAlias('phase_tts_projects__bank_id__voice_banks__id');
 
   $$VoiceBanksTableProcessedTableManager get bankId {
     final $_column = $_itemColumn<String>('bank_id')!;
@@ -15869,10 +15838,7 @@ final class $$PhaseTtsProjectsTableReferences
   static MultiTypedResultKey<$PhaseTtsSegmentsTable, List<PhaseTtsSegment>>
   _phaseTtsSegmentsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.phaseTtsSegments,
-    aliasName: $_aliasNameGenerator(
-      db.phaseTtsProjects.id,
-      db.phaseTtsSegments.projectId,
-    ),
+    aliasName: 'phase_tts_projects__id__phase_tts_segments__project_id',
   );
 
   $$PhaseTtsSegmentsTableProcessedTableManager get phaseTtsSegmentsRefs {
@@ -16268,7 +16234,7 @@ class $$PhaseTtsProjectsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$PhaseTtsProjectsTable, PhaseTtsProject>(table),
                   $$PhaseTtsProjectsTableReferences(db, table, e),
                 ),
               )
@@ -16397,13 +16363,9 @@ final class $$PhaseTtsSegmentsTableReferences
     super.$_typedResult,
   );
 
-  static $PhaseTtsProjectsTable _projectIdTable(_$AppDatabase db) =>
-      db.phaseTtsProjects.createAlias(
-        $_aliasNameGenerator(
-          db.phaseTtsSegments.projectId,
-          db.phaseTtsProjects.id,
-        ),
-      );
+  static $PhaseTtsProjectsTable _projectIdTable(_$AppDatabase db) => db
+      .phaseTtsProjects
+      .createAlias('phase_tts_segments__project_id__phase_tts_projects__id');
 
   $$PhaseTtsProjectsTableProcessedTableManager get projectId {
     final $_column = $_itemColumn<String>('project_id')!;
@@ -16729,7 +16691,7 @@ class $$PhaseTtsSegmentsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$PhaseTtsSegmentsTable, PhaseTtsSegment>(table),
                   $$PhaseTtsSegmentsTableReferences(db, table, e),
                 ),
               )
@@ -16863,9 +16825,7 @@ final class $$NovelProjectsTableReferences
   );
 
   static $VoiceBanksTable _bankIdTable(_$AppDatabase db) =>
-      db.voiceBanks.createAlias(
-        $_aliasNameGenerator(db.novelProjects.bankId, db.voiceBanks.id),
-      );
+      db.voiceBanks.createAlias('novel_projects__bank_id__voice_banks__id');
 
   $$VoiceBanksTableProcessedTableManager get bankId {
     final $_column = $_itemColumn<String>('bank_id')!;
@@ -16884,10 +16844,7 @@ final class $$NovelProjectsTableReferences
   static MultiTypedResultKey<$NovelChaptersTable, List<NovelChapter>>
   _novelChaptersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.novelChapters,
-    aliasName: $_aliasNameGenerator(
-      db.novelProjects.id,
-      db.novelChapters.projectId,
-    ),
+    aliasName: 'novel_projects__id__novel_chapters__project_id',
   );
 
   $$NovelChaptersTableProcessedTableManager get novelChaptersRefs {
@@ -16905,10 +16862,7 @@ final class $$NovelProjectsTableReferences
   static MultiTypedResultKey<$NovelSegmentsTable, List<NovelSegment>>
   _novelSegmentsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.novelSegments,
-    aliasName: $_aliasNameGenerator(
-      db.novelProjects.id,
-      db.novelSegments.projectId,
-    ),
+    aliasName: 'novel_projects__id__novel_segments__project_id',
   );
 
   $$NovelSegmentsTableProcessedTableManager get novelSegmentsRefs {
@@ -17618,7 +17572,7 @@ class $$NovelProjectsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$NovelProjectsTable, NovelProject>(table),
                   $$NovelProjectsTableReferences(db, table, e),
                 ),
               )
@@ -17768,10 +17722,9 @@ final class $$NovelChaptersTableReferences
     super.$_typedResult,
   );
 
-  static $NovelProjectsTable _projectIdTable(_$AppDatabase db) =>
-      db.novelProjects.createAlias(
-        $_aliasNameGenerator(db.novelChapters.projectId, db.novelProjects.id),
-      );
+  static $NovelProjectsTable _projectIdTable(_$AppDatabase db) => db
+      .novelProjects
+      .createAlias('novel_chapters__project_id__novel_projects__id');
 
   $$NovelProjectsTableProcessedTableManager get projectId {
     final $_column = $_itemColumn<String>('project_id')!;
@@ -17790,10 +17743,7 @@ final class $$NovelChaptersTableReferences
   static MultiTypedResultKey<$NovelSegmentsTable, List<NovelSegment>>
   _novelSegmentsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.novelSegments,
-    aliasName: $_aliasNameGenerator(
-      db.novelChapters.id,
-      db.novelSegments.chapterId,
-    ),
+    aliasName: 'novel_chapters__id__novel_segments__chapter_id',
   );
 
   $$NovelSegmentsTableProcessedTableManager get novelSegmentsRefs {
@@ -18092,7 +18042,7 @@ class $$NovelChaptersTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$NovelChaptersTable, NovelChapter>(table),
                   $$NovelChaptersTableReferences(db, table, e),
                 ),
               )
@@ -18224,10 +18174,9 @@ final class $$NovelSegmentsTableReferences
     super.$_typedResult,
   );
 
-  static $NovelProjectsTable _projectIdTable(_$AppDatabase db) =>
-      db.novelProjects.createAlias(
-        $_aliasNameGenerator(db.novelSegments.projectId, db.novelProjects.id),
-      );
+  static $NovelProjectsTable _projectIdTable(_$AppDatabase db) => db
+      .novelProjects
+      .createAlias('novel_segments__project_id__novel_projects__id');
 
   $$NovelProjectsTableProcessedTableManager get projectId {
     final $_column = $_itemColumn<String>('project_id')!;
@@ -18243,10 +18192,9 @@ final class $$NovelSegmentsTableReferences
     );
   }
 
-  static $NovelChaptersTable _chapterIdTable(_$AppDatabase db) =>
-      db.novelChapters.createAlias(
-        $_aliasNameGenerator(db.novelSegments.chapterId, db.novelChapters.id),
-      );
+  static $NovelChaptersTable _chapterIdTable(_$AppDatabase db) => db
+      .novelChapters
+      .createAlias('novel_segments__chapter_id__novel_chapters__id');
 
   $$NovelChaptersTableProcessedTableManager get chapterId {
     final $_column = $_itemColumn<String>('chapter_id')!;
@@ -18662,7 +18610,7 @@ class $$NovelSegmentsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$NovelSegmentsTable, NovelSegment>(table),
                   $$NovelSegmentsTableReferences(db, table, e),
                 ),
               )
@@ -18775,10 +18723,8 @@ final class $$DialogTtsProjectsTableReferences
     super.$_typedResult,
   );
 
-  static $VoiceBanksTable _bankIdTable(_$AppDatabase db) =>
-      db.voiceBanks.createAlias(
-        $_aliasNameGenerator(db.dialogTtsProjects.bankId, db.voiceBanks.id),
-      );
+  static $VoiceBanksTable _bankIdTable(_$AppDatabase db) => db.voiceBanks
+      .createAlias('dialog_tts_projects__bank_id__voice_banks__id');
 
   $$VoiceBanksTableProcessedTableManager get bankId {
     final $_column = $_itemColumn<String>('bank_id')!;
@@ -18797,10 +18743,7 @@ final class $$DialogTtsProjectsTableReferences
   static MultiTypedResultKey<$DialogTtsLinesTable, List<DialogTtsLine>>
   _dialogTtsLinesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.dialogTtsLines,
-    aliasName: $_aliasNameGenerator(
-      db.dialogTtsProjects.id,
-      db.dialogTtsLines.projectId,
-    ),
+    aliasName: 'dialog_tts_projects__id__dialog_tts_lines__project_id',
   );
 
   $$DialogTtsLinesTableProcessedTableManager get dialogTtsLinesRefs {
@@ -19121,7 +19064,7 @@ class $$DialogTtsProjectsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$DialogTtsProjectsTable, DialogTtsProject>(table),
                   $$DialogTtsProjectsTableReferences(db, table, e),
                 ),
               )
@@ -19247,13 +19190,9 @@ final class $$DialogTtsLinesTableReferences
     super.$_typedResult,
   );
 
-  static $DialogTtsProjectsTable _projectIdTable(_$AppDatabase db) =>
-      db.dialogTtsProjects.createAlias(
-        $_aliasNameGenerator(
-          db.dialogTtsLines.projectId,
-          db.dialogTtsProjects.id,
-        ),
-      );
+  static $DialogTtsProjectsTable _projectIdTable(_$AppDatabase db) => db
+      .dialogTtsProjects
+      .createAlias('dialog_tts_lines__project_id__dialog_tts_projects__id');
 
   $$DialogTtsProjectsTableProcessedTableManager get projectId {
     final $_column = $_itemColumn<String>('project_id')!;
@@ -19559,7 +19498,7 @@ class $$DialogTtsLinesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$DialogTtsLinesTable, DialogTtsLine>(table),
                   $$DialogTtsLinesTableReferences(db, table, e),
                 ),
               )
@@ -19661,9 +19600,7 @@ final class $$VideoDubProjectsTableReferences
   );
 
   static $VoiceBanksTable _bankIdTable(_$AppDatabase db) =>
-      db.voiceBanks.createAlias(
-        $_aliasNameGenerator(db.videoDubProjects.bankId, db.voiceBanks.id),
-      );
+      db.voiceBanks.createAlias('video_dub_projects__bank_id__voice_banks__id');
 
   $$VoiceBanksTableProcessedTableManager get bankId {
     final $_column = $_itemColumn<String>('bank_id')!;
@@ -19682,10 +19619,7 @@ final class $$VideoDubProjectsTableReferences
   static MultiTypedResultKey<$SubtitleCuesTable, List<SubtitleCue>>
   _subtitleCuesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.subtitleCues,
-    aliasName: $_aliasNameGenerator(
-      db.videoDubProjects.id,
-      db.subtitleCues.projectId,
-    ),
+    aliasName: 'video_dub_projects__id__subtitle_cues__project_id',
   );
 
   $$SubtitleCuesTableProcessedTableManager get subtitleCuesRefs {
@@ -20039,7 +19973,7 @@ class $$VideoDubProjectsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$VideoDubProjectsTable, VideoDubProject>(table),
                   $$VideoDubProjectsTableReferences(db, table, e),
                 ),
               )
@@ -20160,10 +20094,9 @@ final class $$SubtitleCuesTableReferences
     extends BaseReferences<_$AppDatabase, $SubtitleCuesTable, SubtitleCue> {
   $$SubtitleCuesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $VideoDubProjectsTable _projectIdTable(_$AppDatabase db) =>
-      db.videoDubProjects.createAlias(
-        $_aliasNameGenerator(db.subtitleCues.projectId, db.videoDubProjects.id),
-      );
+  static $VideoDubProjectsTable _projectIdTable(_$AppDatabase db) => db
+      .videoDubProjects
+      .createAlias('subtitle_cues__project_id__video_dub_projects__id');
 
   $$VideoDubProjectsTableProcessedTableManager get projectId {
     final $_column = $_itemColumn<String>('project_id')!;
@@ -20500,7 +20433,7 @@ class $$SubtitleCuesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$SubtitleCuesTable, SubtitleCue>(table),
                   $$SubtitleCuesTableReferences(db, table, e),
                 ),
               )
@@ -20862,7 +20795,16 @@ class $$AudioTracksTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$AudioTracksTable, AudioTrack>(table),
+                  BaseReferences<_$AppDatabase, $AudioTracksTable, AudioTrack>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -21207,7 +21149,16 @@ class $$TimelineClipsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$TimelineClipsTable, TimelineClip>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $TimelineClipsTable,
+                    TimelineClip
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),

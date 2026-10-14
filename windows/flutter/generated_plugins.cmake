@@ -8,8 +8,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   media_kit_video
   record_windows
   screen_retriever_windows
-  sqlite3_flutter_libs
-  volume_controller
   window_manager
 )
 

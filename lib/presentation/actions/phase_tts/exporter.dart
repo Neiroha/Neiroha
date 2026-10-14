@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/audio_merge_service.dart';
@@ -66,13 +67,13 @@ Future<void> exportPhaseTtsMergedAudio({
       '${_safeFileStem(project.name)}_merged_${PathService.formatTimestamp()}$defaultExt';
   String? outPath;
   try {
-    outPath = await FilePicker.platform.saveFile(
+    outPath = await pickSavePath(
       dialogTitle: exportMergedAudioTitle,
       fileName: defaultName,
       type: FileType.audio,
     );
   } catch (_) {
-    final dir = await FilePicker.platform.getDirectoryPath(
+    final dir = await FilePicker.getDirectoryPath(
       dialogTitle: chooseExportFolderTitle,
     );
     if (dir != null && dir.isNotEmpty) outPath = p.join(dir, defaultName);

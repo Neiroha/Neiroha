@@ -53,10 +53,7 @@ extension _VideoDubEditorMediaActions on _VideoDubEditorState {
       DubImportKind.video => FileType.video,
       DubImportKind.audio => FileType.audio,
     };
-    final picked = await FilePicker.platform.pickFiles(
-      type: typeForPicker,
-      allowMultiple: false,
-    );
+    final picked = await pickFiles(type: typeForPicker, allowMultiple: false);
     final src = picked?.files.single.path;
     if (src == null) return;
     if (!await File(src).exists()) return;

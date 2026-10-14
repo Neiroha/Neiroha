@@ -5,7 +5,7 @@ extension _VideoDubEditorSubtitleActions on _VideoDubEditorState {
     db.VideoDubProject project,
     List<db.SubtitleCue> existing,
   ) async {
-    final picked = await FilePicker.platform.pickFiles(
+    final picked = await pickFiles(
       type: FileType.custom,
       allowedExtensions: const ['srt', 'lrc', 'vtt', 'txt'],
       allowMultiple: false,

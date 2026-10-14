@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'voice_asset.dart';
@@ -9,18 +9,14 @@ part of 'voice_asset.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
 /// @nodoc
 mixin _$VoiceAsset {
 
- String get id; String get name; String get providerId; String get modelBindingId; TaskMode get taskMode;// GPT-SoVITS: reference audio path
- String? get refAudioPath;// GPT-SoVITS: prompt text for the reference audio
- String? get promptText;// GPT-SoVITS: language of the prompt text
- String? get promptLang;// Qwen3: voice design instruction
- String? get voiceInstruction;// OpenAI-compatible: preset voice name
- String? get presetVoiceName; double get speed; bool get enabled;
+ String get id; String get name; String get providerId; String get modelBindingId; TaskMode get taskMode; String? get refAudioPath; String? get promptText; String? get promptLang; String? get voiceInstruction; String? get presetVoiceName; double get speed; bool get enabled;
 /// Create a copy of VoiceAsset
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -33,16 +29,21 @@ $VoiceAssetCopyWith<VoiceAsset> get copyWith => _$VoiceAssetCopyWithImpl<VoiceAs
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is VoiceAsset&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.providerId, providerId) || other.providerId == providerId)&&(identical(other.modelBindingId, modelBindingId) || other.modelBindingId == modelBindingId)&&(identical(other.taskMode, taskMode) || other.taskMode == taskMode)&&(identical(other.refAudioPath, refAudioPath) || other.refAudioPath == refAudioPath)&&(identical(other.promptText, promptText) || other.promptText == promptText)&&(identical(other.promptLang, promptLang) || other.promptLang == promptLang)&&(identical(other.voiceInstruction, voiceInstruction) || other.voiceInstruction == voiceInstruction)&&(identical(other.presetVoiceName, presetVoiceName) || other.presetVoiceName == presetVoiceName)&&(identical(other.speed, speed) || other.speed == speed)&&(identical(other.enabled, enabled) || other.enabled == enabled));
+  final _this = this as VoiceAsset;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is VoiceAsset&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.providerId, _this.providerId) || other.providerId == _this.providerId)&&(identical(other.modelBindingId, _this.modelBindingId) || other.modelBindingId == _this.modelBindingId)&&(identical(other.taskMode, _this.taskMode) || other.taskMode == _this.taskMode)&&(identical(other.refAudioPath, _this.refAudioPath) || other.refAudioPath == _this.refAudioPath)&&(identical(other.promptText, _this.promptText) || other.promptText == _this.promptText)&&(identical(other.promptLang, _this.promptLang) || other.promptLang == _this.promptLang)&&(identical(other.voiceInstruction, _this.voiceInstruction) || other.voiceInstruction == _this.voiceInstruction)&&(identical(other.presetVoiceName, _this.presetVoiceName) || other.presetVoiceName == _this.presetVoiceName)&&(identical(other.speed, _this.speed) || other.speed == _this.speed)&&(identical(other.enabled, _this.enabled) || other.enabled == _this.enabled));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,providerId,modelBindingId,taskMode,refAudioPath,promptText,promptLang,voiceInstruction,presetVoiceName,speed,enabled);
+int get hashCode {
+  final _this = this as VoiceAsset;
+  return Object.hash(runtimeType,_this.id,_this.name,_this.providerId,_this.modelBindingId,_this.taskMode,_this.refAudioPath,_this.promptText,_this.promptLang,_this.voiceInstruction,_this.presetVoiceName,_this.speed,_this.enabled);
+}
 
 @override
 String toString() {
-  return 'VoiceAsset(id: $id, name: $name, providerId: $providerId, modelBindingId: $modelBindingId, taskMode: $taskMode, refAudioPath: $refAudioPath, promptText: $promptText, promptLang: $promptLang, voiceInstruction: $voiceInstruction, presetVoiceName: $presetVoiceName, speed: $speed, enabled: $enabled)';
+  final _this = this as VoiceAsset;
+  return 'VoiceAsset(id: ${_this.id}, name: ${_this.name}, providerId: ${_this.providerId}, modelBindingId: ${_this.modelBindingId}, taskMode: ${_this.taskMode}, refAudioPath: ${_this.refAudioPath}, promptText: ${_this.promptText}, promptLang: ${_this.promptLang}, voiceInstruction: ${_this.voiceInstruction}, presetVoiceName: ${_this.presetVoiceName}, speed: ${_this.speed}, enabled: ${_this.enabled})';
 }
 
 
@@ -71,7 +72,7 @@ class _$VoiceAssetCopyWithImpl<$Res>
 /// Create a copy of VoiceAsset
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? providerId = null,Object? modelBindingId = null,Object? taskMode = null,Object? refAudioPath = freezed,Object? promptText = freezed,Object? promptLang = freezed,Object? voiceInstruction = freezed,Object? presetVoiceName = freezed,Object? speed = null,Object? enabled = null,}) {
-  return _then(_self.copyWith(
+  return _then(VoiceAsset(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,providerId: null == providerId ? _self.providerId : providerId // ignore: cast_nullable_to_non_nullable
@@ -233,15 +234,10 @@ class _VoiceAsset implements VoiceAsset {
 @override final  String providerId;
 @override final  String modelBindingId;
 @override final  TaskMode taskMode;
-// GPT-SoVITS: reference audio path
 @override final  String? refAudioPath;
-// GPT-SoVITS: prompt text for the reference audio
 @override final  String? promptText;
-// GPT-SoVITS: language of the prompt text
 @override final  String? promptLang;
-// Qwen3: voice design instruction
 @override final  String? voiceInstruction;
-// OpenAI-compatible: preset voice name
 @override final  String? presetVoiceName;
 @override@JsonKey() final  double speed;
 @override@JsonKey() final  bool enabled;
@@ -259,16 +255,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _VoiceAsset&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.providerId, providerId) || other.providerId == providerId)&&(identical(other.modelBindingId, modelBindingId) || other.modelBindingId == modelBindingId)&&(identical(other.taskMode, taskMode) || other.taskMode == taskMode)&&(identical(other.refAudioPath, refAudioPath) || other.refAudioPath == refAudioPath)&&(identical(other.promptText, promptText) || other.promptText == promptText)&&(identical(other.promptLang, promptLang) || other.promptLang == promptLang)&&(identical(other.voiceInstruction, voiceInstruction) || other.voiceInstruction == voiceInstruction)&&(identical(other.presetVoiceName, presetVoiceName) || other.presetVoiceName == presetVoiceName)&&(identical(other.speed, speed) || other.speed == speed)&&(identical(other.enabled, enabled) || other.enabled == enabled));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _VoiceAsset&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.providerId, providerId) || other.providerId == providerId)&&(identical(other.modelBindingId, modelBindingId) || other.modelBindingId == modelBindingId)&&(identical(other.taskMode, taskMode) || other.taskMode == taskMode)&&(identical(other.refAudioPath, refAudioPath) || other.refAudioPath == refAudioPath)&&(identical(other.promptText, promptText) || other.promptText == promptText)&&(identical(other.promptLang, promptLang) || other.promptLang == promptLang)&&(identical(other.voiceInstruction, voiceInstruction) || other.voiceInstruction == voiceInstruction)&&(identical(other.presetVoiceName, presetVoiceName) || other.presetVoiceName == presetVoiceName)&&(identical(other.speed, speed) || other.speed == speed)&&(identical(other.enabled, enabled) || other.enabled == enabled));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,providerId,modelBindingId,taskMode,refAudioPath,promptText,promptLang,voiceInstruction,presetVoiceName,speed,enabled);
+int get hashCode {
+    return Object.hash(runtimeType,id,name,providerId,modelBindingId,taskMode,refAudioPath,promptText,promptLang,voiceInstruction,presetVoiceName,speed,enabled);
+}
 
 @override
 String toString() {
-  return 'VoiceAsset(id: $id, name: $name, providerId: $providerId, modelBindingId: $modelBindingId, taskMode: $taskMode, refAudioPath: $refAudioPath, promptText: $promptText, promptLang: $promptLang, voiceInstruction: $voiceInstruction, presetVoiceName: $presetVoiceName, speed: $speed, enabled: $enabled)';
+    return 'VoiceAsset(id: $id, name: $name, providerId: $providerId, modelBindingId: $modelBindingId, taskMode: $taskMode, refAudioPath: $refAudioPath, promptText: $promptText, promptLang: $promptLang, voiceInstruction: $voiceInstruction, presetVoiceName: $presetVoiceName, speed: $speed, enabled: $enabled)';
 }
 
 

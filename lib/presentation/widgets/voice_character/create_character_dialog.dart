@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
@@ -525,10 +526,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   }
 
   Future<void> _pickAvatarForCreate() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      allowMultiple: false,
-    );
+    final result = await pickFiles(type: FileType.image, allowMultiple: false);
     if (result == null || result.files.single.path == null) return;
     setState(() => _avatarPath = result.files.single.path!);
   }

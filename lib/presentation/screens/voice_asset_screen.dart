@@ -4,7 +4,9 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:path/path.dart' as p;
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:uuid/uuid.dart';
@@ -152,10 +154,7 @@ class VoiceAssetScreen extends ConsumerWidget {
   }
 
   Future<void> _uploadTrack(BuildContext context, WidgetRef ref) async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.audio,
-      allowMultiple: false,
-    );
+    final result = await pickFiles(type: FileType.audio, allowMultiple: false);
     if (result == null || result.files.single.path == null) return;
     final src = File(result.files.single.path!);
     if (!await src.exists()) return;
@@ -429,7 +428,7 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
   }
 
   Future<void> _pickAvatar() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    final result = await pickFiles(type: FileType.image);
     if (result == null || result.files.single.path == null) return;
     final src = File(result.files.single.path!);
     final avatarDir = await PathService.instance.avatarsDir();

@@ -22,6 +22,7 @@ class SettingsPanel extends StatelessWidget {
   final ValueChanged<bool> onToggleAutoGenerate;
   final ValueChanged<bool> onToggleAutoPlay;
   final VoidCallback onGenerateAll;
+  final VoidCallback? onNormalize;
 
   const SettingsPanel({
     super.key,
@@ -35,11 +36,12 @@ class SettingsPanel extends StatelessWidget {
     required this.onToggleAutoGenerate,
     required this.onToggleAutoPlay,
     required this.onGenerateAll,
+    required this.onNormalize,
   });
 
   @override
   Widget build(BuildContext context) {
-    final lines = linesAsync.valueOrNull ?? const [];
+    final lines = linesAsync.value ?? const [];
     final pending = lines
         .where((l) => l.audioPath == null && l.voiceAssetId != null)
         .length;
@@ -132,6 +134,15 @@ class SettingsPanel extends StatelessWidget {
                           ? AppLocalizations.of(context).uiGenerateAll2(pending)
                           : AppLocalizations.of(context).uiGenerateAll,
                     ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Tooltip(
+                  message: AppLocalizations.of(context).loudnessActionTooltip,
+                  child: OutlinedButton.icon(
+                    onPressed: ready == 0 || generatingAll ? null : onNormalize,
+                    icon: const Icon(Icons.graphic_eq_rounded, size: 16),
+                    label: Text(AppLocalizations.of(context).loudnessAction),
                   ),
                 ),
               ],

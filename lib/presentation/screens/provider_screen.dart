@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/chat_completions_tts_adapter.dart';
@@ -136,8 +137,7 @@ class _ProviderListPane extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     buildDefaultDragHandles: false,
                     itemCount: providers.length,
-                    onReorder: (oldIndex, newIndex) async {
-                      if (newIndex > oldIndex) newIndex -= 1;
+                    onReorderItem: (oldIndex, newIndex) async {
                       final list = [...providers];
                       final item = list.removeAt(oldIndex);
                       list.insert(newIndex, item);
@@ -669,6 +669,11 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     AdapterType.gptSovits => 'http://127.0.0.1:9880',
     AdapterType.cosyvoice => 'http://127.0.0.1:9880',
     AdapterType.voxcpm2Native => 'http://127.0.0.1:8000',
+    AdapterType.geminiTts => 'https://generativelanguage.googleapis.com',
+    AdapterType.elevenLabs => 'https://api.elevenlabs.io',
+    AdapterType.minimaxTts =>
+      'https://api.minimax.io  (China: https://api.minimaxi.com)',
+    AdapterType.indexTts => 'http://127.0.0.1:7860  (IndexTTS WebUI)',
     _ => 'https://api.openai.com/v1',
   };
 
@@ -1449,9 +1454,10 @@ class _HealthBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final color = ok ? Colors.green : Colors.redAccent;
     return Tooltip(
-      message: ok ? 'Endpoint reachable' : (errorMessage ?? 'Unreachable'),
+      message: ok ? l10n.uiReachable : (errorMessage ?? l10n.uiUnreachable),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
@@ -1469,7 +1475,7 @@ class _HealthBadge extends StatelessWidget {
             ),
             SizedBox(width: 6),
             Text(
-              ok ? 'Healthy' : 'Failed',
+              ok ? l10n.uiReachable : l10n.uiFailed,
               style: TextStyle(
                 fontSize: 12,
                 color: color,

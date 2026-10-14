@@ -5,7 +5,7 @@ part 'voice_asset.freezed.dart';
 part 'voice_asset.g.dart';
 
 @freezed
-class VoiceAsset with _$VoiceAsset {
+abstract class VoiceAsset with _$VoiceAsset {
   const factory VoiceAsset({
     required String id,
     required String name,

@@ -45,7 +45,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 29;
+  int get schemaVersion => 31;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -124,6 +124,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 29) {
         await _migrateDefaultProviderApiContracts();
+      }
+      if (from < 30) {
+        await _seedProviders2026Q4();
       }
     },
     beforeOpen: (_) async {
@@ -229,6 +232,32 @@ class AppDatabase extends _$AppDatabase {
       columnName: 'tokens_per_day',
       addColumn: () => m.addColumn(ttsProviders, ttsProviders.tokensPerDay),
     );
+    // v31: loudness targets + Phase TTS merge settings.
+    await _addColumnIfMissing(
+      tableName: 'voice_banks',
+      columnName: 'loudness_target_lufs',
+      addColumn: () => m.addColumn(voiceBanks, voiceBanks.loudnessTargetLufs),
+    );
+    await _addColumnIfMissing(
+      tableName: 'voice_assets',
+      columnName: 'loudness_offset_db',
+      addColumn: () => m.addColumn(voiceAssets, voiceAssets.loudnessOffsetDb),
+    );
+    for (final (table, column) in <(TableInfo, GeneratedColumn)>[
+      (phaseTtsProjects, phaseTtsProjects.autoNormalizeLoudness),
+      (phaseTtsProjects, phaseTtsProjects.mergeGapSeconds),
+      (phaseTtsProjects, phaseTtsProjects.mergeFadeInMs),
+      (phaseTtsProjects, phaseTtsProjects.mergeFadeOutMs),
+      (dialogTtsProjects, dialogTtsProjects.autoNormalizeLoudness),
+      (videoDubProjects, videoDubProjects.autoNormalizeLoudness),
+      (novelProjects, novelProjects.autoNormalizeLoudness),
+    ]) {
+      await _addColumnIfMissing(
+        tableName: table.actualTableName,
+        columnName: column.name,
+        addColumn: () => m.addColumn(table, column),
+      );
+    }
     await _addColumnIfMissing(
       tableName: 'audio_tracks',
       columnName: 'missing',
@@ -624,6 +653,52 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Disabled starter rows for the providers added in 0.4 (ElevenLabs,
+  /// MiniMax, IndexTTS WebUI). `insertOrIgnore` keeps user edits intact when
+  /// an upgrade runs after the user already created rows with these ids.
+  Future<void> _seedProviders2026Q4() async {
+    final maxPos = await customSelect(
+      'SELECT COALESCE(MAX(position), -1) AS p FROM tts_providers',
+    ).getSingle();
+    var position = (maxPos.data['p'] as int? ?? -1) + 1;
+    for (final (id, name, type, url, model) in const [
+      (
+        'default-elevenlabs',
+        'ElevenLabs',
+        'elevenLabs',
+        'https://api.elevenlabs.io',
+        'eleven_v4',
+      ),
+      (
+        'default-minimax-tts',
+        'MiniMax Speech',
+        'minimaxTts',
+        'https://api.minimax.io',
+        'speech-2.8-hd',
+      ),
+      (
+        'default-index-tts',
+        'IndexTTS 2.5 (Local WebUI)',
+        'indexTts',
+        'http://127.0.0.1:7860',
+        'auto',
+      ),
+    ]) {
+      await into(ttsProviders).insert(
+        TtsProvidersCompanion(
+          id: Value(id),
+          name: Value(name),
+          adapterType: Value(type),
+          baseUrl: Value(url),
+          defaultModelName: Value(model),
+          enabled: const Value(false),
+          position: Value(position++),
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+    }
+  }
+
   /// Populate the database with built-in providers and starter data so new
   /// users can immediately understand the workflow.
   Future<void> _seedDefaults() async {
@@ -731,11 +806,13 @@ class AppDatabase extends _$AppDatabase {
         name: const Value('Google AI Studio'),
         adapterType: const Value('geminiTts'),
         baseUrl: const Value('https://generativelanguage.googleapis.com'),
-        defaultModelName: const Value('gemini-2.5-flash-preview-tts'),
+        defaultModelName: const Value('gemini-3.8-flash-tts'),
         enabled: const Value(false),
         position: const Value(7),
       ),
     );
+
+    await _seedProviders2026Q4();
 
     // ── Default voice character ──
     const defaultCharId = 'default-character';

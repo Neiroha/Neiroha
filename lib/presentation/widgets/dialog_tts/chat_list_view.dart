@@ -48,10 +48,7 @@ class ChatListView extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               buildDefaultDragHandles: false,
               itemCount: lines.length,
-              onReorder: (oldIndex, newIndex) {
-                if (newIndex > oldIndex) newIndex--;
-                onReorder(oldIndex, newIndex);
-              },
+              onReorderItem: onReorder,
               itemBuilder: (ctx, i) {
                 final line = lines[i];
                 final asset = line.voiceAssetId != null

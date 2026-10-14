@@ -5,7 +5,7 @@ extension _VideoDubEditorSubtitleActions on _VideoDubEditorState {
     db.VideoDubProject project,
     List<db.SubtitleCue> existing,
   ) async {
-    final picked = await FilePicker.platform.pickFiles(
+    final picked = await pickFiles(
       type: FileType.custom,
       allowedExtensions: const ['srt', 'lrc', 'vtt', 'txt'],
       allowMultiple: false,
@@ -39,6 +39,9 @@ extension _VideoDubEditorSubtitleActions on _VideoDubEditorState {
       return;
     }
 
+    // Resolve the bank voices straight from the DB so the picker is
+    // populated even before the bank stream provider has warmed up.
+    final bankAssets = await _resolveBankAssets(project.bankId);
     if (!mounted) return;
     final choice = await showImportSubtitlesDialog(
       context: context,
@@ -46,12 +49,16 @@ extension _VideoDubEditorSubtitleActions on _VideoDubEditorState {
       existingCount: existing.length,
       initialAutoTts: _autoTtsAfterImport,
       initialAutoSync: _autoSyncAfterImport,
+      voiceAssets: bankAssets,
+      initialVoiceId: _lastImportVoiceId ?? bankAssets.firstOrNull?.id,
     );
     if (choice == null) return;
 
-    // Persist switch state across imports in this session.
+    // Persist switch state + voice pick across imports in this session.
     _autoTtsAfterImport = choice.autoTts;
     _autoSyncAfterImport = choice.autoSync;
+    _lastImportVoiceId = choice.voiceAssetId;
+    final importVoiceId = choice.voiceAssetId;
 
     final database = ref.read(databaseProvider);
     _markDirty();
@@ -64,16 +71,6 @@ extension _VideoDubEditorSubtitleActions on _VideoDubEditorState {
           : (existing.map((c) => c.orderIndex).reduce((a, b) => a > b ? a : b) +
                 1);
     }
-    final banks = ref.read(voiceBanksStreamProvider).valueOrNull ?? const [];
-    final members =
-        ref.read(bankMembersStreamProvider(project.bankId)).valueOrNull ??
-        const <db.VoiceBankMember>[];
-    // Default voice = first voice in this project's bank.
-    String? defaultVoiceId;
-    if (members.isNotEmpty && banks.isNotEmpty) {
-      defaultVoiceId = members.first.voiceAssetId;
-    }
-
     for (var i = 0; i < parsed.length; i++) {
       final c = parsed[i];
       await database.insertSubtitleCue(
@@ -84,7 +81,7 @@ extension _VideoDubEditorSubtitleActions on _VideoDubEditorState {
           startMs: Value(c.startMs),
           endMs: Value(c.endMs),
           cueText: Value(c.text),
-          voiceAssetId: Value(defaultVoiceId),
+          voiceAssetId: Value(importVoiceId),
         ),
       );
     }
@@ -106,7 +103,6 @@ extension _VideoDubEditorSubtitleActions on _VideoDubEditorState {
     if (!choice.autoTts && !choice.autoSync) return;
     final fresh = await database.getSubtitleCues(project.id);
     if (choice.autoTts) {
-      final bankAssets = await _resolveBankAssets(project.bankId);
       if (bankAssets.isEmpty) {
         if (mounted) {
           _snack(AppLocalizations.of(context).uiAutoTtsSkippedNoVoices);

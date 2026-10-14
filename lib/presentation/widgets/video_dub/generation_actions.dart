@@ -167,6 +167,14 @@ extension _VideoDubEditorGenerationActions on _VideoDubEditorState {
         ext,
       );
       await File(filePath).writeAsBytes(result.audioBytes);
+      await ref
+          .read(autoLoudnessServiceProvider)
+          .normalizeGenerated(
+            enabled: project.autoNormalizeLoudness,
+            path: filePath,
+            bankId: project.bankId,
+            voiceAssetId: asset.id,
+          );
       final durationSec = await _probeMediaDuration(filePath);
       await database.updateSubtitleCue(
         cue.copyWith(

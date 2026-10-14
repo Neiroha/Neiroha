@@ -660,8 +660,10 @@ class _RecordDialogState extends State<RecordDialog>
       children: [
         Text(
           _phase == _Phase.recording
-              ? 'Writing WAV'
-              : (_phase == _Phase.preview ? 'Preview' : 'Idle'),
+              ? AppLocalizations.of(context).statusWritingWav
+              : (_phase == _Phase.preview
+                    ? AppLocalizations.of(context).statusPreview
+                    : AppLocalizations.of(context).statusIdle),
           style: TextStyle(
             fontSize: 12,
             color: _phase == _Phase.recording

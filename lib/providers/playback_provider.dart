@@ -179,6 +179,7 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
     List<({String audioPath, String title, String? subtitle})> items, {
     int startIndex = 0,
     String? sourceTag,
+    Duration gap = Duration.zero,
   }) async {
     _cancelActiveSequence();
     final runId = _sequenceRunId;
@@ -197,6 +198,10 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
         _player.onPlayerComplete.first,
         cancelCompleter.future,
       ]);
+      // Same pause the merged export inserts between clips.
+      if (gap > Duration.zero && i < items.length - 1) {
+        await Future.any([Future<void>.delayed(gap), cancelCompleter.future]);
+      }
     }
     if (_sequenceRunId == runId &&
         identical(_sequenceCancelCompleter, cancelCompleter)) {

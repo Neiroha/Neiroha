@@ -8,7 +8,7 @@
 
 [![语言](https://img.shields.io/badge/语言-Dart%20%2F%20Flutter-0553B1?logo=flutter&logoColor=white)](https://flutter.dev)
 [![平台](https://img.shields.io/badge/平台-Windows%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
-[![版本](https://img.shields.io/badge/版本-v0.3.0-blue)](https://github.com/Neiroha/Neiroha/releases)
+[![版本](https://img.shields.io/badge/版本-v0.4.1-blue)](https://github.com/Neiroha/Neiroha/releases)
 [![许可证：MIT](https://img.shields.io/badge/许可证-MIT-green)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Neiroha/Neiroha?style=social)](https://github.com/Neiroha/Neiroha/stargazers)
 
@@ -32,6 +32,7 @@ Neiroha 是一个 Flutter 应用，面向需要大量角色音色、多种 TTS �
 | **把参数变成角色** | 把服务商、模型、音色、语速、参考音频、提示文本、风格指令保存成可复用的语音角色 |
 | **用语音库组织项目** | 一整套角色可以在脚本、小说、对话、视频配音和外部 API 调用之间复用。 |
 | **为长任务设计** | 支持生成队列、音频缓存、小说预取、失败检查、任务监控和本地 GPU 后端的限流控制。 |
+| **音量统一** | 把逐句生成的音频调整到相同的感知响度，按角色设置偏移（例如旁白压低一些），并可随时还原原始音频。 |
 | **也能作为中间件** | 将当前激活的语音库暴露为本地 OpenAI 兼容 TTS API，让编辑器、Agent、脚本和外部工具直接调用。 |
 
 ## 功能亮点
@@ -46,7 +47,7 @@ Neiroha 是一个 Flutter 应用，面向需要大量角色音色、多种 TTS �
 
 ### 语音角色与语音库
 
-把后端参数封装成可命名、可复用的角色。每个角色可以携带服务商、模型/音色、语速、参考音频、提示文本、风格指令和头像。语音库则负责把一整组角色带进不同项目。
+把后端参数封装成可命名、可复用的角色。每个角色可以携带服务商、模型/音色、语速、参考音频、提示文本、风格指令、音量偏移和头像。语音库则负责把一整组角色带进不同项目，并设定整组角色的基准响度。
 
 
 <div align="center">
@@ -63,7 +64,7 @@ Neiroha 是一个 Flutter 应用，面向需要大量角色音色、多种 TTS �
 
 ### 长文本朗读
 
-拆分长脚本、分配角色、批量生成旁白，并在生成完成后合并导出音频。
+拆分长脚本、分配角色、批量生成旁白，并在生成完成后合并导出音频。分段支持拖拽排序、拆分、合并、插入、编辑和多选批量操作；生成可随时停止或只重试失败段，删除可撤销。合并导出会在段间加入停顿、在每处拼接加上短淡入淡出；编辑器可全程用键盘操作（方向键、空格、回车、F2、Delete、Ctrl+S）。
 
 <div align="center">
   <img src="assets/images/screenshot_phase_tts.png" alt="Phase TTS 界面" width="900" />
@@ -77,11 +78,23 @@ Neiroha 是一个 Flutter 应用，面向需要大量角色音色、多种 TTS �
   <img src="assets/images/screenshot_video_tts.png" alt="Video Dub 界面" width="900" />
 </div>
 
+### 音量统一
+
+逐句合成的音频很少处在同一音量，耳语或情绪化的句子可能相差 10 dB 以上。分段 TTS、对话配音、视频配音和小说阅读都可以把音频统一到 EBU R128 目标响度：预设从响亮（-14 LUFS）到 ASMR（-20 LUFS）和广播（-23 LUFS），采用整段增益加峰值限幅，处理前可先查看分析结果。在工程设置中开启「生成后自动统一音量」，新生成的句子会自动对齐目标。原始音频会保留，「还原原始音量」可一键撤销。需要 FFmpeg。
+
 ## 本地 API
 
-Neiroha 也可以作为本地 OpenAI 兼容 TTS 服务运行，由当前激活的语音库提供模型和音色。这让它可以作为编辑器、Agent、脚本和其他工具的语音中间件。
+Neiroha 也可以作为本地 OpenAI 兼容 TTS 服务运行，由当前激活的语音库提供模型和音色。这让它可以作为编辑器、Agent、脚本和其他工具的语音中间件。同一服务还提供 MCP 端点（`/mcp`），AI Agent 可借此管理服务商、角色、语音库和配音工程，包括音量统一。
 
 完整接口见 [docs/api-zh.md](docs/api-zh.md)。安装、后端默认值、API Key、模型配置和使用教程放在 [Wiki](https://github.com/Neiroha/Neiroha/wiki)。
+
+## 开发
+
+- 使用 Flutter 3.47.7 stable（与 CI 一致），然后运行 `flutter pub get`。
+- 修改 Drift 表结构（`lib/data/database/tables.dart`）或 freezed 模型后，运行 `dart run build_runner build`。
+- 修改 `lib/l10n/app_en.arb` / `app_zh.arb` 后，运行 `flutter gen-l10n`。
+- 运行 `flutter analyze` 与 `flutter test`。音量统一与合并导出的测试会调用真实的 FFmpeg，`PATH` 中没有 `ffmpeg` 时自动跳过。
+- `analysis_options.yaml` 排除了 `build/` 与各平台目录（新版 Flutter 也会自动加入这段配置），避免分析其中生成的插件源码。
 
 ## 项目入口
 

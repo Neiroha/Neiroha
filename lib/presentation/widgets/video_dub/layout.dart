@@ -1,87 +1,124 @@
 part of 'editor.dart';
 
 extension _VideoDubEditorLayout on _VideoDubEditorState {
+  /// Top bar. Below ~720 px the badge and button labels drop out and the
+  /// actions turn into icon buttons so nothing overflows.
   Widget _buildBar(db.VideoDubProject project, int voiceCount) {
     final capabilities = ref.watch(platformCapabilitiesProvider);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 20, 10),
-      child: Row(
-        children: [
-          IconButton(
-            tooltip: AppLocalizations.of(context).uiBackToProjects,
-            onPressed: () => _back(project),
-            icon: const Icon(Icons.arrow_back_rounded, size: 20),
-          ),
-          SizedBox(width: 4),
-          Icon(
-            Icons.movie_filter_rounded,
-            color: AppTheme.accentColor,
-            size: 18,
-          ),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              _dirty ? '• ${project.name}' : project.name,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceDim,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              AppLocalizations.of(context).uiVoiceCount(voiceCount),
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.white.withValues(alpha: 0.5),
+    final l10n = AppLocalizations.of(context);
+    Widget busyOr(IconData icon) => _exporting
+        ? const SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : Icon(icon, size: 16);
+    final exportAudio = _exporting ? null : () => _exportAudio(project);
+    final exportVideo = project.videoPath == null || _exporting
+        ? null
+        : () => _exportVideo(project);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 720;
+        return Container(
+          padding: compact
+              ? const EdgeInsets.fromLTRB(4, 6, 8, 6)
+              : const EdgeInsets.fromLTRB(12, 10, 20, 10),
+          child: Row(
+            children: [
+              IconButton(
+                tooltip: l10n.uiBackToProjects,
+                onPressed: () => _back(project),
+                icon: const Icon(Icons.arrow_back_rounded, size: 20),
               ),
-            ),
-          ),
-          SizedBox(width: 12),
-          if (capabilities.supportsLocalAudioMuxing) ...[
-            OutlinedButton.icon(
-              onPressed: _exporting ? null : () => _exportAudio(project),
-              icon: _exporting
-                  ? SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.audiotrack_rounded, size: 16),
-              label: Text(AppLocalizations.of(context).uiExportAudio),
-            ),
-            SizedBox(width: 8),
-          ],
-          if (capabilities.supportsLocalVideoExport) ...[
-            OutlinedButton.icon(
-              onPressed: project.videoPath == null || _exporting
-                  ? null
-                  : () => _exportVideo(project),
-              icon: _exporting
-                  ? SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.file_download_outlined, size: 16),
-              label: Text(
-                _exporting
-                    ? AppLocalizations.of(context).uiExporting
-                    : AppLocalizations.of(context).uiExportVideo,
+              if (!compact) ...[
+                SizedBox(width: 4),
+                Icon(
+                  Icons.movie_filter_rounded,
+                  color: AppTheme.accentColor,
+                  size: 18,
+                ),
+                SizedBox(width: 10),
+              ],
+              Expanded(
+                child: Text(
+                  _dirty ? '• ${project.name}' : project.name,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
-            SizedBox(width: 8),
-          ],
-          FilledButton.icon(
-            onPressed: () => _save(project),
-            icon: const Icon(Icons.save_rounded, size: 16),
-            label: Text(AppLocalizations.of(context).uiSave),
+              if (!compact) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceDim,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    l10n.uiVoiceCount(voiceCount),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+              ],
+              if (capabilities.supportsLocalAudioMuxing) ...[
+                if (compact)
+                  IconButton(
+                    tooltip: l10n.uiExportAudio,
+                    onPressed: exportAudio,
+                    icon: busyOr(Icons.audiotrack_rounded),
+                  )
+                else
+                  OutlinedButton.icon(
+                    onPressed: exportAudio,
+                    icon: busyOr(Icons.audiotrack_rounded),
+                    label: Text(l10n.uiExportAudio),
+                  ),
+                SizedBox(width: compact ? 0 : 8),
+              ],
+              if (capabilities.supportsLocalVideoExport) ...[
+                if (compact)
+                  IconButton(
+                    tooltip: l10n.uiExportVideo,
+                    onPressed: exportVideo,
+                    icon: busyOr(Icons.file_download_outlined),
+                  )
+                else
+                  OutlinedButton.icon(
+                    onPressed: exportVideo,
+                    icon: busyOr(Icons.file_download_outlined),
+                    label: Text(
+                      _exporting ? l10n.uiExporting : l10n.uiExportVideo,
+                    ),
+                  ),
+                SizedBox(width: compact ? 4 : 8),
+              ],
+              if (compact)
+                IconButton.filled(
+                  tooltip: l10n.uiSave,
+                  onPressed: () => _save(project),
+                  icon: const Icon(Icons.save_rounded, size: 18),
+                )
+              else
+                FilledButton.icon(
+                  onPressed: () => _save(project),
+                  icon: const Icon(Icons.save_rounded, size: 16),
+                  label: Text(l10n.uiSave),
+                ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -288,6 +325,14 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.queue_music_rounded, size: 18),
+                  ),
+                if (cues.any((c) => c.audioPath != null && !c.missing))
+                  IconButton(
+                    tooltip: AppLocalizations.of(context).loudnessActionTooltip,
+                    onPressed: _generatingAll || _generatingCueIds.isNotEmpty
+                        ? null
+                        : () => unawaited(_normalizeCueLoudness(project, cues)),
+                    icon: const Icon(Icons.graphic_eq_rounded, size: 18),
                   ),
                 if (cues.isNotEmpty)
                   IconButton(

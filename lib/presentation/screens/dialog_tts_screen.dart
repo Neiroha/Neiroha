@@ -17,6 +17,7 @@ import 'package:neiroha/presentation/widgets/dialog_tts/editor_project_bar.dart'
 import 'package:neiroha/presentation/widgets/dialog_tts/input_bar.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/project_list_header.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/settings_panel.dart';
+import 'package:neiroha/presentation/widgets/loudness_normalize_dialog.dart';
 import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/project_settings_dialog.dart';
@@ -65,8 +66,7 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
   Widget _buildProjectListScreen() {
     final projectsAsync = ref.watch(dialogTtsProjectsStreamProvider);
     final banks =
-        ref.watch(voiceBanksStreamProvider).valueOrNull ??
-        const <db.VoiceBank>[];
+        ref.watch(voiceBanksStreamProvider).value ?? const <db.VoiceBank>[];
     return Column(
       children: [
         ProjectListHeader(onCreate: _createProject),
@@ -111,6 +111,7 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
       projectName: project.name,
       bankId: project.bankId,
       banks: banks,
+      autoNormalizeLoudness: project.autoNormalizeLoudness,
     );
     if (result == null) return;
     final database = ref.read(databaseProvider);
@@ -119,11 +120,14 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
       return;
     }
     final bankChanged = result.bankId != project.bankId;
-    if (result.name != project.name || bankChanged) {
+    if (result.name != project.name ||
+        bankChanged ||
+        result.autoNormalizeLoudness != project.autoNormalizeLoudness) {
       await database.updateDialogTtsProject(
         project.copyWith(
           name: result.name,
           bankId: result.bankId,
+          autoNormalizeLoudness: result.autoNormalizeLoudness,
           updatedAt: DateTime.now(),
         ),
       );
@@ -150,7 +154,7 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
   }
 
   Future<void> _createProject() async {
-    final banks = ref.read(voiceBanksStreamProvider).valueOrNull ?? const [];
+    final banks = ref.read(voiceBanksStreamProvider).value ?? const [];
     if (banks.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -211,7 +215,7 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
   @override
   Widget build(BuildContext context) {
     final projectsAsync = ref.watch(dialogTtsProjectsStreamProvider);
-    final project = projectsAsync.valueOrNull
+    final project = projectsAsync.value
         ?.where((p) => p.id == widget.projectId)
         .firstOrNull;
     if (project == null) {
@@ -223,8 +227,8 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
     );
     final assetsAsync = ref.watch(voiceAssetsStreamProvider);
     final membersAsync = ref.watch(bankMembersStreamProvider(project.bankId));
-    final bankMembers = membersAsync.valueOrNull ?? [];
-    final allAssets = assetsAsync.valueOrNull ?? [];
+    final bankMembers = membersAsync.value ?? [];
+    final allAssets = assetsAsync.value ?? [];
     final assetMap = {for (final a in allAssets) a.id: a};
     final bankAssets = bankMembers
         .map((m) => assetMap[m.voiceAssetId])
@@ -256,7 +260,7 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
                         generatingLineIds: _generatingLineIds,
                         onPlay: _playLine,
                         onPlayFrom: (startIndex) => _playFrom(
-                          linesAsync.valueOrNull ?? const [],
+                          linesAsync.value ?? const [],
                           startIndex,
                           assetMap,
                         ),
@@ -300,9 +304,28 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
                   setState(() => _autoPlayAfterGenerate = v),
               onGenerateAll: () => _generateAll(
                 project,
-                linesAsync.valueOrNull ?? const [],
+                linesAsync.value ?? const [],
                 bankAssets,
               ),
+              onNormalize: _generatingLineIds.isNotEmpty
+                  ? null
+                  : () => unawaited(
+                      runLoudnessNormalization(
+                        context: context,
+                        ref: ref,
+                        bankId: project.bankId,
+                        items: [
+                          for (final l
+                              in linesAsync.value ?? const <db.DialogTtsLine>[])
+                            if (l.audioPath != null && !l.missing)
+                              LoudnessItem(
+                                id: l.id,
+                                path: l.audioPath!,
+                                voiceAssetId: l.voiceAssetId,
+                              ),
+                        ],
+                      ),
+                    ),
             ),
           ),
         ),
@@ -405,10 +428,10 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
       await notifier.stop();
       return;
     }
-    final assets = ref.read(voiceAssetsStreamProvider).valueOrNull ?? const [];
+    final assets = ref.read(voiceAssetsStreamProvider).value ?? const [];
     final voiceName =
         assets.where((a) => a.id == line.voiceAssetId).firstOrNull?.name ??
-        'Line';
+        AppLocalizations.of(context).dialogLineFallback;
     await notifier.load(line.audioPath!, line.lineText, subtitle: voiceName);
     if (line.audioDuration == null) {
       ref
@@ -497,6 +520,14 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
         ext,
       );
       await File(filePath).writeAsBytes(result.audioBytes);
+      await ref
+          .read(autoLoudnessServiceProvider)
+          .normalizeGenerated(
+            enabled: project.autoNormalizeLoudness,
+            path: filePath,
+            bankId: project.bankId,
+            voiceAssetId: asset.id,
+          );
       final durationSec = await measureAudioDuration(filePath);
       await database.updateDialogTtsLine(
         line.copyWith(

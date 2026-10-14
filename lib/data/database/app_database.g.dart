@@ -1532,6 +1532,18 @@ class $VoiceAssetsTable extends VoiceAssets
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _loudnessOffsetDbMeta = const VerificationMeta(
+    'loudnessOffsetDb',
+  );
+  @override
+  late final GeneratedColumn<double> loudnessOffsetDb = GeneratedColumn<double>(
+    'loudness_offset_db',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1552,6 +1564,7 @@ class $VoiceAssetsTable extends VoiceAssets
     speed,
     enabled,
     folderSlug,
+    loudnessOffsetDb,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1699,6 +1712,15 @@ class $VoiceAssetsTable extends VoiceAssets
         folderSlug.isAcceptableOrUnknown(data['folder_slug']!, _folderSlugMeta),
       );
     }
+    if (data.containsKey('loudness_offset_db')) {
+      context.handle(
+        _loudnessOffsetDbMeta,
+        loudnessOffsetDb.isAcceptableOrUnknown(
+          data['loudness_offset_db']!,
+          _loudnessOffsetDbMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1780,6 +1802,10 @@ class $VoiceAssetsTable extends VoiceAssets
         DriftSqlType.string,
         data['${effectivePrefix}folder_slug'],
       ),
+      loudnessOffsetDb: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}loudness_offset_db'],
+      )!,
     );
   }
 
@@ -1808,6 +1834,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
   final double speed;
   final bool enabled;
   final String? folderSlug;
+  final double loudnessOffsetDb;
   const VoiceAsset({
     required this.id,
     required this.name,
@@ -1827,6 +1854,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     required this.speed,
     required this.enabled,
     this.folderSlug,
+    required this.loudnessOffsetDb,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1873,6 +1901,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     if (!nullToAbsent || folderSlug != null) {
       map['folder_slug'] = Variable<String>(folderSlug);
     }
+    map['loudness_offset_db'] = Variable<double>(loudnessOffsetDb);
     return map;
   }
 
@@ -1920,6 +1949,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
       folderSlug: folderSlug == null && nullToAbsent
           ? const Value.absent()
           : Value(folderSlug),
+      loudnessOffsetDb: Value(loudnessOffsetDb),
     );
   }
 
@@ -1949,6 +1979,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
       speed: serializer.fromJson<double>(json['speed']),
       enabled: serializer.fromJson<bool>(json['enabled']),
       folderSlug: serializer.fromJson<String?>(json['folderSlug']),
+      loudnessOffsetDb: serializer.fromJson<double>(json['loudnessOffsetDb']),
     );
   }
   @override
@@ -1973,6 +2004,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
       'speed': serializer.toJson<double>(speed),
       'enabled': serializer.toJson<bool>(enabled),
       'folderSlug': serializer.toJson<String?>(folderSlug),
+      'loudnessOffsetDb': serializer.toJson<double>(loudnessOffsetDb),
     };
   }
 
@@ -1995,6 +2027,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     double? speed,
     bool? enabled,
     Value<String?> folderSlug = const Value.absent(),
+    double? loudnessOffsetDb,
   }) => VoiceAsset(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -2024,6 +2057,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     speed: speed ?? this.speed,
     enabled: enabled ?? this.enabled,
     folderSlug: folderSlug.present ? folderSlug.value : this.folderSlug,
+    loudnessOffsetDb: loudnessOffsetDb ?? this.loudnessOffsetDb,
   );
   VoiceAsset copyWithCompanion(VoiceAssetsCompanion data) {
     return VoiceAsset(
@@ -2069,6 +2103,9 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
       folderSlug: data.folderSlug.present
           ? data.folderSlug.value
           : this.folderSlug,
+      loudnessOffsetDb: data.loudnessOffsetDb.present
+          ? data.loudnessOffsetDb.value
+          : this.loudnessOffsetDb,
     );
   }
 
@@ -2092,7 +2129,8 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
           ..write('avatarPath: $avatarPath, ')
           ..write('speed: $speed, ')
           ..write('enabled: $enabled, ')
-          ..write('folderSlug: $folderSlug')
+          ..write('folderSlug: $folderSlug, ')
+          ..write('loudnessOffsetDb: $loudnessOffsetDb')
           ..write(')'))
         .toString();
   }
@@ -2117,6 +2155,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     speed,
     enabled,
     folderSlug,
+    loudnessOffsetDb,
   );
   @override
   bool operator ==(Object other) =>
@@ -2139,7 +2178,8 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
           other.avatarPath == this.avatarPath &&
           other.speed == this.speed &&
           other.enabled == this.enabled &&
-          other.folderSlug == this.folderSlug);
+          other.folderSlug == this.folderSlug &&
+          other.loudnessOffsetDb == this.loudnessOffsetDb);
 }
 
 class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
@@ -2161,6 +2201,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
   final Value<double> speed;
   final Value<bool> enabled;
   final Value<String?> folderSlug;
+  final Value<double> loudnessOffsetDb;
   final Value<int> rowid;
   const VoiceAssetsCompanion({
     this.id = const Value.absent(),
@@ -2181,6 +2222,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     this.speed = const Value.absent(),
     this.enabled = const Value.absent(),
     this.folderSlug = const Value.absent(),
+    this.loudnessOffsetDb = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VoiceAssetsCompanion.insert({
@@ -2202,6 +2244,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     this.speed = const Value.absent(),
     this.enabled = const Value.absent(),
     this.folderSlug = const Value.absent(),
+    this.loudnessOffsetDb = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -2226,6 +2269,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     Expression<double>? speed,
     Expression<bool>? enabled,
     Expression<String>? folderSlug,
+    Expression<double>? loudnessOffsetDb,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2247,6 +2291,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
       if (speed != null) 'speed': speed,
       if (enabled != null) 'enabled': enabled,
       if (folderSlug != null) 'folder_slug': folderSlug,
+      if (loudnessOffsetDb != null) 'loudness_offset_db': loudnessOffsetDb,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2270,6 +2315,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     Value<double>? speed,
     Value<bool>? enabled,
     Value<String?>? folderSlug,
+    Value<double>? loudnessOffsetDb,
     Value<int>? rowid,
   }) {
     return VoiceAssetsCompanion(
@@ -2291,6 +2337,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
       speed: speed ?? this.speed,
       enabled: enabled ?? this.enabled,
       folderSlug: folderSlug ?? this.folderSlug,
+      loudnessOffsetDb: loudnessOffsetDb ?? this.loudnessOffsetDb,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2352,6 +2399,9 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     if (folderSlug.present) {
       map['folder_slug'] = Variable<String>(folderSlug.value);
     }
+    if (loudnessOffsetDb.present) {
+      map['loudness_offset_db'] = Variable<double>(loudnessOffsetDb.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2379,6 +2429,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
           ..write('speed: $speed, ')
           ..write('enabled: $enabled, ')
           ..write('folderSlug: $folderSlug, ')
+          ..write('loudnessOffsetDb: $loudnessOffsetDb, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2447,6 +2498,18 @@ class $VoiceBanksTable extends VoiceBanks
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _loudnessTargetLufsMeta =
+      const VerificationMeta('loudnessTargetLufs');
+  @override
+  late final GeneratedColumn<double> loudnessTargetLufs =
+      GeneratedColumn<double>(
+        'loudness_target_lufs',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(-16.0),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2454,6 +2517,7 @@ class $VoiceBanksTable extends VoiceBanks
     description,
     isActive,
     createdAt,
+    loudnessTargetLufs,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2503,6 +2567,15 @@ class $VoiceBanksTable extends VoiceBanks
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('loudness_target_lufs')) {
+      context.handle(
+        _loudnessTargetLufsMeta,
+        loudnessTargetLufs.isAcceptableOrUnknown(
+          data['loudness_target_lufs']!,
+          _loudnessTargetLufsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2532,6 +2605,10 @@ class $VoiceBanksTable extends VoiceBanks
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      loudnessTargetLufs: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}loudness_target_lufs'],
+      )!,
     );
   }
 
@@ -2547,12 +2624,14 @@ class VoiceBank extends DataClass implements Insertable<VoiceBank> {
   final String? description;
   final bool isActive;
   final DateTime createdAt;
+  final double loudnessTargetLufs;
   const VoiceBank({
     required this.id,
     required this.name,
     this.description,
     required this.isActive,
     required this.createdAt,
+    required this.loudnessTargetLufs,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2564,6 +2643,7 @@ class VoiceBank extends DataClass implements Insertable<VoiceBank> {
     }
     map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
+    map['loudness_target_lufs'] = Variable<double>(loudnessTargetLufs);
     return map;
   }
 
@@ -2576,6 +2656,7 @@ class VoiceBank extends DataClass implements Insertable<VoiceBank> {
           : Value(description),
       isActive: Value(isActive),
       createdAt: Value(createdAt),
+      loudnessTargetLufs: Value(loudnessTargetLufs),
     );
   }
 
@@ -2590,6 +2671,9 @@ class VoiceBank extends DataClass implements Insertable<VoiceBank> {
       description: serializer.fromJson<String?>(json['description']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      loudnessTargetLufs: serializer.fromJson<double>(
+        json['loudnessTargetLufs'],
+      ),
     );
   }
   @override
@@ -2601,6 +2685,7 @@ class VoiceBank extends DataClass implements Insertable<VoiceBank> {
       'description': serializer.toJson<String?>(description),
       'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'loudnessTargetLufs': serializer.toJson<double>(loudnessTargetLufs),
     };
   }
 
@@ -2610,12 +2695,14 @@ class VoiceBank extends DataClass implements Insertable<VoiceBank> {
     Value<String?> description = const Value.absent(),
     bool? isActive,
     DateTime? createdAt,
+    double? loudnessTargetLufs,
   }) => VoiceBank(
     id: id ?? this.id,
     name: name ?? this.name,
     description: description.present ? description.value : this.description,
     isActive: isActive ?? this.isActive,
     createdAt: createdAt ?? this.createdAt,
+    loudnessTargetLufs: loudnessTargetLufs ?? this.loudnessTargetLufs,
   );
   VoiceBank copyWithCompanion(VoiceBanksCompanion data) {
     return VoiceBank(
@@ -2626,6 +2713,9 @@ class VoiceBank extends DataClass implements Insertable<VoiceBank> {
           : this.description,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      loudnessTargetLufs: data.loudnessTargetLufs.present
+          ? data.loudnessTargetLufs.value
+          : this.loudnessTargetLufs,
     );
   }
 
@@ -2636,13 +2726,21 @@ class VoiceBank extends DataClass implements Insertable<VoiceBank> {
           ..write('name: $name, ')
           ..write('description: $description, ')
           ..write('isActive: $isActive, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('loudnessTargetLufs: $loudnessTargetLufs')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, description, isActive, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    description,
+    isActive,
+    createdAt,
+    loudnessTargetLufs,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2651,7 +2749,8 @@ class VoiceBank extends DataClass implements Insertable<VoiceBank> {
           other.name == this.name &&
           other.description == this.description &&
           other.isActive == this.isActive &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.loudnessTargetLufs == this.loudnessTargetLufs);
 }
 
 class VoiceBanksCompanion extends UpdateCompanion<VoiceBank> {
@@ -2660,6 +2759,7 @@ class VoiceBanksCompanion extends UpdateCompanion<VoiceBank> {
   final Value<String?> description;
   final Value<bool> isActive;
   final Value<DateTime> createdAt;
+  final Value<double> loudnessTargetLufs;
   final Value<int> rowid;
   const VoiceBanksCompanion({
     this.id = const Value.absent(),
@@ -2667,6 +2767,7 @@ class VoiceBanksCompanion extends UpdateCompanion<VoiceBank> {
     this.description = const Value.absent(),
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.loudnessTargetLufs = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VoiceBanksCompanion.insert({
@@ -2675,6 +2776,7 @@ class VoiceBanksCompanion extends UpdateCompanion<VoiceBank> {
     this.description = const Value.absent(),
     this.isActive = const Value.absent(),
     required DateTime createdAt,
+    this.loudnessTargetLufs = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -2685,6 +2787,7 @@ class VoiceBanksCompanion extends UpdateCompanion<VoiceBank> {
     Expression<String>? description,
     Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
+    Expression<double>? loudnessTargetLufs,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2693,6 +2796,8 @@ class VoiceBanksCompanion extends UpdateCompanion<VoiceBank> {
       if (description != null) 'description': description,
       if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
+      if (loudnessTargetLufs != null)
+        'loudness_target_lufs': loudnessTargetLufs,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2703,6 +2808,7 @@ class VoiceBanksCompanion extends UpdateCompanion<VoiceBank> {
     Value<String?>? description,
     Value<bool>? isActive,
     Value<DateTime>? createdAt,
+    Value<double>? loudnessTargetLufs,
     Value<int>? rowid,
   }) {
     return VoiceBanksCompanion(
@@ -2711,6 +2817,7 @@ class VoiceBanksCompanion extends UpdateCompanion<VoiceBank> {
       description: description ?? this.description,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
+      loudnessTargetLufs: loudnessTargetLufs ?? this.loudnessTargetLufs,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2733,6 +2840,9 @@ class VoiceBanksCompanion extends UpdateCompanion<VoiceBank> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (loudnessTargetLufs.present) {
+      map['loudness_target_lufs'] = Variable<double>(loudnessTargetLufs.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2747,6 +2857,7 @@ class VoiceBanksCompanion extends UpdateCompanion<VoiceBank> {
           ..write('description: $description, ')
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
+          ..write('loudnessTargetLufs: $loudnessTargetLufs, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4217,6 +4328,57 @@ class $PhaseTtsProjectsTable extends PhaseTtsProjects
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _autoNormalizeLoudnessMeta =
+      const VerificationMeta('autoNormalizeLoudness');
+  @override
+  late final GeneratedColumn<bool> autoNormalizeLoudness =
+      GeneratedColumn<bool>(
+        'auto_normalize_loudness',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("auto_normalize_loudness" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _mergeGapSecondsMeta = const VerificationMeta(
+    'mergeGapSeconds',
+  );
+  @override
+  late final GeneratedColumn<double> mergeGapSeconds = GeneratedColumn<double>(
+    'merge_gap_seconds',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.3),
+  );
+  static const VerificationMeta _mergeFadeInMsMeta = const VerificationMeta(
+    'mergeFadeInMs',
+  );
+  @override
+  late final GeneratedColumn<int> mergeFadeInMs = GeneratedColumn<int>(
+    'merge_fade_in_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(10),
+  );
+  static const VerificationMeta _mergeFadeOutMsMeta = const VerificationMeta(
+    'mergeFadeOutMs',
+  );
+  @override
+  late final GeneratedColumn<int> mergeFadeOutMs = GeneratedColumn<int>(
+    'merge_fade_out_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(30),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4226,6 +4388,10 @@ class $PhaseTtsProjectsTable extends PhaseTtsProjects
     createdAt,
     updatedAt,
     folderSlug,
+    autoNormalizeLoudness,
+    mergeGapSeconds,
+    mergeFadeInMs,
+    mergeFadeOutMs,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4288,6 +4454,42 @@ class $PhaseTtsProjectsTable extends PhaseTtsProjects
         folderSlug.isAcceptableOrUnknown(data['folder_slug']!, _folderSlugMeta),
       );
     }
+    if (data.containsKey('auto_normalize_loudness')) {
+      context.handle(
+        _autoNormalizeLoudnessMeta,
+        autoNormalizeLoudness.isAcceptableOrUnknown(
+          data['auto_normalize_loudness']!,
+          _autoNormalizeLoudnessMeta,
+        ),
+      );
+    }
+    if (data.containsKey('merge_gap_seconds')) {
+      context.handle(
+        _mergeGapSecondsMeta,
+        mergeGapSeconds.isAcceptableOrUnknown(
+          data['merge_gap_seconds']!,
+          _mergeGapSecondsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('merge_fade_in_ms')) {
+      context.handle(
+        _mergeFadeInMsMeta,
+        mergeFadeInMs.isAcceptableOrUnknown(
+          data['merge_fade_in_ms']!,
+          _mergeFadeInMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('merge_fade_out_ms')) {
+      context.handle(
+        _mergeFadeOutMsMeta,
+        mergeFadeOutMs.isAcceptableOrUnknown(
+          data['merge_fade_out_ms']!,
+          _mergeFadeOutMsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -4325,6 +4527,22 @@ class $PhaseTtsProjectsTable extends PhaseTtsProjects
         DriftSqlType.string,
         data['${effectivePrefix}folder_slug'],
       ),
+      autoNormalizeLoudness: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}auto_normalize_loudness'],
+      )!,
+      mergeGapSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}merge_gap_seconds'],
+      )!,
+      mergeFadeInMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}merge_fade_in_ms'],
+      )!,
+      mergeFadeOutMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}merge_fade_out_ms'],
+      )!,
     );
   }
 
@@ -4342,6 +4560,10 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? folderSlug;
+  final bool autoNormalizeLoudness;
+  final double mergeGapSeconds;
+  final int mergeFadeInMs;
+  final int mergeFadeOutMs;
   const PhaseTtsProject({
     required this.id,
     required this.name,
@@ -4350,6 +4572,10 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
     required this.createdAt,
     required this.updatedAt,
     this.folderSlug,
+    required this.autoNormalizeLoudness,
+    required this.mergeGapSeconds,
+    required this.mergeFadeInMs,
+    required this.mergeFadeOutMs,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4363,6 +4589,10 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
     if (!nullToAbsent || folderSlug != null) {
       map['folder_slug'] = Variable<String>(folderSlug);
     }
+    map['auto_normalize_loudness'] = Variable<bool>(autoNormalizeLoudness);
+    map['merge_gap_seconds'] = Variable<double>(mergeGapSeconds);
+    map['merge_fade_in_ms'] = Variable<int>(mergeFadeInMs);
+    map['merge_fade_out_ms'] = Variable<int>(mergeFadeOutMs);
     return map;
   }
 
@@ -4377,6 +4607,10 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
       folderSlug: folderSlug == null && nullToAbsent
           ? const Value.absent()
           : Value(folderSlug),
+      autoNormalizeLoudness: Value(autoNormalizeLoudness),
+      mergeGapSeconds: Value(mergeGapSeconds),
+      mergeFadeInMs: Value(mergeFadeInMs),
+      mergeFadeOutMs: Value(mergeFadeOutMs),
     );
   }
 
@@ -4393,6 +4627,12 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       folderSlug: serializer.fromJson<String?>(json['folderSlug']),
+      autoNormalizeLoudness: serializer.fromJson<bool>(
+        json['autoNormalizeLoudness'],
+      ),
+      mergeGapSeconds: serializer.fromJson<double>(json['mergeGapSeconds']),
+      mergeFadeInMs: serializer.fromJson<int>(json['mergeFadeInMs']),
+      mergeFadeOutMs: serializer.fromJson<int>(json['mergeFadeOutMs']),
     );
   }
   @override
@@ -4406,6 +4646,10 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'folderSlug': serializer.toJson<String?>(folderSlug),
+      'autoNormalizeLoudness': serializer.toJson<bool>(autoNormalizeLoudness),
+      'mergeGapSeconds': serializer.toJson<double>(mergeGapSeconds),
+      'mergeFadeInMs': serializer.toJson<int>(mergeFadeInMs),
+      'mergeFadeOutMs': serializer.toJson<int>(mergeFadeOutMs),
     };
   }
 
@@ -4417,6 +4661,10 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<String?> folderSlug = const Value.absent(),
+    bool? autoNormalizeLoudness,
+    double? mergeGapSeconds,
+    int? mergeFadeInMs,
+    int? mergeFadeOutMs,
   }) => PhaseTtsProject(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -4425,6 +4673,10 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     folderSlug: folderSlug.present ? folderSlug.value : this.folderSlug,
+    autoNormalizeLoudness: autoNormalizeLoudness ?? this.autoNormalizeLoudness,
+    mergeGapSeconds: mergeGapSeconds ?? this.mergeGapSeconds,
+    mergeFadeInMs: mergeFadeInMs ?? this.mergeFadeInMs,
+    mergeFadeOutMs: mergeFadeOutMs ?? this.mergeFadeOutMs,
   );
   PhaseTtsProject copyWithCompanion(PhaseTtsProjectsCompanion data) {
     return PhaseTtsProject(
@@ -4439,6 +4691,18 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
       folderSlug: data.folderSlug.present
           ? data.folderSlug.value
           : this.folderSlug,
+      autoNormalizeLoudness: data.autoNormalizeLoudness.present
+          ? data.autoNormalizeLoudness.value
+          : this.autoNormalizeLoudness,
+      mergeGapSeconds: data.mergeGapSeconds.present
+          ? data.mergeGapSeconds.value
+          : this.mergeGapSeconds,
+      mergeFadeInMs: data.mergeFadeInMs.present
+          ? data.mergeFadeInMs.value
+          : this.mergeFadeInMs,
+      mergeFadeOutMs: data.mergeFadeOutMs.present
+          ? data.mergeFadeOutMs.value
+          : this.mergeFadeOutMs,
     );
   }
 
@@ -4451,7 +4715,11 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
           ..write('scriptText: $scriptText, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('folderSlug: $folderSlug')
+          ..write('folderSlug: $folderSlug, ')
+          ..write('autoNormalizeLoudness: $autoNormalizeLoudness, ')
+          ..write('mergeGapSeconds: $mergeGapSeconds, ')
+          ..write('mergeFadeInMs: $mergeFadeInMs, ')
+          ..write('mergeFadeOutMs: $mergeFadeOutMs')
           ..write(')'))
         .toString();
   }
@@ -4465,6 +4733,10 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
     createdAt,
     updatedAt,
     folderSlug,
+    autoNormalizeLoudness,
+    mergeGapSeconds,
+    mergeFadeInMs,
+    mergeFadeOutMs,
   );
   @override
   bool operator ==(Object other) =>
@@ -4476,7 +4748,11 @@ class PhaseTtsProject extends DataClass implements Insertable<PhaseTtsProject> {
           other.scriptText == this.scriptText &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.folderSlug == this.folderSlug);
+          other.folderSlug == this.folderSlug &&
+          other.autoNormalizeLoudness == this.autoNormalizeLoudness &&
+          other.mergeGapSeconds == this.mergeGapSeconds &&
+          other.mergeFadeInMs == this.mergeFadeInMs &&
+          other.mergeFadeOutMs == this.mergeFadeOutMs);
 }
 
 class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
@@ -4487,6 +4763,10 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<String?> folderSlug;
+  final Value<bool> autoNormalizeLoudness;
+  final Value<double> mergeGapSeconds;
+  final Value<int> mergeFadeInMs;
+  final Value<int> mergeFadeOutMs;
   final Value<int> rowid;
   const PhaseTtsProjectsCompanion({
     this.id = const Value.absent(),
@@ -4496,6 +4776,10 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.folderSlug = const Value.absent(),
+    this.autoNormalizeLoudness = const Value.absent(),
+    this.mergeGapSeconds = const Value.absent(),
+    this.mergeFadeInMs = const Value.absent(),
+    this.mergeFadeOutMs = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PhaseTtsProjectsCompanion.insert({
@@ -4506,6 +4790,10 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
     required DateTime createdAt,
     required DateTime updatedAt,
     this.folderSlug = const Value.absent(),
+    this.autoNormalizeLoudness = const Value.absent(),
+    this.mergeGapSeconds = const Value.absent(),
+    this.mergeFadeInMs = const Value.absent(),
+    this.mergeFadeOutMs = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -4520,6 +4808,10 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<String>? folderSlug,
+    Expression<bool>? autoNormalizeLoudness,
+    Expression<double>? mergeGapSeconds,
+    Expression<int>? mergeFadeInMs,
+    Expression<int>? mergeFadeOutMs,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4530,6 +4822,11 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (folderSlug != null) 'folder_slug': folderSlug,
+      if (autoNormalizeLoudness != null)
+        'auto_normalize_loudness': autoNormalizeLoudness,
+      if (mergeGapSeconds != null) 'merge_gap_seconds': mergeGapSeconds,
+      if (mergeFadeInMs != null) 'merge_fade_in_ms': mergeFadeInMs,
+      if (mergeFadeOutMs != null) 'merge_fade_out_ms': mergeFadeOutMs,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4542,6 +4839,10 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<String?>? folderSlug,
+    Value<bool>? autoNormalizeLoudness,
+    Value<double>? mergeGapSeconds,
+    Value<int>? mergeFadeInMs,
+    Value<int>? mergeFadeOutMs,
     Value<int>? rowid,
   }) {
     return PhaseTtsProjectsCompanion(
@@ -4552,6 +4853,11 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       folderSlug: folderSlug ?? this.folderSlug,
+      autoNormalizeLoudness:
+          autoNormalizeLoudness ?? this.autoNormalizeLoudness,
+      mergeGapSeconds: mergeGapSeconds ?? this.mergeGapSeconds,
+      mergeFadeInMs: mergeFadeInMs ?? this.mergeFadeInMs,
+      mergeFadeOutMs: mergeFadeOutMs ?? this.mergeFadeOutMs,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4580,6 +4886,20 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
     if (folderSlug.present) {
       map['folder_slug'] = Variable<String>(folderSlug.value);
     }
+    if (autoNormalizeLoudness.present) {
+      map['auto_normalize_loudness'] = Variable<bool>(
+        autoNormalizeLoudness.value,
+      );
+    }
+    if (mergeGapSeconds.present) {
+      map['merge_gap_seconds'] = Variable<double>(mergeGapSeconds.value);
+    }
+    if (mergeFadeInMs.present) {
+      map['merge_fade_in_ms'] = Variable<int>(mergeFadeInMs.value);
+    }
+    if (mergeFadeOutMs.present) {
+      map['merge_fade_out_ms'] = Variable<int>(mergeFadeOutMs.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4596,6 +4916,10 @@ class PhaseTtsProjectsCompanion extends UpdateCompanion<PhaseTtsProject> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('folderSlug: $folderSlug, ')
+          ..write('autoNormalizeLoudness: $autoNormalizeLoudness, ')
+          ..write('mergeGapSeconds: $mergeGapSeconds, ')
+          ..write('mergeFadeInMs: $mergeFadeInMs, ')
+          ..write('mergeFadeOutMs: $mergeFadeOutMs, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5542,6 +5866,21 @@ class $NovelProjectsTable extends NovelProjects
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _autoNormalizeLoudnessMeta =
+      const VerificationMeta('autoNormalizeLoudness');
+  @override
+  late final GeneratedColumn<bool> autoNormalizeLoudness =
+      GeneratedColumn<bool>(
+        'auto_normalize_loudness',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("auto_normalize_loudness" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5568,6 +5907,7 @@ class $NovelProjectsTable extends NovelProjects
     createdAt,
     updatedAt,
     folderSlug,
+    autoNormalizeLoudness,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5780,6 +6120,15 @@ class $NovelProjectsTable extends NovelProjects
         folderSlug.isAcceptableOrUnknown(data['folder_slug']!, _folderSlugMeta),
       );
     }
+    if (data.containsKey('auto_normalize_loudness')) {
+      context.handle(
+        _autoNormalizeLoudnessMeta,
+        autoNormalizeLoudness.isAcceptableOrUnknown(
+          data['auto_normalize_loudness']!,
+          _autoNormalizeLoudnessMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -5885,6 +6234,10 @@ class $NovelProjectsTable extends NovelProjects
         DriftSqlType.string,
         data['${effectivePrefix}folder_slug'],
       ),
+      autoNormalizeLoudness: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}auto_normalize_loudness'],
+      )!,
     );
   }
 
@@ -5919,6 +6272,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? folderSlug;
+  final bool autoNormalizeLoudness;
   const NovelProject({
     required this.id,
     required this.name,
@@ -5944,6 +6298,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
     required this.createdAt,
     required this.updatedAt,
     this.folderSlug,
+    required this.autoNormalizeLoudness,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5982,6 +6337,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
     if (!nullToAbsent || folderSlug != null) {
       map['folder_slug'] = Variable<String>(folderSlug);
     }
+    map['auto_normalize_loudness'] = Variable<bool>(autoNormalizeLoudness);
     return map;
   }
 
@@ -6017,6 +6373,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
       folderSlug: folderSlug == null && nullToAbsent
           ? const Value.absent()
           : Value(folderSlug),
+      autoNormalizeLoudness: Value(autoNormalizeLoudness),
     );
   }
 
@@ -6068,6 +6425,9 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       folderSlug: serializer.fromJson<String?>(json['folderSlug']),
+      autoNormalizeLoudness: serializer.fromJson<bool>(
+        json['autoNormalizeLoudness'],
+      ),
     );
   }
   @override
@@ -6102,6 +6462,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'folderSlug': serializer.toJson<String?>(folderSlug),
+      'autoNormalizeLoudness': serializer.toJson<bool>(autoNormalizeLoudness),
     };
   }
 
@@ -6130,6 +6491,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<String?> folderSlug = const Value.absent(),
+    bool? autoNormalizeLoudness,
   }) => NovelProject(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -6162,6 +6524,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     folderSlug: folderSlug.present ? folderSlug.value : this.folderSlug,
+    autoNormalizeLoudness: autoNormalizeLoudness ?? this.autoNormalizeLoudness,
   );
   NovelProject copyWithCompanion(NovelProjectsCompanion data) {
     return NovelProject(
@@ -6225,6 +6588,9 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
       folderSlug: data.folderSlug.present
           ? data.folderSlug.value
           : this.folderSlug,
+      autoNormalizeLoudness: data.autoNormalizeLoudness.present
+          ? data.autoNormalizeLoudness.value
+          : this.autoNormalizeLoudness,
     );
   }
 
@@ -6254,7 +6620,8 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
           ..write('currentGlobalIndex: $currentGlobalIndex, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('folderSlug: $folderSlug')
+          ..write('folderSlug: $folderSlug, ')
+          ..write('autoNormalizeLoudness: $autoNormalizeLoudness')
           ..write(')'))
         .toString();
   }
@@ -6285,6 +6652,7 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
     createdAt,
     updatedAt,
     folderSlug,
+    autoNormalizeLoudness,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -6314,7 +6682,8 @@ class NovelProject extends DataClass implements Insertable<NovelProject> {
           other.currentGlobalIndex == this.currentGlobalIndex &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.folderSlug == this.folderSlug);
+          other.folderSlug == this.folderSlug &&
+          other.autoNormalizeLoudness == this.autoNormalizeLoudness);
 }
 
 class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
@@ -6342,6 +6711,7 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<String?> folderSlug;
+  final Value<bool> autoNormalizeLoudness;
   final Value<int> rowid;
   const NovelProjectsCompanion({
     this.id = const Value.absent(),
@@ -6368,6 +6738,7 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.folderSlug = const Value.absent(),
+    this.autoNormalizeLoudness = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   NovelProjectsCompanion.insert({
@@ -6395,6 +6766,7 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
     required DateTime createdAt,
     required DateTime updatedAt,
     this.folderSlug = const Value.absent(),
+    this.autoNormalizeLoudness = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -6426,6 +6798,7 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<String>? folderSlug,
+    Expression<bool>? autoNormalizeLoudness,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -6463,6 +6836,8 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (folderSlug != null) 'folder_slug': folderSlug,
+      if (autoNormalizeLoudness != null)
+        'auto_normalize_loudness': autoNormalizeLoudness,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -6492,6 +6867,7 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<String?>? folderSlug,
+    Value<bool>? autoNormalizeLoudness,
     Value<int>? rowid,
   }) {
     return NovelProjectsCompanion(
@@ -6524,6 +6900,8 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       folderSlug: folderSlug ?? this.folderSlug,
+      autoNormalizeLoudness:
+          autoNormalizeLoudness ?? this.autoNormalizeLoudness,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -6617,6 +6995,11 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
     if (folderSlug.present) {
       map['folder_slug'] = Variable<String>(folderSlug.value);
     }
+    if (autoNormalizeLoudness.present) {
+      map['auto_normalize_loudness'] = Variable<bool>(
+        autoNormalizeLoudness.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -6650,6 +7033,7 @@ class NovelProjectsCompanion extends UpdateCompanion<NovelProject> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('folderSlug: $folderSlug, ')
+          ..write('autoNormalizeLoudness: $autoNormalizeLoudness, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -7883,6 +8267,21 @@ class $DialogTtsProjectsTable extends DialogTtsProjects
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _autoNormalizeLoudnessMeta =
+      const VerificationMeta('autoNormalizeLoudness');
+  @override
+  late final GeneratedColumn<bool> autoNormalizeLoudness =
+      GeneratedColumn<bool>(
+        'auto_normalize_loudness',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("auto_normalize_loudness" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -7891,6 +8290,7 @@ class $DialogTtsProjectsTable extends DialogTtsProjects
     createdAt,
     updatedAt,
     folderSlug,
+    autoNormalizeLoudness,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -7947,6 +8347,15 @@ class $DialogTtsProjectsTable extends DialogTtsProjects
         folderSlug.isAcceptableOrUnknown(data['folder_slug']!, _folderSlugMeta),
       );
     }
+    if (data.containsKey('auto_normalize_loudness')) {
+      context.handle(
+        _autoNormalizeLoudnessMeta,
+        autoNormalizeLoudness.isAcceptableOrUnknown(
+          data['auto_normalize_loudness']!,
+          _autoNormalizeLoudnessMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -7980,6 +8389,10 @@ class $DialogTtsProjectsTable extends DialogTtsProjects
         DriftSqlType.string,
         data['${effectivePrefix}folder_slug'],
       ),
+      autoNormalizeLoudness: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}auto_normalize_loudness'],
+      )!,
     );
   }
 
@@ -7997,6 +8410,7 @@ class DialogTtsProject extends DataClass
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? folderSlug;
+  final bool autoNormalizeLoudness;
   const DialogTtsProject({
     required this.id,
     required this.name,
@@ -8004,6 +8418,7 @@ class DialogTtsProject extends DataClass
     required this.createdAt,
     required this.updatedAt,
     this.folderSlug,
+    required this.autoNormalizeLoudness,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -8016,6 +8431,7 @@ class DialogTtsProject extends DataClass
     if (!nullToAbsent || folderSlug != null) {
       map['folder_slug'] = Variable<String>(folderSlug);
     }
+    map['auto_normalize_loudness'] = Variable<bool>(autoNormalizeLoudness);
     return map;
   }
 
@@ -8029,6 +8445,7 @@ class DialogTtsProject extends DataClass
       folderSlug: folderSlug == null && nullToAbsent
           ? const Value.absent()
           : Value(folderSlug),
+      autoNormalizeLoudness: Value(autoNormalizeLoudness),
     );
   }
 
@@ -8044,6 +8461,9 @@ class DialogTtsProject extends DataClass
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       folderSlug: serializer.fromJson<String?>(json['folderSlug']),
+      autoNormalizeLoudness: serializer.fromJson<bool>(
+        json['autoNormalizeLoudness'],
+      ),
     );
   }
   @override
@@ -8056,6 +8476,7 @@ class DialogTtsProject extends DataClass
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'folderSlug': serializer.toJson<String?>(folderSlug),
+      'autoNormalizeLoudness': serializer.toJson<bool>(autoNormalizeLoudness),
     };
   }
 
@@ -8066,6 +8487,7 @@ class DialogTtsProject extends DataClass
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<String?> folderSlug = const Value.absent(),
+    bool? autoNormalizeLoudness,
   }) => DialogTtsProject(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -8073,6 +8495,7 @@ class DialogTtsProject extends DataClass
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     folderSlug: folderSlug.present ? folderSlug.value : this.folderSlug,
+    autoNormalizeLoudness: autoNormalizeLoudness ?? this.autoNormalizeLoudness,
   );
   DialogTtsProject copyWithCompanion(DialogTtsProjectsCompanion data) {
     return DialogTtsProject(
@@ -8084,6 +8507,9 @@ class DialogTtsProject extends DataClass
       folderSlug: data.folderSlug.present
           ? data.folderSlug.value
           : this.folderSlug,
+      autoNormalizeLoudness: data.autoNormalizeLoudness.present
+          ? data.autoNormalizeLoudness.value
+          : this.autoNormalizeLoudness,
     );
   }
 
@@ -8095,14 +8521,22 @@ class DialogTtsProject extends DataClass
           ..write('bankId: $bankId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('folderSlug: $folderSlug')
+          ..write('folderSlug: $folderSlug, ')
+          ..write('autoNormalizeLoudness: $autoNormalizeLoudness')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, bankId, createdAt, updatedAt, folderSlug);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    bankId,
+    createdAt,
+    updatedAt,
+    folderSlug,
+    autoNormalizeLoudness,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -8112,7 +8546,8 @@ class DialogTtsProject extends DataClass
           other.bankId == this.bankId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.folderSlug == this.folderSlug);
+          other.folderSlug == this.folderSlug &&
+          other.autoNormalizeLoudness == this.autoNormalizeLoudness);
 }
 
 class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
@@ -8122,6 +8557,7 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<String?> folderSlug;
+  final Value<bool> autoNormalizeLoudness;
   final Value<int> rowid;
   const DialogTtsProjectsCompanion({
     this.id = const Value.absent(),
@@ -8130,6 +8566,7 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.folderSlug = const Value.absent(),
+    this.autoNormalizeLoudness = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DialogTtsProjectsCompanion.insert({
@@ -8139,6 +8576,7 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
     required DateTime createdAt,
     required DateTime updatedAt,
     this.folderSlug = const Value.absent(),
+    this.autoNormalizeLoudness = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -8152,6 +8590,7 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<String>? folderSlug,
+    Expression<bool>? autoNormalizeLoudness,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -8161,6 +8600,8 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (folderSlug != null) 'folder_slug': folderSlug,
+      if (autoNormalizeLoudness != null)
+        'auto_normalize_loudness': autoNormalizeLoudness,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -8172,6 +8613,7 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<String?>? folderSlug,
+    Value<bool>? autoNormalizeLoudness,
     Value<int>? rowid,
   }) {
     return DialogTtsProjectsCompanion(
@@ -8181,6 +8623,8 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       folderSlug: folderSlug ?? this.folderSlug,
+      autoNormalizeLoudness:
+          autoNormalizeLoudness ?? this.autoNormalizeLoudness,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -8206,6 +8650,11 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
     if (folderSlug.present) {
       map['folder_slug'] = Variable<String>(folderSlug.value);
     }
+    if (autoNormalizeLoudness.present) {
+      map['auto_normalize_loudness'] = Variable<bool>(
+        autoNormalizeLoudness.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -8221,6 +8670,7 @@ class DialogTtsProjectsCompanion extends UpdateCompanion<DialogTtsProject> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('folderSlug: $folderSlug, ')
+          ..write('autoNormalizeLoudness: $autoNormalizeLoudness, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -8899,6 +9349,21 @@ class $VideoDubProjectsTable extends VideoDubProjects
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _autoNormalizeLoudnessMeta =
+      const VerificationMeta('autoNormalizeLoudness');
+  @override
+  late final GeneratedColumn<bool> autoNormalizeLoudness =
+      GeneratedColumn<bool>(
+        'auto_normalize_loudness',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("auto_normalize_loudness" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -8909,6 +9374,7 @@ class $VideoDubProjectsTable extends VideoDubProjects
     createdAt,
     updatedAt,
     folderSlug,
+    autoNormalizeLoudness,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -8980,6 +9446,15 @@ class $VideoDubProjectsTable extends VideoDubProjects
         folderSlug.isAcceptableOrUnknown(data['folder_slug']!, _folderSlugMeta),
       );
     }
+    if (data.containsKey('auto_normalize_loudness')) {
+      context.handle(
+        _autoNormalizeLoudnessMeta,
+        autoNormalizeLoudness.isAcceptableOrUnknown(
+          data['auto_normalize_loudness']!,
+          _autoNormalizeLoudnessMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -9021,6 +9496,10 @@ class $VideoDubProjectsTable extends VideoDubProjects
         DriftSqlType.string,
         data['${effectivePrefix}folder_slug'],
       ),
+      autoNormalizeLoudness: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}auto_normalize_loudness'],
+      )!,
     );
   }
 
@@ -9039,6 +9518,7 @@ class VideoDubProject extends DataClass implements Insertable<VideoDubProject> {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? folderSlug;
+  final bool autoNormalizeLoudness;
   const VideoDubProject({
     required this.id,
     required this.name,
@@ -9048,6 +9528,7 @@ class VideoDubProject extends DataClass implements Insertable<VideoDubProject> {
     required this.createdAt,
     required this.updatedAt,
     this.folderSlug,
+    required this.autoNormalizeLoudness,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -9066,6 +9547,7 @@ class VideoDubProject extends DataClass implements Insertable<VideoDubProject> {
     if (!nullToAbsent || folderSlug != null) {
       map['folder_slug'] = Variable<String>(folderSlug);
     }
+    map['auto_normalize_loudness'] = Variable<bool>(autoNormalizeLoudness);
     return map;
   }
 
@@ -9085,6 +9567,7 @@ class VideoDubProject extends DataClass implements Insertable<VideoDubProject> {
       folderSlug: folderSlug == null && nullToAbsent
           ? const Value.absent()
           : Value(folderSlug),
+      autoNormalizeLoudness: Value(autoNormalizeLoudness),
     );
   }
 
@@ -9102,6 +9585,9 @@ class VideoDubProject extends DataClass implements Insertable<VideoDubProject> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       folderSlug: serializer.fromJson<String?>(json['folderSlug']),
+      autoNormalizeLoudness: serializer.fromJson<bool>(
+        json['autoNormalizeLoudness'],
+      ),
     );
   }
   @override
@@ -9116,6 +9602,7 @@ class VideoDubProject extends DataClass implements Insertable<VideoDubProject> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'folderSlug': serializer.toJson<String?>(folderSlug),
+      'autoNormalizeLoudness': serializer.toJson<bool>(autoNormalizeLoudness),
     };
   }
 
@@ -9128,6 +9615,7 @@ class VideoDubProject extends DataClass implements Insertable<VideoDubProject> {
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<String?> folderSlug = const Value.absent(),
+    bool? autoNormalizeLoudness,
   }) => VideoDubProject(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -9139,6 +9627,7 @@ class VideoDubProject extends DataClass implements Insertable<VideoDubProject> {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     folderSlug: folderSlug.present ? folderSlug.value : this.folderSlug,
+    autoNormalizeLoudness: autoNormalizeLoudness ?? this.autoNormalizeLoudness,
   );
   VideoDubProject copyWithCompanion(VideoDubProjectsCompanion data) {
     return VideoDubProject(
@@ -9154,6 +9643,9 @@ class VideoDubProject extends DataClass implements Insertable<VideoDubProject> {
       folderSlug: data.folderSlug.present
           ? data.folderSlug.value
           : this.folderSlug,
+      autoNormalizeLoudness: data.autoNormalizeLoudness.present
+          ? data.autoNormalizeLoudness.value
+          : this.autoNormalizeLoudness,
     );
   }
 
@@ -9167,7 +9659,8 @@ class VideoDubProject extends DataClass implements Insertable<VideoDubProject> {
           ..write('videoDurationSec: $videoDurationSec, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('folderSlug: $folderSlug')
+          ..write('folderSlug: $folderSlug, ')
+          ..write('autoNormalizeLoudness: $autoNormalizeLoudness')
           ..write(')'))
         .toString();
   }
@@ -9182,6 +9675,7 @@ class VideoDubProject extends DataClass implements Insertable<VideoDubProject> {
     createdAt,
     updatedAt,
     folderSlug,
+    autoNormalizeLoudness,
   );
   @override
   bool operator ==(Object other) =>
@@ -9194,7 +9688,8 @@ class VideoDubProject extends DataClass implements Insertable<VideoDubProject> {
           other.videoDurationSec == this.videoDurationSec &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.folderSlug == this.folderSlug);
+          other.folderSlug == this.folderSlug &&
+          other.autoNormalizeLoudness == this.autoNormalizeLoudness);
 }
 
 class VideoDubProjectsCompanion extends UpdateCompanion<VideoDubProject> {
@@ -9206,6 +9701,7 @@ class VideoDubProjectsCompanion extends UpdateCompanion<VideoDubProject> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<String?> folderSlug;
+  final Value<bool> autoNormalizeLoudness;
   final Value<int> rowid;
   const VideoDubProjectsCompanion({
     this.id = const Value.absent(),
@@ -9216,6 +9712,7 @@ class VideoDubProjectsCompanion extends UpdateCompanion<VideoDubProject> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.folderSlug = const Value.absent(),
+    this.autoNormalizeLoudness = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VideoDubProjectsCompanion.insert({
@@ -9227,6 +9724,7 @@ class VideoDubProjectsCompanion extends UpdateCompanion<VideoDubProject> {
     required DateTime createdAt,
     required DateTime updatedAt,
     this.folderSlug = const Value.absent(),
+    this.autoNormalizeLoudness = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -9242,6 +9740,7 @@ class VideoDubProjectsCompanion extends UpdateCompanion<VideoDubProject> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<String>? folderSlug,
+    Expression<bool>? autoNormalizeLoudness,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -9253,6 +9752,8 @@ class VideoDubProjectsCompanion extends UpdateCompanion<VideoDubProject> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (folderSlug != null) 'folder_slug': folderSlug,
+      if (autoNormalizeLoudness != null)
+        'auto_normalize_loudness': autoNormalizeLoudness,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -9266,6 +9767,7 @@ class VideoDubProjectsCompanion extends UpdateCompanion<VideoDubProject> {
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<String?>? folderSlug,
+    Value<bool>? autoNormalizeLoudness,
     Value<int>? rowid,
   }) {
     return VideoDubProjectsCompanion(
@@ -9277,6 +9779,8 @@ class VideoDubProjectsCompanion extends UpdateCompanion<VideoDubProject> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       folderSlug: folderSlug ?? this.folderSlug,
+      autoNormalizeLoudness:
+          autoNormalizeLoudness ?? this.autoNormalizeLoudness,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -9308,6 +9812,11 @@ class VideoDubProjectsCompanion extends UpdateCompanion<VideoDubProject> {
     if (folderSlug.present) {
       map['folder_slug'] = Variable<String>(folderSlug.value);
     }
+    if (autoNormalizeLoudness.present) {
+      map['auto_normalize_loudness'] = Variable<bool>(
+        autoNormalizeLoudness.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -9325,6 +9834,7 @@ class VideoDubProjectsCompanion extends UpdateCompanion<VideoDubProject> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('folderSlug: $folderSlug, ')
+          ..write('autoNormalizeLoudness: $autoNormalizeLoudness, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -11577,7 +12087,16 @@ class $$AppSettingsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$AppSettingsTable, AppSetting>(table),
+                  BaseReferences<_$AppDatabase, $AppSettingsTable, AppSetting>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -11643,10 +12162,7 @@ final class $$TtsProvidersTableReferences
   static MultiTypedResultKey<$ModelBindingsTable, List<ModelBinding>>
   _modelBindingsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.modelBindings,
-    aliasName: $_aliasNameGenerator(
-      db.ttsProviders.id,
-      db.modelBindings.providerId,
-    ),
+    aliasName: 'tts_providers__id__model_bindings__provider_id',
   );
 
   $$ModelBindingsTableProcessedTableManager get modelBindingsRefs {
@@ -11664,10 +12180,7 @@ final class $$TtsProvidersTableReferences
   static MultiTypedResultKey<$VoiceAssetsTable, List<VoiceAsset>>
   _voiceAssetsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.voiceAssets,
-    aliasName: $_aliasNameGenerator(
-      db.ttsProviders.id,
-      db.voiceAssets.providerId,
-    ),
+    aliasName: 'tts_providers__id__voice_assets__provider_id',
   );
 
   $$VoiceAssetsTableProcessedTableManager get voiceAssetsRefs {
@@ -12089,7 +12602,7 @@ class $$TtsProvidersTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$TtsProvidersTable, TtsProvider>(table),
                   $$TtsProvidersTableReferences(db, table, e),
                 ),
               )
@@ -12194,10 +12707,9 @@ final class $$ModelBindingsTableReferences
     super.$_typedResult,
   );
 
-  static $TtsProvidersTable _providerIdTable(_$AppDatabase db) =>
-      db.ttsProviders.createAlias(
-        $_aliasNameGenerator(db.modelBindings.providerId, db.ttsProviders.id),
-      );
+  static $TtsProvidersTable _providerIdTable(_$AppDatabase db) => db
+      .ttsProviders
+      .createAlias('model_bindings__provider_id__tts_providers__id');
 
   $$TtsProvidersTableProcessedTableManager get providerId {
     final $_column = $_itemColumn<String>('provider_id')!;
@@ -12411,7 +12923,7 @@ class $$ModelBindingsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ModelBindingsTable, ModelBinding>(table),
                   $$ModelBindingsTableReferences(db, table, e),
                 ),
               )
@@ -12495,6 +13007,7 @@ typedef $$VoiceAssetsTableCreateCompanionBuilder =
       Value<double> speed,
       Value<bool> enabled,
       Value<String?> folderSlug,
+      Value<double> loudnessOffsetDb,
       Value<int> rowid,
     });
 typedef $$VoiceAssetsTableUpdateCompanionBuilder =
@@ -12517,6 +13030,7 @@ typedef $$VoiceAssetsTableUpdateCompanionBuilder =
       Value<double> speed,
       Value<bool> enabled,
       Value<String?> folderSlug,
+      Value<double> loudnessOffsetDb,
       Value<int> rowid,
     });
 
@@ -12524,10 +13038,9 @@ final class $$VoiceAssetsTableReferences
     extends BaseReferences<_$AppDatabase, $VoiceAssetsTable, VoiceAsset> {
   $$VoiceAssetsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $TtsProvidersTable _providerIdTable(_$AppDatabase db) =>
-      db.ttsProviders.createAlias(
-        $_aliasNameGenerator(db.voiceAssets.providerId, db.ttsProviders.id),
-      );
+  static $TtsProvidersTable _providerIdTable(_$AppDatabase db) => db
+      .ttsProviders
+      .createAlias('voice_assets__provider_id__tts_providers__id');
 
   $$TtsProvidersTableProcessedTableManager get providerId {
     final $_column = $_itemColumn<String>('provider_id')!;
@@ -12546,10 +13059,7 @@ final class $$VoiceAssetsTableReferences
   static MultiTypedResultKey<$VoiceBankMembersTable, List<VoiceBankMember>>
   _voiceBankMembersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.voiceBankMembers,
-    aliasName: $_aliasNameGenerator(
-      db.voiceAssets.id,
-      db.voiceBankMembers.voiceAssetId,
-    ),
+    aliasName: 'voice_assets__id__voice_bank_members__voice_asset_id',
   );
 
   $$VoiceBankMembersTableProcessedTableManager get voiceBankMembersRefs {
@@ -12570,7 +13080,7 @@ final class $$VoiceAssetsTableReferences
     _$AppDatabase db,
   ) => MultiTypedResultKey.fromTable(
     db.ttsJobs,
-    aliasName: $_aliasNameGenerator(db.voiceAssets.id, db.ttsJobs.voiceAssetId),
+    aliasName: 'voice_assets__id__tts_jobs__voice_asset_id',
   );
 
   $$TtsJobsTableProcessedTableManager get ttsJobsRefs {
@@ -12589,10 +13099,7 @@ final class $$VoiceAssetsTableReferences
   _quickTtsHistoriesRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.quickTtsHistories,
-        aliasName: $_aliasNameGenerator(
-          db.voiceAssets.id,
-          db.quickTtsHistories.voiceAssetId,
-        ),
+        aliasName: 'voice_assets__id__quick_tts_histories__voice_asset_id',
       );
 
   $$QuickTtsHistoriesTableProcessedTableManager get quickTtsHistoriesRefs {
@@ -12701,6 +13208,11 @@ class $$VoiceAssetsTableFilterComposer
 
   ColumnFilters<String> get folderSlug => $composableBuilder(
     column: $table.folderSlug,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get loudnessOffsetDb => $composableBuilder(
+    column: $table.loudnessOffsetDb,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12897,6 +13409,11 @@ class $$VoiceAssetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get loudnessOffsetDb => $composableBuilder(
+    column: $table.loudnessOffsetDb,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TtsProvidersTableOrderingComposer get providerId {
     final $$TtsProvidersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -13000,6 +13517,11 @@ class $$VoiceAssetsTableAnnotationComposer
 
   GeneratedColumn<String> get folderSlug => $composableBuilder(
     column: $table.folderSlug,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get loudnessOffsetDb => $composableBuilder(
+    column: $table.loudnessOffsetDb,
     builder: (column) => column,
   );
 
@@ -13154,6 +13676,7 @@ class $$VoiceAssetsTableTableManager
                 Value<double> speed = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
                 Value<String?> folderSlug = const Value.absent(),
+                Value<double> loudnessOffsetDb = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VoiceAssetsCompanion(
                 id: id,
@@ -13174,6 +13697,7 @@ class $$VoiceAssetsTableTableManager
                 speed: speed,
                 enabled: enabled,
                 folderSlug: folderSlug,
+                loudnessOffsetDb: loudnessOffsetDb,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -13196,6 +13720,7 @@ class $$VoiceAssetsTableTableManager
                 Value<double> speed = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
                 Value<String?> folderSlug = const Value.absent(),
+                Value<double> loudnessOffsetDb = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VoiceAssetsCompanion.insert(
                 id: id,
@@ -13216,12 +13741,13 @@ class $$VoiceAssetsTableTableManager
                 speed: speed,
                 enabled: enabled,
                 folderSlug: folderSlug,
+                loudnessOffsetDb: loudnessOffsetDb,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$VoiceAssetsTable, VoiceAsset>(table),
                   $$VoiceAssetsTableReferences(db, table, e),
                 ),
               )
@@ -13373,6 +13899,7 @@ typedef $$VoiceBanksTableCreateCompanionBuilder =
       Value<String?> description,
       Value<bool> isActive,
       required DateTime createdAt,
+      Value<double> loudnessTargetLufs,
       Value<int> rowid,
     });
 typedef $$VoiceBanksTableUpdateCompanionBuilder =
@@ -13382,6 +13909,7 @@ typedef $$VoiceBanksTableUpdateCompanionBuilder =
       Value<String?> description,
       Value<bool> isActive,
       Value<DateTime> createdAt,
+      Value<double> loudnessTargetLufs,
       Value<int> rowid,
     });
 
@@ -13392,10 +13920,7 @@ final class $$VoiceBanksTableReferences
   static MultiTypedResultKey<$VoiceBankMembersTable, List<VoiceBankMember>>
   _voiceBankMembersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.voiceBankMembers,
-    aliasName: $_aliasNameGenerator(
-      db.voiceBanks.id,
-      db.voiceBankMembers.bankId,
-    ),
+    aliasName: 'voice_banks__id__voice_bank_members__bank_id',
   );
 
   $$VoiceBankMembersTableProcessedTableManager get voiceBankMembersRefs {
@@ -13415,10 +13940,7 @@ final class $$VoiceBanksTableReferences
   static MultiTypedResultKey<$PhaseTtsProjectsTable, List<PhaseTtsProject>>
   _phaseTtsProjectsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.phaseTtsProjects,
-    aliasName: $_aliasNameGenerator(
-      db.voiceBanks.id,
-      db.phaseTtsProjects.bankId,
-    ),
+    aliasName: 'voice_banks__id__phase_tts_projects__bank_id',
   );
 
   $$PhaseTtsProjectsTableProcessedTableManager get phaseTtsProjectsRefs {
@@ -13438,7 +13960,7 @@ final class $$VoiceBanksTableReferences
   static MultiTypedResultKey<$NovelProjectsTable, List<NovelProject>>
   _novelProjectsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.novelProjects,
-    aliasName: $_aliasNameGenerator(db.voiceBanks.id, db.novelProjects.bankId),
+    aliasName: 'voice_banks__id__novel_projects__bank_id',
   );
 
   $$NovelProjectsTableProcessedTableManager get novelProjectsRefs {
@@ -13457,10 +13979,7 @@ final class $$VoiceBanksTableReferences
   _dialogTtsProjectsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.dialogTtsProjects,
-        aliasName: $_aliasNameGenerator(
-          db.voiceBanks.id,
-          db.dialogTtsProjects.bankId,
-        ),
+        aliasName: 'voice_banks__id__dialog_tts_projects__bank_id',
       );
 
   $$DialogTtsProjectsTableProcessedTableManager get dialogTtsProjectsRefs {
@@ -13480,10 +13999,7 @@ final class $$VoiceBanksTableReferences
   static MultiTypedResultKey<$VideoDubProjectsTable, List<VideoDubProject>>
   _videoDubProjectsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.videoDubProjects,
-    aliasName: $_aliasNameGenerator(
-      db.voiceBanks.id,
-      db.videoDubProjects.bankId,
-    ),
+    aliasName: 'voice_banks__id__video_dub_projects__bank_id',
   );
 
   $$VideoDubProjectsTableProcessedTableManager get videoDubProjectsRefs {
@@ -13532,6 +14048,11 @@ class $$VoiceBanksTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get loudnessTargetLufs => $composableBuilder(
+    column: $table.loudnessTargetLufs,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13694,6 +14215,11 @@ class $$VoiceBanksTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get loudnessTargetLufs => $composableBuilder(
+    column: $table.loudnessTargetLufs,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$VoiceBanksTableAnnotationComposer
@@ -13721,6 +14247,11 @@ class $$VoiceBanksTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<double> get loudnessTargetLufs => $composableBuilder(
+    column: $table.loudnessTargetLufs,
+    builder: (column) => column,
+  );
 
   Expression<T> voiceBankMembersRefs<T extends Object>(
     Expression<T> Function($$VoiceBankMembersTableAnnotationComposer a) f,
@@ -13888,6 +14419,7 @@ class $$VoiceBanksTableTableManager
                 Value<String?> description = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<double> loudnessTargetLufs = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VoiceBanksCompanion(
                 id: id,
@@ -13895,6 +14427,7 @@ class $$VoiceBanksTableTableManager
                 description: description,
                 isActive: isActive,
                 createdAt: createdAt,
+                loudnessTargetLufs: loudnessTargetLufs,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -13904,6 +14437,7 @@ class $$VoiceBanksTableTableManager
                 Value<String?> description = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 required DateTime createdAt,
+                Value<double> loudnessTargetLufs = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VoiceBanksCompanion.insert(
                 id: id,
@@ -13911,12 +14445,13 @@ class $$VoiceBanksTableTableManager
                 description: description,
                 isActive: isActive,
                 createdAt: createdAt,
+                loudnessTargetLufs: loudnessTargetLufs,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$VoiceBanksTable, VoiceBank>(table),
                   $$VoiceBanksTableReferences(db, table, e),
                 ),
               )
@@ -14099,9 +14634,7 @@ final class $$VoiceBankMembersTableReferences
   );
 
   static $VoiceBanksTable _bankIdTable(_$AppDatabase db) =>
-      db.voiceBanks.createAlias(
-        $_aliasNameGenerator(db.voiceBankMembers.bankId, db.voiceBanks.id),
-      );
+      db.voiceBanks.createAlias('voice_bank_members__bank_id__voice_banks__id');
 
   $$VoiceBanksTableProcessedTableManager get bankId {
     final $_column = $_itemColumn<String>('bank_id')!;
@@ -14117,13 +14650,9 @@ final class $$VoiceBankMembersTableReferences
     );
   }
 
-  static $VoiceAssetsTable _voiceAssetIdTable(_$AppDatabase db) =>
-      db.voiceAssets.createAlias(
-        $_aliasNameGenerator(
-          db.voiceBankMembers.voiceAssetId,
-          db.voiceAssets.id,
-        ),
-      );
+  static $VoiceAssetsTable _voiceAssetIdTable(_$AppDatabase db) => db
+      .voiceAssets
+      .createAlias('voice_bank_members__voice_asset_id__voice_assets__id');
 
   $$VoiceAssetsTableProcessedTableManager get voiceAssetId {
     final $_column = $_itemColumn<String>('voice_asset_id')!;
@@ -14376,7 +14905,7 @@ class $$VoiceBankMembersTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$VoiceBankMembersTable, VoiceBankMember>(table),
                   $$VoiceBankMembersTableReferences(db, table, e),
                 ),
               )
@@ -14487,9 +15016,7 @@ final class $$TtsJobsTableReferences
   $$TtsJobsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $VoiceAssetsTable _voiceAssetIdTable(_$AppDatabase db) =>
-      db.voiceAssets.createAlias(
-        $_aliasNameGenerator(db.ttsJobs.voiceAssetId, db.voiceAssets.id),
-      );
+      db.voiceAssets.createAlias('tts_jobs__voice_asset_id__voice_assets__id');
 
   $$VoiceAssetsTableProcessedTableManager get voiceAssetId {
     final $_column = $_itemColumn<String>('voice_asset_id')!;
@@ -14775,7 +15302,7 @@ class $$TtsJobsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$TtsJobsTable, TtsJob>(table),
                   $$TtsJobsTableReferences(db, table, e),
                 ),
               )
@@ -14879,13 +15406,9 @@ final class $$QuickTtsHistoriesTableReferences
     super.$_typedResult,
   );
 
-  static $VoiceAssetsTable _voiceAssetIdTable(_$AppDatabase db) =>
-      db.voiceAssets.createAlias(
-        $_aliasNameGenerator(
-          db.quickTtsHistories.voiceAssetId,
-          db.voiceAssets.id,
-        ),
-      );
+  static $VoiceAssetsTable _voiceAssetIdTable(_$AppDatabase db) => db
+      .voiceAssets
+      .createAlias('quick_tts_histories__voice_asset_id__voice_assets__id');
 
   $$VoiceAssetsTableProcessedTableManager get voiceAssetId {
     final $_column = $_itemColumn<String>('voice_asset_id')!;
@@ -15189,7 +15712,7 @@ class $$QuickTtsHistoriesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$QuickTtsHistoriesTable, QuickTtsHistory>(table),
                   $$QuickTtsHistoriesTableReferences(db, table, e),
                 ),
               )
@@ -15264,6 +15787,10 @@ typedef $$PhaseTtsProjectsTableCreateCompanionBuilder =
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<String?> folderSlug,
+      Value<bool> autoNormalizeLoudness,
+      Value<double> mergeGapSeconds,
+      Value<int> mergeFadeInMs,
+      Value<int> mergeFadeOutMs,
       Value<int> rowid,
     });
 typedef $$PhaseTtsProjectsTableUpdateCompanionBuilder =
@@ -15275,6 +15802,10 @@ typedef $$PhaseTtsProjectsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<String?> folderSlug,
+      Value<bool> autoNormalizeLoudness,
+      Value<double> mergeGapSeconds,
+      Value<int> mergeFadeInMs,
+      Value<int> mergeFadeOutMs,
       Value<int> rowid,
     });
 
@@ -15288,9 +15819,7 @@ final class $$PhaseTtsProjectsTableReferences
   );
 
   static $VoiceBanksTable _bankIdTable(_$AppDatabase db) =>
-      db.voiceBanks.createAlias(
-        $_aliasNameGenerator(db.phaseTtsProjects.bankId, db.voiceBanks.id),
-      );
+      db.voiceBanks.createAlias('phase_tts_projects__bank_id__voice_banks__id');
 
   $$VoiceBanksTableProcessedTableManager get bankId {
     final $_column = $_itemColumn<String>('bank_id')!;
@@ -15309,10 +15838,7 @@ final class $$PhaseTtsProjectsTableReferences
   static MultiTypedResultKey<$PhaseTtsSegmentsTable, List<PhaseTtsSegment>>
   _phaseTtsSegmentsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.phaseTtsSegments,
-    aliasName: $_aliasNameGenerator(
-      db.phaseTtsProjects.id,
-      db.phaseTtsSegments.projectId,
-    ),
+    aliasName: 'phase_tts_projects__id__phase_tts_segments__project_id',
   );
 
   $$PhaseTtsSegmentsTableProcessedTableManager get phaseTtsSegmentsRefs {
@@ -15366,6 +15892,26 @@ class $$PhaseTtsProjectsTableFilterComposer
 
   ColumnFilters<String> get folderSlug => $composableBuilder(
     column: $table.folderSlug,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get autoNormalizeLoudness => $composableBuilder(
+    column: $table.autoNormalizeLoudness,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get mergeGapSeconds => $composableBuilder(
+    column: $table.mergeGapSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get mergeFadeInMs => $composableBuilder(
+    column: $table.mergeFadeInMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get mergeFadeOutMs => $composableBuilder(
+    column: $table.mergeFadeOutMs,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15457,6 +16003,26 @@ class $$PhaseTtsProjectsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get autoNormalizeLoudness => $composableBuilder(
+    column: $table.autoNormalizeLoudness,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get mergeGapSeconds => $composableBuilder(
+    column: $table.mergeGapSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get mergeFadeInMs => $composableBuilder(
+    column: $table.mergeFadeInMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get mergeFadeOutMs => $composableBuilder(
+    column: $table.mergeFadeOutMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$VoiceBanksTableOrderingComposer get bankId {
     final $$VoiceBanksTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -15509,6 +16075,26 @@ class $$PhaseTtsProjectsTableAnnotationComposer
 
   GeneratedColumn<String> get folderSlug => $composableBuilder(
     column: $table.folderSlug,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get autoNormalizeLoudness => $composableBuilder(
+    column: $table.autoNormalizeLoudness,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get mergeGapSeconds => $composableBuilder(
+    column: $table.mergeGapSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get mergeFadeInMs => $composableBuilder(
+    column: $table.mergeFadeInMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get mergeFadeOutMs => $composableBuilder(
+    column: $table.mergeFadeOutMs,
     builder: (column) => column,
   );
 
@@ -15598,6 +16184,10 @@ class $$PhaseTtsProjectsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String?> folderSlug = const Value.absent(),
+                Value<bool> autoNormalizeLoudness = const Value.absent(),
+                Value<double> mergeGapSeconds = const Value.absent(),
+                Value<int> mergeFadeInMs = const Value.absent(),
+                Value<int> mergeFadeOutMs = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PhaseTtsProjectsCompanion(
                 id: id,
@@ -15607,6 +16197,10 @@ class $$PhaseTtsProjectsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 folderSlug: folderSlug,
+                autoNormalizeLoudness: autoNormalizeLoudness,
+                mergeGapSeconds: mergeGapSeconds,
+                mergeFadeInMs: mergeFadeInMs,
+                mergeFadeOutMs: mergeFadeOutMs,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -15618,6 +16212,10 @@ class $$PhaseTtsProjectsTableTableManager
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<String?> folderSlug = const Value.absent(),
+                Value<bool> autoNormalizeLoudness = const Value.absent(),
+                Value<double> mergeGapSeconds = const Value.absent(),
+                Value<int> mergeFadeInMs = const Value.absent(),
+                Value<int> mergeFadeOutMs = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PhaseTtsProjectsCompanion.insert(
                 id: id,
@@ -15627,12 +16225,16 @@ class $$PhaseTtsProjectsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 folderSlug: folderSlug,
+                autoNormalizeLoudness: autoNormalizeLoudness,
+                mergeGapSeconds: mergeGapSeconds,
+                mergeFadeInMs: mergeFadeInMs,
+                mergeFadeOutMs: mergeFadeOutMs,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$PhaseTtsProjectsTable, PhaseTtsProject>(table),
                   $$PhaseTtsProjectsTableReferences(db, table, e),
                 ),
               )
@@ -15761,13 +16363,9 @@ final class $$PhaseTtsSegmentsTableReferences
     super.$_typedResult,
   );
 
-  static $PhaseTtsProjectsTable _projectIdTable(_$AppDatabase db) =>
-      db.phaseTtsProjects.createAlias(
-        $_aliasNameGenerator(
-          db.phaseTtsSegments.projectId,
-          db.phaseTtsProjects.id,
-        ),
-      );
+  static $PhaseTtsProjectsTable _projectIdTable(_$AppDatabase db) => db
+      .phaseTtsProjects
+      .createAlias('phase_tts_segments__project_id__phase_tts_projects__id');
 
   $$PhaseTtsProjectsTableProcessedTableManager get projectId {
     final $_column = $_itemColumn<String>('project_id')!;
@@ -16093,7 +16691,7 @@ class $$PhaseTtsSegmentsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$PhaseTtsSegmentsTable, PhaseTtsSegment>(table),
                   $$PhaseTtsSegmentsTableReferences(db, table, e),
                 ),
               )
@@ -16185,6 +16783,7 @@ typedef $$NovelProjectsTableCreateCompanionBuilder =
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<String?> folderSlug,
+      Value<bool> autoNormalizeLoudness,
       Value<int> rowid,
     });
 typedef $$NovelProjectsTableUpdateCompanionBuilder =
@@ -16213,6 +16812,7 @@ typedef $$NovelProjectsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<String?> folderSlug,
+      Value<bool> autoNormalizeLoudness,
       Value<int> rowid,
     });
 
@@ -16225,9 +16825,7 @@ final class $$NovelProjectsTableReferences
   );
 
   static $VoiceBanksTable _bankIdTable(_$AppDatabase db) =>
-      db.voiceBanks.createAlias(
-        $_aliasNameGenerator(db.novelProjects.bankId, db.voiceBanks.id),
-      );
+      db.voiceBanks.createAlias('novel_projects__bank_id__voice_banks__id');
 
   $$VoiceBanksTableProcessedTableManager get bankId {
     final $_column = $_itemColumn<String>('bank_id')!;
@@ -16246,10 +16844,7 @@ final class $$NovelProjectsTableReferences
   static MultiTypedResultKey<$NovelChaptersTable, List<NovelChapter>>
   _novelChaptersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.novelChapters,
-    aliasName: $_aliasNameGenerator(
-      db.novelProjects.id,
-      db.novelChapters.projectId,
-    ),
+    aliasName: 'novel_projects__id__novel_chapters__project_id',
   );
 
   $$NovelChaptersTableProcessedTableManager get novelChaptersRefs {
@@ -16267,10 +16862,7 @@ final class $$NovelProjectsTableReferences
   static MultiTypedResultKey<$NovelSegmentsTable, List<NovelSegment>>
   _novelSegmentsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.novelSegments,
-    aliasName: $_aliasNameGenerator(
-      db.novelProjects.id,
-      db.novelSegments.projectId,
-    ),
+    aliasName: 'novel_projects__id__novel_segments__project_id',
   );
 
   $$NovelSegmentsTableProcessedTableManager get novelSegmentsRefs {
@@ -16407,6 +16999,11 @@ class $$NovelProjectsTableFilterComposer
 
   ColumnFilters<String> get folderSlug => $composableBuilder(
     column: $table.folderSlug,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get autoNormalizeLoudness => $composableBuilder(
+    column: $table.autoNormalizeLoudness,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16608,6 +17205,11 @@ class $$NovelProjectsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get autoNormalizeLoudness => $composableBuilder(
+    column: $table.autoNormalizeLoudness,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$VoiceBanksTableOrderingComposer get bankId {
     final $$VoiceBanksTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -16746,6 +17348,11 @@ class $$NovelProjectsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get autoNormalizeLoudness => $composableBuilder(
+    column: $table.autoNormalizeLoudness,
+    builder: (column) => column,
+  );
+
   $$VoiceBanksTableAnnotationComposer get bankId {
     final $$VoiceBanksTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -16876,6 +17483,7 @@ class $$NovelProjectsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String?> folderSlug = const Value.absent(),
+                Value<bool> autoNormalizeLoudness = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => NovelProjectsCompanion(
                 id: id,
@@ -16902,6 +17510,7 @@ class $$NovelProjectsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 folderSlug: folderSlug,
+                autoNormalizeLoudness: autoNormalizeLoudness,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -16930,6 +17539,7 @@ class $$NovelProjectsTableTableManager
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<String?> folderSlug = const Value.absent(),
+                Value<bool> autoNormalizeLoudness = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => NovelProjectsCompanion.insert(
                 id: id,
@@ -16956,12 +17566,13 @@ class $$NovelProjectsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 folderSlug: folderSlug,
+                autoNormalizeLoudness: autoNormalizeLoudness,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$NovelProjectsTable, NovelProject>(table),
                   $$NovelProjectsTableReferences(db, table, e),
                 ),
               )
@@ -17111,10 +17722,9 @@ final class $$NovelChaptersTableReferences
     super.$_typedResult,
   );
 
-  static $NovelProjectsTable _projectIdTable(_$AppDatabase db) =>
-      db.novelProjects.createAlias(
-        $_aliasNameGenerator(db.novelChapters.projectId, db.novelProjects.id),
-      );
+  static $NovelProjectsTable _projectIdTable(_$AppDatabase db) => db
+      .novelProjects
+      .createAlias('novel_chapters__project_id__novel_projects__id');
 
   $$NovelProjectsTableProcessedTableManager get projectId {
     final $_column = $_itemColumn<String>('project_id')!;
@@ -17133,10 +17743,7 @@ final class $$NovelChaptersTableReferences
   static MultiTypedResultKey<$NovelSegmentsTable, List<NovelSegment>>
   _novelSegmentsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.novelSegments,
-    aliasName: $_aliasNameGenerator(
-      db.novelChapters.id,
-      db.novelSegments.chapterId,
-    ),
+    aliasName: 'novel_chapters__id__novel_segments__chapter_id',
   );
 
   $$NovelSegmentsTableProcessedTableManager get novelSegmentsRefs {
@@ -17435,7 +18042,7 @@ class $$NovelChaptersTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$NovelChaptersTable, NovelChapter>(table),
                   $$NovelChaptersTableReferences(db, table, e),
                 ),
               )
@@ -17567,10 +18174,9 @@ final class $$NovelSegmentsTableReferences
     super.$_typedResult,
   );
 
-  static $NovelProjectsTable _projectIdTable(_$AppDatabase db) =>
-      db.novelProjects.createAlias(
-        $_aliasNameGenerator(db.novelSegments.projectId, db.novelProjects.id),
-      );
+  static $NovelProjectsTable _projectIdTable(_$AppDatabase db) => db
+      .novelProjects
+      .createAlias('novel_segments__project_id__novel_projects__id');
 
   $$NovelProjectsTableProcessedTableManager get projectId {
     final $_column = $_itemColumn<String>('project_id')!;
@@ -17586,10 +18192,9 @@ final class $$NovelSegmentsTableReferences
     );
   }
 
-  static $NovelChaptersTable _chapterIdTable(_$AppDatabase db) =>
-      db.novelChapters.createAlias(
-        $_aliasNameGenerator(db.novelSegments.chapterId, db.novelChapters.id),
-      );
+  static $NovelChaptersTable _chapterIdTable(_$AppDatabase db) => db
+      .novelChapters
+      .createAlias('novel_segments__chapter_id__novel_chapters__id');
 
   $$NovelChaptersTableProcessedTableManager get chapterId {
     final $_column = $_itemColumn<String>('chapter_id')!;
@@ -18005,7 +18610,7 @@ class $$NovelSegmentsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$NovelSegmentsTable, NovelSegment>(table),
                   $$NovelSegmentsTableReferences(db, table, e),
                 ),
               )
@@ -18090,6 +18695,7 @@ typedef $$DialogTtsProjectsTableCreateCompanionBuilder =
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<String?> folderSlug,
+      Value<bool> autoNormalizeLoudness,
       Value<int> rowid,
     });
 typedef $$DialogTtsProjectsTableUpdateCompanionBuilder =
@@ -18100,6 +18706,7 @@ typedef $$DialogTtsProjectsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<String?> folderSlug,
+      Value<bool> autoNormalizeLoudness,
       Value<int> rowid,
     });
 
@@ -18116,10 +18723,8 @@ final class $$DialogTtsProjectsTableReferences
     super.$_typedResult,
   );
 
-  static $VoiceBanksTable _bankIdTable(_$AppDatabase db) =>
-      db.voiceBanks.createAlias(
-        $_aliasNameGenerator(db.dialogTtsProjects.bankId, db.voiceBanks.id),
-      );
+  static $VoiceBanksTable _bankIdTable(_$AppDatabase db) => db.voiceBanks
+      .createAlias('dialog_tts_projects__bank_id__voice_banks__id');
 
   $$VoiceBanksTableProcessedTableManager get bankId {
     final $_column = $_itemColumn<String>('bank_id')!;
@@ -18138,10 +18743,7 @@ final class $$DialogTtsProjectsTableReferences
   static MultiTypedResultKey<$DialogTtsLinesTable, List<DialogTtsLine>>
   _dialogTtsLinesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.dialogTtsLines,
-    aliasName: $_aliasNameGenerator(
-      db.dialogTtsProjects.id,
-      db.dialogTtsLines.projectId,
-    ),
+    aliasName: 'dialog_tts_projects__id__dialog_tts_lines__project_id',
   );
 
   $$DialogTtsLinesTableProcessedTableManager get dialogTtsLinesRefs {
@@ -18188,6 +18790,11 @@ class $$DialogTtsProjectsTableFilterComposer
 
   ColumnFilters<String> get folderSlug => $composableBuilder(
     column: $table.folderSlug,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get autoNormalizeLoudness => $composableBuilder(
+    column: $table.autoNormalizeLoudness,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -18274,6 +18881,11 @@ class $$DialogTtsProjectsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get autoNormalizeLoudness => $composableBuilder(
+    column: $table.autoNormalizeLoudness,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$VoiceBanksTableOrderingComposer get bankId {
     final $$VoiceBanksTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -18321,6 +18933,11 @@ class $$DialogTtsProjectsTableAnnotationComposer
 
   GeneratedColumn<String> get folderSlug => $composableBuilder(
     column: $table.folderSlug,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get autoNormalizeLoudness => $composableBuilder(
+    column: $table.autoNormalizeLoudness,
     builder: (column) => column,
   );
 
@@ -18412,6 +19029,7 @@ class $$DialogTtsProjectsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String?> folderSlug = const Value.absent(),
+                Value<bool> autoNormalizeLoudness = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DialogTtsProjectsCompanion(
                 id: id,
@@ -18420,6 +19038,7 @@ class $$DialogTtsProjectsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 folderSlug: folderSlug,
+                autoNormalizeLoudness: autoNormalizeLoudness,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -18430,6 +19049,7 @@ class $$DialogTtsProjectsTableTableManager
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<String?> folderSlug = const Value.absent(),
+                Value<bool> autoNormalizeLoudness = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DialogTtsProjectsCompanion.insert(
                 id: id,
@@ -18438,12 +19058,13 @@ class $$DialogTtsProjectsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 folderSlug: folderSlug,
+                autoNormalizeLoudness: autoNormalizeLoudness,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$DialogTtsProjectsTable, DialogTtsProject>(table),
                   $$DialogTtsProjectsTableReferences(db, table, e),
                 ),
               )
@@ -18569,13 +19190,9 @@ final class $$DialogTtsLinesTableReferences
     super.$_typedResult,
   );
 
-  static $DialogTtsProjectsTable _projectIdTable(_$AppDatabase db) =>
-      db.dialogTtsProjects.createAlias(
-        $_aliasNameGenerator(
-          db.dialogTtsLines.projectId,
-          db.dialogTtsProjects.id,
-        ),
-      );
+  static $DialogTtsProjectsTable _projectIdTable(_$AppDatabase db) => db
+      .dialogTtsProjects
+      .createAlias('dialog_tts_lines__project_id__dialog_tts_projects__id');
 
   $$DialogTtsProjectsTableProcessedTableManager get projectId {
     final $_column = $_itemColumn<String>('project_id')!;
@@ -18881,7 +19498,7 @@ class $$DialogTtsLinesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$DialogTtsLinesTable, DialogTtsLine>(table),
                   $$DialogTtsLinesTableReferences(db, table, e),
                 ),
               )
@@ -18956,6 +19573,7 @@ typedef $$VideoDubProjectsTableCreateCompanionBuilder =
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<String?> folderSlug,
+      Value<bool> autoNormalizeLoudness,
       Value<int> rowid,
     });
 typedef $$VideoDubProjectsTableUpdateCompanionBuilder =
@@ -18968,6 +19586,7 @@ typedef $$VideoDubProjectsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<String?> folderSlug,
+      Value<bool> autoNormalizeLoudness,
       Value<int> rowid,
     });
 
@@ -18981,9 +19600,7 @@ final class $$VideoDubProjectsTableReferences
   );
 
   static $VoiceBanksTable _bankIdTable(_$AppDatabase db) =>
-      db.voiceBanks.createAlias(
-        $_aliasNameGenerator(db.videoDubProjects.bankId, db.voiceBanks.id),
-      );
+      db.voiceBanks.createAlias('video_dub_projects__bank_id__voice_banks__id');
 
   $$VoiceBanksTableProcessedTableManager get bankId {
     final $_column = $_itemColumn<String>('bank_id')!;
@@ -19002,10 +19619,7 @@ final class $$VideoDubProjectsTableReferences
   static MultiTypedResultKey<$SubtitleCuesTable, List<SubtitleCue>>
   _subtitleCuesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.subtitleCues,
-    aliasName: $_aliasNameGenerator(
-      db.videoDubProjects.id,
-      db.subtitleCues.projectId,
-    ),
+    aliasName: 'video_dub_projects__id__subtitle_cues__project_id',
   );
 
   $$SubtitleCuesTableProcessedTableManager get subtitleCuesRefs {
@@ -19062,6 +19676,11 @@ class $$VideoDubProjectsTableFilterComposer
 
   ColumnFilters<String> get folderSlug => $composableBuilder(
     column: $table.folderSlug,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get autoNormalizeLoudness => $composableBuilder(
+    column: $table.autoNormalizeLoudness,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -19158,6 +19777,11 @@ class $$VideoDubProjectsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get autoNormalizeLoudness => $composableBuilder(
+    column: $table.autoNormalizeLoudness,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$VoiceBanksTableOrderingComposer get bankId {
     final $$VoiceBanksTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -19213,6 +19837,11 @@ class $$VideoDubProjectsTableAnnotationComposer
 
   GeneratedColumn<String> get folderSlug => $composableBuilder(
     column: $table.folderSlug,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get autoNormalizeLoudness => $composableBuilder(
+    column: $table.autoNormalizeLoudness,
     builder: (column) => column,
   );
 
@@ -19303,6 +19932,7 @@ class $$VideoDubProjectsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String?> folderSlug = const Value.absent(),
+                Value<bool> autoNormalizeLoudness = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VideoDubProjectsCompanion(
                 id: id,
@@ -19313,6 +19943,7 @@ class $$VideoDubProjectsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 folderSlug: folderSlug,
+                autoNormalizeLoudness: autoNormalizeLoudness,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -19325,6 +19956,7 @@ class $$VideoDubProjectsTableTableManager
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<String?> folderSlug = const Value.absent(),
+                Value<bool> autoNormalizeLoudness = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VideoDubProjectsCompanion.insert(
                 id: id,
@@ -19335,12 +19967,13 @@ class $$VideoDubProjectsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 folderSlug: folderSlug,
+                autoNormalizeLoudness: autoNormalizeLoudness,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$VideoDubProjectsTable, VideoDubProject>(table),
                   $$VideoDubProjectsTableReferences(db, table, e),
                 ),
               )
@@ -19461,10 +20094,9 @@ final class $$SubtitleCuesTableReferences
     extends BaseReferences<_$AppDatabase, $SubtitleCuesTable, SubtitleCue> {
   $$SubtitleCuesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $VideoDubProjectsTable _projectIdTable(_$AppDatabase db) =>
-      db.videoDubProjects.createAlias(
-        $_aliasNameGenerator(db.subtitleCues.projectId, db.videoDubProjects.id),
-      );
+  static $VideoDubProjectsTable _projectIdTable(_$AppDatabase db) => db
+      .videoDubProjects
+      .createAlias('subtitle_cues__project_id__video_dub_projects__id');
 
   $$VideoDubProjectsTableProcessedTableManager get projectId {
     final $_column = $_itemColumn<String>('project_id')!;
@@ -19801,7 +20433,7 @@ class $$SubtitleCuesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$SubtitleCuesTable, SubtitleCue>(table),
                   $$SubtitleCuesTableReferences(db, table, e),
                 ),
               )
@@ -20163,7 +20795,16 @@ class $$AudioTracksTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$AudioTracksTable, AudioTrack>(table),
+                  BaseReferences<_$AppDatabase, $AudioTracksTable, AudioTrack>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -20508,7 +21149,16 @@ class $$TimelineClipsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$TimelineClipsTable, TimelineClip>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $TimelineClipsTable,
+                    TimelineClip
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),

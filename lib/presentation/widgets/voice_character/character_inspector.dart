@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
@@ -12,6 +13,7 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/loudness_fields.dart';
 import 'package:neiroha/presentation/widgets/voice_character/components.dart';
 import 'package:neiroha/presentation/widgets/voice_character/selection.dart';
 import 'package:neiroha/providers/app_providers.dart';
@@ -44,6 +46,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
   late TextEditingController _instructionCtrl;
   late String _selectedProviderId;
   String? _selectedSpeaker;
+  double _loudnessOffsetDb = 0;
 
   List<String> _speakers = [];
   bool _loadingSpeakers = false;
@@ -78,6 +81,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
     _instructionCtrl = TextEditingController(text: a.voiceInstruction ?? '');
     _selectedProviderId = a.providerId;
     _selectedSpeaker = a.presetVoiceName;
+    _loudnessOffsetDb = a.loudnessOffsetDb;
     _speakers = [];
     _loadingSpeakers = false;
   }
@@ -101,8 +105,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
   }
 
   db.TtsProvider? get _selectedProvider {
-    final providers =
-        ref.read(ttsProvidersStreamProvider).valueOrNull ?? const [];
+    final providers = ref.read(ttsProvidersStreamProvider).value ?? const [];
     return providers
         .where((p) => p.id == _selectedProviderId)
         .cast<db.TtsProvider?>()
@@ -116,16 +119,24 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         t == 'openaiCompatible' ||
         t == 'chatCompletionsTts' ||
         t == 'gptSovits' ||
-        t == 'geminiTts';
+        t == 'geminiTts' ||
+        t == 'elevenLabs' ||
+        t == 'minimaxTts';
   }
 
   bool get _isGptSovits => _selectedProvider?.adapterType == 'gptSovits';
+
+  /// Adapters that store the synthesis language in modelName.
+  bool get _usesTextLang =>
+      _isGptSovits || _selectedProvider?.adapterType == 'indexTts';
 
   bool get _hasModelField {
     final t = _selectedProvider?.adapterType ?? '';
     return t == 'openaiCompatible' ||
         t == 'chatCompletionsTts' ||
-        t == 'geminiTts';
+        t == 'geminiTts' ||
+        t == 'elevenLabs' ||
+        t == 'minimaxTts';
   }
 
   Future<void> _fetchSpeakers() async {
@@ -175,8 +186,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
   Widget build(BuildContext context) {
     final a = widget.asset;
     final allProviders =
-        ref.watch(ttsProvidersStreamProvider).valueOrNull ??
-        const <db.TtsProvider>[];
+        ref.watch(ttsProvidersStreamProvider).value ?? const <db.TtsProvider>[];
     final capabilities = ref.watch(platformCapabilitiesProvider);
     final enabledProviders = allProviders
         .where(
@@ -254,7 +264,9 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         SizedBox(height: 12),
 
         // ── Provider ─────────────────────────────────────────────────────────
-        VoiceCharacterSectionLabel('PROVIDER'),
+        VoiceCharacterSectionLabel(
+          AppLocalizations.of(context).sectionProvider,
+        ),
         SizedBox(height: 8),
         if (enabledProviders.isEmpty)
           Text(
@@ -311,11 +323,16 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
             labelText: AppLocalizations.of(context).uiSpeed10Normal,
           ),
         ),
+        SizedBox(height: 12),
+        CharacterLoudnessOffsetField(
+          value: _loudnessOffsetDb,
+          onChanged: (v) => setState(() => _loudnessOffsetDb = v),
+        ),
         SizedBox(height: 20),
 
         // ── Mode-specific fields ─────────────────────────────────────────────
         if (a.taskMode == 'presetVoice') ...[
-          VoiceCharacterSectionLabel('VOICE'),
+          VoiceCharacterSectionLabel(AppLocalizations.of(context).sectionVoice),
           SizedBox(height: 8),
           if (_loadingSpeakers)
             Padding(
@@ -359,9 +376,12 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
               controller: _modelNameCtrl,
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context).uiModelName,
-                hintText: _selectedProvider?.adapterType == 'geminiTts'
-                    ? 'e.g. gemini-2.5-flash-preview-tts'
-                    : 'e.g. tts-1',
+                hintText: switch (_selectedProvider?.adapterType) {
+                  'geminiTts' => 'e.g. gemini-3.8-flash-tts',
+                  'elevenLabs' => 'e.g. eleven_v4',
+                  'minimaxTts' => 'e.g. speech-2.8-hd',
+                  _ => 'e.g. tts-1',
+                },
               ),
             ),
           ],
@@ -375,7 +395,11 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
               ),
             ),
           ],
-          if (_selectedProvider?.adapterType == 'geminiTts') ...[
+          if (const {
+            'geminiTts',
+            'elevenLabs',
+            'minimaxTts',
+          }.contains(_selectedProvider?.adapterType)) ...[
             SizedBox(height: 12),
             TextField(
               controller: _instructionCtrl,
@@ -393,7 +417,9 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         ],
 
         if (a.taskMode == 'cloneWithPrompt') ...[
-          VoiceCharacterSectionLabel('VOICE CLONE'),
+          VoiceCharacterSectionLabel(
+            AppLocalizations.of(context).sectionVoiceClone,
+          ),
           SizedBox(height: 8),
           if (a.refAudioPath != null) ...[
             Text(
@@ -498,7 +524,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
               labelText: AppLocalizations.of(context).uiLanguageCode,
             ),
           ),
-          if (_isGptSovits) ...[
+          if (_usesTextLang) ...[
             SizedBox(height: 10),
             TextField(
               controller: _textLangCtrl,
@@ -522,7 +548,9 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         ],
 
         if (a.taskMode == 'voiceDesign') ...[
-          VoiceCharacterSectionLabel('VOICE DESIGN'),
+          VoiceCharacterSectionLabel(
+            AppLocalizations.of(context).sectionVoiceDesign,
+          ),
           SizedBox(height: 8),
           TextField(
             controller: _instructionCtrl,
@@ -620,10 +648,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
   }
 
   Future<void> _pickAvatar(db.VoiceAsset asset) async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      allowMultiple: false,
-    );
+    final result = await pickFiles(type: FileType.image, allowMultiple: false);
     if (result == null || result.files.single.path == null) return;
 
     final picked = result.files.single.path!;
@@ -652,7 +677,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
     final textLang = _textLangCtrl.text.trim();
 
     String? modelName;
-    if (_isGptSovits) {
+    if (_usesTextLang) {
       modelName = textLang.isEmpty ? null : textLang;
     } else if (_hasModelField) {
       final v = _modelNameCtrl.text.trim();
@@ -669,6 +694,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
       providerId: _selectedProviderId,
       modelName: Value(modelName),
       speed: speed,
+      loudnessOffsetDb: _loudnessOffsetDb,
       presetVoiceName: Value(
         _voiceNameCtrl.text.trim().isEmpty ? null : _voiceNameCtrl.text.trim(),
       ),
@@ -724,6 +750,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         avatarPath: Value(asset.avatarPath),
         speed: Value(asset.speed),
         enabled: Value(asset.enabled),
+        loudnessOffsetDb: Value(asset.loudnessOffsetDb),
       ),
     );
     final bankId = widget.bankId;

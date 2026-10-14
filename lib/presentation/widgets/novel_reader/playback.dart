@@ -175,6 +175,9 @@ extension _NovelReaderEditorCache on _NovelReaderEditorState {
       'cosyvoice' => true,
       'voxcpm2Native' => true,
       'geminiTts' => true,
+      'elevenLabs' => true,
+      'minimaxTts' => true,
+      'indexTts' => true,
       _ => false,
     };
   }
@@ -322,7 +325,9 @@ extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {
         await _waitForSegmentGap(activeProject, runId, stopCompleter);
       }
     } catch (e) {
-      if (runId == _playRunId) _snack('Playback stopped: $e');
+      if (runId == _playRunId && mounted) {
+        _snack(AppLocalizations.of(context).novelPlaybackStopped(e));
+      }
     } finally {
       if (runId == _playRunId) {
         _stopCompleter = null;
@@ -717,6 +722,14 @@ extension _NovelReaderEditorGeneration on _NovelReaderEditorState {
         fileBase: fileBase,
         force: force,
       );
+      await ref
+          .read(autoLoudnessServiceProvider)
+          .normalizeGenerated(
+            enabled: project.autoNormalizeLoudness,
+            path: filePath,
+            bankId: project.bankId,
+            voiceAssetId: asset.id,
+          );
       final durationSec = _stopCompleter == null
           ? await measureAudioDuration(filePath)
           : null;
@@ -1135,7 +1148,7 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
         _snack(l10n.uiFFmpegIsRequiredForExportConfigureItInSettings);
         return;
       }
-      var outPath = await FilePicker.platform.saveFile(
+      var outPath = await pickSavePath(
         dialogTitle: l10n.uiExportNovelAudio,
         fileName:
             '${PathService.sanitizeSegment(project.name)}_${PathService.formatTimestamp()}.wav',
@@ -1146,6 +1159,17 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
       final outFile = File(outPath);
       if (!await outFile.parent.exists()) {
         await outFile.parent.create(recursive: true);
+      }
+      // Match what the reader plays: the same gap between segments, with
+      // short de-click fades at every cut.
+      final options = AudioMergeOptions(
+        gapSeconds: project.playbackGapSeconds,
+        fadeInMs: project.playbackGapSeconds > 0 ? 10 : 0,
+        fadeOutMs: project.playbackGapSeconds > 0 ? 30 : 0,
+      );
+      if (!options.isPlain) {
+        await _exportBookWithSpacing(inputs, outPath, options);
+        return;
       }
       final listFile = File(
         p.join(
@@ -1194,6 +1218,46 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
     }
   }
 
+  Future<void> _exportBookWithSpacing(
+    List<String> inputs,
+    String outPath,
+    AudioMergeOptions options,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final merger = ref.read(audioMergeServiceProvider);
+    Object? failure;
+    final completed = await runTaskWithProgress(
+      context: context,
+      taskLabel: l10n.uiExportingNovelAudio,
+      task: (report, cancelled) async {
+        try {
+          await merger.merge(
+            inputs: inputs,
+            outputPath: outPath,
+            options: options,
+            encoderArgs: LoudnessNormalizer.encoderArgsFor(
+              p.extension(outPath).toLowerCase(),
+            ),
+            onProgress: report,
+            isCancelled: cancelled,
+          );
+        } on AudioMergeCancelled {
+          // Reported through the return value.
+        } catch (e) {
+          failure = e;
+        }
+      },
+    );
+    if (!mounted) return;
+    if (failure != null) {
+      _snack(l10n.uiExportFailed(failure!));
+    } else if (!completed) {
+      _snack(l10n.uiExportCancelled);
+    } else {
+      await showExportSuccessDialog(context: context, filePath: outPath);
+    }
+  }
+
   int _totalDurationMs(List<db.NovelSegment> segments) {
     var total = 0;
     for (final segment in segments) {
@@ -1204,9 +1268,13 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
   }
 
   String _segmentSubtitle(db.NovelSegment segment, [db.NovelChapter? chapter]) {
-    final prefix = segment.segmentType == 'dialogue' ? 'Dialogue' : 'Narrator';
+    final l10n = AppLocalizations.of(context);
+    final prefix = segment.segmentType == 'dialogue'
+        ? l10n.novelDialogue
+        : l10n.novelNarrator;
     final chapterTitle = chapter?.title.trim();
-    final segmentLabel = '$prefix · Segment ${segment.globalIndex + 1}';
+    final segmentLabel =
+        '$prefix · ${l10n.novelSegmentLabel(segment.globalIndex + 1)}';
     if (chapterTitle == null || chapterTitle.isEmpty) return segmentLabel;
     return '$chapterTitle · $segmentLabel';
   }

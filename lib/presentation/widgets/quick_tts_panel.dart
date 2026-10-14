@@ -100,7 +100,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
     db.VoiceAsset asset,
     AsyncValue<List<db.QuickTtsHistory>> historyAsync,
   ) {
-    final hasHistory = (historyAsync.valueOrNull ?? []).isNotEmpty;
+    final hasHistory = (historyAsync.value ?? []).isNotEmpty;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
       child: Row(
@@ -512,7 +512,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
   }
 
   Future<void> _generate(db.VoiceAsset asset) async {
-    final providers = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
+    final providers = ref.read(ttsProvidersStreamProvider).value ?? [];
     final provider = providers
         .where((p) => p.id == asset.providerId)
         .firstOrNull;

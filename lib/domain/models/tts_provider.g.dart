@@ -6,17 +6,16 @@ part of 'tts_provider.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$TtsProviderImpl _$$TtsProviderImplFromJson(Map<String, dynamic> json) =>
-    _$TtsProviderImpl(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      adapterType: $enumDecode(_$AdapterTypeEnumMap, json['adapterType']),
-      baseUrl: json['baseUrl'] as String,
-      apiKey: json['apiKey'] as String? ?? '',
-      enabled: json['enabled'] as bool? ?? true,
-    );
+_TtsProvider _$TtsProviderFromJson(Map<String, dynamic> json) => _TtsProvider(
+  id: json['id'] as String,
+  name: json['name'] as String,
+  adapterType: $enumDecode(_$AdapterTypeEnumMap, json['adapterType']),
+  baseUrl: json['baseUrl'] as String,
+  apiKey: json['apiKey'] as String? ?? '',
+  enabled: json['enabled'] as bool? ?? true,
+);
 
-Map<String, dynamic> _$$TtsProviderImplToJson(_$TtsProviderImpl instance) =>
+Map<String, dynamic> _$TtsProviderToJson(_TtsProvider instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
@@ -35,4 +34,7 @@ const _$AdapterTypeEnumMap = {
   AdapterType.azureTts: 'azureTts',
   AdapterType.systemTts: 'systemTts',
   AdapterType.geminiTts: 'geminiTts',
+  AdapterType.elevenLabs: 'elevenLabs',
+  AdapterType.minimaxTts: 'minimaxTts',
+  AdapterType.indexTts: 'indexTts',
 };

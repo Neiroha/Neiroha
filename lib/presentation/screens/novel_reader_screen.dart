@@ -6,10 +6,13 @@ import 'dart:typed_data';
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/services/audio_merge_service.dart';
+import 'package:neiroha/data/services/loudness_normalizer.dart';
 import 'package:neiroha/data/storage/novel_dialogue_rules_service.dart';
 import 'package:neiroha/data/storage/novel_import_service.dart';
 import 'package:neiroha/data/storage/novel_text_filter_rules_service.dart';
@@ -19,6 +22,7 @@ import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/export_progress.dart';
+import 'package:neiroha/presentation/widgets/loudness_normalize_dialog.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/project_settings_dialog.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
@@ -69,8 +73,7 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
   Widget _buildProjectListScreen() {
     final projectsAsync = ref.watch(novelProjectsStreamProvider);
     final banks =
-        ref.watch(voiceBanksStreamProvider).valueOrNull ??
-        const <db.VoiceBank>[];
+        ref.watch(voiceBanksStreamProvider).value ?? const <db.VoiceBank>[];
     return Column(
       children: [
         _NovelProjectHeader(onCreate: _createProject),
@@ -122,6 +125,7 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
       projectName: project.name,
       bankId: project.bankId,
       banks: banks,
+      autoNormalizeLoudness: project.autoNormalizeLoudness,
     );
     if (result == null) return;
     final database = ref.read(databaseProvider);
@@ -130,7 +134,9 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
       return;
     }
     final bankChanged = result.bankId != project.bankId;
-    if (result.name != project.name || bankChanged) {
+    if (result.name != project.name ||
+        bankChanged ||
+        result.autoNormalizeLoudness != project.autoNormalizeLoudness) {
       var narratorId = project.narratorVoiceAssetId;
       var dialogueId = project.dialogueVoiceAssetId;
       if (bankChanged) {
@@ -142,6 +148,7 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
         project.copyWith(
           name: result.name,
           bankId: result.bankId,
+          autoNormalizeLoudness: result.autoNormalizeLoudness,
           narratorVoiceAssetId: Value(narratorId),
           dialogueVoiceAssetId: Value(dialogueId),
           updatedAt: DateTime.now(),
@@ -170,9 +177,9 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
   }
 
   Future<void> _createProject() async {
-    final banks = ref.read(voiceBanksStreamProvider).valueOrNull ?? const [];
+    final banks = ref.read(voiceBanksStreamProvider).value ?? const [];
     if (banks.isEmpty) {
-      _snack('Create a Voice Bank first.');
+      _snack(AppLocalizations.of(context).uiCreateAVoiceBankFirst);
       return;
     }
     final result = await showDialog<_CreateNovelResult>(

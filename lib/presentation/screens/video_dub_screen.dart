@@ -141,8 +141,7 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
   Widget _buildProjectListScreen() {
     final projectsAsync = ref.watch(videoDubProjectsStreamProvider);
     final banks =
-        ref.watch(voiceBanksStreamProvider).valueOrNull ??
-        const <db.VoiceBank>[];
+        ref.watch(voiceBanksStreamProvider).value ?? const <db.VoiceBank>[];
     return Column(
       children: [
         _buildListHeader(),
@@ -223,6 +222,7 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
       projectName: project.name,
       bankId: project.bankId,
       banks: banks,
+      autoNormalizeLoudness: project.autoNormalizeLoudness,
     );
     if (result == null) return;
     final database = ref.read(databaseProvider);
@@ -231,11 +231,14 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
       return;
     }
     final bankChanged = result.bankId != project.bankId;
-    if (result.name != project.name || bankChanged) {
+    if (result.name != project.name ||
+        bankChanged ||
+        result.autoNormalizeLoudness != project.autoNormalizeLoudness) {
       await database.updateVideoDubProject(
         project.copyWith(
           name: result.name,
           bankId: result.bankId,
+          autoNormalizeLoudness: result.autoNormalizeLoudness,
           updatedAt: DateTime.now(),
         ),
       );
@@ -262,7 +265,7 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
   }
 
   Future<void> _createProject() async {
-    final banks = ref.read(voiceBanksStreamProvider).valueOrNull ?? [];
+    final banks = ref.read(voiceBanksStreamProvider).value ?? [];
     if (banks.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

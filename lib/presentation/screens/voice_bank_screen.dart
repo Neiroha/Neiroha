@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/screens/voice_character_screen.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/loudness_fields.dart';
 import 'package:neiroha/presentation/widgets/quick_tts_panel.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/presentation/widgets/voice_bank/voice_bank_widgets.dart';
@@ -309,9 +311,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     final assetsAsync = ref.watch(voiceAssetsStreamProvider);
     final providersAsync = ref.watch(ttsProvidersStreamProvider);
 
-    final bank = banksAsync.valueOrNull
-        ?.where((b) => b.id == bankId)
-        .firstOrNull;
+    final bank = banksAsync.value?.where((b) => b.id == bankId).firstOrNull;
     if (bank == null) {
       return Center(child: CircularProgressIndicator());
     }
@@ -521,8 +521,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
 
     final selectedId = ref.watch(selectedCharacterIdProvider);
     final healthStatus =
-        ref.watch(voiceHealthStatusProvider).valueOrNull ??
-        const <String, bool>{};
+        ref.watch(voiceHealthStatusProvider).value ?? const <String, bool>{};
     return ListView.builder(
       padding: const EdgeInsets.all(8),
       itemCount: filtered.length,
@@ -638,7 +637,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
   // ───────────────── Bank actions ─────────────────
 
   void _createBank() async {
-    final banks = ref.read(voiceBanksStreamProvider).valueOrNull ?? [];
+    final banks = ref.read(voiceBanksStreamProvider).value ?? [];
     final nameCtrl = TextEditingController();
     final result = await showDialog<String>(
       context: context,
@@ -692,32 +691,58 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     }
   }
 
+  /// Bank settings: name and the base loudness target its cast is
+  /// normalized to.
   void _renameBank(db.VoiceBank bank, List<db.VoiceBank> allBanks) async {
     final nameCtrl = TextEditingController(text: bank.name);
-    final result = await showDialog<String>(
+    var target = bank.loudnessTargetLufs;
+    final saved = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context).uiRenameVoiceBank),
-        content: TextField(
-          controller: nameCtrl,
-          autofocus: true,
-          decoration: InputDecoration(
-            labelText: AppLocalizations.of(context).uiBankName,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text(AppLocalizations.of(context).bankSettingsTitle),
+          content: SizedBox(
+            width: 420,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).uiBankName,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                BankLoudnessTargetField(
+                  value: target,
+                  onChanged: (v) => setDialogState(() => target = v),
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(AppLocalizations.of(context).uiCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(AppLocalizations.of(context).uiSave),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(AppLocalizations.of(context).uiCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, nameCtrl.text),
-            child: Text(AppLocalizations.of(context).uiRename),
-          ),
-        ],
       ),
     );
-    if (result != null && result.isNotEmpty && result != bank.name) {
+    final result = nameCtrl.text.trim();
+    nameCtrl.dispose();
+    if (saved != true) return;
+    if (target != bank.loudnessTargetLufs) {
+      bank = bank.copyWith(loudnessTargetLufs: target);
+      await ref.read(databaseProvider).updateBank(bank);
+    }
+    if (result.isNotEmpty && result != bank.name) {
       if (allBanks.any((b) => b.name == result && b.id != bank.id)) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -784,9 +809,9 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     AsyncValue<List<db.VoiceAsset>> assetsAsync,
     AsyncValue<List<db.TtsProvider>> providersAsync,
   ) async {
-    final members = membersAsync.valueOrNull ?? [];
-    final allAssets = assetsAsync.valueOrNull ?? [];
-    final allProviders = providersAsync.valueOrNull ?? [];
+    final members = membersAsync.value ?? [];
+    final allAssets = assetsAsync.value ?? [];
+    final allProviders = providersAsync.value ?? [];
     final l10n = AppLocalizations.of(context);
     if (members.isEmpty) {
       if (mounted) {

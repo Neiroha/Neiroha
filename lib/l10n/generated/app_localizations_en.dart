@@ -123,7 +123,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutSubtitle =>
-      'v0.3.0 - AI Audio Middleware & Dubbing Workstation';
+      'v0.4.1 - AI Audio Middleware & Dubbing Workstation';
 
   @override
   String get uiUnassigned => '-- Unassigned --';
@@ -1904,4 +1904,501 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get uiDetails => 'Details';
+
+  @override
+  String get uiVoiceForImportedCues => 'Voice for imported cues';
+
+  @override
+  String get uiVoiceForImportedCuesHint =>
+      'Pick a character from the voice bank of this project, or leave cues unassigned and cast them one by one.';
+
+  @override
+  String get uiLeaveUnassigned => 'Leave unassigned';
+
+  @override
+  String get uiCloudVoiceCloneHint =>
+      'Pick a voice above, or add a reference audio to clone a new voice on the provider account when saving.';
+
+  @override
+  String uiCloudVoiceCloneFailed(Object error) {
+    return 'Voice clone failed: $error';
+  }
+
+  @override
+  String get uiIndexTtsEmotionHint =>
+      'Optional emotion description (needs the experimental emotion mode of the WebUI)';
+
+  @override
+  String get uiApiAutoStart => 'Start API server on launch';
+
+  @override
+  String get uiApiAutoStartDescription =>
+      'Start the local API and MCP server automatically when Neiroha opens, so agents can connect without a manual toggle.';
+
+  @override
+  String get uiMcpEndpoint => 'MCP server for AI agents';
+
+  @override
+  String uiMcpEndpointDescription(Object url) {
+    return 'Lets agents manage providers, voices and dubbing jobs at $url (streamable HTTP). Uses the API key above when set.';
+  }
+
+  @override
+  String get loudnessAction => 'Unify loudness';
+
+  @override
+  String get loudnessActionTooltip =>
+      'Bring every generated clip to the same loudness';
+
+  @override
+  String get loudnessTitle => 'Unify Loudness';
+
+  @override
+  String loudnessIntro(Object count) {
+    return 'Measures the perceived loudness (LUFS) of $count generated clips and brings each one to the same target. Only the gain changes; a limiter keeps peaks from clipping. Files are rewritten in place, so timelines and exports pick up the result automatically.';
+  }
+
+  @override
+  String get loudnessTarget => 'TARGET LOUDNESS';
+
+  @override
+  String get loudnessPresetLoud => 'Loud';
+
+  @override
+  String get loudnessPresetLoudHint =>
+      '-14 LUFS · short-video and music platforms';
+
+  @override
+  String get loudnessPresetStandard => 'Standard';
+
+  @override
+  String get loudnessPresetStandardHint =>
+      '-16 LUFS · podcasts, audiobooks, narration';
+
+  @override
+  String get loudnessPresetSoft => 'Soft';
+
+  @override
+  String get loudnessPresetSoftHint =>
+      '-20 LUFS · ASMR, sleep and whisper content';
+
+  @override
+  String get loudnessPresetBroadcast => 'Broadcast';
+
+  @override
+  String get loudnessPresetBroadcastHint =>
+      '-23 LUFS · EBU R128 broadcast standard';
+
+  @override
+  String get loudnessPresetCustom => 'Custom';
+
+  @override
+  String get loudnessPresetCustomHint =>
+      'Pick any target between -30 and -10 LUFS';
+
+  @override
+  String get loudnessKeepBackup => 'Keep original backups';
+
+  @override
+  String get loudnessKeepBackupHint =>
+      'Originals go to an _original_audio folder next to the clips. Later runs always start from them, so you can change the target without stacking quality loss.';
+
+  @override
+  String get loudnessAnalyze => 'Analyze';
+
+  @override
+  String loudnessAnalyzing(Object done, Object total) {
+    return 'Analyzing $done / $total';
+  }
+
+  @override
+  String loudnessApplying(Object done, Object total) {
+    return 'Processing $done / $total';
+  }
+
+  @override
+  String loudnessApply(Object count) {
+    return 'Unify $count clips';
+  }
+
+  @override
+  String get loudnessRange => 'Current range';
+
+  @override
+  String get loudnessSpread => 'Spread';
+
+  @override
+  String get loudnessNeedsChange => 'To adjust';
+
+  @override
+  String loudnessSummary(
+    Object adjusted,
+    Object onTarget,
+    Object silent,
+    Object failed,
+  ) {
+    return 'Adjusted $adjusted · already on target $onTarget · silent, skipped $silent · failed $failed';
+  }
+
+  @override
+  String loudnessLastError(Object error) {
+    return 'Last error: $error';
+  }
+
+  @override
+  String get loudnessNoAudio => 'No generated audio to unify yet.';
+
+  @override
+  String get loudnessFfmpegRequired =>
+      'Unifying loudness needs FFmpeg — configure it in Settings.';
+
+  @override
+  String get loudnessStop => 'Stop';
+
+  @override
+  String phaseStatsGenerated(Object done, Object total) {
+    return '$done/$total generated';
+  }
+
+  @override
+  String phaseStatsFailed(Object count) {
+    return '$count failed';
+  }
+
+  @override
+  String phaseStatsUnassigned(Object count) {
+    return '$count without voice';
+  }
+
+  @override
+  String get phaseFilterAll => 'All';
+
+  @override
+  String get phaseFilterPending => 'Pending';
+
+  @override
+  String get phaseFilterDone => 'Generated';
+
+  @override
+  String get phaseFilterFailed => 'Failed';
+
+  @override
+  String get phaseNoFilterMatches => 'No segments match this filter.';
+
+  @override
+  String get phaseApplyVoiceToAll => 'Apply to all';
+
+  @override
+  String get phaseEditText => 'Edit text';
+
+  @override
+  String get phaseEditTextHint =>
+      'Saving changed text clears the generated audio of this segment.';
+
+  @override
+  String get phaseResplitTitle => 'Re-split the script?';
+
+  @override
+  String phaseResplitBody(Object count) {
+    return 'This replaces the current $count segments together with their voice assignments, style settings and generated audio links.';
+  }
+
+  @override
+  String get phaseResplitConfirm => 'Re-split';
+
+  @override
+  String phaseCharCount(Object count) {
+    return '$count chars';
+  }
+
+  @override
+  String get phasePlay => 'Play';
+
+  @override
+  String get phasePlayAll => 'Play all';
+
+  @override
+  String get phaseStopPlayback => 'Stop';
+
+  @override
+  String get phaseMoreActions => 'More actions';
+
+  @override
+  String get loudnessAutoTitle => 'Normalize after generation';
+
+  @override
+  String loudnessAutoHint(Object target) {
+    return 'New clips go to the voice bank target ($target LUFS) plus the loudness offset of each character.';
+  }
+
+  @override
+  String get loudnessCharacterOffset => 'Loudness offset';
+
+  @override
+  String get loudnessCharacterOffsetHint =>
+      'Relative to the voice bank target. For example -3 dB keeps a narrator under the cast, +1 to +2 dB lifts a lead.';
+
+  @override
+  String get loudnessBankTarget => 'Loudness target';
+
+  @override
+  String get loudnessBankTargetHint =>
+      'Projects that normalize audio bring this cast here, then add the offset of each character. About -16 LUFS suits narration, -20 LUFS suits ASMR.';
+
+  @override
+  String get bankDeactivate => 'Deactivate';
+
+  @override
+  String get bankSetActive => 'Set Active';
+
+  @override
+  String get bankSettingsMenu => 'Settings…';
+
+  @override
+  String get bankSettingsTitle => 'Voice bank settings';
+
+  @override
+  String get loudnessUseOffsets => 'Apply character offsets';
+
+  @override
+  String get loudnessUseOffsetsHint =>
+      'Each speaker lands on the target plus their own offset, for example a narrator a few dB lower.';
+
+  @override
+  String loudnessRestore(Object count) {
+    return 'Restore originals ($count)';
+  }
+
+  @override
+  String loudnessRestored(Object count) {
+    return 'Restored $count clips to their original loudness.';
+  }
+
+  @override
+  String get phaseStopGenerating => 'Stop generating';
+
+  @override
+  String phaseRetryFailed(Object count) {
+    return 'Retry failed ($count)';
+  }
+
+  @override
+  String get phaseSelectMode => 'Select multiple';
+
+  @override
+  String get phaseAddSegment => 'Add segment';
+
+  @override
+  String phaseSelectedCount(Object count) {
+    return '$count selected';
+  }
+
+  @override
+  String get phaseSelectAll => 'Select all';
+
+  @override
+  String get phaseAssignVoice => 'Assign voice';
+
+  @override
+  String get phaseRegenerateSelected => 'Regenerate selected';
+
+  @override
+  String get phaseDeleteSelected => 'Delete selected';
+
+  @override
+  String get phaseExitSelect => 'Exit multi-select';
+
+  @override
+  String get phaseInsertBelow => 'Insert below';
+
+  @override
+  String get phaseMergeNext => 'Merge with next';
+
+  @override
+  String get phaseSplit => 'Split…';
+
+  @override
+  String get phaseSplitTitle => 'Split segment';
+
+  @override
+  String get phaseSplitHint => 'Click where the second segment should start.';
+
+  @override
+  String get phaseSplitAction => 'Split here';
+
+  @override
+  String get phaseInsertTitle => 'New segment';
+
+  @override
+  String get phaseInsertAction => 'Insert';
+
+  @override
+  String phaseDeletedCount(Object count) {
+    return 'Deleted $count segments';
+  }
+
+  @override
+  String get phaseUndo => 'Undo';
+
+  @override
+  String get phaseDragToReorder => 'Drag to reorder';
+
+  @override
+  String get phaseShortcuts =>
+      'Keyboard: Up/Down move · Space play/stop · Enter generate · F2 edit · Delete remove · Esc clear · Ctrl+A select all (multi-select) · Ctrl+S save';
+
+  @override
+  String get phaseMergeSettings => 'Playback and export';
+
+  @override
+  String get phaseMergeGap => 'Pause between segments';
+
+  @override
+  String get phaseMergeGapHint => 'Used by Play All and Export Merged.';
+
+  @override
+  String get phaseFadeIn => 'Fade in';
+
+  @override
+  String get phaseFadeOut => 'Fade out';
+
+  @override
+  String get phaseFadeHint =>
+      'Applied to every segment in the merged export. 10–50 ms removes clicks at the cuts; longer values soften each line.';
+
+  @override
+  String get sectionReferenceAudio => 'REFERENCE AUDIO';
+
+  @override
+  String get sectionCharacterInfo => 'CHARACTER INFO';
+
+  @override
+  String get sectionProvider => 'PROVIDER';
+
+  @override
+  String get sectionModel => 'MODEL';
+
+  @override
+  String get sectionVoice => 'VOICE';
+
+  @override
+  String get sectionVoiceNameOptional => 'VOICE NAME (optional)';
+
+  @override
+  String get sectionVoiceDescription => 'VOICE DESCRIPTION';
+
+  @override
+  String get sectionCosyvoiceMode => 'COSYVOICE MODE';
+
+  @override
+  String get sectionServerProfileOptional => 'SERVER PROFILE (optional)';
+
+  @override
+  String get sectionInstruct => 'INSTRUCT';
+
+  @override
+  String get sectionVoxcpm2Mode => 'VOXCPM2 MODE';
+
+  @override
+  String get sectionGptSovitsMode => 'GPT-SOVITS MODE';
+
+  @override
+  String get sectionTrainedSpeaker => 'TRAINED SPEAKER';
+
+  @override
+  String get sectionVoiceClone => 'VOICE CLONE';
+
+  @override
+  String get sectionVoiceDesign => 'VOICE DESIGN';
+
+  @override
+  String get sectionOutput => 'OUTPUT';
+
+  @override
+  String get autoFillProviderSpeaker => 'Auto-fill: Provider + Speaker';
+
+  @override
+  String get statusIdle => 'Idle';
+
+  @override
+  String get statusPreview => 'Preview';
+
+  @override
+  String novelGeneratingSegments(Object count) {
+    return 'Generating $count segments';
+  }
+
+  @override
+  String novelGeneratingShort(Object count) {
+    return 'Generating $count';
+  }
+
+  @override
+  String get novelEpubReserved =>
+      'EPUB import is not supported yet; the TXT files were imported.';
+
+  @override
+  String novelImportFailed(Object error) {
+    return 'Import failed: $error';
+  }
+
+  @override
+  String get novelSegmentSaved => 'Segment saved.';
+
+  @override
+  String get novelSegmentDeleted => 'Segment deleted.';
+
+  @override
+  String novelDeleteChapterMessage(Object title) {
+    return 'This removes \"$title\" and its cached audio.';
+  }
+
+  @override
+  String get novelChapterDeleted => 'Chapter deleted.';
+
+  @override
+  String novelDialogueRulesSaved(Object count) {
+    return 'Dialogue rules saved; rebuilt $count segments.';
+  }
+
+  @override
+  String get novelTextFiltersSaved =>
+      'Text filters saved. Stale novel audio will regenerate on demand.';
+
+  @override
+  String novelPlaybackStopped(Object error) {
+    return 'Playback stopped: $error';
+  }
+
+  @override
+  String get novelNarrator => 'Narrator';
+
+  @override
+  String get novelDialogue => 'Dialogue';
+
+  @override
+  String novelSegmentLabel(Object index) {
+    return 'Segment $index';
+  }
+
+  @override
+  String get phaseNoAudioToPlay => 'No generated audio to play.';
+
+  @override
+  String get dialogLineFallback => 'Line';
+
+  @override
+  String get videoDubDeleteV1First =>
+      'Delete the V1 clip first; only one source video is allowed.';
+
+  @override
+  String get statusWritingWav => 'Recording WAV';
+
+  @override
+  String novelImported(Object chapters, Object segments) {
+    return 'Imported $chapters chapters, $segments segments.';
+  }
+
+  @override
+  String get novelImportFolderTitle => 'Import novel folder';
 }

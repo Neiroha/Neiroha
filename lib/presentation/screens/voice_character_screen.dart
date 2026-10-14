@@ -18,8 +18,7 @@ void openCreateCharacterDialog(
   WidgetRef ref, {
   void Function(String assetId)? onCreated,
 }) {
-  final allProviders =
-      ref.read(ttsProvidersStreamProvider).valueOrNull ?? const [];
+  final allProviders = ref.read(ttsProvidersStreamProvider).value ?? const [];
   final capabilities = ref.read(platformCapabilitiesProvider);
   final enabledProviders = allProviders
       .where(
@@ -38,7 +37,7 @@ void openCreateCharacterDialog(
     );
     return;
   }
-  final audioTracks = ref.read(audioTracksStreamProvider).valueOrNull ?? [];
+  final audioTracks = ref.read(audioTracksStreamProvider).value ?? [];
   showDialog(
     context: context,
     barrierDismissible: false,

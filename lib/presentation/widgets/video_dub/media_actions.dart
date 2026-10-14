@@ -45,7 +45,7 @@ extension _VideoDubEditorMediaActions on _VideoDubEditorState {
     // programmatically.
     if (kind == DubImportKind.video &&
         existing.any((c) => c.laneIndex == DubLanes.v1)) {
-      _snack('Delete the V1 clip first — only one source video is allowed');
+      _snack(AppLocalizations.of(context).videoDubDeleteV1First);
       return;
     }
 
@@ -53,10 +53,7 @@ extension _VideoDubEditorMediaActions on _VideoDubEditorState {
       DubImportKind.video => FileType.video,
       DubImportKind.audio => FileType.audio,
     };
-    final picked = await FilePicker.platform.pickFiles(
-      type: typeForPicker,
-      allowMultiple: false,
-    );
+    final picked = await pickFiles(type: typeForPicker, allowMultiple: false);
     final src = picked?.files.single.path;
     if (src == null) return;
     if (!await File(src).exists()) return;
@@ -145,12 +142,12 @@ extension _VideoDubEditorMediaActions on _VideoDubEditorState {
 
   Future<void> _exportVideo(db.VideoDubProject project) async {
     final cues =
-        ref.read(subtitleCuesStreamProvider(widget.projectId)).valueOrNull ??
+        ref.read(subtitleCuesStreamProvider(widget.projectId)).value ??
         const <db.SubtitleCue>[];
     final clips =
         ref
             .read(timelineClipsStreamProvider('videodub:${widget.projectId}'))
-            .valueOrNull ??
+            .value ??
         const <db.TimelineClip>[];
     _updateState(() => _exporting = true);
     try {
@@ -170,12 +167,12 @@ extension _VideoDubEditorMediaActions on _VideoDubEditorState {
 
   Future<void> _exportAudio(db.VideoDubProject project) async {
     final cues =
-        ref.read(subtitleCuesStreamProvider(widget.projectId)).valueOrNull ??
+        ref.read(subtitleCuesStreamProvider(widget.projectId)).value ??
         const <db.SubtitleCue>[];
     final clips =
         ref
             .read(timelineClipsStreamProvider('videodub:${widget.projectId}'))
-            .valueOrNull ??
+            .value ??
         const <db.TimelineClip>[];
     _updateState(() => _exporting = true);
     try {
@@ -191,6 +188,35 @@ extension _VideoDubEditorMediaActions on _VideoDubEditorState {
     } finally {
       if (mounted) _updateState(() => _exporting = false);
     }
+  }
+
+  /// Even out the generated cue takes. Only TTS cues are touched — A3
+  /// imports are the user's own material.
+  Future<void> _normalizeCueLoudness(
+    db.VideoDubProject project,
+    List<db.SubtitleCue> cues,
+  ) async {
+    await runLoudnessNormalization(
+      context: context,
+      ref: ref,
+      bankId: project.bankId,
+      items: [
+        for (final c in cues)
+          if (c.audioPath != null && !c.missing)
+            LoudnessItem(
+              id: c.id,
+              path: c.audioPath!,
+              voiceAssetId: c.voiceAssetId,
+            ),
+      ],
+      // Release media_kit's handles so the files can be rewritten.
+      beforeApply: () async {
+        await _cuePlayer.stop();
+        await _previewPlayer.stop();
+        _activeCueId = null;
+        _updateState(() => _previewCueId = null);
+      },
+    );
   }
 
   Future<void> _exportSubtitlesAndTts(

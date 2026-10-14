@@ -114,7 +114,7 @@ class StorageSettingsCard extends ConsumerWidget {
   }
 
   Future<void> _pickRoot(BuildContext context, WidgetRef ref) async {
-    final picked = await FilePicker.platform.getDirectoryPath(
+    final picked = await FilePicker.getDirectoryPath(
       dialogTitle: 'Choose voice asset directory',
     );
     if (picked == null || picked.isEmpty) return;

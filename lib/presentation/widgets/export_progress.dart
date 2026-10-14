@@ -180,6 +180,44 @@ Future<FfmpegRunResult> runFfmpegWithProgress({
   return result;
 }
 
+/// Run an in-process [task] behind the same modal progress dialog as
+/// [runFfmpegWithProgress]. The task reports 0..1 through `report` and
+/// should poll `cancelled` between steps. Returns false when cancelled.
+Future<bool> runTaskWithProgress({
+  required BuildContext context,
+  required String taskLabel,
+  required Future<void> Function(
+    void Function(double progress) report,
+    bool Function() cancelled,
+  )
+  task,
+}) async {
+  final progress = ValueNotifier<double>(0);
+  var cancelRequested = false;
+  unawaited(
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _ProgressDialog(
+        label: taskLabel,
+        indeterminate: false,
+        progress: progress,
+        onCancel: () => cancelRequested = true,
+      ),
+    ),
+  );
+  try {
+    await task(
+      (v) => progress.value = v.clamp(0.0, 1.0),
+      () => cancelRequested,
+    );
+    return !cancelRequested;
+  } finally {
+    if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+    progress.dispose();
+  }
+}
+
 void _ffmpegProgressWorker(Map<String, Object?> message) async {
   final sendPort = message['sendPort']! as SendPort;
   final ffmpegPath = message['ffmpegPath']! as String;

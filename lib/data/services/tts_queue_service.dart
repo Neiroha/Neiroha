@@ -7,6 +7,35 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 
 enum TtsQueueTaskStatus { queued, running, completed, failed }
 
+/// Cancels the not-yet-started requests submitted with it. Requests already
+/// talking to the provider run to completion (their audio is already paid
+/// for), so callers should still handle a late result.
+class TtsCancelToken {
+  bool _cancelled = false;
+  final List<void Function()> _listeners = [];
+
+  bool get isCancelled => _cancelled;
+
+  void cancel() {
+    if (_cancelled) return;
+    _cancelled = true;
+    for (final listener in List.of(_listeners)) {
+      listener();
+    }
+    _listeners.clear();
+  }
+
+  void _onCancel(void Function() listener) => _listeners.add(listener);
+}
+
+/// Thrown for a queued request whose [TtsCancelToken] was cancelled.
+class TtsCancelledException implements Exception {
+  const TtsCancelledException();
+
+  @override
+  String toString() => 'Cancelled';
+}
+
 class TtsQueueTaskSnapshot {
   const TtsQueueTaskSnapshot({
     required this.id,
@@ -108,12 +137,14 @@ class TtsQueueService {
     String? modelName,
     String source = 'TTS',
     String? label,
+    TtsCancelToken? cancelToken,
   }) {
     return enqueue(
       provider: provider,
       estimatedTokens: estimateTokens(request),
       source: source,
       label: label ?? _labelForRequest(request),
+      cancelToken: cancelToken,
       task: () {
         final adapter = createAdapter(provider, modelName: modelName);
         return adapter.synthesize(request);
@@ -127,7 +158,11 @@ class TtsQueueService {
     int estimatedTokens = 1,
     String source = 'TTS',
     String label = 'TTS request',
+    TtsCancelToken? cancelToken,
   }) {
+    if (cancelToken?.isCancelled ?? false) {
+      return Future<T>.error(const TtsCancelledException());
+    }
     final state = _states.putIfAbsent(provider.id, () => _ProviderQueueState());
     final queuedTask = _QueuedTtsTask<T>(
       id: '${++_nextTaskId}',
@@ -138,6 +173,12 @@ class TtsQueueService {
       run: task,
     );
     state.pending.add(queuedTask);
+    cancelToken?._onCancel(() {
+      if (!state.pending.remove(queuedTask)) return;
+      queuedTask.completer.completeError(const TtsCancelledException());
+      _emitSnapshot();
+      _drain(provider.id);
+    });
     _emitSnapshot();
     _drain(provider.id);
     return queuedTask.completer.future;

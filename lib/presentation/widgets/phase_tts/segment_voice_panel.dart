@@ -1,20 +1,29 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
+import 'package:neiroha/domain/voice_capabilities.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 
+part 'segment_card.dart';
+part 'segment_dialogs.dart';
+
 /// Right-side sentence list for Phase TTS.
 ///
-/// The list stays compact: voice selection, playback, regeneration, and a
-/// settings dialog for per-sentence style controls.
+/// Header with progress stats, a wrapping action toolbar, status filters and
+/// one card per sentence. Cards can be reordered by their drag handle,
+/// selected in bulk, split / merged / inserted, and driven from the
+/// keyboard (see [_onKey]). Structural edits go through callbacks so the
+/// screen owns persistence and undo.
 class SegmentVoicePanel extends ConsumerStatefulWidget {
   final db.PhaseTtsProject project;
   final List<db.PhaseTtsSegment> segments;
@@ -25,10 +34,34 @@ class SegmentVoicePanel extends ConsumerStatefulWidget {
   onVoiceChanged;
   final void Function(db.PhaseTtsSegment segment, int index) onPlay;
   final Future<void> Function(db.PhaseTtsSegment segment)? onGenerate;
-  final ValueChanged<String> onDelete;
+
+  /// Regenerate the given segments (selection, failed retries).
+  final void Function(List<db.PhaseTtsSegment> segments)? onGenerateMany;
+
+  /// Non-null while a batch generation can be stopped.
+  final VoidCallback? onCancelGenerate;
+  final void Function(List<db.PhaseTtsSegment> segments) onDelete;
+  final Future<void> Function(db.PhaseTtsSegment segment, String text)
+  onEditText;
+  final Future<void> Function(
+    db.PhaseTtsSegment segment,
+    String head,
+    String tail,
+  )
+  onSplit;
+  final Future<void> Function(db.PhaseTtsSegment segment) onMergeNext;
+
+  /// Insert [text] after [after] (at the top when null).
+  final Future<void> Function(db.PhaseTtsSegment? after, String text)
+  onInsertAfter;
+  final void Function(int oldIndex, int newIndex) onReorder;
+
+  /// Highlight the segment in the script editor.
+  final ValueChanged<db.PhaseTtsSegment> onReveal;
   final VoidCallback onChanged;
   final VoidCallback onPlayAll;
   final VoidCallback onGenerateAll;
+  final VoidCallback? onNormalize;
   final bool generatingAll;
 
   const SegmentVoicePanel({
@@ -41,10 +74,19 @@ class SegmentVoicePanel extends ConsumerStatefulWidget {
     required this.onVoiceChanged,
     required this.onPlay,
     required this.onGenerate,
+    required this.onGenerateMany,
+    required this.onCancelGenerate,
     required this.onDelete,
+    required this.onEditText,
+    required this.onSplit,
+    required this.onMergeNext,
+    required this.onInsertAfter,
+    required this.onReorder,
+    required this.onReveal,
     required this.onChanged,
     required this.onPlayAll,
     required this.onGenerateAll,
+    required this.onNormalize,
     required this.generatingAll,
   });
 
@@ -54,10 +96,22 @@ class SegmentVoicePanel extends ConsumerStatefulWidget {
 
 class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
   String? _bulkVoiceId;
+  _SegmentFilter _filter = _SegmentFilter.all;
   PhaseSegmentSettings _settings = const PhaseSegmentSettings();
   String? _projectSlug;
   Timer? _saveTimer;
   Future<dynamic> _pendingSave = Future<dynamic>.value();
+
+  bool _selecting = false;
+  final Set<String> _selected = <String>{};
+  String? _focusedId;
+
+  /// Optimistic order after a drag, until the database stream catches up.
+  List<String>? _localOrder;
+
+  final FocusNode _focusNode = FocusNode(debugLabel: 'phase-segments');
+  final ScrollController _scrollController = ScrollController();
+  final Map<String, GlobalKey> _cardKeys = {};
 
   // Cached during initState — `ref.read` is unsafe in dispose() because
   // ConsumerStatefulElement is already torn down by then. The service object
@@ -79,7 +133,16 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
       _settings = const PhaseSegmentSettings();
       _bulkVoiceId = null;
       _projectSlug = null;
+      _selected.clear();
+      _focusedId = null;
       unawaited(_loadSettings());
+    }
+    if (!identical(oldWidget.segments, widget.segments)) {
+      _localOrder = null;
+      final ids = widget.segments.map((s) => s.id).toSet();
+      _selected.removeWhere((id) => !ids.contains(id));
+      if (_focusedId != null && !ids.contains(_focusedId)) _focusedId = null;
+      _cardKeys.removeWhere((id, _) => !ids.contains(id));
     }
   }
 
@@ -96,8 +159,12 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
             .then((_) => service.save(slug, settings)),
       );
     }
+    _focusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
+
+  // ───────────────────────── Style settings file ─────────────────────────
 
   Future<void> _loadSettings() async {
     final slug = await _ensureProjectSlug();
@@ -154,43 +221,51 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     return _pendingSave.then((_) {});
   }
 
-  Future<void> _generateSegment(db.PhaseTtsSegment segment) async {
+  /// Settings must be on disk before the screen reads them for a request.
+  Future<void> _flushSettings() async {
     _saveTimer?.cancel();
     await _saveSettings();
-    await widget.onGenerate?.call(segment);
+  }
+
+  // ───────────────────────── Voice changes ─────────────────────────
+
+  db.TtsProvider? _providerFor(db.VoiceAsset? asset) {
+    if (asset == null) return null;
+    final providers = ref.read(ttsProvidersStreamProvider).value ?? [];
+    return providers.where((p) => p.id == asset.providerId).firstOrNull;
+  }
+
+  /// Drop style fields the newly chosen voice's engine can't use.
+  SegmentVoiceSettings _pruneFor(
+    SegmentVoiceSettings current,
+    String? voiceAssetId,
+  ) {
+    final asset = widget.bankAssets
+        .where((a) => a.id == voiceAssetId)
+        .firstOrNull;
+    final provider = _providerFor(asset);
+    final keepInstruction =
+        asset != null &&
+        provider != null &&
+        VoiceCapabilities.supportsVoiceInstruction(asset, provider);
+    final keepAudioTag =
+        asset != null &&
+        provider != null &&
+        VoiceCapabilities.supportsAudioTags(asset, provider);
+    return SegmentVoiceSettings(
+      voiceInstruction: keepInstruction ? current.voiceInstruction : null,
+      audioTagPrefix: keepAudioTag ? current.audioTagPrefix : null,
+    );
   }
 
   Future<void> _applyBulkVoice(List<db.PhaseTtsSegment> segments) async {
     await widget.onApplyVoiceToAll(_bulkVoiceId);
     if (_settings.bySegmentId.isEmpty) return;
-
-    final providers = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
-    final providerById = {
-      for (final provider in providers) provider.id: provider,
-    };
-    final selectedAsset = widget.bankAssets
-        .where((asset) => asset.id == _bulkVoiceId)
-        .firstOrNull;
-    final provider = selectedAsset == null
-        ? null
-        : providerById[selectedAsset.providerId];
-    final keepInstruction =
-        selectedAsset != null &&
-        provider != null &&
-        _supportsVoiceInstruction(selectedAsset, provider);
-    final keepAudioTag =
-        selectedAsset != null &&
-        provider != null &&
-        _supportsAudioTags(selectedAsset, provider);
-
     final next = Map<String, SegmentVoiceSettings>.from(_settings.bySegmentId);
     for (final segment in segments) {
       final current = next[segment.id];
       if (current == null || current.isEmpty) continue;
-      final pruned = SegmentVoiceSettings(
-        voiceInstruction: keepInstruction ? current.voiceInstruction : null,
-        audioTagPrefix: keepAudioTag ? current.audioTagPrefix : null,
-      );
+      final pruned = _pruneFor(current, _bulkVoiceId);
       if (pruned.isEmpty) {
         next.remove(segment.id);
       } else {
@@ -205,260 +280,438 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     widget.onVoiceChanged(segment, voiceAssetId);
     final current = _settings.bySegmentId[segment.id];
     if (current == null || current.isEmpty) return;
-
-    final providers = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
-    final providerById = {
-      for (final provider in providers) provider.id: provider,
-    };
-    final selectedAsset = widget.bankAssets
-        .where((asset) => asset.id == voiceAssetId)
-        .firstOrNull;
-    final provider = selectedAsset == null
-        ? null
-        : providerById[selectedAsset.providerId];
-    final keepInstruction =
-        selectedAsset != null &&
-        provider != null &&
-        _supportsVoiceInstruction(selectedAsset, provider);
-    final keepAudioTag =
-        selectedAsset != null &&
-        provider != null &&
-        _supportsAudioTags(selectedAsset, provider);
-
     _setSegmentSettings(
       segment.id,
-      SegmentVoiceSettings(
-        voiceInstruction: keepInstruction ? current.voiceInstruction : null,
-        audioTagPrefix: keepAudioTag ? current.audioTagPrefix : null,
-      ),
+      _pruneFor(current, voiceAssetId),
       saveNow: true,
     );
   }
 
-  void _deleteSegment(db.PhaseTtsSegment segment) {
-    _setSegmentSettings(
-      segment.id,
-      const SegmentVoiceSettings(),
-      saveNow: true,
-    );
-    widget.onDelete(segment.id);
+  // ───────────────────────── Actions ─────────────────────────
+
+  Future<void> _generateSegment(db.PhaseTtsSegment segment) async {
+    await _flushSettings();
+    await widget.onGenerate?.call(segment);
   }
 
-  Future<void> _openSettingsDialog(db.PhaseTtsSegment segment) async {
-    final providers = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
-    final providerById = {
-      for (final provider in providers) provider.id: provider,
-    };
-    final current =
-        _settings.bySegmentId[segment.id] ?? const SegmentVoiceSettings();
-    var selectedVoiceId = segment.voiceAssetId;
-    final instructionCtrl = TextEditingController(
-      text: current.voiceInstruction ?? '',
-    );
-    final audioTagCtrl = TextEditingController(
-      text: current.audioTagPrefix ?? '',
-    );
+  Future<void> _generateMany(List<db.PhaseTtsSegment> segments) async {
+    if (segments.isEmpty) return;
+    await _flushSettings();
+    widget.onGenerateMany?.call(segments);
+  }
 
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            final selectedAsset = widget.bankAssets
-                .where((asset) => asset.id == selectedVoiceId)
-                .firstOrNull;
-            final provider = selectedAsset == null
-                ? null
-                : providerById[selectedAsset.providerId];
-            final supportsInstruction =
-                selectedAsset != null &&
-                provider != null &&
-                _supportsVoiceInstruction(selectedAsset, provider);
-            final supportsAudioTag =
-                selectedAsset != null &&
-                provider != null &&
-                _supportsAudioTags(selectedAsset, provider);
+  Future<void> _togglePlay(db.PhaseTtsSegment segment, int index) async {
+    final playback = ref.read(playbackNotifierProvider);
+    if (playback.isPlaying && playback.audioPath == segment.audioPath) {
+      await ref.read(playbackNotifierProvider.notifier).stop();
+      return;
+    }
+    widget.onPlay(segment, index);
+  }
 
-            return AlertDialog(
-              title: Text(AppLocalizations.of(context).uiSentenceVoice),
-              content: SizedBox(
-                width: 460,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      segment.segmentText,
-                      style: const TextStyle(fontSize: 13),
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 12),
-                    _VoiceDropdown(
-                      value: selectedVoiceId,
-                      assets: widget.bankAssets,
-                      hintText: AppLocalizations.of(context).uiVoice,
-                      onChanged: (id) =>
-                          setDialogState(() => selectedVoiceId = id),
-                    ),
-                    SizedBox(height: 10),
-                    if (supportsInstruction)
-                      TextField(
-                        controller: instructionCtrl,
-                        minLines: 2,
-                        maxLines: 4,
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(
-                            context,
-                          ).uiStyleDirection,
-                          hintText: '焦虑地说，压低声音，语速稍快',
-                        ),
-                      ),
-                    if (supportsAudioTag) ...[
-                      SizedBox(height: 10),
-                      TextField(
-                        controller: audioTagCtrl,
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(
-                            context,
-                          ).uiAudioTagPrefix,
-                          hintText: '(紧张|深呼吸)',
-                        ),
-                      ),
-                    ],
-                    if (!supportsInstruction && !supportsAudioTag) ...[
-                      SizedBox(height: 10),
-                      TextField(
-                        enabled: false,
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(
-                            context,
-                          ).uiNoPerSentenceStyleControls,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    instructionCtrl.clear();
-                    audioTagCtrl.clear();
-                    setDialogState(() => selectedVoiceId = null);
-                  },
-                  child: Text(AppLocalizations.of(context).uiClear),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(AppLocalizations.of(context).uiCancel),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    if (selectedVoiceId != segment.voiceAssetId) {
-                      _changeSegmentVoice(segment, selectedVoiceId);
-                    }
-                    _setSegmentSettings(
-                      segment.id,
-                      SegmentVoiceSettings(
-                        voiceInstruction: supportsInstruction
-                            ? _normalizeText(instructionCtrl.text)
-                            : null,
-                        audioTagPrefix: supportsAudioTag
-                            ? _normalizeText(audioTagCtrl.text)
-                            : null,
-                      ),
-                      saveNow: true,
-                    );
-                    Navigator.pop(context);
-                  },
-                  child: Text(AppLocalizations.of(context).uiSave),
-                ),
-              ],
-            );
-          },
+  void _focusSegment(db.PhaseTtsSegment segment, {bool reveal = true}) {
+    setState(() => _focusedId = segment.id);
+    _focusNode.requestFocus();
+    if (reveal) widget.onReveal(segment);
+  }
+
+  void _toggleSelected(String id) {
+    setState(() {
+      if (!_selected.remove(id)) _selected.add(id);
+    });
+  }
+
+  void _setSelecting(bool value) {
+    setState(() {
+      _selecting = value;
+      _selected.clear();
+    });
+    _focusNode.requestFocus();
+  }
+
+  void _delete(List<db.PhaseTtsSegment> segments) {
+    if (segments.isEmpty) return;
+    setState(() {
+      _selected.removeAll(segments.map((s) => s.id));
+      if (segments.any((s) => s.id == _focusedId)) _focusedId = null;
+    });
+    // Style settings stay in the file so an undo brings them back.
+    widget.onDelete(segments);
+  }
+
+  /// [newIndex] is already adjusted for the removed item (onReorderItem).
+  void _reorder(List<db.PhaseTtsSegment> ordered, int oldIndex, int newIndex) {
+    if (newIndex == oldIndex) return;
+    final ids = ordered.map((s) => s.id).toList();
+    ids.insert(newIndex, ids.removeAt(oldIndex));
+    setState(() => _localOrder = ids);
+    widget.onReorder(oldIndex, newIndex);
+  }
+
+  bool _matchesFilter(db.PhaseTtsSegment segment) => switch (_filter) {
+    _SegmentFilter.all => true,
+    _SegmentFilter.pending => !_hasAudio(segment),
+    _SegmentFilter.done => _hasAudio(segment),
+    _SegmentFilter.failed => segment.error != null,
+  };
+
+  List<db.PhaseTtsSegment> _ordered() {
+    final ordered = [...widget.segments]
+      ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+    final local = _localOrder;
+    if (local == null || local.length != ordered.length) return ordered;
+    final byId = {for (final s in ordered) s.id: s};
+    if (!local.every(byId.containsKey)) return ordered;
+    return [for (final id in local) byId[id]!];
+  }
+
+  // ───────────────────────── Keyboard ─────────────────────────
+
+  /// ↑/↓ move focus · Space play/stop · Enter generate · F2 edit · Delete remove ·
+  /// Esc leave multi-select or clear focus · Ctrl+A select all (multi-select).
+  KeyEventResult _onKey(
+    FocusNode node,
+    KeyEvent event,
+    List<db.PhaseTtsSegment> ordered,
+    List<int> visible,
+  ) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    final ctrl =
+        HardwareKeyboard.instance.isControlPressed ||
+        HardwareKeyboard.instance.isMetaPressed;
+    final focusedIndex = ordered.indexWhere((s) => s.id == _focusedId);
+    final focused = focusedIndex < 0 ? null : ordered[focusedIndex];
+
+    if (key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.arrowUp) {
+      if (visible.isEmpty) return KeyEventResult.handled;
+      final pos = visible.indexOf(focusedIndex);
+      final down = key == LogicalKeyboardKey.arrowDown;
+      final nextPos = pos < 0
+          ? (down ? 0 : visible.length - 1)
+          : (pos + (down ? 1 : -1)).clamp(0, visible.length - 1);
+      final next = ordered[visible[nextPos]];
+      _focusSegment(next);
+      _ensureVisible(next.id, visible[nextPos]);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.escape) {
+      if (_selecting) {
+        _setSelecting(false);
+      } else {
+        setState(() => _focusedId = null);
+      }
+      return KeyEventResult.handled;
+    }
+    if (ctrl && key == LogicalKeyboardKey.keyA && _selecting) {
+      setState(() => _selected.addAll(visible.map((i) => ordered[i].id)));
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.delete) {
+      if (_selecting && _selected.isNotEmpty) {
+        _delete([
+          for (final s in ordered)
+            if (_selected.contains(s.id)) s,
+        ]);
+      } else if (focused != null) {
+        _delete([focused]);
+      }
+      return KeyEventResult.handled;
+    }
+    if (focused == null) return KeyEventResult.ignored;
+    if (key == LogicalKeyboardKey.space) {
+      if (_hasAudio(focused)) unawaited(_togglePlay(focused, focusedIndex));
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter) {
+      if (_canGenerate(focused)) unawaited(_generateSegment(focused));
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.f2) {
+      unawaited(_openEditTextDialog(focused));
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  void _ensureVisible(String id, int index) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _cardKeys[id]?.currentContext;
+      if (ctx != null) {
+        unawaited(
+          Scrollable.ensureVisible(
+            ctx,
+            alignment: 0.3,
+            duration: const Duration(milliseconds: 160),
+            alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+          ),
         );
-      },
-    );
-
-    instructionCtrl.dispose();
-    audioTagCtrl.dispose();
+        return;
+      }
+      // Not built yet (far off-screen): jump close, then align.
+      if (!_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      _scrollController.jumpTo(
+        (index * 118.0).clamp(0.0, position.maxScrollExtent),
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final again = _cardKeys[id]?.currentContext;
+        if (again != null) {
+          unawaited(Scrollable.ensureVisible(again, alignment: 0.3));
+        }
+      });
+    });
   }
 
-  String? _normalizeText(String value) {
-    final trimmed = value.trim();
-    return trimmed.isEmpty ? null : trimmed;
-  }
+  bool _canGenerate(db.PhaseTtsSegment segment) =>
+      segment.voiceAssetId != null &&
+      !widget.generatingSegmentIds.contains(segment.id) &&
+      widget.onGenerate != null;
 
-  bool _supportsVoiceInstruction(db.VoiceAsset asset, db.TtsProvider provider) {
-    return switch (provider.adapterType) {
-      'chatCompletionsTts' => _isMimoTtsModel(asset, provider),
-      'cosyvoice' => true,
-      'voxcpm2Native' => true,
-      'geminiTts' => true,
-      _ => false,
-    };
-  }
-
-  bool _supportsAudioTags(db.VoiceAsset asset, db.TtsProvider provider) {
-    return _isMimoTtsModel(asset, provider);
-  }
-
-  bool _isMimoTtsModel(db.VoiceAsset asset, db.TtsProvider provider) {
-    final model = (asset.modelName ?? provider.defaultModelName).toLowerCase();
-    return provider.adapterType == 'chatCompletionsTts' &&
-        model.contains('mimo') &&
-        (model.contains('tts') ||
-            model.contains('voiceclone') ||
-            model.contains('voicedesign'));
-  }
+  // ───────────────────────── Build ─────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    final ordered = [...widget.segments]
-      ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+    final l10n = AppLocalizations.of(context);
+    final ordered = _ordered();
+    final doneCount = ordered.where(_hasAudio).length;
+    final failed = ordered.where((s) => s.error != null).toList();
+    final pendingCount = ordered.length - doneCount;
+    final unassignedCount = ordered.where((s) => s.voiceAssetId == null).length;
+    final queuedCount = ordered
+        .where((s) => !_hasAudio(s) && s.voiceAssetId != null)
+        .length;
+    final totalSeconds = ordered
+        .where(_hasAudio)
+        .fold<double>(0, (sum, s) => sum + (s.audioDuration ?? 0));
+    // Only rebuild on play/stop transitions, not on every position tick.
+    final playingPath = ref.watch(
+      playbackNotifierProvider.select((s) => s.isPlaying ? s.audioPath : null),
+    );
+    final visible = [
+      for (var i = 0; i < ordered.length; i++)
+        if (_matchesFilter(ordered[i])) i,
+    ];
+    final reorderable =
+        _filter == _SegmentFilter.all && !_selecting && ordered.length > 1;
+
+    return Focus(
+      focusNode: _focusNode,
+      onKeyEvent: (node, event) => _onKey(node, event, ordered, visible),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _PanelHeader(
+            total: ordered.length,
+            done: doneCount,
+            failed: failed.length,
+            unassigned: unassignedCount,
+            totalSeconds: totalSeconds,
+          ),
+          if (_selecting)
+            _buildSelectionBar(l10n, ordered, visible)
+          else
+            _buildToolbar(
+              l10n,
+              ordered,
+              doneCount: doneCount,
+              queuedCount: queuedCount,
+              failed: failed,
+            ),
+          if (ordered.isNotEmpty)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: Row(
+                children: [
+                  for (final filter in _SegmentFilter.values) ...[
+                    ChoiceChip(
+                      visualDensity: VisualDensity.compact,
+                      label: Text(switch (filter) {
+                        _SegmentFilter.all =>
+                          '${l10n.phaseFilterAll} ${ordered.length}',
+                        _SegmentFilter.pending =>
+                          '${l10n.phaseFilterPending} $pendingCount',
+                        _SegmentFilter.done =>
+                          '${l10n.phaseFilterDone} $doneCount',
+                        _SegmentFilter.failed =>
+                          '${l10n.phaseFilterFailed} ${failed.length}',
+                      }),
+                      selected: _filter == filter,
+                      onSelected: (_) => setState(() => _filter = filter),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                ],
+              ),
+            ),
+          const Divider(height: 1),
+          Expanded(
+            child: ordered.isEmpty
+                ? _EmptyState(
+                    text: l10n.uiRunAutoSplitToCreateSegments,
+                    action: TextButton.icon(
+                      onPressed: () => unawaited(_openInsertDialog(null)),
+                      icon: const Icon(Icons.add_rounded, size: 16),
+                      label: Text(l10n.phaseAddSegment),
+                    ),
+                  )
+                : visible.isEmpty
+                ? _EmptyState(text: l10n.phaseNoFilterMatches)
+                : reorderable
+                ? ReorderableListView.builder(
+                    scrollController: _scrollController,
+                    buildDefaultDragHandles: false,
+                    padding: const EdgeInsets.all(8),
+                    itemCount: ordered.length,
+                    onReorderItem: (o, n) => _reorder(ordered, o, n),
+                    proxyDecorator: (child, _, _) =>
+                        Material(color: Colors.transparent, child: child),
+                    itemBuilder: (context, index) => _buildCard(
+                      ordered,
+                      index,
+                      playingPath,
+                      dragIndex: index,
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(8),
+                    itemCount: visible.length,
+                    itemBuilder: (context, i) =>
+                        _buildCard(ordered, visible[i], playingPath),
+                  ),
+          ),
+          const PersistentAudioBar(onlyForSourceTag: phaseTtsPlaybackSource),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCard(
+    List<db.PhaseTtsSegment> ordered,
+    int index,
+    String? playingPath, {
+    int? dragIndex,
+  }) {
+    final segment = ordered[index];
+    final generating = widget.generatingSegmentIds.contains(segment.id);
+    return _SegmentCard(
+      key: _cardKeys.putIfAbsent(segment.id, () => GlobalKey()),
+      segment: segment,
+      index: index,
+      isLast: index == ordered.length - 1,
+      assets: widget.bankAssets,
+      settings: _settings.bySegmentId[segment.id],
+      isGenerating: generating,
+      isPlaying: playingPath != null && playingPath == segment.audioPath,
+      focused: segment.id == _focusedId,
+      selecting: _selecting,
+      selected: _selected.contains(segment.id),
+      dragIndex: dragIndex,
+      onTap: () =>
+          _selecting ? _toggleSelected(segment.id) : _focusSegment(segment),
+      onVoiceChanged: (id) => _changeSegmentVoice(segment, id),
+      onSettings: () => _openSettingsDialog(segment),
+      onEditText: () => _openEditTextDialog(segment),
+      onSplit: () => _openSplitDialog(segment),
+      onMergeNext: () => unawaited(widget.onMergeNext(segment)),
+      onInsertBelow: () => unawaited(_openInsertDialog(segment)),
+      onTogglePlay: () => _togglePlay(segment, index),
+      onDelete: () => _delete([segment]),
+      onGenerate: _canGenerate(segment)
+          ? () => unawaited(_generateSegment(segment))
+          : null,
+    );
+  }
+
+  Widget _buildToolbar(
+    AppLocalizations l10n,
+    List<db.PhaseTtsSegment> ordered, {
+    required int doneCount,
+    required int queuedCount,
+    required List<db.PhaseTtsSegment> failed,
+  }) {
     final assetIds = widget.bankAssets.map((asset) => asset.id).toSet();
     final bulkValue = _bulkVoiceId != null && assetIds.contains(_bulkVoiceId)
         ? _bulkVoiceId
         : null;
-    final hasGeneratedAudio = ordered.any(
-      (segment) => segment.audioPath != null && !segment.missing,
-    );
     final canGenerateAll =
-        ordered.isNotEmpty &&
+        queuedCount > 0 &&
         widget.bankAssets.isNotEmpty &&
         !widget.generatingAll;
-
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Row(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Text(
-                AppLocalizations.of(context).uiSEGMENTS,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.4),
-                ),
-              ),
-              SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceDim,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  '${ordered.length}',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.white.withValues(alpha: 0.5),
+              if (widget.generatingAll)
+                FilledButton.tonalIcon(
+                  onPressed: widget.onCancelGenerate,
+                  icon: const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  label: Text(l10n.phaseStopGenerating),
+                )
+              else
+                FilledButton.icon(
+                  onPressed: canGenerateAll ? widget.onGenerateAll : null,
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 16),
+                  label: Text(
+                    queuedCount > 0
+                        ? l10n.uiGenerateAll2(queuedCount)
+                        : l10n.uiGenerateAll,
                   ),
                 ),
+              if (failed.isNotEmpty && !widget.generatingAll)
+                OutlinedButton.icon(
+                  onPressed: widget.onGenerateMany == null
+                      ? null
+                      : () => unawaited(
+                          _generateMany(
+                            failed
+                                .where((s) => s.voiceAssetId != null)
+                                .toList(),
+                          ),
+                        ),
+                  icon: const Icon(Icons.replay_rounded, size: 16),
+                  label: Text(l10n.phaseRetryFailed(failed.length)),
+                ),
+              OutlinedButton.icon(
+                onPressed: doneCount > 0 ? widget.onPlayAll : null,
+                icon: const Icon(Icons.playlist_play_rounded, size: 18),
+                label: Text(l10n.phasePlayAll),
+              ),
+              Tooltip(
+                message: l10n.loudnessActionTooltip,
+                child: OutlinedButton.icon(
+                  onPressed: doneCount > 0 ? widget.onNormalize : null,
+                  icon: const Icon(Icons.graphic_eq_rounded, size: 16),
+                  label: Text(l10n.loudnessAction),
+                ),
+              ),
+              IconButton(
+                tooltip: l10n.phaseSelectMode,
+                onPressed: ordered.isEmpty ? null : () => _setSelecting(true),
+                icon: const Icon(Icons.checklist_rounded, size: 20),
+              ),
+              IconButton(
+                tooltip: l10n.phaseAddSegment,
+                onPressed: () => unawaited(
+                  _openInsertDialog(ordered.isEmpty ? null : ordered.last),
+                ),
+                icon: const Icon(Icons.add_rounded, size: 20),
               ),
             ],
           ),
@@ -469,218 +722,241 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
             children: [
               Expanded(
                 child: SizedBox(
-                  height: 36,
+                  height: 38,
                   child: _VoiceDropdown(
                     value: bulkValue,
                     assets: widget.bankAssets,
-                    hintText: AppLocalizations.of(context).uiVoiceForAll,
+                    hintText: l10n.uiVoiceForAll,
                     onChanged: (id) => setState(() => _bulkVoiceId = id),
                   ),
                 ),
               ),
-              SizedBox(width: 8),
-              FilledButton.icon(
+              const SizedBox(width: 8),
+              TextButton.icon(
                 onPressed: ordered.isEmpty
                     ? null
                     : () => unawaited(_applyBulkVoice(ordered)),
-                icon: const Icon(Icons.done_all_rounded, size: 14),
-                label: Text(AppLocalizations.of(context).uiApplyAll),
-              ),
-              SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: canGenerateAll ? widget.onGenerateAll : null,
-                icon: widget.generatingAll
-                    ? SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.auto_awesome_rounded, size: 14),
-                label: Text(AppLocalizations.of(context).uiGenerateAll),
-              ),
-              SizedBox(width: 8),
-              IconButton.filled(
-                tooltip: AppLocalizations.of(context).uiPlayAllGeneratedAudio,
-                onPressed: hasGeneratedAudio ? widget.onPlayAll : null,
-                icon: const Icon(Icons.playlist_play_rounded, size: 18),
+                icon: const Icon(Icons.done_all_rounded, size: 16),
+                label: Text(l10n.phaseApplyVoiceToAll),
               ),
             ],
           ),
         ),
-        Expanded(
-          child: ordered.isEmpty
-              ? const _EmptyState()
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                  itemCount: ordered.length,
-                  itemBuilder: (context, index) {
-                    final segment = ordered[index];
-                    final rowSettings = _settings.bySegmentId[segment.id];
-                    return _SegmentVoiceRow(
-                      segment: segment,
-                      index: index,
-                      assets: widget.bankAssets,
-                      settings: rowSettings,
-                      isGenerating: widget.generatingSegmentIds.contains(
-                        segment.id,
-                      ),
-                      onVoiceChanged: (id) => _changeSegmentVoice(segment, id),
-                      onSettings: () => _openSettingsDialog(segment),
-                      onPlay: () => widget.onPlay(segment, index),
-                      onDelete: () => _deleteSegment(segment),
-                      onGenerate:
-                          segment.voiceAssetId == null ||
-                              widget.generatingSegmentIds.contains(
-                                segment.id,
-                              ) ||
-                              widget.onGenerate == null
-                          ? null
-                          : () => unawaited(_generateSegment(segment)),
-                    );
-                  },
-                ),
-        ),
-        const PersistentAudioBar(onlyForSourceTag: phaseTtsPlaybackSource),
       ],
+    );
+  }
+
+  Widget _buildSelectionBar(
+    AppLocalizations l10n,
+    List<db.PhaseTtsSegment> ordered,
+    List<int> visible,
+  ) {
+    final chosen = [
+      for (final s in ordered)
+        if (_selected.contains(s.id)) s,
+    ];
+    final none = chosen.isEmpty;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
+      decoration: BoxDecoration(
+        color: AppTheme.accentColor.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppTheme.accentColor.withValues(alpha: 0.4)),
+      ),
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 4,
+        runSpacing: 4,
+        children: [
+          Text(
+            l10n.phaseSelectedCount(chosen.length),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(width: 4),
+          TextButton(
+            onPressed: () => setState(
+              () => _selected.addAll(visible.map((i) => ordered[i].id)),
+            ),
+            child: Text(l10n.phaseSelectAll),
+          ),
+          PopupMenuButton<String>(
+            enabled: !none,
+            tooltip: l10n.phaseAssignVoice,
+            onSelected: (id) {
+              final voiceId = id.isEmpty ? null : id;
+              for (final s in chosen) {
+                _changeSegmentVoice(s, voiceId);
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(value: '', child: Text(l10n.uiUnassigned)),
+              for (final a in widget.bankAssets)
+                PopupMenuItem(value: a.id, child: Text(a.name)),
+            ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.record_voice_over_rounded,
+                    size: 16,
+                    color: none ? Colors.white24 : AppTheme.accentColor,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    l10n.phaseAssignVoice,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: none ? Colors.white38 : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: l10n.phaseRegenerateSelected,
+            onPressed: none || widget.onGenerateMany == null
+                ? null
+                : () => unawaited(
+                    _generateMany(
+                      chosen.where((s) => s.voiceAssetId != null).toList(),
+                    ),
+                  ),
+            icon: const Icon(Icons.refresh_rounded, size: 20),
+          ),
+          IconButton(
+            tooltip: l10n.phaseDeleteSelected,
+            onPressed: none ? null : () => _delete(chosen),
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              size: 20,
+              color: _failedColor,
+            ),
+          ),
+          IconButton(
+            tooltip: l10n.phaseExitSelect,
+            onPressed: () => _setSelecting(false),
+            icon: const Icon(Icons.close_rounded, size: 20),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _SegmentVoiceRow extends StatelessWidget {
-  final db.PhaseTtsSegment segment;
-  final int index;
-  final List<db.VoiceAsset> assets;
-  final SegmentVoiceSettings? settings;
-  final bool isGenerating;
-  final ValueChanged<String?> onVoiceChanged;
-  final VoidCallback onSettings;
-  final VoidCallback onPlay;
-  final VoidCallback? onGenerate;
-  final VoidCallback onDelete;
+bool _hasAudio(db.PhaseTtsSegment segment) =>
+    segment.audioPath != null && !segment.missing;
 
-  const _SegmentVoiceRow({
-    required this.segment,
-    required this.index,
-    required this.assets,
-    required this.settings,
-    required this.isGenerating,
-    required this.onVoiceChanged,
-    required this.onSettings,
-    required this.onPlay,
-    required this.onGenerate,
-    required this.onDelete,
+enum _SegmentFilter { all, pending, done, failed }
+
+enum _SegmentStatus { pending, generating, done, failed }
+
+const _doneColor = Color(0xFF4ADE80);
+const _failedColor = Color(0xFFF87171);
+
+class _PanelHeader extends StatelessWidget {
+  final int total;
+  final int done;
+  final int failed;
+  final int unassigned;
+  final double totalSeconds;
+
+  const _PanelHeader({
+    required this.total,
+    required this.done,
+    required this.failed,
+    required this.unassigned,
+    required this.totalSeconds,
   });
 
   @override
   Widget build(BuildContext context) {
-    final assetIds = assets.map((asset) => asset.id).toSet();
-    final value =
-        segment.voiceAssetId != null && assetIds.contains(segment.voiceAssetId)
-        ? segment.voiceAssetId
-        : null;
-    final hasSettings = settings != null && !settings!.isEmpty;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceDim,
-        borderRadius: BorderRadius.circular(8),
-      ),
+    final l10n = AppLocalizations.of(context);
+    final muted = Colors.white.withValues(alpha: 0.5);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 10),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              Container(
-                width: 28,
-                height: 28,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  '${index + 1}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.5),
-                  ),
-                ),
-              ),
-              SizedBox(width: 8),
               Expanded(
-                child: SizedBox(
-                  height: 34,
-                  child: _VoiceDropdown(
-                    value: value,
-                    assets: assets,
-                    hintText: AppLocalizations.of(context).uiVoice,
-                    onChanged: onVoiceChanged,
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      l10n.uiSEGMENTS,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                        color: Colors.white.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    Text(
+                      l10n.phaseStatsGenerated(done, total),
+                      style: TextStyle(fontSize: 12, color: muted),
+                    ),
+                    if (totalSeconds > 0)
+                      Text(
+                        _formatClock(totalSeconds),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: muted,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    if (failed > 0)
+                      Text(
+                        l10n.phaseStatsFailed(failed),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: _failedColor,
+                        ),
+                      ),
+                    if (unassigned > 0)
+                      Text(
+                        l10n.phaseStatsUnassigned(unassigned),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.amber,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Tooltip(
+                message: l10n.phaseShortcuts,
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Icon(
+                    Icons.keyboard_rounded,
+                    size: 16,
+                    color: Colors.white.withValues(alpha: 0.35),
                   ),
                 ),
-              ),
-              SizedBox(width: 6),
-              IconButton(
-                tooltip: AppLocalizations.of(context).uiVoiceSettings,
-                icon: Icon(
-                  Icons.tune_rounded,
-                  size: 17,
-                  color: hasSettings
-                      ? AppTheme.accentColor
-                      : Colors.white.withValues(alpha: 0.35),
-                ),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                onPressed: onSettings,
-              ),
-              SizedBox(width: 4),
-              IconButton(
-                tooltip: AppLocalizations.of(context).uiDeleteSegment,
-                icon: Icon(
-                  Icons.close_rounded,
-                  size: 16,
-                  color: Colors.white.withValues(alpha: 0.3),
-                ),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                onPressed: onDelete,
-              ),
-              SizedBox(width: 4),
-              _StatusButton(
-                isGenerating: isGenerating,
-                hasAudio: segment.audioPath != null,
-                error: segment.error,
-                onPlay: onPlay,
-              ),
-              SizedBox(width: 4),
-              IconButton(
-                icon: Icon(
-                  segment.audioPath != null
-                      ? Icons.refresh_rounded
-                      : Icons.auto_awesome_rounded,
-                  size: 16,
-                  color: onGenerate == null
-                      ? Colors.white.withValues(alpha: 0.15)
-                      : AppTheme.accentColor,
-                ),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                tooltip: segment.audioPath != null ? 'Regenerate' : 'Generate',
-                onPressed: onGenerate,
               ),
             ],
           ),
-          SizedBox(height: 6),
-          Text(
-            segment.segmentText,
-            style: const TextStyle(fontSize: 12),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (hasSettings) ...[
-            SizedBox(height: 6),
-            _SettingsSummary(settings: settings!),
+          if (total > 0) ...[
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: done / total,
+                  minHeight: 3,
+                  backgroundColor: Colors.white.withValues(alpha: 0.06),
+                  color: done == total ? _doneColor : AppTheme.accentColor,
+                ),
+              ),
+            ),
           ],
         ],
       ),
@@ -688,141 +964,30 @@ class _SegmentVoiceRow extends StatelessWidget {
   }
 }
 
-class _SettingsSummary extends StatelessWidget {
-  final SegmentVoiceSettings settings;
-
-  const _SettingsSummary({required this.settings});
-
-  @override
-  Widget build(BuildContext context) {
-    final parts = [
-      if (settings.voiceInstruction != null &&
-          settings.voiceInstruction!.isNotEmpty)
-        settings.voiceInstruction!,
-      if (settings.audioTagPrefix != null &&
-          settings.audioTagPrefix!.isNotEmpty)
-        settings.audioTagPrefix!,
-    ];
-    return Text(
-      parts.join('  |  '),
-      style: TextStyle(
-        fontSize: 11,
-        color: AppTheme.accentColor.withValues(alpha: 0.85),
-      ),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-    );
-  }
+String _formatClock(double seconds) {
+  final total = seconds.round();
+  final h = total ~/ 3600;
+  final m = (total % 3600) ~/ 60;
+  final s = total % 60;
+  final mm = h > 0 ? m.toString().padLeft(2, '0') : '$m';
+  final clock = '$mm:${s.toString().padLeft(2, '0')}';
+  return h > 0 ? '$h:$clock' : clock;
 }
 
-class _VoiceDropdown extends StatelessWidget {
-  final String? value;
-  final List<db.VoiceAsset> assets;
-  final String hintText;
-  final ValueChanged<String?> onChanged;
-
-  const _VoiceDropdown({
-    required this.value,
-    required this.assets,
-    required this.hintText,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      key: ValueKey(value),
-      decoration: InputDecoration(
-        hintText: hintText,
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      ),
-      isExpanded: true,
-      initialValue: value,
-      items: [
-        DropdownMenuItem<String>(
-          value: null,
-          child: Text(
-            AppLocalizations.of(context).uiUnassigned,
-            style: TextStyle(fontSize: 12),
-          ),
-        ),
-        for (final asset in assets)
-          DropdownMenuItem<String>(
-            value: asset.id,
-            child: Text(
-              asset.name,
-              style: const TextStyle(fontSize: 12),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-      ],
-      onChanged: onChanged,
-    );
-  }
+String _formatShort(double seconds) {
+  if (seconds < 60) return '${seconds.toStringAsFixed(1)}s';
+  return _formatClock(seconds);
 }
 
-class _StatusButton extends StatelessWidget {
-  final bool isGenerating;
-  final bool hasAudio;
-  final String? error;
-  final VoidCallback onPlay;
-
-  const _StatusButton({
-    required this.isGenerating,
-    required this.hasAudio,
-    required this.error,
-    required this.onPlay,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (isGenerating) {
-      return SizedBox(
-        width: 18,
-        height: 18,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-    if (hasAudio) {
-      return IconButton(
-        icon: const Icon(Icons.play_arrow_rounded, size: 18),
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(),
-        onPressed: onPlay,
-      );
-    }
-    if (error != null) {
-      return Tooltip(
-        message: error!,
-        child: const Icon(
-          Icons.error_rounded,
-          size: 18,
-          color: Colors.redAccent,
-        ),
-      );
-    }
-    return Icon(
-      Icons.pending_rounded,
-      size: 18,
-      color: Colors.white.withValues(alpha: 0.2),
-    );
+/// Split point near the middle of [text], preferring sentence punctuation.
+int _suggestSplitOffset(String text) {
+  final middle = text.length ~/ 2;
+  final marks = RegExp(r'[。！？!?；;，,、…]');
+  var best = -1;
+  for (final m in marks.allMatches(text)) {
+    final at = m.end;
+    if (at <= 0 || at >= text.length) continue;
+    if (best < 0 || (at - middle).abs() < (best - middle).abs()) best = at;
   }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        AppLocalizations.of(context).uiRunAutoSplitToCreateSegments,
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.white.withValues(alpha: 0.3),
-        ),
-      ),
-    );
-  }
+  return best < 0 ? math.max(1, middle) : best;
 }

@@ -8,7 +8,7 @@
 
 [![Language](https://img.shields.io/badge/language-Dart%20%2F%20Flutter-0553B1?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
-[![Version](https://img.shields.io/badge/version-v0.3.0-blue)](https://github.com/Neiroha/Neiroha/releases)
+[![Version](https://img.shields.io/badge/version-v0.4.1-blue)](https://github.com/Neiroha/Neiroha/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Neiroha/Neiroha?style=social)](https://github.com/Neiroha/Neiroha/stargazers)
 
@@ -32,6 +32,7 @@ It brings local inference wrappers, cloud speech APIs, voice cloning, reusable v
 | **Characters, not raw params** | Save provider, model, voice, speed, reference audio, prompt text, and style instructions as reusable voice characters. |
 | **Voice banks for projects** | Reuse a whole cast across scripts, novels, dialog sessions, video dubbing, and external API calls. |
 | **Built for long work** | Queue synthesis, cache generated audio, prefetch novel segments, inspect failures, monitor tasks, and keep local GPU backends under control. |
+| **Even loudness** | Bring every generated line to the same perceived loudness, with a per-character offset so a narrator can sit under the cast, and restore the originals at any time. |
 | **Works as middleware** | Expose the active voice bank through a local OpenAI-compatible TTS API for editors, agents, scripts, and other tools. |
 
 ## Feature Highlights
@@ -46,7 +47,7 @@ Connect cloud and local TTS backends, fetch available models and voices, run hea
 
 ### Voice Characters & Voice Banks
 
-Turn backend settings into named, reusable characters. Each character can carry a provider, model or voice, speed, reference audio, prompt text, style instructions, and an avatar. Voice banks move a whole cast between projects.
+Turn backend settings into named, reusable characters. Each character can carry a provider, model or voice, speed, reference audio, prompt text, style instructions, a loudness offset, and an avatar. Voice banks move a whole cast between projects and set the base loudness the cast is normalized to.
 
 <div align="center">
   <img src="assets/images/screenshot_overview.png" alt="Voice characters and voice banks" width="900" />
@@ -62,7 +63,7 @@ Write multi-character dialog in a chat-style editor, assign every line to a voic
 
 ### Long-form Narration
 
-Split scripts into segments, assign voices, batch-generate narration, and export merged audio when the takes are ready.
+Split scripts into segments, assign voices, batch-generate narration, and export merged audio when the takes are ready. Segments can be reordered by drag, split, merged, inserted, edited, and handled in bulk; generation can be stopped or retried for failed lines only, and deletes can be undone. The merged export adds a pause between segments and short fades at every cut, and the editor is fully keyboard-driven (arrows, Space, Enter, F2, Delete, Ctrl+S).
 
 <div align="center">
   <img src="assets/images/screenshot_phase_tts.png" alt="Phase TTS screen" width="900" />
@@ -76,11 +77,23 @@ Import video and subtitles, generate TTS cues, align them on a lightweight timel
   <img src="assets/images/screenshot_video_tts.png" alt="Video Dub screen" width="900" />
 </div>
 
+### Consistent Loudness
+
+Lines synthesized one by one rarely come back at the same level; whispered or emotional takes can be 10 dB apart. Every batch project (Phase TTS, Dialog TTS, Video Dub, Novel Reader) can unify its clips to an EBU R128 target: presets from loud (-14 LUFS) to ASMR (-20 LUFS) and broadcast (-23 LUFS), static gain with a peak limiter, and an analysis view before anything changes. Turn on **Normalize after generation** in a project's settings to keep new lines on target automatically. Originals are kept, so **Restore originals** undoes it. Requires FFmpeg.
+
 ## Local API
 
-Neiroha can also run as a local OpenAI-compatible TTS service backed by the active voice bank. This makes it useful as a voice middleware layer for editors, agents, scripts, and other tools.
+Neiroha can also run as a local OpenAI-compatible TTS service backed by the active voice bank. This makes it useful as a voice middleware layer for editors, agents, scripts, and other tools. The same server exposes an MCP endpoint (`/mcp`) so AI agents can manage providers, characters, voice banks and dubbing projects, including loudness unification.
 
 The full API reference lives in [docs/api.md](docs/api.md). Installation, backend defaults, API keys, model configuration, and workflow guides live in the [Wiki](https://github.com/Neiroha/Neiroha/wiki).
+
+## Development
+
+- Flutter 3.47.7 stable (the version CI uses), then `flutter pub get`.
+- After changing the Drift tables (`lib/data/database/tables.dart`) or the freezed models, run `dart run build_runner build`.
+- After changing `lib/l10n/app_en.arb` / `app_zh.arb`, run `flutter gen-l10n`.
+- `flutter analyze` and `flutter test`. The loudness and merge tests use a real FFmpeg and are skipped when `ffmpeg` is not on `PATH`.
+- `analysis_options.yaml` excludes `build/` and the platform folders (recent Flutter versions add this block automatically), so the generated plugin sources there are not analyzed.
 
 ## Project Links
 

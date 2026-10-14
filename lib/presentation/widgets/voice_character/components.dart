@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:neiroha/presentation/theme/app_theme.dart';
@@ -386,10 +387,7 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.audio,
-      allowMultiple: false,
-    );
+    final result = await pickFiles(type: FileType.audio, allowMultiple: false);
     if (result != null && result.files.single.path != null) {
       onPick(result.files.single.path!);
     }

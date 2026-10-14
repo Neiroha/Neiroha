@@ -194,15 +194,17 @@ class _NovelSettingsPane extends StatelessWidget {
           SizedBox(height: 8),
           Text(
             generatingSegmentIds.isEmpty
-                ? 'Idle'
-                : 'Generating ${generatingSegmentIds.length} segment(s)',
+                ? AppLocalizations.of(context).statusIdle
+                : AppLocalizations.of(
+                    context,
+                  ).novelGeneratingSegments(generatingSegmentIds.length),
             style: TextStyle(
               fontSize: 11,
               color: Colors.white.withValues(alpha: 0.45),
             ),
           ),
           SizedBox(height: 18),
-          _PanelTitle('OUTPUT'),
+          _PanelTitle(AppLocalizations.of(context).sectionOutput),
           OutlinedButton.icon(
             onPressed: hasAudio && !exporting ? onExport : null,
             icon: exporting

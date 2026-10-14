@@ -223,6 +223,7 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
       projectName: project.name,
       bankId: project.bankId,
       banks: banks,
+      autoNormalizeLoudness: project.autoNormalizeLoudness,
     );
     if (result == null) return;
     final database = ref.read(databaseProvider);
@@ -231,11 +232,14 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
       return;
     }
     final bankChanged = result.bankId != project.bankId;
-    if (result.name != project.name || bankChanged) {
+    if (result.name != project.name ||
+        bankChanged ||
+        result.autoNormalizeLoudness != project.autoNormalizeLoudness) {
       await database.updateVideoDubProject(
         project.copyWith(
           name: result.name,
           bankId: result.bankId,
+          autoNormalizeLoudness: result.autoNormalizeLoudness,
           updatedAt: DateTime.now(),
         ),
       );

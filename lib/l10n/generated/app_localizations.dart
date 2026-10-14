@@ -3829,6 +3829,492 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'More actions'**
   String get phaseMoreActions;
+
+  /// No description provided for @loudnessAutoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Normalize after generation'**
+  String get loudnessAutoTitle;
+
+  /// No description provided for @loudnessAutoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'New clips go to the voice bank target ({target} LUFS) plus the loudness offset of each character.'**
+  String loudnessAutoHint(Object target);
+
+  /// No description provided for @loudnessCharacterOffset.
+  ///
+  /// In en, this message translates to:
+  /// **'Loudness offset'**
+  String get loudnessCharacterOffset;
+
+  /// No description provided for @loudnessCharacterOffsetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Relative to the voice bank target. For example -3 dB keeps a narrator under the cast, +1 to +2 dB lifts a lead.'**
+  String get loudnessCharacterOffsetHint;
+
+  /// No description provided for @loudnessBankTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Loudness target'**
+  String get loudnessBankTarget;
+
+  /// No description provided for @loudnessBankTargetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects that normalize audio bring this cast here, then add the offset of each character. About -16 LUFS suits narration, -20 LUFS suits ASMR.'**
+  String get loudnessBankTargetHint;
+
+  /// No description provided for @bankDeactivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivate'**
+  String get bankDeactivate;
+
+  /// No description provided for @bankSetActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Active'**
+  String get bankSetActive;
+
+  /// No description provided for @bankSettingsMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings…'**
+  String get bankSettingsMenu;
+
+  /// No description provided for @bankSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice bank settings'**
+  String get bankSettingsTitle;
+
+  /// No description provided for @loudnessUseOffsets.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply character offsets'**
+  String get loudnessUseOffsets;
+
+  /// No description provided for @loudnessUseOffsetsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each speaker lands on the target plus their own offset, for example a narrator a few dB lower.'**
+  String get loudnessUseOffsetsHint;
+
+  /// No description provided for @loudnessRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore originals ({count})'**
+  String loudnessRestore(Object count);
+
+  /// No description provided for @loudnessRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Restored {count} clips to their original loudness.'**
+  String loudnessRestored(Object count);
+
+  /// No description provided for @phaseStopGenerating.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop generating'**
+  String get phaseStopGenerating;
+
+  /// No description provided for @phaseRetryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry failed ({count})'**
+  String phaseRetryFailed(Object count);
+
+  /// No description provided for @phaseSelectMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Select multiple'**
+  String get phaseSelectMode;
+
+  /// No description provided for @phaseAddSegment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add segment'**
+  String get phaseAddSegment;
+
+  /// No description provided for @phaseSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String phaseSelectedCount(Object count);
+
+  /// No description provided for @phaseSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get phaseSelectAll;
+
+  /// No description provided for @phaseAssignVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign voice'**
+  String get phaseAssignVoice;
+
+  /// No description provided for @phaseRegenerateSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Regenerate selected'**
+  String get phaseRegenerateSelected;
+
+  /// No description provided for @phaseDeleteSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete selected'**
+  String get phaseDeleteSelected;
+
+  /// No description provided for @phaseExitSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit multi-select'**
+  String get phaseExitSelect;
+
+  /// No description provided for @phaseInsertBelow.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert below'**
+  String get phaseInsertBelow;
+
+  /// No description provided for @phaseMergeNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge with next'**
+  String get phaseMergeNext;
+
+  /// No description provided for @phaseSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'Split…'**
+  String get phaseSplit;
+
+  /// No description provided for @phaseSplitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Split segment'**
+  String get phaseSplitTitle;
+
+  /// No description provided for @phaseSplitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Click where the second segment should start.'**
+  String get phaseSplitHint;
+
+  /// No description provided for @phaseSplitAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Split here'**
+  String get phaseSplitAction;
+
+  /// No description provided for @phaseInsertTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New segment'**
+  String get phaseInsertTitle;
+
+  /// No description provided for @phaseInsertAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert'**
+  String get phaseInsertAction;
+
+  /// No description provided for @phaseDeletedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {count} segments'**
+  String phaseDeletedCount(Object count);
+
+  /// No description provided for @phaseUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get phaseUndo;
+
+  /// No description provided for @phaseDragToReorder.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder'**
+  String get phaseDragToReorder;
+
+  /// No description provided for @phaseShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard: Up/Down move · Space play/stop · Enter generate · F2 edit · Delete remove · Esc clear · Ctrl+A select all (multi-select) · Ctrl+S save'**
+  String get phaseShortcuts;
+
+  /// No description provided for @phaseMergeSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback and export'**
+  String get phaseMergeSettings;
+
+  /// No description provided for @phaseMergeGap.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause between segments'**
+  String get phaseMergeGap;
+
+  /// No description provided for @phaseMergeGapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Used by Play All and Export Merged.'**
+  String get phaseMergeGapHint;
+
+  /// No description provided for @phaseFadeIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Fade in'**
+  String get phaseFadeIn;
+
+  /// No description provided for @phaseFadeOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Fade out'**
+  String get phaseFadeOut;
+
+  /// No description provided for @phaseFadeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Applied to every segment in the merged export. 10–50 ms removes clicks at the cuts; longer values soften each line.'**
+  String get phaseFadeHint;
+
+  /// No description provided for @sectionReferenceAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'REFERENCE AUDIO'**
+  String get sectionReferenceAudio;
+
+  /// No description provided for @sectionCharacterInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'CHARACTER INFO'**
+  String get sectionCharacterInfo;
+
+  /// No description provided for @sectionProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'PROVIDER'**
+  String get sectionProvider;
+
+  /// No description provided for @sectionModel.
+  ///
+  /// In en, this message translates to:
+  /// **'MODEL'**
+  String get sectionModel;
+
+  /// No description provided for @sectionVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'VOICE'**
+  String get sectionVoice;
+
+  /// No description provided for @sectionVoiceNameOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'VOICE NAME (optional)'**
+  String get sectionVoiceNameOptional;
+
+  /// No description provided for @sectionVoiceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'VOICE DESCRIPTION'**
+  String get sectionVoiceDescription;
+
+  /// No description provided for @sectionCosyvoiceMode.
+  ///
+  /// In en, this message translates to:
+  /// **'COSYVOICE MODE'**
+  String get sectionCosyvoiceMode;
+
+  /// No description provided for @sectionServerProfileOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'SERVER PROFILE (optional)'**
+  String get sectionServerProfileOptional;
+
+  /// No description provided for @sectionInstruct.
+  ///
+  /// In en, this message translates to:
+  /// **'INSTRUCT'**
+  String get sectionInstruct;
+
+  /// No description provided for @sectionVoxcpm2Mode.
+  ///
+  /// In en, this message translates to:
+  /// **'VOXCPM2 MODE'**
+  String get sectionVoxcpm2Mode;
+
+  /// No description provided for @sectionGptSovitsMode.
+  ///
+  /// In en, this message translates to:
+  /// **'GPT-SOVITS MODE'**
+  String get sectionGptSovitsMode;
+
+  /// No description provided for @sectionTrainedSpeaker.
+  ///
+  /// In en, this message translates to:
+  /// **'TRAINED SPEAKER'**
+  String get sectionTrainedSpeaker;
+
+  /// No description provided for @sectionVoiceClone.
+  ///
+  /// In en, this message translates to:
+  /// **'VOICE CLONE'**
+  String get sectionVoiceClone;
+
+  /// No description provided for @sectionVoiceDesign.
+  ///
+  /// In en, this message translates to:
+  /// **'VOICE DESIGN'**
+  String get sectionVoiceDesign;
+
+  /// No description provided for @sectionOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'OUTPUT'**
+  String get sectionOutput;
+
+  /// No description provided for @autoFillProviderSpeaker.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-fill: Provider + Speaker'**
+  String get autoFillProviderSpeaker;
+
+  /// No description provided for @statusIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get statusIdle;
+
+  /// No description provided for @statusPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get statusPreview;
+
+  /// No description provided for @novelGeneratingSegments.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating {count} segments'**
+  String novelGeneratingSegments(Object count);
+
+  /// No description provided for @novelGeneratingShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating {count}'**
+  String novelGeneratingShort(Object count);
+
+  /// No description provided for @novelEpubReserved.
+  ///
+  /// In en, this message translates to:
+  /// **'EPUB import is not supported yet; the TXT files were imported.'**
+  String get novelEpubReserved;
+
+  /// No description provided for @novelImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Import failed: {error}'**
+  String novelImportFailed(Object error);
+
+  /// No description provided for @novelSegmentSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Segment saved.'**
+  String get novelSegmentSaved;
+
+  /// No description provided for @novelSegmentDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Segment deleted.'**
+  String get novelSegmentDeleted;
+
+  /// No description provided for @novelDeleteChapterMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes \"{title}\" and its cached audio.'**
+  String novelDeleteChapterMessage(Object title);
+
+  /// No description provided for @novelChapterDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapter deleted.'**
+  String get novelChapterDeleted;
+
+  /// No description provided for @novelDialogueRulesSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Dialogue rules saved; rebuilt {count} segments.'**
+  String novelDialogueRulesSaved(Object count);
+
+  /// No description provided for @novelTextFiltersSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Text filters saved. Stale novel audio will regenerate on demand.'**
+  String get novelTextFiltersSaved;
+
+  /// No description provided for @novelPlaybackStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback stopped: {error}'**
+  String novelPlaybackStopped(Object error);
+
+  /// No description provided for @novelNarrator.
+  ///
+  /// In en, this message translates to:
+  /// **'Narrator'**
+  String get novelNarrator;
+
+  /// No description provided for @novelDialogue.
+  ///
+  /// In en, this message translates to:
+  /// **'Dialogue'**
+  String get novelDialogue;
+
+  /// No description provided for @novelSegmentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Segment {index}'**
+  String novelSegmentLabel(Object index);
+
+  /// No description provided for @phaseNoAudioToPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'No generated audio to play.'**
+  String get phaseNoAudioToPlay;
+
+  /// No description provided for @dialogLineFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Line'**
+  String get dialogLineFallback;
+
+  /// No description provided for @videoDubDeleteV1First.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the V1 clip first; only one source video is allowed.'**
+  String get videoDubDeleteV1First;
+
+  /// No description provided for @statusWritingWav.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording WAV'**
+  String get statusWritingWav;
+
+  /// No description provided for @novelImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported {chapters} chapters, {segments} segments.'**
+  String novelImported(Object chapters, Object segments);
+
+  /// No description provided for @novelImportFolderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import novel folder'**
+  String get novelImportFolderTitle;
 }
 
 class _AppLocalizationsDelegate

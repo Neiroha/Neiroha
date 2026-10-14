@@ -84,8 +84,9 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
       for (final f in picked.files)
         if (f.path != null) File(f.path!),
     ];
-    if (files.any((f) => p.extension(f.path).toLowerCase() == '.epub')) {
-      _snack('EPUB import is reserved for the next pass; TXT files were used.');
+    if (mounted &&
+        files.any((f) => p.extension(f.path).toLowerCase() == '.epub')) {
+      _snack(AppLocalizations.of(context).novelEpubReserved);
     }
     await _runImport(project, () {
       return ref
@@ -96,7 +97,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
 
   Future<void> _importFolder(db.NovelProject project) async {
     final path = await FilePicker.platform.getDirectoryPath(
-      dialogTitle: 'Import novel folder',
+      dialogTitle: AppLocalizations.of(context).novelImportFolderTitle,
     );
     if (path == null || path.isEmpty) return;
     await _runImport(project, () {
@@ -119,11 +120,14 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
         _manualChapterId = null;
         _manualPageIndex = null;
       });
+      if (!mounted) return;
       _snack(
-        'Imported ${report.chapterCount} chapters, ${report.segmentCount} segments.',
+        AppLocalizations.of(
+          context,
+        ).novelImported(report.chapterCount, report.segmentCount),
       );
     } catch (e) {
-      _snack('Import failed: $e');
+      if (mounted) _snack(AppLocalizations.of(context).novelImportFailed(e));
     } finally {
       if (mounted) _updateState(() => _importing = false);
     }
@@ -157,7 +161,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     );
     await _syncChapterRawText(project.id, segment.chapterId);
     await dbx.updateNovelProject(project.copyWith(updatedAt: DateTime.now()));
-    _snack('Segment saved.');
+    if (mounted) _snack(AppLocalizations.of(context).novelSegmentSaved);
   }
 
   Future<void> _deleteSegment(
@@ -172,7 +176,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     await _syncChapterRawText(project.id, segment.chapterId);
     if (!mounted) return;
     _updateState(() => _manualPageIndex = null);
-    _snack('Segment deleted.');
+    _snack(AppLocalizations.of(context).novelSegmentDeleted);
   }
 
   Future<void> _showChapterEditorDialog(
@@ -274,8 +278,10 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
   ) async {
     final ok = await _confirm(
       title: AppLocalizations.of(context).uiDeleteChapter2,
-      message: 'This removes "${chapter.title}" and its cached audio.',
-      action: 'Delete',
+      message: AppLocalizations.of(
+        context,
+      ).novelDeleteChapterMessage(chapter.title),
+      action: AppLocalizations.of(context).uiDelete,
     );
     if (!ok) return;
 
@@ -290,7 +296,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
       if (_manualChapterId == chapter.id) _manualChapterId = null;
       _manualPageIndex = null;
     });
-    _snack('Chapter deleted.');
+    _snack(AppLocalizations.of(context).novelChapterDeleted);
   }
 
   Future<void> _syncChapterRawText(String projectId, String chapterId) async {
@@ -343,7 +349,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     await dbx.updateNovelProject(project.copyWith(updatedAt: DateTime.now()));
     ref.invalidate(novelDialogueRulesProvider);
     if (!mounted) return;
-    _snack('Dialogue rules saved; rebuilt $rebuilt segment(s).');
+    _snack(AppLocalizations.of(context).novelDialogueRulesSaved(rebuilt));
   }
 
   Future<void> _manageTextFilterRules() async {
@@ -354,7 +360,7 @@ extension _NovelReaderEditorChapters on _NovelReaderEditorState {
     if (changed != true) return;
     ref.invalidate(novelTextFilterRulesProvider);
     if (!mounted) return;
-    _snack('Text filters saved. Stale novel audio will regenerate on demand.');
+    _snack(AppLocalizations.of(context).novelTextFiltersSaved);
   }
 
   Future<void> _deleteSegmentAudioFiles(

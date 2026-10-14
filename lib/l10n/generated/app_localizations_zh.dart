@@ -2059,4 +2059,278 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get phaseMoreActions => '更多操作';
+
+  @override
+  String get loudnessAutoTitle => '生成后自动统一音量';
+
+  @override
+  String loudnessAutoHint(Object target) {
+    return '新生成的音频自动调整到语音库基准（$target LUFS），再叠加各角色的音量偏移。';
+  }
+
+  @override
+  String get loudnessCharacterOffset => '音量偏移';
+
+  @override
+  String get loudnessCharacterOffsetHint =>
+      '相对语音库基准响度。例如旁白设 -3 dB 压在角色之下，主角设 +1 ~ +2 dB 略微突出。';
+
+  @override
+  String get loudnessBankTarget => '基准响度';
+
+  @override
+  String get loudnessBankTargetHint =>
+      '开启音量统一的工程会把该语音库的音频调整到此响度，再叠加各角色偏移。旁白约 -16 LUFS，ASMR 约 -20 LUFS 较合适。';
+
+  @override
+  String get bankDeactivate => '取消激活';
+
+  @override
+  String get bankSetActive => '设为激活';
+
+  @override
+  String get bankSettingsMenu => '设置…';
+
+  @override
+  String get bankSettingsTitle => '语音库设置';
+
+  @override
+  String get loudnessUseOffsets => '应用角色音量偏移';
+
+  @override
+  String get loudnessUseOffsetsHint => '每位说话人对齐到“目标 + 自身偏移”，例如旁白低几 dB。';
+
+  @override
+  String loudnessRestore(Object count) {
+    return '还原原始音量（$count）';
+  }
+
+  @override
+  String loudnessRestored(Object count) {
+    return '已将 $count 段还原为原始音量。';
+  }
+
+  @override
+  String get phaseStopGenerating => '停止生成';
+
+  @override
+  String phaseRetryFailed(Object count) {
+    return '重试失败（$count）';
+  }
+
+  @override
+  String get phaseSelectMode => '多选';
+
+  @override
+  String get phaseAddSegment => '添加分段';
+
+  @override
+  String phaseSelectedCount(Object count) {
+    return '已选 $count';
+  }
+
+  @override
+  String get phaseSelectAll => '全选';
+
+  @override
+  String get phaseAssignVoice => '指定音色';
+
+  @override
+  String get phaseRegenerateSelected => '重新生成所选';
+
+  @override
+  String get phaseDeleteSelected => '删除所选';
+
+  @override
+  String get phaseExitSelect => '退出多选';
+
+  @override
+  String get phaseInsertBelow => '在下方插入';
+
+  @override
+  String get phaseMergeNext => '与下一段合并';
+
+  @override
+  String get phaseSplit => '拆分…';
+
+  @override
+  String get phaseSplitTitle => '拆分分段';
+
+  @override
+  String get phaseSplitHint => '点击第二段开始的位置。';
+
+  @override
+  String get phaseSplitAction => '在光标处拆分';
+
+  @override
+  String get phaseInsertTitle => '新分段';
+
+  @override
+  String get phaseInsertAction => '插入';
+
+  @override
+  String phaseDeletedCount(Object count) {
+    return '已删除 $count 个分段';
+  }
+
+  @override
+  String get phaseUndo => '撤销';
+
+  @override
+  String get phaseDragToReorder => '拖动排序';
+
+  @override
+  String get phaseShortcuts =>
+      '快捷键：↑/↓ 切换 · 空格 播放/停止 · 回车 生成 · F2 编辑 · Delete 删除 · Esc 取消 · Ctrl+A 全选（多选模式）· Ctrl+S 保存';
+
+  @override
+  String get phaseMergeSettings => '播放与导出设置';
+
+  @override
+  String get phaseMergeGap => '段间停顿';
+
+  @override
+  String get phaseMergeGapHint => '用于「播放全部」与「导出合并音频」。';
+
+  @override
+  String get phaseFadeIn => '淡入';
+
+  @override
+  String get phaseFadeOut => '淡出';
+
+  @override
+  String get phaseFadeHint => '合并导出时作用于每一段：10–50 ms 可消除拼接处的爆音，更长则让每句起落更柔和。';
+
+  @override
+  String get sectionReferenceAudio => '参考音频';
+
+  @override
+  String get sectionCharacterInfo => '角色信息';
+
+  @override
+  String get sectionProvider => '服务商';
+
+  @override
+  String get sectionModel => '模型';
+
+  @override
+  String get sectionVoice => '音色';
+
+  @override
+  String get sectionVoiceNameOptional => '音色名称（可选）';
+
+  @override
+  String get sectionVoiceDescription => '音色描述';
+
+  @override
+  String get sectionCosyvoiceMode => 'CosyVoice 模式';
+
+  @override
+  String get sectionServerProfileOptional => '服务器配置（可选）';
+
+  @override
+  String get sectionInstruct => '指令';
+
+  @override
+  String get sectionVoxcpm2Mode => 'VoxCPM2 模式';
+
+  @override
+  String get sectionGptSovitsMode => 'GPT-SoVITS 模式';
+
+  @override
+  String get sectionTrainedSpeaker => '训练好的说话人';
+
+  @override
+  String get sectionVoiceClone => '音色克隆';
+
+  @override
+  String get sectionVoiceDesign => '音色设计';
+
+  @override
+  String get sectionOutput => '输出';
+
+  @override
+  String get autoFillProviderSpeaker => '自动填充：服务商 + 说话人';
+
+  @override
+  String get statusIdle => '空闲';
+
+  @override
+  String get statusPreview => '试听';
+
+  @override
+  String novelGeneratingSegments(Object count) {
+    return '正在生成 $count 段';
+  }
+
+  @override
+  String novelGeneratingShort(Object count) {
+    return '生成中 $count';
+  }
+
+  @override
+  String get novelEpubReserved => '暂不支持导入 EPUB，已导入其中的 TXT 文件。';
+
+  @override
+  String novelImportFailed(Object error) {
+    return '导入失败：$error';
+  }
+
+  @override
+  String get novelSegmentSaved => '分段已保存。';
+
+  @override
+  String get novelSegmentDeleted => '分段已删除。';
+
+  @override
+  String novelDeleteChapterMessage(Object title) {
+    return '将删除《$title》及其缓存音频。';
+  }
+
+  @override
+  String get novelChapterDeleted => '章节已删除。';
+
+  @override
+  String novelDialogueRulesSaved(Object count) {
+    return '对话规则已保存，重建了 $count 个分段。';
+  }
+
+  @override
+  String get novelTextFiltersSaved => '文本过滤规则已保存，过期的音频会在需要时重新生成。';
+
+  @override
+  String novelPlaybackStopped(Object error) {
+    return '播放已停止：$error';
+  }
+
+  @override
+  String get novelNarrator => '旁白';
+
+  @override
+  String get novelDialogue => '对白';
+
+  @override
+  String novelSegmentLabel(Object index) {
+    return '第 $index 段';
+  }
+
+  @override
+  String get phaseNoAudioToPlay => '没有可播放的已生成音频。';
+
+  @override
+  String get dialogLineFallback => '台词';
+
+  @override
+  String get videoDubDeleteV1First => '请先删除 V1 片段，只允许一个源视频。';
+
+  @override
+  String get statusWritingWav => '正在录制 WAV';
+
+  @override
+  String novelImported(Object chapters, Object segments) {
+    return '已导入 $chapters 章、$segments 个分段。';
+  }
+
+  @override
+  String get novelImportFolderTitle => '导入小说文件夹';
 }

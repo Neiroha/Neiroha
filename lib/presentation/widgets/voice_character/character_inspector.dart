@@ -12,6 +12,7 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/loudness_fields.dart';
 import 'package:neiroha/presentation/widgets/voice_character/components.dart';
 import 'package:neiroha/presentation/widgets/voice_character/selection.dart';
 import 'package:neiroha/providers/app_providers.dart';
@@ -44,6 +45,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
   late TextEditingController _instructionCtrl;
   late String _selectedProviderId;
   String? _selectedSpeaker;
+  double _loudnessOffsetDb = 0;
 
   List<String> _speakers = [];
   bool _loadingSpeakers = false;
@@ -78,6 +80,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
     _instructionCtrl = TextEditingController(text: a.voiceInstruction ?? '');
     _selectedProviderId = a.providerId;
     _selectedSpeaker = a.presetVoiceName;
+    _loudnessOffsetDb = a.loudnessOffsetDb;
     _speakers = [];
     _loadingSpeakers = false;
   }
@@ -262,7 +265,9 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         SizedBox(height: 12),
 
         // ── Provider ─────────────────────────────────────────────────────────
-        VoiceCharacterSectionLabel('PROVIDER'),
+        VoiceCharacterSectionLabel(
+          AppLocalizations.of(context).sectionProvider,
+        ),
         SizedBox(height: 8),
         if (enabledProviders.isEmpty)
           Text(
@@ -319,11 +324,16 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
             labelText: AppLocalizations.of(context).uiSpeed10Normal,
           ),
         ),
+        SizedBox(height: 12),
+        CharacterLoudnessOffsetField(
+          value: _loudnessOffsetDb,
+          onChanged: (v) => setState(() => _loudnessOffsetDb = v),
+        ),
         SizedBox(height: 20),
 
         // ── Mode-specific fields ─────────────────────────────────────────────
         if (a.taskMode == 'presetVoice') ...[
-          VoiceCharacterSectionLabel('VOICE'),
+          VoiceCharacterSectionLabel(AppLocalizations.of(context).sectionVoice),
           SizedBox(height: 8),
           if (_loadingSpeakers)
             Padding(
@@ -408,7 +418,9 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         ],
 
         if (a.taskMode == 'cloneWithPrompt') ...[
-          VoiceCharacterSectionLabel('VOICE CLONE'),
+          VoiceCharacterSectionLabel(
+            AppLocalizations.of(context).sectionVoiceClone,
+          ),
           SizedBox(height: 8),
           if (a.refAudioPath != null) ...[
             Text(
@@ -537,7 +549,9 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         ],
 
         if (a.taskMode == 'voiceDesign') ...[
-          VoiceCharacterSectionLabel('VOICE DESIGN'),
+          VoiceCharacterSectionLabel(
+            AppLocalizations.of(context).sectionVoiceDesign,
+          ),
           SizedBox(height: 8),
           TextField(
             controller: _instructionCtrl,
@@ -684,6 +698,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
       providerId: _selectedProviderId,
       modelName: Value(modelName),
       speed: speed,
+      loudnessOffsetDb: _loudnessOffsetDb,
       presetVoiceName: Value(
         _voiceNameCtrl.text.trim().isEmpty ? null : _voiceNameCtrl.text.trim(),
       ),
@@ -739,6 +754,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         avatarPath: Value(asset.avatarPath),
         speed: Value(asset.speed),
         enabled: Value(asset.enabled),
+        loudnessOffsetDb: Value(asset.loudnessOffsetDb),
       ),
     );
     final bankId = widget.bankId;

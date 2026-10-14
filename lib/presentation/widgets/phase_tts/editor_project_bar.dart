@@ -16,6 +16,9 @@ class EditorProjectBar extends StatelessWidget {
   /// `null` disables the Export Merged button (no completed audio yet, or
   /// no ffmpeg available).
   final VoidCallback? onExportMerged;
+
+  /// Pause / fade / loudness settings for Play All and the merged export.
+  final VoidCallback onMergeSettings;
   final VoidCallback onClose;
   final VoidCallback onSave;
 
@@ -26,6 +29,7 @@ class EditorProjectBar extends StatelessWidget {
     required this.onClose,
     required this.onSave,
     required this.onExportMerged,
+    required this.onMergeSettings,
     this.exporting = false,
     this.dirty = false,
   });
@@ -67,6 +71,11 @@ class EditorProjectBar extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
+          ),
+          IconButton(
+            tooltip: l10n.phaseMergeSettings,
+            onPressed: onMergeSettings,
+            icon: const Icon(Icons.tune_rounded, size: 18),
           ),
           IconButton(
             tooltip: l10n.uiExportMerged,
@@ -122,7 +131,12 @@ class EditorProjectBar extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(width: 12),
+          SizedBox(width: 8),
+          IconButton(
+            tooltip: AppLocalizations.of(context).phaseMergeSettings,
+            onPressed: onMergeSettings,
+            icon: const Icon(Icons.tune_rounded, size: 18),
+          ),
           TextButton.icon(
             onPressed: exporting ? null : onExportMerged,
             icon: _exportIcon(),

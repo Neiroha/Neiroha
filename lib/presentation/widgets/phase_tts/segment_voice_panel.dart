@@ -1,22 +1,29 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
+import 'package:neiroha/domain/voice_capabilities.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 
+part 'segment_card.dart';
+part 'segment_dialogs.dart';
+
 /// Right-side sentence list for Phase TTS.
 ///
 /// Header with progress stats, a wrapping action toolbar, status filters and
-/// one card per sentence: text first, then a voice pill and the play /
-/// generate actions. Less frequent actions (style, edit, delete) live in the
-/// card's overflow menu so they can't be hit by accident.
+/// one card per sentence. Cards can be reordered by their drag handle,
+/// selected in bulk, split / merged / inserted, and driven from the
+/// keyboard (see [_onKey]). Structural edits go through callbacks so the
+/// screen owns persistence and undo.
 class SegmentVoicePanel extends ConsumerStatefulWidget {
   final db.PhaseTtsProject project;
   final List<db.PhaseTtsSegment> segments;
@@ -27,9 +34,30 @@ class SegmentVoicePanel extends ConsumerStatefulWidget {
   onVoiceChanged;
   final void Function(db.PhaseTtsSegment segment, int index) onPlay;
   final Future<void> Function(db.PhaseTtsSegment segment)? onGenerate;
-  final ValueChanged<String> onDelete;
+
+  /// Regenerate the given segments (selection, failed retries).
+  final void Function(List<db.PhaseTtsSegment> segments)? onGenerateMany;
+
+  /// Non-null while a batch generation can be stopped.
+  final VoidCallback? onCancelGenerate;
+  final void Function(List<db.PhaseTtsSegment> segments) onDelete;
   final Future<void> Function(db.PhaseTtsSegment segment, String text)
   onEditText;
+  final Future<void> Function(
+    db.PhaseTtsSegment segment,
+    String head,
+    String tail,
+  )
+  onSplit;
+  final Future<void> Function(db.PhaseTtsSegment segment) onMergeNext;
+
+  /// Insert [text] after [after] (at the top when null).
+  final Future<void> Function(db.PhaseTtsSegment? after, String text)
+  onInsertAfter;
+  final void Function(int oldIndex, int newIndex) onReorder;
+
+  /// Highlight the segment in the script editor.
+  final ValueChanged<db.PhaseTtsSegment> onReveal;
   final VoidCallback onChanged;
   final VoidCallback onPlayAll;
   final VoidCallback onGenerateAll;
@@ -46,8 +74,15 @@ class SegmentVoicePanel extends ConsumerStatefulWidget {
     required this.onVoiceChanged,
     required this.onPlay,
     required this.onGenerate,
+    required this.onGenerateMany,
+    required this.onCancelGenerate,
     required this.onDelete,
     required this.onEditText,
+    required this.onSplit,
+    required this.onMergeNext,
+    required this.onInsertAfter,
+    required this.onReorder,
+    required this.onReveal,
     required this.onChanged,
     required this.onPlayAll,
     required this.onGenerateAll,
@@ -66,6 +101,17 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
   String? _projectSlug;
   Timer? _saveTimer;
   Future<dynamic> _pendingSave = Future<dynamic>.value();
+
+  bool _selecting = false;
+  final Set<String> _selected = <String>{};
+  String? _focusedId;
+
+  /// Optimistic order after a drag, until the database stream catches up.
+  List<String>? _localOrder;
+
+  final FocusNode _focusNode = FocusNode(debugLabel: 'phase-segments');
+  final ScrollController _scrollController = ScrollController();
+  final Map<String, GlobalKey> _cardKeys = {};
 
   // Cached during initState — `ref.read` is unsafe in dispose() because
   // ConsumerStatefulElement is already torn down by then. The service object
@@ -87,7 +133,16 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
       _settings = const PhaseSegmentSettings();
       _bulkVoiceId = null;
       _projectSlug = null;
+      _selected.clear();
+      _focusedId = null;
       unawaited(_loadSettings());
+    }
+    if (!identical(oldWidget.segments, widget.segments)) {
+      _localOrder = null;
+      final ids = widget.segments.map((s) => s.id).toSet();
+      _selected.removeWhere((id) => !ids.contains(id));
+      if (_focusedId != null && !ids.contains(_focusedId)) _focusedId = null;
+      _cardKeys.removeWhere((id, _) => !ids.contains(id));
     }
   }
 
@@ -104,8 +159,12 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
             .then((_) => service.save(slug, settings)),
       );
     }
+    _focusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
+
+  // ───────────────────────── Style settings file ─────────────────────────
 
   Future<void> _loadSettings() async {
     final slug = await _ensureProjectSlug();
@@ -162,43 +221,51 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     return _pendingSave.then((_) {});
   }
 
-  Future<void> _generateSegment(db.PhaseTtsSegment segment) async {
+  /// Settings must be on disk before the screen reads them for a request.
+  Future<void> _flushSettings() async {
     _saveTimer?.cancel();
     await _saveSettings();
-    await widget.onGenerate?.call(segment);
+  }
+
+  // ───────────────────────── Voice changes ─────────────────────────
+
+  db.TtsProvider? _providerFor(db.VoiceAsset? asset) {
+    if (asset == null) return null;
+    final providers = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
+    return providers.where((p) => p.id == asset.providerId).firstOrNull;
+  }
+
+  /// Drop style fields the newly chosen voice's engine can't use.
+  SegmentVoiceSettings _pruneFor(
+    SegmentVoiceSettings current,
+    String? voiceAssetId,
+  ) {
+    final asset = widget.bankAssets
+        .where((a) => a.id == voiceAssetId)
+        .firstOrNull;
+    final provider = _providerFor(asset);
+    final keepInstruction =
+        asset != null &&
+        provider != null &&
+        VoiceCapabilities.supportsVoiceInstruction(asset, provider);
+    final keepAudioTag =
+        asset != null &&
+        provider != null &&
+        VoiceCapabilities.supportsAudioTags(asset, provider);
+    return SegmentVoiceSettings(
+      voiceInstruction: keepInstruction ? current.voiceInstruction : null,
+      audioTagPrefix: keepAudioTag ? current.audioTagPrefix : null,
+    );
   }
 
   Future<void> _applyBulkVoice(List<db.PhaseTtsSegment> segments) async {
     await widget.onApplyVoiceToAll(_bulkVoiceId);
     if (_settings.bySegmentId.isEmpty) return;
-
-    final providers = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
-    final providerById = {
-      for (final provider in providers) provider.id: provider,
-    };
-    final selectedAsset = widget.bankAssets
-        .where((asset) => asset.id == _bulkVoiceId)
-        .firstOrNull;
-    final provider = selectedAsset == null
-        ? null
-        : providerById[selectedAsset.providerId];
-    final keepInstruction =
-        selectedAsset != null &&
-        provider != null &&
-        _supportsVoiceInstruction(selectedAsset, provider);
-    final keepAudioTag =
-        selectedAsset != null &&
-        provider != null &&
-        _supportsAudioTags(selectedAsset, provider);
-
     final next = Map<String, SegmentVoiceSettings>.from(_settings.bySegmentId);
     for (final segment in segments) {
       final current = next[segment.id];
       if (current == null || current.isEmpty) continue;
-      final pruned = SegmentVoiceSettings(
-        voiceInstruction: keepInstruction ? current.voiceInstruction : null,
-        audioTagPrefix: keepAudioTag ? current.audioTagPrefix : null,
-      );
+      final pruned = _pruneFor(current, _bulkVoiceId);
       if (pruned.isEmpty) {
         next.remove(segment.id);
       } else {
@@ -213,264 +280,24 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     widget.onVoiceChanged(segment, voiceAssetId);
     final current = _settings.bySegmentId[segment.id];
     if (current == null || current.isEmpty) return;
-
-    final providers = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
-    final providerById = {
-      for (final provider in providers) provider.id: provider,
-    };
-    final selectedAsset = widget.bankAssets
-        .where((asset) => asset.id == voiceAssetId)
-        .firstOrNull;
-    final provider = selectedAsset == null
-        ? null
-        : providerById[selectedAsset.providerId];
-    final keepInstruction =
-        selectedAsset != null &&
-        provider != null &&
-        _supportsVoiceInstruction(selectedAsset, provider);
-    final keepAudioTag =
-        selectedAsset != null &&
-        provider != null &&
-        _supportsAudioTags(selectedAsset, provider);
-
     _setSegmentSettings(
       segment.id,
-      SegmentVoiceSettings(
-        voiceInstruction: keepInstruction ? current.voiceInstruction : null,
-        audioTagPrefix: keepAudioTag ? current.audioTagPrefix : null,
-      ),
+      _pruneFor(current, voiceAssetId),
       saveNow: true,
     );
   }
 
-  void _deleteSegment(db.PhaseTtsSegment segment) {
-    _setSegmentSettings(
-      segment.id,
-      const SegmentVoiceSettings(),
-      saveNow: true,
-    );
-    widget.onDelete(segment.id);
+  // ───────────────────────── Actions ─────────────────────────
+
+  Future<void> _generateSegment(db.PhaseTtsSegment segment) async {
+    await _flushSettings();
+    await widget.onGenerate?.call(segment);
   }
 
-  Future<void> _openSettingsDialog(db.PhaseTtsSegment segment) async {
-    final providers = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
-    final providerById = {
-      for (final provider in providers) provider.id: provider,
-    };
-    final current =
-        _settings.bySegmentId[segment.id] ?? const SegmentVoiceSettings();
-    var selectedVoiceId = segment.voiceAssetId;
-    final instructionCtrl = TextEditingController(
-      text: current.voiceInstruction ?? '',
-    );
-    final audioTagCtrl = TextEditingController(
-      text: current.audioTagPrefix ?? '',
-    );
-
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            final selectedAsset = widget.bankAssets
-                .where((asset) => asset.id == selectedVoiceId)
-                .firstOrNull;
-            final provider = selectedAsset == null
-                ? null
-                : providerById[selectedAsset.providerId];
-            final supportsInstruction =
-                selectedAsset != null &&
-                provider != null &&
-                _supportsVoiceInstruction(selectedAsset, provider);
-            final supportsAudioTag =
-                selectedAsset != null &&
-                provider != null &&
-                _supportsAudioTags(selectedAsset, provider);
-
-            return AlertDialog(
-              title: Text(AppLocalizations.of(context).uiSentenceVoice),
-              content: SizedBox(
-                width: 460,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      segment.segmentText,
-                      style: const TextStyle(fontSize: 13),
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 12),
-                    _VoiceDropdown(
-                      value: selectedVoiceId,
-                      assets: widget.bankAssets,
-                      hintText: AppLocalizations.of(context).uiVoice,
-                      onChanged: (id) =>
-                          setDialogState(() => selectedVoiceId = id),
-                    ),
-                    SizedBox(height: 10),
-                    if (supportsInstruction)
-                      TextField(
-                        controller: instructionCtrl,
-                        minLines: 2,
-                        maxLines: 4,
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(
-                            context,
-                          ).uiStyleDirection,
-                          hintText: '焦虑地说，压低声音，语速稍快',
-                        ),
-                      ),
-                    if (supportsAudioTag) ...[
-                      SizedBox(height: 10),
-                      TextField(
-                        controller: audioTagCtrl,
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(
-                            context,
-                          ).uiAudioTagPrefix,
-                          hintText: '(紧张|深呼吸)',
-                        ),
-                      ),
-                    ],
-                    if (!supportsInstruction && !supportsAudioTag) ...[
-                      SizedBox(height: 10),
-                      TextField(
-                        enabled: false,
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(
-                            context,
-                          ).uiNoPerSentenceStyleControls,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    instructionCtrl.clear();
-                    audioTagCtrl.clear();
-                    setDialogState(() => selectedVoiceId = null);
-                  },
-                  child: Text(AppLocalizations.of(context).uiClear),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(AppLocalizations.of(context).uiCancel),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    if (selectedVoiceId != segment.voiceAssetId) {
-                      _changeSegmentVoice(segment, selectedVoiceId);
-                    }
-                    _setSegmentSettings(
-                      segment.id,
-                      SegmentVoiceSettings(
-                        voiceInstruction: supportsInstruction
-                            ? _normalizeText(instructionCtrl.text)
-                            : null,
-                        audioTagPrefix: supportsAudioTag
-                            ? _normalizeText(audioTagCtrl.text)
-                            : null,
-                      ),
-                      saveNow: true,
-                    );
-                    Navigator.pop(context);
-                  },
-                  child: Text(AppLocalizations.of(context).uiSave),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    instructionCtrl.dispose();
-    audioTagCtrl.dispose();
-  }
-
-  String? _normalizeText(String value) {
-    final trimmed = value.trim();
-    return trimmed.isEmpty ? null : trimmed;
-  }
-
-  bool _supportsVoiceInstruction(db.VoiceAsset asset, db.TtsProvider provider) {
-    return switch (provider.adapterType) {
-      'chatCompletionsTts' => _isMimoTtsModel(asset, provider),
-      'cosyvoice' => true,
-      'voxcpm2Native' => true,
-      'geminiTts' => true,
-      'elevenLabs' => true,
-      'minimaxTts' => true,
-      'indexTts' => true,
-      _ => false,
-    };
-  }
-
-  bool _supportsAudioTags(db.VoiceAsset asset, db.TtsProvider provider) {
-    return _isMimoTtsModel(asset, provider);
-  }
-
-  bool _isMimoTtsModel(db.VoiceAsset asset, db.TtsProvider provider) {
-    final model = (asset.modelName ?? provider.defaultModelName).toLowerCase();
-    return provider.adapterType == 'chatCompletionsTts' &&
-        model.contains('mimo') &&
-        (model.contains('tts') ||
-            model.contains('voiceclone') ||
-            model.contains('voicedesign'));
-  }
-
-  Future<void> _openEditTextDialog(db.PhaseTtsSegment segment) async {
-    final l10n = AppLocalizations.of(context);
-    final controller = TextEditingController(text: segment.segmentText);
-    final next = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.phaseEditText),
-        content: SizedBox(
-          width: 520,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: controller,
-                autofocus: true,
-                minLines: 3,
-                maxLines: 8,
-              ),
-              if (segment.audioPath != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  l10n.phaseEditTextHint,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.5),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.uiCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: Text(l10n.uiSave),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (next == null || next.isEmpty || next == segment.segmentText) return;
-    await widget.onEditText(segment, next);
+  Future<void> _generateMany(List<db.PhaseTtsSegment> segments) async {
+    if (segments.isEmpty) return;
+    await _flushSettings();
+    widget.onGenerateMany?.call(segments);
   }
 
   Future<void> _togglePlay(db.PhaseTtsSegment segment, int index) async {
@@ -482,6 +309,45 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     widget.onPlay(segment, index);
   }
 
+  void _focusSegment(db.PhaseTtsSegment segment, {bool reveal = true}) {
+    setState(() => _focusedId = segment.id);
+    _focusNode.requestFocus();
+    if (reveal) widget.onReveal(segment);
+  }
+
+  void _toggleSelected(String id) {
+    setState(() {
+      if (!_selected.remove(id)) _selected.add(id);
+    });
+  }
+
+  void _setSelecting(bool value) {
+    setState(() {
+      _selecting = value;
+      _selected.clear();
+    });
+    _focusNode.requestFocus();
+  }
+
+  void _delete(List<db.PhaseTtsSegment> segments) {
+    if (segments.isEmpty) return;
+    setState(() {
+      _selected.removeAll(segments.map((s) => s.id));
+      if (segments.any((s) => s.id == _focusedId)) _focusedId = null;
+    });
+    // Style settings stay in the file so an undo brings them back.
+    widget.onDelete(segments);
+  }
+
+  /// [newIndex] is already adjusted for the removed item (onReorderItem).
+  void _reorder(List<db.PhaseTtsSegment> ordered, int oldIndex, int newIndex) {
+    if (newIndex == oldIndex) return;
+    final ids = ordered.map((s) => s.id).toList();
+    ids.insert(newIndex, ids.removeAt(oldIndex));
+    setState(() => _localOrder = ids);
+    widget.onReorder(oldIndex, newIndex);
+  }
+
   bool _matchesFilter(db.PhaseTtsSegment segment) => switch (_filter) {
     _SegmentFilter.all => true,
     _SegmentFilter.pending => !_hasAudio(segment),
@@ -489,17 +355,131 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     _SegmentFilter.failed => segment.error != null,
   };
 
+  List<db.PhaseTtsSegment> _ordered() {
+    final ordered = [...widget.segments]
+      ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+    final local = _localOrder;
+    if (local == null || local.length != ordered.length) return ordered;
+    final byId = {for (final s in ordered) s.id: s};
+    if (!local.every(byId.containsKey)) return ordered;
+    return [for (final id in local) byId[id]!];
+  }
+
+  // ───────────────────────── Keyboard ─────────────────────────
+
+  /// ↑/↓ move focus · Space play/stop · Enter generate · F2 edit · Delete remove ·
+  /// Esc leave multi-select or clear focus · Ctrl+A select all (multi-select).
+  KeyEventResult _onKey(
+    FocusNode node,
+    KeyEvent event,
+    List<db.PhaseTtsSegment> ordered,
+    List<int> visible,
+  ) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    final ctrl =
+        HardwareKeyboard.instance.isControlPressed ||
+        HardwareKeyboard.instance.isMetaPressed;
+    final focusedIndex = ordered.indexWhere((s) => s.id == _focusedId);
+    final focused = focusedIndex < 0 ? null : ordered[focusedIndex];
+
+    if (key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.arrowUp) {
+      if (visible.isEmpty) return KeyEventResult.handled;
+      final pos = visible.indexOf(focusedIndex);
+      final down = key == LogicalKeyboardKey.arrowDown;
+      final nextPos = pos < 0
+          ? (down ? 0 : visible.length - 1)
+          : (pos + (down ? 1 : -1)).clamp(0, visible.length - 1);
+      final next = ordered[visible[nextPos]];
+      _focusSegment(next);
+      _ensureVisible(next.id, visible[nextPos]);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.escape) {
+      if (_selecting) {
+        _setSelecting(false);
+      } else {
+        setState(() => _focusedId = null);
+      }
+      return KeyEventResult.handled;
+    }
+    if (ctrl && key == LogicalKeyboardKey.keyA && _selecting) {
+      setState(() => _selected.addAll(visible.map((i) => ordered[i].id)));
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.delete) {
+      if (_selecting && _selected.isNotEmpty) {
+        _delete([
+          for (final s in ordered)
+            if (_selected.contains(s.id)) s,
+        ]);
+      } else if (focused != null) {
+        _delete([focused]);
+      }
+      return KeyEventResult.handled;
+    }
+    if (focused == null) return KeyEventResult.ignored;
+    if (key == LogicalKeyboardKey.space) {
+      if (_hasAudio(focused)) unawaited(_togglePlay(focused, focusedIndex));
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter) {
+      if (_canGenerate(focused)) unawaited(_generateSegment(focused));
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.f2) {
+      unawaited(_openEditTextDialog(focused));
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  void _ensureVisible(String id, int index) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _cardKeys[id]?.currentContext;
+      if (ctx != null) {
+        unawaited(
+          Scrollable.ensureVisible(
+            ctx,
+            alignment: 0.3,
+            duration: const Duration(milliseconds: 160),
+            alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+          ),
+        );
+        return;
+      }
+      // Not built yet (far off-screen): jump close, then align.
+      if (!_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      _scrollController.jumpTo(
+        (index * 118.0).clamp(0.0, position.maxScrollExtent),
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final again = _cardKeys[id]?.currentContext;
+        if (again != null) {
+          unawaited(Scrollable.ensureVisible(again, alignment: 0.3));
+        }
+      });
+    });
+  }
+
+  bool _canGenerate(db.PhaseTtsSegment segment) =>
+      segment.voiceAssetId != null &&
+      !widget.generatingSegmentIds.contains(segment.id) &&
+      widget.onGenerate != null;
+
+  // ───────────────────────── Build ─────────────────────────
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final ordered = [...widget.segments]
-      ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
-    final assetIds = widget.bankAssets.map((asset) => asset.id).toSet();
-    final bulkValue = _bulkVoiceId != null && assetIds.contains(_bulkVoiceId)
-        ? _bulkVoiceId
-        : null;
+    final ordered = _ordered();
     final doneCount = ordered.where(_hasAudio).length;
-    final failedCount = ordered.where((s) => s.error != null).length;
+    final failed = ordered.where((s) => s.error != null).toList();
     final pendingCount = ordered.length - doneCount;
     final unassignedCount = ordered.where((s) => s.voiceAssetId == null).length;
     final queuedCount = ordered
@@ -508,10 +488,6 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
     final totalSeconds = ordered
         .where(_hasAudio)
         .fold<double>(0, (sum, s) => sum + (s.audioDuration ?? 0));
-    final canGenerateAll =
-        queuedCount > 0 &&
-        widget.bankAssets.isNotEmpty &&
-        !widget.generatingAll;
     // Only rebuild on play/stop transitions, not on every position tick.
     final playingPath = ref.watch(
       playbackNotifierProvider.select((s) => s.isPlaying ? s.audioPath : null),
@@ -520,38 +496,198 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
       for (var i = 0; i < ordered.length; i++)
         if (_matchesFilter(ordered[i])) i,
     ];
+    final reorderable =
+        _filter == _SegmentFilter.all && !_selecting && ordered.length > 1;
 
+    return Focus(
+      focusNode: _focusNode,
+      onKeyEvent: (node, event) => _onKey(node, event, ordered, visible),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _PanelHeader(
+            total: ordered.length,
+            done: doneCount,
+            failed: failed.length,
+            unassigned: unassignedCount,
+            totalSeconds: totalSeconds,
+          ),
+          if (_selecting)
+            _buildSelectionBar(l10n, ordered, visible)
+          else
+            _buildToolbar(
+              l10n,
+              ordered,
+              doneCount: doneCount,
+              queuedCount: queuedCount,
+              failed: failed,
+            ),
+          if (ordered.isNotEmpty)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: Row(
+                children: [
+                  for (final filter in _SegmentFilter.values) ...[
+                    ChoiceChip(
+                      visualDensity: VisualDensity.compact,
+                      label: Text(switch (filter) {
+                        _SegmentFilter.all =>
+                          '${l10n.phaseFilterAll} ${ordered.length}',
+                        _SegmentFilter.pending =>
+                          '${l10n.phaseFilterPending} $pendingCount',
+                        _SegmentFilter.done =>
+                          '${l10n.phaseFilterDone} $doneCount',
+                        _SegmentFilter.failed =>
+                          '${l10n.phaseFilterFailed} ${failed.length}',
+                      }),
+                      selected: _filter == filter,
+                      onSelected: (_) => setState(() => _filter = filter),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                ],
+              ),
+            ),
+          const Divider(height: 1),
+          Expanded(
+            child: ordered.isEmpty
+                ? _EmptyState(
+                    text: l10n.uiRunAutoSplitToCreateSegments,
+                    action: TextButton.icon(
+                      onPressed: () => unawaited(_openInsertDialog(null)),
+                      icon: const Icon(Icons.add_rounded, size: 16),
+                      label: Text(l10n.phaseAddSegment),
+                    ),
+                  )
+                : visible.isEmpty
+                ? _EmptyState(text: l10n.phaseNoFilterMatches)
+                : reorderable
+                ? ReorderableListView.builder(
+                    scrollController: _scrollController,
+                    buildDefaultDragHandles: false,
+                    padding: const EdgeInsets.all(8),
+                    itemCount: ordered.length,
+                    onReorderItem: (o, n) => _reorder(ordered, o, n),
+                    proxyDecorator: (child, _, _) =>
+                        Material(color: Colors.transparent, child: child),
+                    itemBuilder: (context, index) => _buildCard(
+                      ordered,
+                      index,
+                      playingPath,
+                      dragIndex: index,
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(8),
+                    itemCount: visible.length,
+                    itemBuilder: (context, i) =>
+                        _buildCard(ordered, visible[i], playingPath),
+                  ),
+          ),
+          const PersistentAudioBar(onlyForSourceTag: phaseTtsPlaybackSource),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCard(
+    List<db.PhaseTtsSegment> ordered,
+    int index,
+    String? playingPath, {
+    int? dragIndex,
+  }) {
+    final segment = ordered[index];
+    final generating = widget.generatingSegmentIds.contains(segment.id);
+    return _SegmentCard(
+      key: _cardKeys.putIfAbsent(segment.id, () => GlobalKey()),
+      segment: segment,
+      index: index,
+      isLast: index == ordered.length - 1,
+      assets: widget.bankAssets,
+      settings: _settings.bySegmentId[segment.id],
+      isGenerating: generating,
+      isPlaying: playingPath != null && playingPath == segment.audioPath,
+      focused: segment.id == _focusedId,
+      selecting: _selecting,
+      selected: _selected.contains(segment.id),
+      dragIndex: dragIndex,
+      onTap: () =>
+          _selecting ? _toggleSelected(segment.id) : _focusSegment(segment),
+      onVoiceChanged: (id) => _changeSegmentVoice(segment, id),
+      onSettings: () => _openSettingsDialog(segment),
+      onEditText: () => _openEditTextDialog(segment),
+      onSplit: () => _openSplitDialog(segment),
+      onMergeNext: () => unawaited(widget.onMergeNext(segment)),
+      onInsertBelow: () => unawaited(_openInsertDialog(segment)),
+      onTogglePlay: () => _togglePlay(segment, index),
+      onDelete: () => _delete([segment]),
+      onGenerate: _canGenerate(segment)
+          ? () => unawaited(_generateSegment(segment))
+          : null,
+    );
+  }
+
+  Widget _buildToolbar(
+    AppLocalizations l10n,
+    List<db.PhaseTtsSegment> ordered, {
+    required int doneCount,
+    required int queuedCount,
+    required List<db.PhaseTtsSegment> failed,
+  }) {
+    final assetIds = widget.bankAssets.map((asset) => asset.id).toSet();
+    final bulkValue = _bulkVoiceId != null && assetIds.contains(_bulkVoiceId)
+        ? _bulkVoiceId
+        : null;
+    final canGenerateAll =
+        queuedCount > 0 &&
+        widget.bankAssets.isNotEmpty &&
+        !widget.generatingAll;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _PanelHeader(
-          total: ordered.length,
-          done: doneCount,
-          failed: failedCount,
-          unassigned: unassignedCount,
-          totalSeconds: totalSeconds,
-        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              FilledButton.icon(
-                onPressed: canGenerateAll ? widget.onGenerateAll : null,
-                icon: widget.generatingAll
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.auto_awesome_rounded, size: 16),
-                label: Text(
-                  queuedCount > 0 && !widget.generatingAll
-                      ? l10n.uiGenerateAll2(queuedCount)
-                      : l10n.uiGenerateAll,
+              if (widget.generatingAll)
+                FilledButton.tonalIcon(
+                  onPressed: widget.onCancelGenerate,
+                  icon: const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  label: Text(l10n.phaseStopGenerating),
+                )
+              else
+                FilledButton.icon(
+                  onPressed: canGenerateAll ? widget.onGenerateAll : null,
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 16),
+                  label: Text(
+                    queuedCount > 0
+                        ? l10n.uiGenerateAll2(queuedCount)
+                        : l10n.uiGenerateAll,
+                  ),
                 ),
-              ),
+              if (failed.isNotEmpty && !widget.generatingAll)
+                OutlinedButton.icon(
+                  onPressed: widget.onGenerateMany == null
+                      ? null
+                      : () => unawaited(
+                          _generateMany(
+                            failed
+                                .where((s) => s.voiceAssetId != null)
+                                .toList(),
+                          ),
+                        ),
+                  icon: const Icon(Icons.replay_rounded, size: 16),
+                  label: Text(l10n.phaseRetryFailed(failed.length)),
+                ),
               OutlinedButton.icon(
                 onPressed: doneCount > 0 ? widget.onPlayAll : null,
                 icon: const Icon(Icons.playlist_play_rounded, size: 18),
@@ -564,6 +700,18 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
                   icon: const Icon(Icons.graphic_eq_rounded, size: 16),
                   label: Text(l10n.loudnessAction),
                 ),
+              ),
+              IconButton(
+                tooltip: l10n.phaseSelectMode,
+                onPressed: ordered.isEmpty ? null : () => _setSelecting(true),
+                icon: const Icon(Icons.checklist_rounded, size: 20),
+              ),
+              IconButton(
+                tooltip: l10n.phaseAddSegment,
+                onPressed: () => unawaited(
+                  _openInsertDialog(ordered.isEmpty ? null : ordered.last),
+                ),
+                icon: const Icon(Icons.add_rounded, size: 20),
               ),
             ],
           ),
@@ -594,75 +742,107 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
             ],
           ),
         ),
-        if (ordered.isNotEmpty)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: Row(
-              children: [
-                for (final filter in _SegmentFilter.values) ...[
-                  ChoiceChip(
-                    visualDensity: VisualDensity.compact,
-                    label: Text(switch (filter) {
-                      _SegmentFilter.all =>
-                        '${l10n.phaseFilterAll} ${ordered.length}',
-                      _SegmentFilter.pending =>
-                        '${l10n.phaseFilterPending} $pendingCount',
-                      _SegmentFilter.done =>
-                        '${l10n.phaseFilterDone} $doneCount',
-                      _SegmentFilter.failed =>
-                        '${l10n.phaseFilterFailed} $failedCount',
-                    }),
-                    selected: _filter == filter,
-                    onSelected: (_) => setState(() => _filter = filter),
+      ],
+    );
+  }
+
+  Widget _buildSelectionBar(
+    AppLocalizations l10n,
+    List<db.PhaseTtsSegment> ordered,
+    List<int> visible,
+  ) {
+    final chosen = [
+      for (final s in ordered)
+        if (_selected.contains(s.id)) s,
+    ];
+    final none = chosen.isEmpty;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
+      decoration: BoxDecoration(
+        color: AppTheme.accentColor.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppTheme.accentColor.withValues(alpha: 0.4)),
+      ),
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 4,
+        runSpacing: 4,
+        children: [
+          Text(
+            l10n.phaseSelectedCount(chosen.length),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(width: 4),
+          TextButton(
+            onPressed: () => setState(
+              () => _selected.addAll(visible.map((i) => ordered[i].id)),
+            ),
+            child: Text(l10n.phaseSelectAll),
+          ),
+          PopupMenuButton<String>(
+            enabled: !none,
+            tooltip: l10n.phaseAssignVoice,
+            onSelected: (id) {
+              final voiceId = id.isEmpty ? null : id;
+              for (final s in chosen) {
+                _changeSegmentVoice(s, voiceId);
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(value: '', child: Text(l10n.uiUnassigned)),
+              for (final a in widget.bankAssets)
+                PopupMenuItem(value: a.id, child: Text(a.name)),
+            ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.record_voice_over_rounded,
+                    size: 16,
+                    color: none ? Colors.white24 : AppTheme.accentColor,
                   ),
                   const SizedBox(width: 6),
+                  Text(
+                    l10n.phaseAssignVoice,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: none ? Colors.white38 : null,
+                    ),
+                  ),
                 ],
-              ],
+              ),
             ),
           ),
-        const Divider(height: 1),
-        Expanded(
-          child: ordered.isEmpty
-              ? _EmptyState(text: l10n.uiRunAutoSplitToCreateSegments)
-              : visible.isEmpty
-              ? _EmptyState(text: l10n.phaseNoFilterMatches)
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                  itemCount: visible.length,
-                  itemBuilder: (context, i) {
-                    final index = visible[i];
-                    final segment = ordered[index];
-                    final generating = widget.generatingSegmentIds.contains(
-                      segment.id,
-                    );
-                    return _SegmentCard(
-                      key: ValueKey(segment.id),
-                      segment: segment,
-                      index: index,
-                      assets: widget.bankAssets,
-                      settings: _settings.bySegmentId[segment.id],
-                      isGenerating: generating,
-                      isPlaying:
-                          playingPath != null &&
-                          playingPath == segment.audioPath,
-                      onVoiceChanged: (id) => _changeSegmentVoice(segment, id),
-                      onSettings: () => _openSettingsDialog(segment),
-                      onEditText: () => _openEditTextDialog(segment),
-                      onTogglePlay: () => _togglePlay(segment, index),
-                      onDelete: () => _deleteSegment(segment),
-                      onGenerate:
-                          segment.voiceAssetId == null ||
-                              generating ||
-                              widget.onGenerate == null
-                          ? null
-                          : () => unawaited(_generateSegment(segment)),
-                    );
-                  },
-                ),
-        ),
-        const PersistentAudioBar(onlyForSourceTag: phaseTtsPlaybackSource),
-      ],
+          IconButton(
+            tooltip: l10n.phaseRegenerateSelected,
+            onPressed: none || widget.onGenerateMany == null
+                ? null
+                : () => unawaited(
+                    _generateMany(
+                      chosen.where((s) => s.voiceAssetId != null).toList(),
+                    ),
+                  ),
+            icon: const Icon(Icons.refresh_rounded, size: 20),
+          ),
+          IconButton(
+            tooltip: l10n.phaseDeleteSelected,
+            onPressed: none ? null : () => _delete(chosen),
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              size: 20,
+              color: _failedColor,
+            ),
+          ),
+          IconButton(
+            tooltip: l10n.phaseExitSelect,
+            onPressed: () => _setSelecting(false),
+            icon: const Icon(Icons.close_rounded, size: 20),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -697,636 +877,88 @@ class _PanelHeader extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final muted = Colors.white.withValues(alpha: 0.5);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Wrap(
-            spacing: 10,
-            runSpacing: 4,
-            crossAxisAlignment: WrapCrossAlignment.center,
+          Row(
             children: [
-              Text(
-                l10n.uiSEGMENTS,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.4),
+              Expanded(
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      l10n.uiSEGMENTS,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                        color: Colors.white.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    Text(
+                      l10n.phaseStatsGenerated(done, total),
+                      style: TextStyle(fontSize: 12, color: muted),
+                    ),
+                    if (totalSeconds > 0)
+                      Text(
+                        _formatClock(totalSeconds),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: muted,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    if (failed > 0)
+                      Text(
+                        l10n.phaseStatsFailed(failed),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: _failedColor,
+                        ),
+                      ),
+                    if (unassigned > 0)
+                      Text(
+                        l10n.phaseStatsUnassigned(unassigned),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.amber,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              Text(
-                l10n.phaseStatsGenerated(done, total),
-                style: TextStyle(fontSize: 12, color: muted),
-              ),
-              if (totalSeconds > 0)
-                Text(
-                  _formatClock(totalSeconds),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: muted,
-                    fontFeatures: const [FontFeature.tabularFigures()],
+              Tooltip(
+                message: l10n.phaseShortcuts,
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Icon(
+                    Icons.keyboard_rounded,
+                    size: 16,
+                    color: Colors.white.withValues(alpha: 0.35),
                   ),
                 ),
-              if (failed > 0)
-                Text(
-                  l10n.phaseStatsFailed(failed),
-                  style: const TextStyle(fontSize: 12, color: _failedColor),
-                ),
-              if (unassigned > 0)
-                Text(
-                  l10n.phaseStatsUnassigned(unassigned),
-                  style: const TextStyle(fontSize: 12, color: Colors.amber),
-                ),
+              ),
             ],
           ),
           if (total > 0) ...[
             const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(
-                value: done / total,
-                minHeight: 3,
-                backgroundColor: Colors.white.withValues(alpha: 0.06),
-                color: done == total ? _doneColor : AppTheme.accentColor,
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: done / total,
+                  minHeight: 3,
+                  backgroundColor: Colors.white.withValues(alpha: 0.06),
+                  color: done == total ? _doneColor : AppTheme.accentColor,
+                ),
               ),
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _SegmentCard extends StatefulWidget {
-  final db.PhaseTtsSegment segment;
-  final int index;
-  final List<db.VoiceAsset> assets;
-  final SegmentVoiceSettings? settings;
-  final bool isGenerating;
-  final bool isPlaying;
-  final ValueChanged<String?> onVoiceChanged;
-  final VoidCallback onSettings;
-  final VoidCallback onEditText;
-  final VoidCallback onTogglePlay;
-  final VoidCallback? onGenerate;
-  final VoidCallback onDelete;
-
-  const _SegmentCard({
-    super.key,
-    required this.segment,
-    required this.index,
-    required this.assets,
-    required this.settings,
-    required this.isGenerating,
-    required this.isPlaying,
-    required this.onVoiceChanged,
-    required this.onSettings,
-    required this.onEditText,
-    required this.onTogglePlay,
-    required this.onGenerate,
-    required this.onDelete,
-  });
-
-  @override
-  State<_SegmentCard> createState() => _SegmentCardState();
-}
-
-class _SegmentCardState extends State<_SegmentCard> {
-  bool _expanded = false;
-
-  _SegmentStatus get _status {
-    if (widget.isGenerating) return _SegmentStatus.generating;
-    if (widget.segment.error != null) return _SegmentStatus.failed;
-    if (_hasAudio(widget.segment)) return _SegmentStatus.done;
-    return _SegmentStatus.pending;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final segment = widget.segment;
-    final status = _status;
-    final hasAudio = _hasAudio(segment);
-    final settings = widget.settings;
-    final hasSettings = settings != null && !settings.isEmpty;
-    final statusColor = switch (status) {
-      _SegmentStatus.pending => Colors.white.withValues(alpha: 0.12),
-      _SegmentStatus.generating => AppTheme.accentColor,
-      _SegmentStatus.done => _doneColor,
-      _SegmentStatus.failed => _failedColor,
-    };
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 160),
-      margin: const EdgeInsets.only(bottom: 6),
-      decoration: BoxDecoration(
-        color: widget.isPlaying
-            ? AppTheme.accentColor.withValues(alpha: 0.10)
-            : AppTheme.surfaceDim,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: widget.isPlaying
-              ? AppTheme.accentColor.withValues(alpha: 0.6)
-              : Colors.white.withValues(alpha: 0.04),
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(width: 3, color: statusColor),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 4, 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    InkWell(
-                      borderRadius: BorderRadius.circular(6),
-                      onTap: () => setState(() => _expanded = !_expanded),
-                      onDoubleTap: widget.onEditText,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _IndexBadge(index: widget.index, status: status),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 3, right: 6),
-                              child: Text(
-                                segment.segmentText,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  height: 1.45,
-                                ),
-                                maxLines: _expanded ? null : 3,
-                                overflow: _expanded
-                                    ? TextOverflow.visible
-                                    : TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (hasSettings) ...[
-                      const SizedBox(height: 6),
-                      _SettingsSummary(settings: settings),
-                    ],
-                    if (segment.error != null && !widget.isGenerating) ...[
-                      const SizedBox(height: 6),
-                      Tooltip(
-                        message: segment.error!,
-                        child: Text(
-                          segment.error!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: _failedColor.withValues(alpha: 0.9),
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Flexible(
-                          child: _VoiceChip(
-                            value: segment.voiceAssetId,
-                            assets: widget.assets,
-                            onChanged: widget.onVoiceChanged,
-                          ),
-                        ),
-                        const Spacer(),
-                        if (hasAudio && segment.audioDuration != null)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 4),
-                            child: Text(
-                              _formatShort(segment.audioDuration!),
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.white.withValues(alpha: 0.45),
-                                fontFeatures: const [
-                                  FontFeature.tabularFigures(),
-                                ],
-                              ),
-                            ),
-                          ),
-                        if (hasAudio)
-                          _CardAction(
-                            tooltip: widget.isPlaying
-                                ? l10n.phaseStopPlayback
-                                : l10n.phasePlay,
-                            icon: widget.isPlaying
-                                ? Icons.stop_rounded
-                                : Icons.play_arrow_rounded,
-                            color: widget.isPlaying
-                                ? AppTheme.accentColor
-                                : null,
-                            onPressed: widget.onTogglePlay,
-                          ),
-                        if (widget.isGenerating)
-                          const SizedBox(
-                            width: 34,
-                            height: 34,
-                            child: Padding(
-                              padding: EdgeInsets.all(9),
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          )
-                        else
-                          _CardAction(
-                            tooltip: segment.audioPath != null
-                                ? l10n.uiRegenerate
-                                : l10n.uiGenerate,
-                            icon: segment.audioPath != null
-                                ? Icons.refresh_rounded
-                                : Icons.auto_awesome_rounded,
-                            color: widget.onGenerate == null
-                                ? null
-                                : AppTheme.accentColor,
-                            onPressed: widget.onGenerate,
-                          ),
-                        PopupMenuButton<String>(
-                          tooltip: l10n.phaseMoreActions,
-                          icon: Icon(
-                            Icons.more_vert_rounded,
-                            size: 18,
-                            color: Colors.white.withValues(alpha: 0.55),
-                          ),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 180),
-                          style: IconButton.styleFrom(
-                            minimumSize: const Size(34, 34),
-                            fixedSize: const Size(34, 34),
-                          ),
-                          onSelected: (value) {
-                            switch (value) {
-                              case 'style':
-                                widget.onSettings();
-                              case 'edit':
-                                widget.onEditText();
-                              case 'delete':
-                                widget.onDelete();
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            _menuItem(
-                              'style',
-                              Icons.tune_rounded,
-                              l10n.uiVoiceSettings,
-                              highlight: hasSettings,
-                            ),
-                            _menuItem(
-                              'edit',
-                              Icons.edit_note_rounded,
-                              l10n.phaseEditText,
-                            ),
-                            const PopupMenuDivider(),
-                            _menuItem(
-                              'delete',
-                              Icons.delete_outline_rounded,
-                              l10n.uiDeleteSegment,
-                              destructive: true,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  PopupMenuItem<String> _menuItem(
-    String value,
-    IconData icon,
-    String label, {
-    bool highlight = false,
-    bool destructive = false,
-  }) {
-    final color = destructive
-        ? _failedColor
-        : highlight
-        ? AppTheme.accentColor
-        : null;
-    return PopupMenuItem<String>(
-      value: value,
-      height: 40,
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(width: 12),
-          Text(label, style: TextStyle(fontSize: 13, color: color)),
-        ],
-      ),
-    );
-  }
-}
-
-class _IndexBadge extends StatelessWidget {
-  final int index;
-  final _SegmentStatus status;
-
-  const _IndexBadge({required this.index, required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final (bg, fg) = switch (status) {
-      _SegmentStatus.done => (_doneColor.withValues(alpha: 0.14), _doneColor),
-      _SegmentStatus.failed => (
-        _failedColor.withValues(alpha: 0.14),
-        _failedColor,
-      ),
-      _SegmentStatus.generating => (
-        AppTheme.accentColor.withValues(alpha: 0.2),
-        Colors.white,
-      ),
-      _SegmentStatus.pending => (
-        Colors.white.withValues(alpha: 0.05),
-        Colors.white.withValues(alpha: 0.5),
-      ),
-    };
-    return Container(
-      constraints: const BoxConstraints(minWidth: 28),
-      height: 24,
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        '${index + 1}',
-        style: TextStyle(
-          fontSize: 11.5,
-          fontWeight: FontWeight.w600,
-          color: fg,
-          fontFeatures: const [FontFeature.tabularFigures()],
-        ),
-      ),
-    );
-  }
-}
-
-/// Lightweight voice selector: a pill showing the current voice that opens a
-/// menu, instead of a full form dropdown per row.
-class _VoiceChip extends StatelessWidget {
-  static const _unassigned = '';
-
-  final String? value;
-  final List<db.VoiceAsset> assets;
-  final ValueChanged<String?> onChanged;
-
-  const _VoiceChip({
-    required this.value,
-    required this.assets,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final current = assets.where((a) => a.id == value).firstOrNull;
-    final assigned = current != null;
-    return PopupMenuButton<String>(
-      tooltip: l10n.uiVoice,
-      initialValue: current?.id ?? _unassigned,
-      onSelected: (id) => onChanged(id == _unassigned ? null : id),
-      itemBuilder: (context) => [
-        PopupMenuItem<String>(
-          value: _unassigned,
-          height: 36,
-          child: Text(
-            l10n.uiUnassigned,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.white.withValues(alpha: 0.6),
-            ),
-          ),
-        ),
-        for (final asset in assets)
-          PopupMenuItem<String>(
-            value: asset.id,
-            height: 36,
-            child: Row(
-              children: [
-                Icon(
-                  asset.id == value
-                      ? Icons.check_rounded
-                      : Icons.record_voice_over_rounded,
-                  size: 16,
-                  color: asset.id == value
-                      ? AppTheme.accentColor
-                      : Colors.white.withValues(alpha: 0.4),
-                ),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Text(
-                    asset.name,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-      child: Container(
-        height: 30,
-        padding: const EdgeInsets.only(left: 8, right: 4),
-        decoration: BoxDecoration(
-          color: assigned
-              ? AppTheme.accentColor.withValues(alpha: 0.14)
-              : Colors.amber.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.record_voice_over_rounded,
-              size: 14,
-              color: assigned ? AppTheme.accentColor : Colors.amber,
-            ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                current?.name ?? l10n.uiVoice,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: assigned
-                      ? Colors.white.withValues(alpha: 0.9)
-                      : Colors.amber,
-                ),
-              ),
-            ),
-            Icon(
-              Icons.arrow_drop_down_rounded,
-              size: 18,
-              color: Colors.white.withValues(alpha: 0.5),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CardAction extends StatelessWidget {
-  final String tooltip;
-  final IconData icon;
-  final Color? color;
-  final VoidCallback? onPressed;
-
-  const _CardAction({
-    required this.tooltip,
-    required this.icon,
-    required this.onPressed,
-    this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      tooltip: tooltip,
-      onPressed: onPressed,
-      iconSize: 19,
-      visualDensity: VisualDensity.compact,
-      constraints: const BoxConstraints.tightFor(width: 34, height: 34),
-      padding: EdgeInsets.zero,
-      color: color ?? Colors.white.withValues(alpha: 0.75),
-      disabledColor: Colors.white.withValues(alpha: 0.18),
-      icon: Icon(icon),
-    );
-  }
-}
-
-class _SettingsSummary extends StatelessWidget {
-  final SegmentVoiceSettings settings;
-
-  const _SettingsSummary({required this.settings});
-
-  @override
-  Widget build(BuildContext context) {
-    final parts = [
-      if (settings.voiceInstruction != null &&
-          settings.voiceInstruction!.isNotEmpty)
-        settings.voiceInstruction!,
-      if (settings.audioTagPrefix != null &&
-          settings.audioTagPrefix!.isNotEmpty)
-        settings.audioTagPrefix!,
-    ];
-    return Row(
-      children: [
-        Icon(
-          Icons.tune_rounded,
-          size: 12,
-          color: AppTheme.accentColor.withValues(alpha: 0.85),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            parts.join('  |  '),
-            style: TextStyle(
-              fontSize: 11,
-              color: AppTheme.accentColor.withValues(alpha: 0.9),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _VoiceDropdown extends StatelessWidget {
-  final String? value;
-  final List<db.VoiceAsset> assets;
-  final String hintText;
-  final ValueChanged<String?> onChanged;
-
-  const _VoiceDropdown({
-    required this.value,
-    required this.assets,
-    required this.hintText,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      key: ValueKey(value),
-      decoration: InputDecoration(
-        hintText: hintText,
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      ),
-      isExpanded: true,
-      initialValue: value,
-      items: [
-        DropdownMenuItem<String>(
-          value: null,
-          child: Text(
-            AppLocalizations.of(context).uiUnassigned,
-            style: TextStyle(fontSize: 12),
-          ),
-        ),
-        for (final asset in assets)
-          DropdownMenuItem<String>(
-            value: asset.id,
-            child: Text(
-              asset.name,
-              style: const TextStyle(fontSize: 12),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-      ],
-      onChanged: onChanged,
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final String text;
-
-  const _EmptyState({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.segment_rounded,
-              size: 36,
-              color: Colors.white.withValues(alpha: 0.18),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              text,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.35),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1345,4 +977,17 @@ String _formatClock(double seconds) {
 String _formatShort(double seconds) {
   if (seconds < 60) return '${seconds.toStringAsFixed(1)}s';
   return _formatClock(seconds);
+}
+
+/// Split point near the middle of [text], preferring sentence punctuation.
+int _suggestSplitOffset(String text) {
+  final middle = text.length ~/ 2;
+  final marks = RegExp(r'[。！？!?；;，,、…]');
+  var best = -1;
+  for (final m in marks.allMatches(text)) {
+    final at = m.end;
+    if (at <= 0 || at >= text.length) continue;
+    if (best < 0 || (at - middle).abs() < (best - middle).abs()) best = at;
+  }
+  return best < 0 ? math.max(1, middle) : best;
 }

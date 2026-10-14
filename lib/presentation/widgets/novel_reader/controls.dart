@@ -85,8 +85,10 @@ class _NovelReaderBottomBar extends ConsumerWidget {
         .length;
     final cacheProgress = segments.isEmpty ? 0.0 : cached / segments.length;
     final idleStatusText = generatingSegmentIds.isEmpty
-        ? 'Idle'
-        : 'Generating ${generatingSegmentIds.length}';
+        ? AppLocalizations.of(context).statusIdle
+        : AppLocalizations.of(
+            context,
+          ).novelGeneratingShort(generatingSegmentIds.length);
 
     return LayoutBuilder(
       builder: (context, constraints) {

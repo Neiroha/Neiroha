@@ -448,7 +448,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   /// Build the reference audio picker with voice asset library support.
   List<Widget> _buildRefAudioPicker() {
     return [
-      VoiceCharacterSectionLabel('REFERENCE AUDIO'),
+      VoiceCharacterSectionLabel(
+        AppLocalizations.of(context).sectionReferenceAudio,
+      ),
       SizedBox(height: 8),
       // Pick from voice assets library
       if (widget.audioTracks.isNotEmpty) ...[
@@ -580,7 +582,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 children: [
                   // ── CHARACTER INFO (at top) ──
-                  VoiceCharacterSectionLabel('CHARACTER INFO'),
+                  VoiceCharacterSectionLabel(
+                    AppLocalizations.of(context).sectionCharacterInfo,
+                  ),
                   SizedBox(height: 8),
                   Center(
                     child: GestureDetector(
@@ -642,7 +646,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                       ),
                       SizedBox(width: 8),
                       Tooltip(
-                        message: 'Auto-fill: Provider + Speaker',
+                        message: AppLocalizations.of(
+                          context,
+                        ).autoFillProviderSpeaker,
                         child: IconButton(
                           onPressed: _autoFillName,
                           icon: const Icon(
@@ -671,7 +677,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                   SizedBox(height: 20),
 
                   // ── PROVIDER ──
-                  VoiceCharacterSectionLabel('PROVIDER'),
+                  VoiceCharacterSectionLabel(
+                    AppLocalizations.of(context).sectionProvider,
+                  ),
                   SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     decoration: InputDecoration(
@@ -720,7 +728,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                   if (_isPresetVoiceProvider) ...[
                     if (_usesModelThenVoice) ...[
                       // ── Step 1: Select Model ──
-                      VoiceCharacterSectionLabel('MODEL'),
+                      VoiceCharacterSectionLabel(
+                        AppLocalizations.of(context).sectionModel,
+                      ),
                       SizedBox(height: 8),
                       if (_loadingModels)
                         Padding(
@@ -784,7 +794,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
                         // ── Preset Voice: voice picker ──
                         if (_ttsModelType == 'preset') ...[
-                          VoiceCharacterSectionLabel('VOICE'),
+                          VoiceCharacterSectionLabel(
+                            AppLocalizations.of(context).sectionVoice,
+                          ),
                           SizedBox(height: 8),
                           if (_loadingSpeakers)
                             Padding(
@@ -877,7 +889,11 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                         // ── Voice Clone: ref audio upload ──
                         if (_ttsModelType == 'clone') ...[
                           ..._buildRefAudioPicker(),
-                          VoiceCharacterSectionLabel('VOICE NAME (optional)'),
+                          VoiceCharacterSectionLabel(
+                            AppLocalizations.of(
+                              context,
+                            ).sectionVoiceNameOptional,
+                          ),
                           SizedBox(height: 4),
                           Text(
                             AppLocalizations.of(
@@ -904,7 +920,11 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
                         // ── Voice Design: text description ──
                         if (_ttsModelType == 'design') ...[
-                          VoiceCharacterSectionLabel('VOICE DESCRIPTION'),
+                          VoiceCharacterSectionLabel(
+                            AppLocalizations.of(
+                              context,
+                            ).sectionVoiceDescription,
+                          ),
                           SizedBox(height: 4),
                           Text(
                             AppLocalizations.of(
@@ -955,7 +975,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                     ],
                   ] else if (_isCosyVoice) ...[
                     // ── CosyVoice: 3 modes ──
-                    VoiceCharacterSectionLabel('COSYVOICE MODE'),
+                    VoiceCharacterSectionLabel(
+                      AppLocalizations.of(context).sectionCosyvoiceMode,
+                    ),
                     SizedBox(height: 8),
                     VoiceCharacterCosyVoiceModeSelector(
                       selected: _cosyVoiceMode,
@@ -975,7 +997,11 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                     ),
                     SizedBox(height: 20),
                     if (_cosyVoiceMode != null) ...[
-                      VoiceCharacterSectionLabel('SERVER PROFILE (optional)'),
+                      VoiceCharacterSectionLabel(
+                        AppLocalizations.of(
+                          context,
+                        ).sectionServerProfileOptional,
+                      ),
                       SizedBox(height: 4),
                       Text(
                         AppLocalizations.of(
@@ -1079,7 +1105,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
                       // ── Cross Lingual ──────────────────────────────────────
                       if (_cosyVoiceMode == 'cross_lingual') ...[
-                        VoiceCharacterSectionLabel('REFERENCE AUDIO'),
+                        VoiceCharacterSectionLabel(
+                          AppLocalizations.of(context).sectionReferenceAudio,
+                        ),
                         SizedBox(height: 4),
                         Text(
                           AppLocalizations.of(
@@ -1096,7 +1124,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
                       // ── Instruct ───────────────────────────────────────────
                       if (_cosyVoiceMode == 'instruct') ...[
-                        VoiceCharacterSectionLabel('INSTRUCT'),
+                        VoiceCharacterSectionLabel(
+                          AppLocalizations.of(context).sectionInstruct,
+                        ),
                         SizedBox(height: 8),
                         TextField(
                           controller: _instructionCtrl,
@@ -1130,7 +1160,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                     ],
                   ] else if (_isVoxCpm2) ...[
                     // ── VoxCPM2 Native: 3 modes ──
-                    VoiceCharacterSectionLabel('VOXCPM2 MODE'),
+                    VoiceCharacterSectionLabel(
+                      AppLocalizations.of(context).sectionVoxcpm2Mode,
+                    ),
                     SizedBox(height: 8),
                     VoiceCharacterVoxCpm2ModeSelector(
                       selected: _voxcpmMode,
@@ -1233,7 +1265,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
                       // ── Design ─────────────────────────────────────────────
                       if (_voxcpmMode == 'design') ...[
-                        VoiceCharacterSectionLabel('VOICE DESCRIPTION'),
+                        VoiceCharacterSectionLabel(
+                          AppLocalizations.of(context).sectionVoiceDescription,
+                        ),
                         SizedBox(height: 4),
                         Text(
                           AppLocalizations.of(
@@ -1282,7 +1316,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                       ],
                     ],
                   ] else if (_isGptSovits) ...[
-                    VoiceCharacterSectionLabel('GPT-SOVITS MODE'),
+                    VoiceCharacterSectionLabel(
+                      AppLocalizations.of(context).sectionGptSovitsMode,
+                    ),
                     SizedBox(height: 8),
                     VoiceCharacterGptSovitsModeSelector(
                       selected: _gptSovitsMode,
@@ -1302,7 +1338,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                     ),
                     SizedBox(height: 20),
                     if (_gptSovitsMode == 'trained') ...[
-                      VoiceCharacterSectionLabel('TRAINED SPEAKER'),
+                      VoiceCharacterSectionLabel(
+                        AppLocalizations.of(context).sectionTrainedSpeaker,
+                      ),
                       SizedBox(height: 8),
                       ..._buildSpeakerPicker(
                         label: AppLocalizations.of(context).uiSelectSpeaker,
@@ -1400,7 +1438,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                     ),
                   ] else ...[
                     // ── Fallback for other adapters (qwen3, etc.) ──
-                    VoiceCharacterSectionLabel('VOICE'),
+                    VoiceCharacterSectionLabel(
+                      AppLocalizations.of(context).sectionVoice,
+                    ),
                     SizedBox(height: 8),
                     ..._buildSpeakerPicker(),
                     TextField(

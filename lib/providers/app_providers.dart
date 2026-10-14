@@ -3,6 +3,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/data/services/android_media_session_service.dart';
+import 'package:neiroha/data/services/audio_merge_service.dart';
+import 'package:neiroha/data/services/auto_loudness_service.dart';
 import 'package:neiroha/data/services/loudness_normalizer.dart';
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
@@ -67,6 +69,21 @@ final ffmpegServiceProvider = Provider<FFmpegService>((ref) {
 final loudnessNormalizerProvider = Provider<LoudnessNormalizer>((ref) {
   final ffmpeg = ref.watch(ffmpegServiceProvider);
   return LoudnessNormalizer(resolveFfmpeg: ffmpeg.resolvePath);
+});
+
+/// Merged export with gaps and fades (Phase TTS, Novel Reader).
+final audioMergeServiceProvider = Provider<AudioMergeService>((ref) {
+  final ffmpeg = ref.watch(ffmpegServiceProvider);
+  return AudioMergeService(resolveFfmpeg: ffmpeg.resolvePath);
+});
+
+/// "Normalize after generation" for projects that opt in.
+final autoLoudnessServiceProvider = Provider<AutoLoudnessService>((ref) {
+  return AutoLoudnessService(
+    db: ref.watch(databaseProvider),
+    ffmpeg: ref.watch(ffmpegServiceProvider),
+    normalizer: ref.watch(loudnessNormalizerProvider),
+  );
 });
 
 /// User-configurable export defaults (audio format / video + audio codecs)

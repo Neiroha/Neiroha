@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
@@ -27,6 +28,13 @@ class _FakeSettingsFile extends PhaseSegmentSettingsFileService {
   Future<void> save(String projectSlug, PhaseSegmentSettings settings) async {}
 }
 
+class _Calls {
+  final reveals = <String>[];
+  final deleted = <List<String>>[];
+  final generatedMany = <List<String>>[];
+  final generated = <String>[];
+}
+
 class _SilentPlayback extends PlaybackNotifier {
   @override
   PlaybackState build() => const PlaybackState();
@@ -41,6 +49,10 @@ void main() {
     scriptText: '',
     createdAt: now,
     updatedAt: now,
+    autoNormalizeLoudness: false,
+    mergeGapSeconds: 0.3,
+    mergeFadeInMs: 10,
+    mergeFadeOutMs: 30,
   );
   final voice = db.VoiceAsset(
     id: 'v1',
@@ -49,6 +61,7 @@ void main() {
     taskMode: 'presetVoice',
     speed: 1,
     enabled: true,
+    loudnessOffsetDb: 0,
   );
   db.PhaseTtsSegment seg(
     int i, {
@@ -72,7 +85,8 @@ void main() {
     seg(2),
   ];
 
-  Future<void> pump(WidgetTester tester, Size size) async {
+  Future<_Calls> pump(WidgetTester tester, Size size) async {
+    final calls = _Calls();
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -102,8 +116,17 @@ void main() {
               onApplyVoiceToAll: (_) async {},
               onVoiceChanged: (_, _) {},
               onPlay: (_, _) {},
-              onGenerate: (_) async {},
-              onDelete: (_) {},
+              onGenerate: (s) async => calls.generated.add(s.id),
+              onGenerateMany: (rows) =>
+                  calls.generatedMany.add([for (final s in rows) s.id]),
+              onCancelGenerate: null,
+              onDelete: (rows) =>
+                  calls.deleted.add([for (final s in rows) s.id]),
+              onSplit: (_, _, _) async {},
+              onMergeNext: (_) async {},
+              onInsertAfter: (_, _) async {},
+              onReorder: (_, _) {},
+              onReveal: (s) => calls.reveals.add(s.id),
               onEditText: (_, _) async {},
               onChanged: () {},
               onPlayAll: () {},
@@ -116,6 +139,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    return calls;
   }
 
   for (final size in const [Size(340, 720), Size(1100, 800)]) {
@@ -137,5 +161,51 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('HTTP 500'), findsNothing);
     expect(find.text('第 0 句。'), findsOneWidget);
+  });
+  testWidgets('keyboard moves focus, reveals and generates', (tester) async {
+    final calls = await pump(tester, const Size(900, 800));
+    await tester.tap(find.text('第 0 句。'));
+    await tester.pumpAndSettle();
+    expect(calls.reveals, ['s0']);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(calls.reveals.last, 's1');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(calls.generated, ['s1']);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.delete);
+    await tester.pumpAndSettle();
+    expect(calls.deleted, [
+      ['s1'],
+    ]);
+  });
+
+  testWidgets('retry failed regenerates only the failed segments', (
+    tester,
+  ) async {
+    final calls = await pump(tester, const Size(900, 800));
+    await tester.tap(find.text('重试失败（1）'));
+    await tester.pumpAndSettle();
+    expect(calls.generatedMany, [
+      ['s1'],
+    ]);
+  });
+
+  testWidgets('multi-select deletes the chosen segments', (tester) async {
+    final calls = await pump(tester, const Size(900, 800));
+    await tester.tap(find.byTooltip('多选'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('第 0 句。'));
+    await tester.tap(find.text('第 2 句。第 2 句。第 2 句。'));
+    await tester.pumpAndSettle();
+    expect(find.text('已选 2'), findsOneWidget);
+    await tester.tap(find.byTooltip('删除所选'));
+    await tester.pumpAndSettle();
+    expect(calls.deleted, [
+      ['s0', 's2'],
+    ]);
   });
 }

@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/services/audio_merge_service.dart';
+import 'package:neiroha/data/services/loudness_normalizer.dart';
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/widgets/export_progress.dart';
@@ -83,6 +85,24 @@ Future<void> exportPhaseTtsMergedAudio({
     await outFile.parent.create(recursive: true);
   }
 
+  final options = AudioMergeOptions(
+    gapSeconds: project.mergeGapSeconds,
+    fadeInMs: project.mergeFadeInMs,
+    fadeOutMs: project.mergeFadeOutMs,
+  );
+  if (!options.isPlain) {
+    if (!context.mounted) return;
+    await _exportWithSpacing(
+      context: context,
+      ref: ref,
+      inputs: inputs,
+      outPath: outPath,
+      options: options,
+      taskLabel: mergingAudioTaskLabel,
+    );
+    return;
+  }
+
   final listFile = File(
     p.join(
       outFile.parent.path,
@@ -133,6 +153,49 @@ Future<void> exportPhaseTtsMergedAudio({
     try {
       if (await listFile.exists()) await listFile.delete();
     } catch (_) {}
+  }
+}
+
+/// Gaps / fades path: render each clip, then concat (see AudioMergeService).
+Future<void> _exportWithSpacing({
+  required BuildContext context,
+  required WidgetRef ref,
+  required List<String> inputs,
+  required String outPath,
+  required AudioMergeOptions options,
+  required String taskLabel,
+}) async {
+  final merger = ref.read(audioMergeServiceProvider);
+  Object? failure;
+  final completed = await runTaskWithProgress(
+    context: context,
+    taskLabel: taskLabel,
+    task: (report, cancelled) async {
+      try {
+        await merger.merge(
+          inputs: inputs,
+          outputPath: outPath,
+          options: options,
+          encoderArgs: LoudnessNormalizer.encoderArgsFor(
+            p.extension(outPath).toLowerCase(),
+          ),
+          onProgress: report,
+          isCancelled: cancelled,
+        );
+      } on AudioMergeCancelled {
+        // Reported through the return value.
+      } catch (e) {
+        failure = e;
+      }
+    },
+  );
+  if (!context.mounted) return;
+  if (failure != null) {
+    _snack(context, AppLocalizations.of(context).uiAudioExportFailed(failure!));
+  } else if (!completed) {
+    _snack(context, AppLocalizations.of(context).uiExportCancelled);
+  } else {
+    await showExportSuccessDialog(context: context, filePath: outPath);
   }
 }
 

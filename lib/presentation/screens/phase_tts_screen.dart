@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/data/storage/split_rules_service.dart';
@@ -11,11 +12,14 @@ import 'package:uuid/uuid.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
+import 'package:neiroha/data/services/tts_queue_service.dart';
+import 'package:neiroha/domain/voice_capabilities.dart';
 import 'package:neiroha/presentation/actions/phase_tts/exporter.dart';
 import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/create_project_dialog.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/editor_project_bar.dart';
+import 'package:neiroha/presentation/widgets/phase_tts/merge_settings_dialog.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/project_list_header.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/segment_voice_panel.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/script_workspace.dart';
@@ -45,8 +49,9 @@ class PhaseTtsScreen extends ConsumerStatefulWidget {
 
 class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
   String? _selectedProjectId;
-  final _scriptController = TextEditingController();
+  final _scriptController = ScriptHighlightController();
   bool _generatingAll = false;
+  TtsCancelToken? _cancelToken;
   bool _exportingMerged = false;
   bool _dirty = false;
   Future<dynamic> _pendingScriptWrite = Future<dynamic>.value();
@@ -146,6 +151,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
       projectName: project.name,
       bankId: project.bankId,
       banks: banks,
+      autoNormalizeLoudness: project.autoNormalizeLoudness,
     );
     if (result == null) return;
     final database = ref.read(databaseProvider);
@@ -154,11 +160,14 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
       return;
     }
     final bankChanged = result.bankId != project.bankId;
-    if (result.name != project.name || bankChanged) {
+    if (result.name != project.name ||
+        bankChanged ||
+        result.autoNormalizeLoudness != project.autoNormalizeLoudness) {
       await database.updatePhaseTtsProject(
         project.copyWith(
           name: result.name,
           bankId: result.bankId,
+          autoNormalizeLoudness: result.autoNormalizeLoudness,
           updatedAt: DateTime.now(),
         ),
       );
@@ -213,39 +222,48 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
       (s) => s.audioPath != null && !s.missing,
     );
 
-    return Column(
-      children: [
-        EditorProjectBar(
-          project: project,
-          voiceCount: bankAssets.length,
-          exporting: _exportingMerged,
-          dirty: _dirty,
-          onExportMerged: hasGeneratedAudio
-              ? () => unawaited(_exportMerged(project, segments))
-              : null,
-          onClose: () => unawaited(_back(project)),
-          onSave: () => unawaited(_saveProject(project)),
-        ),
-        const Divider(height: 1),
-        Expanded(
-          child: ResizableSplitPane(
-            initialLeftFraction: 0.55,
-            compactRightIcon: Icons.tune_rounded,
-            compactRightLabel: AppLocalizations.of(context).uiDetails,
-            left: PhaseScriptWorkspace(
-              controller: _scriptController,
-              onScriptChanged: () => _saveScript(project),
-              onAutoSplit: (rule) =>
-                  unawaited(_autoSplit(project, rule, segments)),
-            ),
-            rightBuilder: (_) => _buildRightPane(
-              project: project,
-              segments: segments,
-              bankAssets: bankAssets,
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.keyS, control: true): () =>
+            unawaited(_saveProject(project)),
+        const SingleActivator(LogicalKeyboardKey.keyS, meta: true): () =>
+            unawaited(_saveProject(project)),
+      },
+      child: Column(
+        children: [
+          EditorProjectBar(
+            project: project,
+            voiceCount: bankAssets.length,
+            exporting: _exportingMerged,
+            dirty: _dirty,
+            onExportMerged: hasGeneratedAudio
+                ? () => unawaited(_exportMerged(project, segments))
+                : null,
+            onMergeSettings: () => unawaited(_showMergeSettings(project)),
+            onClose: () => unawaited(_back(project)),
+            onSave: () => unawaited(_saveProject(project)),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: ResizableSplitPane(
+              initialLeftFraction: 0.55,
+              compactRightIcon: Icons.tune_rounded,
+              compactRightLabel: AppLocalizations.of(context).uiDetails,
+              left: PhaseScriptWorkspace(
+                controller: _scriptController,
+                onScriptChanged: () => _saveScript(project),
+                onAutoSplit: (rule) =>
+                    unawaited(_autoSplit(project, rule, segments)),
+              ),
+              rightBuilder: (_) => _buildRightPane(
+                project: project,
+                segments: segments,
+                bankAssets: bankAssets,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -267,20 +285,121 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
       onGenerate: bankAssets.isEmpty
           ? null
           : (segment) => _generateOne(project, segment, bankAssets),
-      onDelete: (id) {
-        _markDirty();
-        unawaited(ref.read(databaseProvider).deletePhaseTtsSegment(id));
-      },
+      onGenerateMany: bankAssets.isEmpty
+          ? null
+          : (targets) =>
+                unawaited(_generateBatch(project, targets, bankAssets)),
+      onCancelGenerate: _cancelToken?.cancel,
+      onDelete: (rows) => unawaited(_deleteSegments(project, rows)),
       onEditText: _editSegmentText,
+      onSplit: (segment, head, tail) async {
+        await ref
+            .read(databaseProvider)
+            .splitPhaseSegment(segment, head, tail, const Uuid().v4());
+        _markDirty();
+      },
+      onMergeNext: (segment) async {
+        await ref
+            .read(databaseProvider)
+            .mergePhaseSegmentWithNext(project.id, segment.id);
+        _markDirty();
+      },
+      onInsertAfter: (after, text) async {
+        await ref
+            .read(databaseProvider)
+            .insertPhaseSegmentAfter(
+              projectId: project.id,
+              afterId: after?.id,
+              id: const Uuid().v4(),
+              text: text,
+              voiceAssetId: after?.voiceAssetId,
+            );
+        _markDirty();
+      },
+      onReorder: (oldIndex, newIndex) {
+        _markDirty();
+        unawaited(
+          ref
+              .read(databaseProvider)
+              .reorderPhaseSegment(project.id, oldIndex, newIndex),
+        );
+      },
+      onReveal: (segment) => _revealInScript(segment, segments),
       onChanged: _markDirty,
-      onPlayAll: () => unawaited(_playAll(segments, bankAssets)),
+      onPlayAll: () => unawaited(_playAll(project, segments, bankAssets)),
       onGenerateAll: () =>
           unawaited(_generateAll(project, segments, bankAssets)),
       onNormalize: _generatingAll || _generatingSegmentIds.isNotEmpty
           ? null
-          : () => unawaited(_normalizeLoudness(segments)),
+          : () => unawaited(_normalizeLoudness(project, segments)),
       generatingAll: _generatingAll,
     );
+  }
+
+  /// Delete with a snackbar undo that puts the rows back in place.
+  Future<void> _deleteSegments(
+    db.PhaseTtsProject project,
+    List<db.PhaseTtsSegment> rows,
+  ) async {
+    if (rows.isEmpty) return;
+    final database = ref.read(databaseProvider);
+    await database.deletePhaseSegments(project.id, rows.map((s) => s.id));
+    _markDirty();
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(l10n.phaseDeletedCount(rows.length)),
+        duration: const Duration(seconds: 6),
+        action: SnackBarAction(
+          label: l10n.phaseUndo,
+          onPressed: () =>
+              unawaited(database.restorePhaseSegments(project.id, rows)),
+        ),
+      ),
+    );
+  }
+
+  /// Highlight [segment] inside the script. Segments are located in order,
+  /// each search starting where the previous one ended, so repeated
+  /// sentences resolve to the right occurrence.
+  void _revealInScript(
+    db.PhaseTtsSegment segment,
+    List<db.PhaseTtsSegment> segments,
+  ) {
+    final script = _scriptController.text;
+    final ordered = [...segments]
+      ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+    var cursor = 0;
+    for (final s in ordered) {
+      final needle = s.segmentText.trim();
+      if (needle.isEmpty) continue;
+      final at = script.indexOf(needle, cursor);
+      if (s.id == segment.id) {
+        // Fall back to a global search when earlier segments were edited.
+        final hit = at >= 0 ? at : script.indexOf(needle);
+        if (hit < 0) {
+          _scriptController.clearHighlight();
+        } else {
+          _scriptController.reveal(
+            TextRange(start: hit, end: hit + needle.length),
+          );
+        }
+        return;
+      }
+      if (at >= 0) cursor = at + needle.length;
+    }
+  }
+
+  Future<void> _showMergeSettings(db.PhaseTtsProject project) async {
+    final result = await showPhaseMergeSettingsDialog(
+      context: context,
+      project: project,
+    );
+    if (result == null) return;
+    await ref.read(databaseProvider).updatePhaseTtsProject(result);
   }
 
   Future<void> _editSegmentText(db.PhaseTtsSegment segment, String text) async {
@@ -300,14 +419,22 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     _markDirty();
   }
 
-  Future<void> _normalizeLoudness(List<db.PhaseTtsSegment> segments) async {
+  Future<void> _normalizeLoudness(
+    db.PhaseTtsProject project,
+    List<db.PhaseTtsSegment> segments,
+  ) async {
     await runLoudnessNormalization(
       context: context,
       ref: ref,
+      bankId: project.bankId,
       items: [
         for (final s in segments)
           if (s.audioPath != null && !s.missing)
-            LoudnessItem(id: s.id, path: s.audioPath!),
+            LoudnessItem(
+              id: s.id,
+              path: s.audioPath!,
+              voiceAssetId: s.voiceAssetId,
+            ),
       ],
     );
   }
@@ -422,6 +549,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
   }
 
   Future<void> _playAll(
+    db.PhaseTtsProject project,
     List<db.PhaseTtsSegment> segments,
     List<db.VoiceAsset> bankAssets,
   ) async {
@@ -441,12 +569,16 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
           ),
     ];
     if (items.isEmpty) {
-      _showSnack('No generated audio to play.');
+      _showSnack(AppLocalizations.of(context).phaseNoAudioToPlay);
       return;
     }
     await ref
         .read(playbackNotifierProvider.notifier)
-        .playSequenceFrom(items, sourceTag: phaseTtsPlaybackSource);
+        .playSequenceFrom(
+          items,
+          sourceTag: phaseTtsPlaybackSource,
+          gap: Duration(milliseconds: (project.mergeGapSeconds * 1000).round()),
+        );
   }
 
   void _createProject() async {
@@ -589,27 +721,48 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     return ref.read(phaseSegmentSettingsFileServiceProvider).load(slug);
   }
 
+  /// Generate every pending segment that has a voice.
   Future<void> _generateAll(
     db.PhaseTtsProject project,
     List<db.PhaseTtsSegment> segments,
     List<db.VoiceAsset> bankAssets,
+  ) => _generateBatch(project, [
+    for (final seg in segments)
+      if (seg.audioPath == null && seg.voiceAssetId != null) seg,
+  ], bankAssets);
+
+  /// Generate [targets] (regenerating ones that already have audio) under a
+  /// shared cancel token so "Stop" drops whatever has not started yet.
+  Future<void> _generateBatch(
+    db.PhaseTtsProject project,
+    List<db.PhaseTtsSegment> targets,
+    List<db.VoiceAsset> bankAssets,
   ) async {
-    if (segments.isEmpty || bankAssets.isEmpty || _generatingAll) return;
-    setState(() => _generatingAll = true);
+    if (targets.isEmpty || bankAssets.isEmpty || _generatingAll) return;
+    final token = TtsCancelToken();
+    setState(() {
+      _generatingAll = true;
+      _cancelToken = token;
+    });
     try {
       final segmentSettings = await _loadSegmentSettings(project);
       await Future.wait([
-        for (final seg in segments)
-          if (seg.audioPath == null && seg.voiceAssetId != null)
-            _generateOne(
-              project,
-              seg,
-              bankAssets,
-              segmentSettings: segmentSettings,
-            ),
+        for (final seg in targets)
+          _generateOne(
+            project,
+            seg,
+            bankAssets,
+            segmentSettings: segmentSettings,
+            cancelToken: token,
+          ),
       ]);
     } finally {
-      if (mounted) setState(() => _generatingAll = false);
+      if (mounted) {
+        setState(() {
+          _generatingAll = false;
+          _cancelToken = null;
+        });
+      }
     }
   }
 
@@ -618,8 +771,10 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     db.PhaseTtsSegment seg,
     List<db.VoiceAsset> bankAssets, {
     PhaseSegmentSettings? segmentSettings,
+    TtsCancelToken? cancelToken,
   }) async {
     if (seg.voiceAssetId == null) return;
+    if (cancelToken?.isCancelled ?? false) return;
     final database = ref.read(databaseProvider);
 
     setState(() => _generatingSegmentIds.add(seg.id));
@@ -651,6 +806,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
             modelName: asset.modelName,
             source: 'Phase TTS',
             label: 'Segment ${seg.orderIndex + 1}: ${seg.segmentText}',
+            cancelToken: cancelToken,
             request: TtsRequest(
               text: seg.segmentText,
               voice: asset.presetVoiceName ?? asset.name,
@@ -659,12 +815,14 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
                   ? asset.modelName
                   : null,
               presetVoiceName: asset.presetVoiceName,
-              voiceInstruction: _supportsVoiceInstruction(asset, provider)
+              voiceInstruction:
+                  VoiceCapabilities.supportsVoiceInstruction(asset, provider)
                   ? (instructionOverride == null || instructionOverride.isEmpty
                         ? asset.voiceInstruction
                         : instructionOverride)
                   : null,
-              audioTagPrefix: _supportsAudioTags(asset, provider)
+              audioTagPrefix:
+                  VoiceCapabilities.supportsAudioTags(asset, provider)
                   ? (audioTagPrefix == null || audioTagPrefix.isEmpty
                         ? null
                         : audioTagPrefix)
@@ -681,6 +839,14 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         ext,
       );
       await File(filePath).writeAsBytes(result.audioBytes);
+      await ref
+          .read(autoLoudnessServiceProvider)
+          .normalizeGenerated(
+            enabled: project.autoNormalizeLoudness,
+            path: filePath,
+            bankId: project.bankId,
+            voiceAssetId: asset.id,
+          );
       final durationSec = await measureAudioDuration(filePath);
       await database.updatePhaseTtsSegment(
         seg.copyWith(
@@ -690,6 +856,8 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         ),
       );
       _markDirty();
+    } on TtsCancelledException {
+      // Stopped before it started: leave the segment pending.
     } catch (e) {
       await database.updatePhaseTtsSegment(
         seg.copyWith(error: Value(e.toString())),
@@ -698,32 +866,6 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     } finally {
       if (mounted) setState(() => _generatingSegmentIds.remove(seg.id));
     }
-  }
-
-  bool _supportsVoiceInstruction(db.VoiceAsset asset, db.TtsProvider provider) {
-    return switch (provider.adapterType) {
-      'chatCompletionsTts' => _isMimoTtsModel(asset, provider),
-      'cosyvoice' => true,
-      'voxcpm2Native' => true,
-      'geminiTts' => true,
-      'elevenLabs' => true,
-      'minimaxTts' => true,
-      'indexTts' => true,
-      _ => false,
-    };
-  }
-
-  bool _supportsAudioTags(db.VoiceAsset asset, db.TtsProvider provider) {
-    return _isMimoTtsModel(asset, provider);
-  }
-
-  bool _isMimoTtsModel(db.VoiceAsset asset, db.TtsProvider provider) {
-    final model = (asset.modelName ?? provider.defaultModelName).toLowerCase();
-    return provider.adapterType == 'chatCompletionsTts' &&
-        model.contains('mimo') &&
-        (model.contains('tts') ||
-            model.contains('voiceclone') ||
-            model.contains('voicedesign'));
   }
 
   Future<void> _exportMerged(

@@ -944,5 +944,157 @@
   "phasePlay": "Play",
   "phasePlayAll": "Play all",
   "phaseStopPlayback": "Stop",
-  "phaseMoreActions": "More actions"
+  "phaseMoreActions": "More actions",
+  "loudnessAutoTitle": "Normalize after generation",
+  "loudnessAutoHint": "New clips go to the voice bank target ({target} LUFS) plus the loudness offset of each character.",
+  "@loudnessAutoHint": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "loudnessCharacterOffset": "Loudness offset",
+  "loudnessCharacterOffsetHint": "Relative to the voice bank target. For example -3 dB keeps a narrator under the cast, +1 to +2 dB lifts a lead.",
+  "loudnessBankTarget": "Loudness target",
+  "loudnessBankTargetHint": "Projects that normalize audio bring this cast here, then add the offset of each character. About -16 LUFS suits narration, -20 LUFS suits ASMR.",
+  "bankDeactivate": "Deactivate",
+  "bankSetActive": "Set Active",
+  "bankSettingsMenu": "Settings…",
+  "bankSettingsTitle": "Voice bank settings",
+  "loudnessUseOffsets": "Apply character offsets",
+  "loudnessUseOffsetsHint": "Each speaker lands on the target plus their own offset, for example a narrator a few dB lower.",
+  "loudnessRestore": "Restore originals ({count})",
+  "@loudnessRestore": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "loudnessRestored": "Restored {count} clips to their original loudness.",
+  "@loudnessRestored": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "phaseStopGenerating": "Stop generating",
+  "phaseRetryFailed": "Retry failed ({count})",
+  "@phaseRetryFailed": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "phaseSelectMode": "Select multiple",
+  "phaseAddSegment": "Add segment",
+  "phaseSelectedCount": "{count} selected",
+  "@phaseSelectedCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "phaseSelectAll": "Select all",
+  "phaseAssignVoice": "Assign voice",
+  "phaseRegenerateSelected": "Regenerate selected",
+  "phaseDeleteSelected": "Delete selected",
+  "phaseExitSelect": "Exit multi-select",
+  "phaseInsertBelow": "Insert below",
+  "phaseMergeNext": "Merge with next",
+  "phaseSplit": "Split…",
+  "phaseSplitTitle": "Split segment",
+  "phaseSplitHint": "Click where the second segment should start.",
+  "phaseSplitAction": "Split here",
+  "phaseInsertTitle": "New segment",
+  "phaseInsertAction": "Insert",
+  "phaseDeletedCount": "Deleted {count} segments",
+  "@phaseDeletedCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "phaseUndo": "Undo",
+  "phaseDragToReorder": "Drag to reorder",
+  "phaseShortcuts": "Keyboard: Up/Down move · Space play/stop · Enter generate · F2 edit · Delete remove · Esc clear · Ctrl+A select all (multi-select) · Ctrl+S save",
+  "phaseMergeSettings": "Playback and export",
+  "phaseMergeGap": "Pause between segments",
+  "phaseMergeGapHint": "Used by Play All and Export Merged.",
+  "phaseFadeIn": "Fade in",
+  "phaseFadeOut": "Fade out",
+  "phaseFadeHint": "Applied to every segment in the merged export. 10–50 ms removes clicks at the cuts; longer values soften each line.",
+  "sectionReferenceAudio": "REFERENCE AUDIO",
+  "sectionCharacterInfo": "CHARACTER INFO",
+  "sectionProvider": "PROVIDER",
+  "sectionModel": "MODEL",
+  "sectionVoice": "VOICE",
+  "sectionVoiceNameOptional": "VOICE NAME (optional)",
+  "sectionVoiceDescription": "VOICE DESCRIPTION",
+  "sectionCosyvoiceMode": "COSYVOICE MODE",
+  "sectionServerProfileOptional": "SERVER PROFILE (optional)",
+  "sectionInstruct": "INSTRUCT",
+  "sectionVoxcpm2Mode": "VOXCPM2 MODE",
+  "sectionGptSovitsMode": "GPT-SOVITS MODE",
+  "sectionTrainedSpeaker": "TRAINED SPEAKER",
+  "sectionVoiceClone": "VOICE CLONE",
+  "sectionVoiceDesign": "VOICE DESIGN",
+  "sectionOutput": "OUTPUT",
+  "autoFillProviderSpeaker": "Auto-fill: Provider + Speaker",
+  "statusIdle": "Idle",
+  "statusPreview": "Preview",
+  "novelGeneratingSegments": "Generating {count} segments",
+  "@novelGeneratingSegments": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "novelGeneratingShort": "Generating {count}",
+  "@novelGeneratingShort": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "novelEpubReserved": "EPUB import is not supported yet; the TXT files were imported.",
+  "novelImportFailed": "Import failed: {error}",
+  "@novelImportFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "novelSegmentSaved": "Segment saved.",
+  "novelSegmentDeleted": "Segment deleted.",
+  "novelDeleteChapterMessage": "This removes \"{title}\" and its cached audio.",
+  "@novelDeleteChapterMessage": {
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "novelChapterDeleted": "Chapter deleted.",
+  "novelDialogueRulesSaved": "Dialogue rules saved; rebuilt {count} segments.",
+  "@novelDialogueRulesSaved": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "novelTextFiltersSaved": "Text filters saved. Stale novel audio will regenerate on demand.",
+  "novelPlaybackStopped": "Playback stopped: {error}",
+  "@novelPlaybackStopped": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "novelNarrator": "Narrator",
+  "novelDialogue": "Dialogue",
+  "novelSegmentLabel": "Segment {index}",
+  "@novelSegmentLabel": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "phaseNoAudioToPlay": "No generated audio to play.",
+  "dialogLineFallback": "Line",
+  "videoDubDeleteV1First": "Delete the V1 clip first; only one source video is allowed.",
+  "statusWritingWav": "Recording WAV",
+  "novelImported": "Imported {chapters} chapters, {segments} segments.",
+  "@novelImported": {
+    "placeholders": {
+      "chapters": {},
+      "segments": {}
+    }
+  },
+  "novelImportFolderTitle": "Import novel folder"
 }

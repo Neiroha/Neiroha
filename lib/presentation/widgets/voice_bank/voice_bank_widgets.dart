@@ -91,11 +91,17 @@ class VoiceBankTile extends StatelessWidget {
                   itemBuilder: (_) => [
                     PopupMenuItem(
                       value: 'activate',
-                      child: Text(bank.isActive ? 'Deactivate' : 'Set Active'),
+                      child: Text(
+                        bank.isActive
+                            ? AppLocalizations.of(context).bankDeactivate
+                            : AppLocalizations.of(context).bankSetActive,
+                      ),
                     ),
                     PopupMenuItem(
                       value: 'rename',
-                      child: Text(AppLocalizations.of(context).uiRename),
+                      child: Text(
+                        AppLocalizations.of(context).bankSettingsMenu,
+                      ),
                     ),
                     PopupMenuItem(
                       value: 'duplicate',

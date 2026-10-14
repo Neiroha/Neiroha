@@ -16,18 +16,24 @@ class LoudnessItem {
   final String id;
   final String path;
 
-  const LoudnessItem({required this.id, required this.path});
+  /// Speaker of the clip; its character loudness offset is applied.
+  final String? voiceAssetId;
+
+  const LoudnessItem({required this.id, required this.path, this.voiceAssetId});
 }
 
 /// Check FFmpeg, then open the batch loudness dialog for [items].
 ///
-/// [beforeApply] runs right before files are rewritten — editors with their
-/// own players (Video Dub) use it to release file handles. Global playback
-/// is always stopped. Returns true when at least one file changed.
+/// With [bankId] the dialog starts from that bank's loudness target and
+/// offers the per-character offsets. [beforeApply] runs right before files
+/// are rewritten — editors with their own players (Video Dub) use it to
+/// release file handles. Global playback is always stopped. Returns true
+/// when at least one file changed.
 Future<bool> runLoudnessNormalization({
   required BuildContext context,
   required WidgetRef ref,
   required List<LoudnessItem> items,
+  String? bankId,
   Future<void> Function()? beforeApply,
 }) async {
   final l10n = AppLocalizations.of(context);
@@ -57,11 +63,22 @@ Future<bool> runLoudnessNormalization({
     );
     return false;
   }
+  final database = ref.read(databaseProvider);
+  final bank = bankId == null ? null : await database.getBankById(bankId);
+  final offsets = {
+    for (final a in await database.getAllVoiceAssets())
+      if (a.loudnessOffsetDb != 0) a.id: a.loudnessOffsetDb,
+  };
   if (!context.mounted) return false;
   final changed = await showDialog<bool>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => _LoudnessDialog(items: present, beforeApply: beforeApply),
+    builder: (_) => _LoudnessDialog(
+      items: present,
+      bankTargetLufs: bank?.loudnessTargetLufs,
+      offsets: offsets,
+      beforeApply: beforeApply,
+    ),
   );
   return changed ?? false;
 }
@@ -82,9 +99,16 @@ enum _Phase { idle, analyzing, analyzed, applying, done }
 
 class _LoudnessDialog extends ConsumerStatefulWidget {
   final List<LoudnessItem> items;
+  final double? bankTargetLufs;
+  final Map<String, double> offsets;
   final Future<void> Function()? beforeApply;
 
-  const _LoudnessDialog({required this.items, required this.beforeApply});
+  const _LoudnessDialog({
+    required this.items,
+    required this.bankTargetLufs,
+    required this.offsets,
+    required this.beforeApply,
+  });
 
   @override
   ConsumerState<_LoudnessDialog> createState() => _LoudnessDialogState();
@@ -109,21 +133,47 @@ class _LoudnessDialogState extends ConsumerState<_LoudnessDialog> {
   int _onTarget = 0;
   int _silent = 0;
   int _failed = 0;
+  int _restored = 0;
   String? _lastError;
+  late bool _useOffsets = _hasOffsets;
+  late final int _restorable = widget.items
+      .where((i) => LoudnessNormalizer.hasRestorableBackup(i.path))
+      .length;
 
   int get _concurrency =>
       (Platform.numberOfProcessors ~/ 2).clamp(1, 4).toInt();
 
   double get _targetLufs => _preset.lufs ?? _customLufs;
 
-  LoudnessTarget get _target => LoudnessTarget(lufs: _targetLufs);
+  bool get _hasOffsets =>
+      widget.items.any((i) => (widget.offsets[i.voiceAssetId] ?? 0) != 0);
+
+  double _offsetFor(LoudnessItem item) =>
+      _useOffsets ? widget.offsets[item.voiceAssetId] ?? 0 : 0;
+
+  LoudnessTarget _targetFor(LoudnessItem item) => LoudnessTarget(
+    lufs: LoudnessNormalizer.targetFor(
+      bankLufs: _targetLufs,
+      offsetDb: _offsetFor(item),
+    ),
+  );
 
   bool get _busy => _phase == _Phase.analyzing || _phase == _Phase.applying;
 
   @override
   void initState() {
     super.initState();
+    final bankTarget = widget.bankTargetLufs;
+    if (bankTarget != null) {
+      _selectTarget(bankTarget);
+    }
     unawaited(_loadPrefs());
+  }
+
+  void _selectTarget(double lufs) {
+    final preset = _Preset.values.where((p) => p.lufs == lufs).firstOrNull;
+    _preset = preset ?? _Preset.custom;
+    _customLufs = lufs.clamp(_minLufs, _maxLufs).toDouble();
   }
 
   Future<void> _loadPrefs() async {
@@ -134,14 +184,29 @@ class _LoudnessDialogState extends ConsumerState<_LoudnessDialog> {
     final rawBackup = await database.getSetting(_kBackupKey);
     if (!mounted) return;
     setState(() {
-      if (rawTarget != null) {
-        final preset = _Preset.values
-            .where((p) => p.lufs == rawTarget)
-            .firstOrNull;
-        _preset = preset ?? _Preset.custom;
-        _customLufs = rawTarget.clamp(_minLufs, _maxLufs).toDouble();
+      // A project's bank target wins over the last free-standing choice.
+      if (rawTarget != null && widget.bankTargetLufs == null) {
+        _selectTarget(rawTarget);
       }
       if (rawBackup != null) _keepBackup = rawBackup != 'false';
+    });
+  }
+
+  Future<void> _restore() async {
+    await ref.read(playbackNotifierProvider.notifier).stop();
+    await widget.beforeApply?.call();
+    var restored = 0;
+    for (final item in widget.items) {
+      try {
+        if (await LoudnessNormalizer.restoreFile(item.path)) restored++;
+      } catch (e) {
+        _lastError = '$e';
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _restored = restored;
+      _phase = _Phase.done;
     });
   }
 
@@ -197,7 +262,6 @@ class _LoudnessDialogState extends ConsumerState<_LoudnessDialog> {
     await widget.beforeApply?.call();
     if (!mounted) return;
     final normalizer = ref.read(loudnessNormalizerProvider);
-    final target = _target;
     final keepBackup = _keepBackup;
     setState(() {
       _phase = _Phase.applying;
@@ -216,7 +280,7 @@ class _LoudnessDialogState extends ConsumerState<_LoudnessDialog> {
     await _runPool(candidates, (item) async {
       final outcome = await normalizer.normalizeFile(
         item.path,
-        target,
+        _targetFor(item),
         measured: _measured[item.id],
         keepBackup: keepBackup,
       );
@@ -267,6 +331,23 @@ class _LoudnessDialogState extends ConsumerState<_LoudnessDialog> {
               const SizedBox(height: 8),
               _buildPresetPicker(l10n),
               const SizedBox(height: 4),
+              if (_hasOffsets)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  value: _useOffsets,
+                  onChanged: _busy || _phase == _Phase.done
+                      ? null
+                      : (v) => setState(() => _useOffsets = v),
+                  title: Text(l10n.loudnessUseOffsets),
+                  subtitle: Text(
+                    l10n.loudnessUseOffsetsHint,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.white.withValues(alpha: 0.45),
+                    ),
+                  ),
+                ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 dense: true,
@@ -424,12 +505,14 @@ class _LoudnessDialogState extends ConsumerState<_LoudnessDialog> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      l10n.loudnessSummary(
-                        _adjusted,
-                        _onTarget,
-                        _silent,
-                        _failed,
-                      ),
+                      _restored > 0
+                          ? l10n.loudnessRestored(_restored)
+                          : l10n.loudnessSummary(
+                              _adjusted,
+                              _onTarget,
+                              _silent,
+                              _failed,
+                            ),
                       style: const TextStyle(fontSize: 12.5),
                     ),
                   ),
@@ -454,10 +537,19 @@ class _LoudnessDialogState extends ConsumerState<_LoudnessDialog> {
   }
 
   Widget _buildAnalysis(AppLocalizations l10n) {
-    final values = [
-      for (final m in _measured.values)
-        if (!m.isSilent) m.integratedLufs,
-    ];
+    // Plot each clip relative to the base target: a narrator meant to sit
+    // 3 dB under the cast counts as "on target" at base − 3.
+    final values = <double>[];
+    var toAdjust = 0;
+    final tolerance = const LoudnessTarget(lufs: 0).toleranceLu;
+    for (final item in widget.items) {
+      final m = _measured[item.id];
+      if (m == null || m.isSilent) continue;
+      values.add(m.integratedLufs - _offsetFor(item));
+      if ((_targetFor(item).lufs - m.integratedLufs).abs() > tolerance) {
+        toAdjust++;
+      }
+    }
     if (values.isEmpty) {
       return _Panel(
         child: Text(l10n.loudnessNoAudio, style: const TextStyle(fontSize: 12)),
@@ -465,10 +557,7 @@ class _LoudnessDialogState extends ConsumerState<_LoudnessDialog> {
     }
     final lo = values.reduce(math.min);
     final hi = values.reduce(math.max);
-    final target = _target;
-    final toAdjust = values
-        .where((v) => (target.lufs - v).abs() > target.toleranceLu)
-        .length;
+    final target = LoudnessTarget(lufs: _targetLufs);
     return _Panel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -524,6 +613,12 @@ class _LoudnessDialogState extends ConsumerState<_LoudnessDialog> {
     switch (_phase) {
       case _Phase.idle:
         return [
+          if (_restorable > 0)
+            TextButton.icon(
+              onPressed: () => unawaited(_restore()),
+              icon: const Icon(Icons.settings_backup_restore_rounded, size: 16),
+              label: Text(l10n.loudnessRestore(_restorable)),
+            ),
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(l10n.uiCancel),
@@ -559,7 +654,8 @@ class _LoudnessDialogState extends ConsumerState<_LoudnessDialog> {
       case _Phase.done:
         return [
           FilledButton(
-            onPressed: () => Navigator.pop(context, _adjusted > 0),
+            onPressed: () =>
+                Navigator.pop(context, _adjusted > 0 || _restored > 0),
             child: Text(l10n.uiDone),
           ),
         ];

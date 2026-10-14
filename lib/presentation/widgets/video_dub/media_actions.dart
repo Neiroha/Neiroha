@@ -45,7 +45,7 @@ extension _VideoDubEditorMediaActions on _VideoDubEditorState {
     // programmatically.
     if (kind == DubImportKind.video &&
         existing.any((c) => c.laneIndex == DubLanes.v1)) {
-      _snack('Delete the V1 clip first — only one source video is allowed');
+      _snack(AppLocalizations.of(context).videoDubDeleteV1First);
       return;
     }
 
@@ -195,14 +195,22 @@ extension _VideoDubEditorMediaActions on _VideoDubEditorState {
 
   /// Even out the generated cue takes. Only TTS cues are touched — A3
   /// imports are the user's own material.
-  Future<void> _normalizeCueLoudness(List<db.SubtitleCue> cues) async {
+  Future<void> _normalizeCueLoudness(
+    db.VideoDubProject project,
+    List<db.SubtitleCue> cues,
+  ) async {
     await runLoudnessNormalization(
       context: context,
       ref: ref,
+      bankId: project.bankId,
       items: [
         for (final c in cues)
           if (c.audioPath != null && !c.missing)
-            LoudnessItem(id: c.id, path: c.audioPath!),
+            LoudnessItem(
+              id: c.id,
+              path: c.audioPath!,
+              voiceAssetId: c.voiceAssetId,
+            ),
       ],
       // Release media_kit's handles so the files can be rewritten.
       beforeApply: () async {

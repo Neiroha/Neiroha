@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/services/audio_merge_service.dart';
+import 'package:neiroha/data/services/loudness_normalizer.dart';
 import 'package:neiroha/data/storage/novel_dialogue_rules_service.dart';
 import 'package:neiroha/data/storage/novel_import_service.dart';
 import 'package:neiroha/data/storage/novel_text_filter_rules_service.dart';
@@ -123,6 +125,7 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
       projectName: project.name,
       bankId: project.bankId,
       banks: banks,
+      autoNormalizeLoudness: project.autoNormalizeLoudness,
     );
     if (result == null) return;
     final database = ref.read(databaseProvider);
@@ -131,7 +134,9 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
       return;
     }
     final bankChanged = result.bankId != project.bankId;
-    if (result.name != project.name || bankChanged) {
+    if (result.name != project.name ||
+        bankChanged ||
+        result.autoNormalizeLoudness != project.autoNormalizeLoudness) {
       var narratorId = project.narratorVoiceAssetId;
       var dialogueId = project.dialogueVoiceAssetId;
       if (bankChanged) {
@@ -143,6 +148,7 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
         project.copyWith(
           name: result.name,
           bankId: result.bankId,
+          autoNormalizeLoudness: result.autoNormalizeLoudness,
           narratorVoiceAssetId: Value(narratorId),
           dialogueVoiceAssetId: Value(dialogueId),
           updatedAt: DateTime.now(),
@@ -173,7 +179,7 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
   Future<void> _createProject() async {
     final banks = ref.read(voiceBanksStreamProvider).valueOrNull ?? const [];
     if (banks.isEmpty) {
-      _snack('Create a Voice Bank first.');
+      _snack(AppLocalizations.of(context).uiCreateAVoiceBankFirst);
       return;
     }
     final result = await showDialog<_CreateNovelResult>(

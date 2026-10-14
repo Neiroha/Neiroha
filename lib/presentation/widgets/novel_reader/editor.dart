@@ -319,10 +319,17 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
                   runLoudnessNormalization(
                     context: context,
                     ref: ref,
+                    bankId: project.bankId,
                     items: [
                       for (final s in segments)
                         if (s.audioPath != null && !s.missing)
-                          LoudnessItem(id: s.id, path: s.audioPath!),
+                          LoudnessItem(
+                            id: s.id,
+                            path: s.audioPath!,
+                            voiceAssetId: s.segmentType == 'dialogue'
+                                ? project.dialogueVoiceAssetId
+                                : project.narratorVoiceAssetId,
+                          ),
                     ],
                   ),
                 );

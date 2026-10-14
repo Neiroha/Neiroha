@@ -112,6 +112,7 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
       projectName: project.name,
       bankId: project.bankId,
       banks: banks,
+      autoNormalizeLoudness: project.autoNormalizeLoudness,
     );
     if (result == null) return;
     final database = ref.read(databaseProvider);
@@ -120,11 +121,14 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
       return;
     }
     final bankChanged = result.bankId != project.bankId;
-    if (result.name != project.name || bankChanged) {
+    if (result.name != project.name ||
+        bankChanged ||
+        result.autoNormalizeLoudness != project.autoNormalizeLoudness) {
       await database.updateDialogTtsProject(
         project.copyWith(
           name: result.name,
           bankId: result.bankId,
+          autoNormalizeLoudness: result.autoNormalizeLoudness,
           updatedAt: DateTime.now(),
         ),
       );
@@ -310,12 +314,17 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
                       runLoudnessNormalization(
                         context: context,
                         ref: ref,
+                        bankId: project.bankId,
                         items: [
                           for (final l
                               in linesAsync.valueOrNull ??
                                   const <db.DialogTtsLine>[])
                             if (l.audioPath != null && !l.missing)
-                              LoudnessItem(id: l.id, path: l.audioPath!),
+                              LoudnessItem(
+                                id: l.id,
+                                path: l.audioPath!,
+                                voiceAssetId: l.voiceAssetId,
+                              ),
                         ],
                       ),
                     ),
@@ -424,7 +433,7 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
     final assets = ref.read(voiceAssetsStreamProvider).valueOrNull ?? const [];
     final voiceName =
         assets.where((a) => a.id == line.voiceAssetId).firstOrNull?.name ??
-        'Line';
+        AppLocalizations.of(context).dialogLineFallback;
     await notifier.load(line.audioPath!, line.lineText, subtitle: voiceName);
     if (line.audioDuration == null) {
       ref
@@ -513,6 +522,14 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
         ext,
       );
       await File(filePath).writeAsBytes(result.audioBytes);
+      await ref
+          .read(autoLoudnessServiceProvider)
+          .normalizeGenerated(
+            enabled: project.autoNormalizeLoudness,
+            path: filePath,
+            bankId: project.bankId,
+            voiceAssetId: asset.id,
+          );
       final durationSec = await measureAudioDuration(filePath);
       await database.updateDialogTtsLine(
         line.copyWith(

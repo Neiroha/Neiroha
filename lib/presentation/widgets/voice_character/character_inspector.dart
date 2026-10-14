@@ -105,8 +105,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
   }
 
   db.TtsProvider? get _selectedProvider {
-    final providers =
-        ref.read(ttsProvidersStreamProvider).valueOrNull ?? const [];
+    final providers = ref.read(ttsProvidersStreamProvider).value ?? const [];
     return providers
         .where((p) => p.id == _selectedProviderId)
         .cast<db.TtsProvider?>()
@@ -187,8 +186,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
   Widget build(BuildContext context) {
     final a = widget.asset;
     final allProviders =
-        ref.watch(ttsProvidersStreamProvider).valueOrNull ??
-        const <db.TtsProvider>[];
+        ref.watch(ttsProvidersStreamProvider).value ?? const <db.TtsProvider>[];
     final capabilities = ref.watch(platformCapabilitiesProvider);
     final enabledProviders = allProviders
         .where(

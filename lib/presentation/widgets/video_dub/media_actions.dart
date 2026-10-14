@@ -142,12 +142,12 @@ extension _VideoDubEditorMediaActions on _VideoDubEditorState {
 
   Future<void> _exportVideo(db.VideoDubProject project) async {
     final cues =
-        ref.read(subtitleCuesStreamProvider(widget.projectId)).valueOrNull ??
+        ref.read(subtitleCuesStreamProvider(widget.projectId)).value ??
         const <db.SubtitleCue>[];
     final clips =
         ref
             .read(timelineClipsStreamProvider('videodub:${widget.projectId}'))
-            .valueOrNull ??
+            .value ??
         const <db.TimelineClip>[];
     _updateState(() => _exporting = true);
     try {
@@ -167,12 +167,12 @@ extension _VideoDubEditorMediaActions on _VideoDubEditorState {
 
   Future<void> _exportAudio(db.VideoDubProject project) async {
     final cues =
-        ref.read(subtitleCuesStreamProvider(widget.projectId)).valueOrNull ??
+        ref.read(subtitleCuesStreamProvider(widget.projectId)).value ??
         const <db.SubtitleCue>[];
     final clips =
         ref
             .read(timelineClipsStreamProvider('videodub:${widget.projectId}'))
-            .valueOrNull ??
+            .value ??
         const <db.TimelineClip>[];
     _updateState(() => _exporting = true);
     try {

@@ -249,7 +249,7 @@ class _VideoDubEditorState extends ConsumerState<VideoDubEditor> {
   void _applyA1Gating(int ms) {
     final clips = ref
         .read(timelineClipsStreamProvider('videodub:${widget.projectId}'))
-        .valueOrNull;
+        .value;
     bool covered = false;
     if (clips != null) {
       for (final c in clips) {
@@ -281,9 +281,7 @@ class _VideoDubEditorState extends ConsumerState<VideoDubEditor> {
       final ms = pos.inMilliseconds;
       _applyA1Gating(ms);
 
-      final cues = ref
-          .read(subtitleCuesStreamProvider(widget.projectId))
-          .valueOrNull;
+      final cues = ref.read(subtitleCuesStreamProvider(widget.projectId)).value;
       if (cues == null || cues.isEmpty) return;
 
       // Find cue whose window contains current ms.
@@ -331,7 +329,7 @@ class _VideoDubEditorState extends ConsumerState<VideoDubEditor> {
   @override
   Widget build(BuildContext context) {
     final projectsAsync = ref.watch(videoDubProjectsStreamProvider);
-    final project = projectsAsync.valueOrNull
+    final project = projectsAsync.value
         ?.where((p) => p.id == widget.projectId)
         .firstOrNull;
 
@@ -347,20 +345,19 @@ class _VideoDubEditorState extends ConsumerState<VideoDubEditor> {
     final cuesAsync = ref.watch(subtitleCuesStreamProvider(widget.projectId));
     final assetsAsync = ref.watch(voiceAssetsStreamProvider);
     final membersAsync = ref.watch(bankMembersStreamProvider(project.bankId));
-    final allAssets = assetsAsync.valueOrNull ?? const <db.VoiceAsset>[];
+    final allAssets = assetsAsync.value ?? const <db.VoiceAsset>[];
     final assetMap = {for (final a in allAssets) a.id: a};
-    final bankMembers =
-        membersAsync.valueOrNull ?? const <db.VoiceBankMember>[];
+    final bankMembers = membersAsync.value ?? const <db.VoiceBankMember>[];
     final bankAssets = bankMembers
         .map((m) => assetMap[m.voiceAssetId])
         .whereType<db.VoiceAsset>()
         .toList();
 
-    final cues = cuesAsync.valueOrNull ?? const <db.SubtitleCue>[];
+    final cues = cuesAsync.value ?? const <db.SubtitleCue>[];
     final clipsAsync = ref.watch(
       timelineClipsStreamProvider('videodub:${widget.projectId}'),
     );
-    final clips = clipsAsync.valueOrNull ?? const <db.TimelineClip>[];
+    final clips = clipsAsync.value ?? const <db.TimelineClip>[];
     final capabilities = ref.watch(platformCapabilitiesProvider);
     final ffmpegSupported = capabilities.supportsFfmpegCli;
     final ffmpegAvailable = ref

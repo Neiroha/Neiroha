@@ -10,7 +10,7 @@ void warnIfVoiceHealthFailedOnce({
   required WidgetRef ref,
   required db.VoiceAsset asset,
 }) {
-  final health = ref.read(voiceHealthStatusProvider).valueOrNull;
+  final health = ref.read(voiceHealthStatusProvider).value;
   if (health?[asset.id] != false) return;
   final warned = ref.read(warnedUnhealthyVoiceIdsProvider);
   if (warned.contains(asset.id)) return;

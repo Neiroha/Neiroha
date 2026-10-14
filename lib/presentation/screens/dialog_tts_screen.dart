@@ -66,8 +66,7 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
   Widget _buildProjectListScreen() {
     final projectsAsync = ref.watch(dialogTtsProjectsStreamProvider);
     final banks =
-        ref.watch(voiceBanksStreamProvider).valueOrNull ??
-        const <db.VoiceBank>[];
+        ref.watch(voiceBanksStreamProvider).value ?? const <db.VoiceBank>[];
     return Column(
       children: [
         ProjectListHeader(onCreate: _createProject),
@@ -155,7 +154,7 @@ class _DialogTtsScreenState extends ConsumerState<DialogTtsScreen> {
   }
 
   Future<void> _createProject() async {
-    final banks = ref.read(voiceBanksStreamProvider).valueOrNull ?? const [];
+    final banks = ref.read(voiceBanksStreamProvider).value ?? const [];
     if (banks.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -216,7 +215,7 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
   @override
   Widget build(BuildContext context) {
     final projectsAsync = ref.watch(dialogTtsProjectsStreamProvider);
-    final project = projectsAsync.valueOrNull
+    final project = projectsAsync.value
         ?.where((p) => p.id == widget.projectId)
         .firstOrNull;
     if (project == null) {
@@ -228,8 +227,8 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
     );
     final assetsAsync = ref.watch(voiceAssetsStreamProvider);
     final membersAsync = ref.watch(bankMembersStreamProvider(project.bankId));
-    final bankMembers = membersAsync.valueOrNull ?? [];
-    final allAssets = assetsAsync.valueOrNull ?? [];
+    final bankMembers = membersAsync.value ?? [];
+    final allAssets = assetsAsync.value ?? [];
     final assetMap = {for (final a in allAssets) a.id: a};
     final bankAssets = bankMembers
         .map((m) => assetMap[m.voiceAssetId])
@@ -261,7 +260,7 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
                         generatingLineIds: _generatingLineIds,
                         onPlay: _playLine,
                         onPlayFrom: (startIndex) => _playFrom(
-                          linesAsync.valueOrNull ?? const [],
+                          linesAsync.value ?? const [],
                           startIndex,
                           assetMap,
                         ),
@@ -305,7 +304,7 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
                   setState(() => _autoPlayAfterGenerate = v),
               onGenerateAll: () => _generateAll(
                 project,
-                linesAsync.valueOrNull ?? const [],
+                linesAsync.value ?? const [],
                 bankAssets,
               ),
               onNormalize: _generatingLineIds.isNotEmpty
@@ -317,8 +316,7 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
                         bankId: project.bankId,
                         items: [
                           for (final l
-                              in linesAsync.valueOrNull ??
-                                  const <db.DialogTtsLine>[])
+                              in linesAsync.value ?? const <db.DialogTtsLine>[])
                             if (l.audioPath != null && !l.missing)
                               LoudnessItem(
                                 id: l.id,
@@ -430,7 +428,7 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
       await notifier.stop();
       return;
     }
-    final assets = ref.read(voiceAssetsStreamProvider).valueOrNull ?? const [];
+    final assets = ref.read(voiceAssetsStreamProvider).value ?? const [];
     final voiceName =
         assets.where((a) => a.id == line.voiceAssetId).firstOrNull?.name ??
         AppLocalizations.of(context).dialogLineFallback;

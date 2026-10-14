@@ -57,7 +57,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
   @override
   Widget build(BuildContext context) {
     final projectsAsync = ref.watch(novelProjectsStreamProvider);
-    final project = projectsAsync.valueOrNull
+    final project = projectsAsync.value
         ?.where((p) => p.id == widget.projectId)
         .firstOrNull;
     if (project == null) {
@@ -65,22 +65,20 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     }
 
     final chapters =
-        ref.watch(novelChaptersStreamProvider(project.id)).valueOrNull ??
+        ref.watch(novelChaptersStreamProvider(project.id)).value ??
         const <db.NovelChapter>[];
     final segments =
-        ref.watch(novelSegmentsStreamProvider(project.id)).valueOrNull ??
+        ref.watch(novelSegmentsStreamProvider(project.id)).value ??
         const <db.NovelSegment>[];
     final allAssets =
-        ref.watch(voiceAssetsStreamProvider).valueOrNull ??
-        const <db.VoiceAsset>[];
+        ref.watch(voiceAssetsStreamProvider).value ?? const <db.VoiceAsset>[];
     final members =
-        ref.watch(bankMembersStreamProvider(project.bankId)).valueOrNull ??
+        ref.watch(bankMembersStreamProvider(project.bankId)).value ??
         const <db.VoiceBankMember>[];
     final providers =
-        ref.watch(ttsProvidersStreamProvider).valueOrNull ??
-        const <db.TtsProvider>[];
+        ref.watch(ttsProvidersStreamProvider).value ?? const <db.TtsProvider>[];
     final textFilterRules =
-        ref.watch(novelTextFilterRulesProvider).valueOrNull ??
+        ref.watch(novelTextFilterRulesProvider).value ??
         NovelTextFilterRulesService.builtInRules;
     final textFilterSignature = NovelTextFilterRulesService.signature(
       textFilterRules,

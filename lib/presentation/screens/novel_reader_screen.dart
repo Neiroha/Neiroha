@@ -73,8 +73,7 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
   Widget _buildProjectListScreen() {
     final projectsAsync = ref.watch(novelProjectsStreamProvider);
     final banks =
-        ref.watch(voiceBanksStreamProvider).valueOrNull ??
-        const <db.VoiceBank>[];
+        ref.watch(voiceBanksStreamProvider).value ?? const <db.VoiceBank>[];
     return Column(
       children: [
         _NovelProjectHeader(onCreate: _createProject),
@@ -178,7 +177,7 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
   }
 
   Future<void> _createProject() async {
-    final banks = ref.read(voiceBanksStreamProvider).valueOrNull ?? const [];
+    final banks = ref.read(voiceBanksStreamProvider).value ?? const [];
     if (banks.isEmpty) {
       _snack(AppLocalizations.of(context).uiCreateAVoiceBankFirst);
       return;

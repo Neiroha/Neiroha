@@ -15,7 +15,7 @@ dependencies:
   cupertino_icons: ^2.0.0
 
   # State management
-  flutter_riverpod: ^2.6.1
+  flutter_riverpod: ^3.4.3
 
   # Local database (Drift = type-safe SQLite)
   drift: ^2.35.0

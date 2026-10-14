@@ -192,7 +192,7 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
       return true;
     }
     final clips =
-        ref.read(timelineClipsStreamProvider(_streamKey)).valueOrNull ??
+        ref.read(timelineClipsStreamProvider(_streamKey)).value ??
         const <db.TimelineClip>[];
     if (clips.isEmpty) return false;
     _playAll(clips);
@@ -323,7 +323,7 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
     final activeAudioPath = ref.watch(
       playbackNotifierProvider.select((state) => state.audioPath),
     );
-    final clips = clipsAsync.valueOrNull ?? const <db.TimelineClip>[];
+    final clips = clipsAsync.value ?? const <db.TimelineClip>[];
 
     int minLane = -1;
     int maxLane = 1;
@@ -889,7 +889,7 @@ class _StoryTrackEditorState extends ConsumerState<StoryTrackEditor> {
   }
 
   Future<void> _importFromLibrary(List<db.TimelineClip> clips) async {
-    final tracks = ref.read(audioTracksStreamProvider).valueOrNull ?? const [];
+    final tracks = ref.read(audioTracksStreamProvider).value ?? const [];
     if (tracks.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

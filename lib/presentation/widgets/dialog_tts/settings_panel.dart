@@ -41,7 +41,7 @@ class SettingsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lines = linesAsync.valueOrNull ?? const [];
+    final lines = linesAsync.value ?? const [];
     final pending = lines
         .where((l) => l.audioPath == null && l.voiceAssetId != null)
         .length;

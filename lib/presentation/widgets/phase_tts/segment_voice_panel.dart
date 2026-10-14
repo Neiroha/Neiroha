@@ -231,7 +231,7 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
 
   db.TtsProvider? _providerFor(db.VoiceAsset? asset) {
     if (asset == null) return null;
-    final providers = ref.read(ttsProvidersStreamProvider).valueOrNull ?? [];
+    final providers = ref.read(ttsProvidersStreamProvider).value ?? [];
     return providers.where((p) => p.id == asset.providerId).firstOrNull;
   }
 

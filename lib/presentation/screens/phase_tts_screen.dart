@@ -92,8 +92,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
   Widget _buildProjectListScreen() {
     final projectsAsync = ref.watch(phaseTtsProjectsStreamProvider);
     final banks =
-        ref.watch(voiceBanksStreamProvider).valueOrNull ??
-        const <db.VoiceBank>[];
+        ref.watch(voiceBanksStreamProvider).value ?? const <db.VoiceBank>[];
     return Column(
       children: [
         ProjectListHeader(onCreate: _createProject),
@@ -201,7 +200,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     final segmentsAsync = ref.watch(phaseTtsSegmentsStreamProvider(projectId));
     final assetsAsync = ref.watch(voiceAssetsStreamProvider);
 
-    final project = projectsAsync.valueOrNull
+    final project = projectsAsync.value
         ?.where((p) => p.id == projectId)
         .firstOrNull;
     if (project == null) {
@@ -209,15 +208,15 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     }
 
     final membersAsync = ref.watch(bankMembersStreamProvider(project.bankId));
-    final bankMembers = membersAsync.valueOrNull ?? [];
-    final allAssets = assetsAsync.valueOrNull ?? [];
+    final bankMembers = membersAsync.value ?? [];
+    final allAssets = assetsAsync.value ?? [];
     final assetMap = {for (final a in allAssets) a.id: a};
     final bankAssets = bankMembers
         .map((m) => assetMap[m.voiceAssetId])
         .whereType<db.VoiceAsset>()
         .toList();
 
-    final segments = segmentsAsync.valueOrNull ?? const <db.PhaseTtsSegment>[];
+    final segments = segmentsAsync.value ?? const <db.PhaseTtsSegment>[];
     final hasGeneratedAudio = segments.any(
       (s) => s.audioPath != null && !s.missing,
     );
@@ -582,7 +581,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
   }
 
   void _createProject() async {
-    final banks = ref.read(voiceBanksStreamProvider).valueOrNull ?? const [];
+    final banks = ref.read(voiceBanksStreamProvider).value ?? const [];
     if (banks.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -296,16 +296,13 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final banks = ref.watch(voiceBanksStreamProvider).valueOrNull ?? const [];
+    final banks = ref.watch(voiceBanksStreamProvider).value ?? const [];
     final otherBanks = banks
         .where((b) => b.id != widget.targetBank.id)
         .toList();
-    final allAssets =
-        ref.watch(voiceAssetsStreamProvider).valueOrNull ?? const [];
+    final allAssets = ref.watch(voiceAssetsStreamProvider).value ?? const [];
     final targetMembers =
-        ref
-            .watch(bankMembersStreamProvider(widget.targetBank.id))
-            .valueOrNull ??
+        ref.watch(bankMembersStreamProvider(widget.targetBank.id)).value ??
         const [];
     final targetAssetIds = targetMembers.map((m) => m.voiceAssetId).toSet();
 
@@ -520,8 +517,7 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
     Set<String> targetAssetIds,
   ) async {
     final sourceMembers =
-        ref.read(bankMembersStreamProvider(_sourceBankId!)).valueOrNull ??
-        const [];
+        ref.read(bankMembersStreamProvider(_sourceBankId!)).value ?? const [];
     final assetMap = {for (final a in allAssets) a.id: a};
     final toAdd = sourceMembers
         .map((m) => assetMap[m.voiceAssetId])

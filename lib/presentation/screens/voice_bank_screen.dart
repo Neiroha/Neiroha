@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
@@ -310,9 +311,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     final assetsAsync = ref.watch(voiceAssetsStreamProvider);
     final providersAsync = ref.watch(ttsProvidersStreamProvider);
 
-    final bank = banksAsync.valueOrNull
-        ?.where((b) => b.id == bankId)
-        .firstOrNull;
+    final bank = banksAsync.value?.where((b) => b.id == bankId).firstOrNull;
     if (bank == null) {
       return Center(child: CircularProgressIndicator());
     }
@@ -522,8 +521,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
 
     final selectedId = ref.watch(selectedCharacterIdProvider);
     final healthStatus =
-        ref.watch(voiceHealthStatusProvider).valueOrNull ??
-        const <String, bool>{};
+        ref.watch(voiceHealthStatusProvider).value ?? const <String, bool>{};
     return ListView.builder(
       padding: const EdgeInsets.all(8),
       itemCount: filtered.length,
@@ -639,7 +637,7 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
   // ───────────────── Bank actions ─────────────────
 
   void _createBank() async {
-    final banks = ref.read(voiceBanksStreamProvider).valueOrNull ?? [];
+    final banks = ref.read(voiceBanksStreamProvider).value ?? [];
     final nameCtrl = TextEditingController();
     final result = await showDialog<String>(
       context: context,
@@ -811,9 +809,9 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
     AsyncValue<List<db.VoiceAsset>> assetsAsync,
     AsyncValue<List<db.TtsProvider>> providersAsync,
   ) async {
-    final members = membersAsync.valueOrNull ?? [];
-    final allAssets = assetsAsync.valueOrNull ?? [];
-    final allProviders = providersAsync.valueOrNull ?? [];
+    final members = membersAsync.value ?? [];
+    final allAssets = assetsAsync.value ?? [];
+    final allProviders = providersAsync.value ?? [];
     final l10n = AppLocalizations.of(context);
     if (members.isEmpty) {
       if (mounted) {

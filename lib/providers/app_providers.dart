@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/data/services/android_media_session_service.dart';
+import 'package:neiroha/data/services/loudness_normalizer.dart';
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/data/storage/export_prefs.dart';
@@ -60,6 +61,12 @@ final ffmpegServiceProvider = Provider<FFmpegService>((ref) {
     ref.watch(databaseProvider),
     capabilities: ref.watch(platformCapabilitiesProvider),
   );
+});
+
+/// Batch loudness normalization for generated project audio.
+final loudnessNormalizerProvider = Provider<LoudnessNormalizer>((ref) {
+  final ffmpeg = ref.watch(ffmpegServiceProvider);
+  return LoudnessNormalizer(resolveFfmpeg: ffmpeg.resolvePath);
 });
 
 /// User-configurable export defaults (audio format / video + audio codecs)

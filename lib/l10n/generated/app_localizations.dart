@@ -3536,6 +3536,299 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lets agents manage providers, voices and dubbing jobs at {url} (streamable HTTP). Uses the API key above when set.'**
   String uiMcpEndpointDescription(Object url);
+
+  /// No description provided for @loudnessAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Unify loudness'**
+  String get loudnessAction;
+
+  /// No description provided for @loudnessActionTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring every generated clip to the same loudness'**
+  String get loudnessActionTooltip;
+
+  /// No description provided for @loudnessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unify Loudness'**
+  String get loudnessTitle;
+
+  /// No description provided for @loudnessIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Measures the perceived loudness (LUFS) of {count} generated clips and brings each one to the same target. Only the gain changes; a limiter keeps peaks from clipping. Files are rewritten in place, so timelines and exports pick up the result automatically.'**
+  String loudnessIntro(Object count);
+
+  /// No description provided for @loudnessTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'TARGET LOUDNESS'**
+  String get loudnessTarget;
+
+  /// No description provided for @loudnessPresetLoud.
+  ///
+  /// In en, this message translates to:
+  /// **'Loud'**
+  String get loudnessPresetLoud;
+
+  /// No description provided for @loudnessPresetLoudHint.
+  ///
+  /// In en, this message translates to:
+  /// **'-14 LUFS · short-video and music platforms'**
+  String get loudnessPresetLoudHint;
+
+  /// No description provided for @loudnessPresetStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get loudnessPresetStandard;
+
+  /// No description provided for @loudnessPresetStandardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'-16 LUFS · podcasts, audiobooks, narration'**
+  String get loudnessPresetStandardHint;
+
+  /// No description provided for @loudnessPresetSoft.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft'**
+  String get loudnessPresetSoft;
+
+  /// No description provided for @loudnessPresetSoftHint.
+  ///
+  /// In en, this message translates to:
+  /// **'-20 LUFS · ASMR, sleep and whisper content'**
+  String get loudnessPresetSoftHint;
+
+  /// No description provided for @loudnessPresetBroadcast.
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast'**
+  String get loudnessPresetBroadcast;
+
+  /// No description provided for @loudnessPresetBroadcastHint.
+  ///
+  /// In en, this message translates to:
+  /// **'-23 LUFS · EBU R128 broadcast standard'**
+  String get loudnessPresetBroadcastHint;
+
+  /// No description provided for @loudnessPresetCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get loudnessPresetCustom;
+
+  /// No description provided for @loudnessPresetCustomHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick any target between -30 and -10 LUFS'**
+  String get loudnessPresetCustomHint;
+
+  /// No description provided for @loudnessKeepBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep original backups'**
+  String get loudnessKeepBackup;
+
+  /// No description provided for @loudnessKeepBackupHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Originals go to an _original_audio folder next to the clips. Later runs always start from them, so you can change the target without stacking quality loss.'**
+  String get loudnessKeepBackupHint;
+
+  /// No description provided for @loudnessAnalyze.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyze'**
+  String get loudnessAnalyze;
+
+  /// No description provided for @loudnessAnalyzing.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing {done} / {total}'**
+  String loudnessAnalyzing(Object done, Object total);
+
+  /// No description provided for @loudnessApplying.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing {done} / {total}'**
+  String loudnessApplying(Object done, Object total);
+
+  /// No description provided for @loudnessApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Unify {count} clips'**
+  String loudnessApply(Object count);
+
+  /// No description provided for @loudnessRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Current range'**
+  String get loudnessRange;
+
+  /// No description provided for @loudnessSpread.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread'**
+  String get loudnessSpread;
+
+  /// No description provided for @loudnessNeedsChange.
+  ///
+  /// In en, this message translates to:
+  /// **'To adjust'**
+  String get loudnessNeedsChange;
+
+  /// No description provided for @loudnessSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjusted {adjusted} · already on target {onTarget} · silent, skipped {silent} · failed {failed}'**
+  String loudnessSummary(
+    Object adjusted,
+    Object onTarget,
+    Object silent,
+    Object failed,
+  );
+
+  /// No description provided for @loudnessLastError.
+  ///
+  /// In en, this message translates to:
+  /// **'Last error: {error}'**
+  String loudnessLastError(Object error);
+
+  /// No description provided for @loudnessNoAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'No generated audio to unify yet.'**
+  String get loudnessNoAudio;
+
+  /// No description provided for @loudnessFfmpegRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Unifying loudness needs FFmpeg — configure it in Settings.'**
+  String get loudnessFfmpegRequired;
+
+  /// No description provided for @loudnessStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get loudnessStop;
+
+  /// No description provided for @phaseStatsGenerated.
+  ///
+  /// In en, this message translates to:
+  /// **'{done}/{total} generated'**
+  String phaseStatsGenerated(Object done, Object total);
+
+  /// No description provided for @phaseStatsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} failed'**
+  String phaseStatsFailed(Object count);
+
+  /// No description provided for @phaseStatsUnassigned.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} without voice'**
+  String phaseStatsUnassigned(Object count);
+
+  /// No description provided for @phaseFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get phaseFilterAll;
+
+  /// No description provided for @phaseFilterPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get phaseFilterPending;
+
+  /// No description provided for @phaseFilterDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated'**
+  String get phaseFilterDone;
+
+  /// No description provided for @phaseFilterFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get phaseFilterFailed;
+
+  /// No description provided for @phaseNoFilterMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No segments match this filter.'**
+  String get phaseNoFilterMatches;
+
+  /// No description provided for @phaseApplyVoiceToAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to all'**
+  String get phaseApplyVoiceToAll;
+
+  /// No description provided for @phaseEditText.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit text'**
+  String get phaseEditText;
+
+  /// No description provided for @phaseEditTextHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving changed text clears the generated audio of this segment.'**
+  String get phaseEditTextHint;
+
+  /// No description provided for @phaseResplitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-split the script?'**
+  String get phaseResplitTitle;
+
+  /// No description provided for @phaseResplitBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This replaces the current {count} segments together with their voice assignments, style settings and generated audio links.'**
+  String phaseResplitBody(Object count);
+
+  /// No description provided for @phaseResplitConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-split'**
+  String get phaseResplitConfirm;
+
+  /// No description provided for @phaseCharCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} chars'**
+  String phaseCharCount(Object count);
+
+  /// No description provided for @phasePlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get phasePlay;
+
+  /// No description provided for @phasePlayAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Play all'**
+  String get phasePlayAll;
+
+  /// No description provided for @phaseStopPlayback.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get phaseStopPlayback;
+
+  /// No description provided for @phaseMoreActions.
+  ///
+  /// In en, this message translates to:
+  /// **'More actions'**
+  String get phaseMoreActions;
 }
 
 class _AppLocalizationsDelegate

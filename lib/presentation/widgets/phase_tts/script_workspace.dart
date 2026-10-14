@@ -37,19 +37,43 @@ class _PhaseScriptWorkspaceState extends ConsumerState<PhaseScriptWorkspace> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Row(
+          padding: const EdgeInsets.fromLTRB(16, 10, 12, 8),
+          // Wrap instead of Row so the split toolbar drops under the title
+          // on narrow panes rather than overflowing.
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
+            runSpacing: 6,
             children: [
-              Text(
-                AppLocalizations.of(context).uiSCRIPT,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.4),
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    AppLocalizations.of(context).uiSCRIPT,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.2,
+                      color: Colors.white.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: widget.controller,
+                    builder: (context, value, _) => Text(
+                      AppLocalizations.of(
+                        context,
+                      ).phaseCharCount(value.text.characters.length),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.withValues(alpha: 0.35),
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const Spacer(),
               rulesAsync.when(
                 loading: () => const SizedBox.shrink(),
                 error: (_, _) => const SizedBox.shrink(),
@@ -75,12 +99,13 @@ class _PhaseScriptWorkspaceState extends ConsumerState<PhaseScriptWorkspace> {
         ),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: TextField(
               controller: widget.controller,
               maxLines: null,
               expands: true,
               textAlignVertical: TextAlignVertical.top,
+              style: const TextStyle(fontSize: 14, height: 1.6),
               onChanged: (_) => widget.onScriptChanged(),
               decoration: InputDecoration(
                 hintText: AppLocalizations.of(
@@ -170,7 +195,7 @@ class _SplitToolbar extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 32, minWidth: 32),
         ),
         SizedBox(width: 4),
-        TextButton.icon(
+        FilledButton.tonalIcon(
           onPressed: enabled.isEmpty ? null : onRun,
           icon: const Icon(Icons.splitscreen_rounded, size: 16),
           label: Text(AppLocalizations.of(context).uiAutoSplit),

@@ -835,5 +835,114 @@
     "placeholders": {
       "url": {}
     }
-  }
+  },
+  "loudnessAction": "Unify loudness",
+  "loudnessActionTooltip": "Bring every generated clip to the same loudness",
+  "loudnessTitle": "Unify Loudness",
+  "loudnessIntro": "Measures the perceived loudness (LUFS) of {count} generated clips and brings each one to the same target. Only the gain changes; a limiter keeps peaks from clipping. Files are rewritten in place, so timelines and exports pick up the result automatically.",
+  "@loudnessIntro": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "loudnessTarget": "TARGET LOUDNESS",
+  "loudnessPresetLoud": "Loud",
+  "loudnessPresetLoudHint": "-14 LUFS · short-video and music platforms",
+  "loudnessPresetStandard": "Standard",
+  "loudnessPresetStandardHint": "-16 LUFS · podcasts, audiobooks, narration",
+  "loudnessPresetSoft": "Soft",
+  "loudnessPresetSoftHint": "-20 LUFS · ASMR, sleep and whisper content",
+  "loudnessPresetBroadcast": "Broadcast",
+  "loudnessPresetBroadcastHint": "-23 LUFS · EBU R128 broadcast standard",
+  "loudnessPresetCustom": "Custom",
+  "loudnessPresetCustomHint": "Pick any target between -30 and -10 LUFS",
+  "loudnessKeepBackup": "Keep original backups",
+  "loudnessKeepBackupHint": "Originals go to an _original_audio folder next to the clips. Later runs always start from them, so you can change the target without stacking quality loss.",
+  "loudnessAnalyze": "Analyze",
+  "loudnessAnalyzing": "Analyzing {done} / {total}",
+  "@loudnessAnalyzing": {
+    "placeholders": {
+      "done": {},
+      "total": {}
+    }
+  },
+  "loudnessApplying": "Processing {done} / {total}",
+  "@loudnessApplying": {
+    "placeholders": {
+      "done": {},
+      "total": {}
+    }
+  },
+  "loudnessApply": "Unify {count} clips",
+  "@loudnessApply": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "loudnessRange": "Current range",
+  "loudnessSpread": "Spread",
+  "loudnessNeedsChange": "To adjust",
+  "loudnessSummary": "Adjusted {adjusted} · already on target {onTarget} · silent, skipped {silent} · failed {failed}",
+  "@loudnessSummary": {
+    "placeholders": {
+      "adjusted": {},
+      "onTarget": {},
+      "silent": {},
+      "failed": {}
+    }
+  },
+  "loudnessLastError": "Last error: {error}",
+  "@loudnessLastError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loudnessNoAudio": "No generated audio to unify yet.",
+  "loudnessFfmpegRequired": "Unifying loudness needs FFmpeg — configure it in Settings.",
+  "loudnessStop": "Stop",
+  "phaseStatsGenerated": "{done}/{total} generated",
+  "@phaseStatsGenerated": {
+    "placeholders": {
+      "done": {},
+      "total": {}
+    }
+  },
+  "phaseStatsFailed": "{count} failed",
+  "@phaseStatsFailed": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "phaseStatsUnassigned": "{count} without voice",
+  "@phaseStatsUnassigned": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "phaseFilterAll": "All",
+  "phaseFilterPending": "Pending",
+  "phaseFilterDone": "Generated",
+  "phaseFilterFailed": "Failed",
+  "phaseNoFilterMatches": "No segments match this filter.",
+  "phaseApplyVoiceToAll": "Apply to all",
+  "phaseEditText": "Edit text",
+  "phaseEditTextHint": "Saving changed text clears the generated audio of this segment.",
+  "phaseResplitTitle": "Re-split the script?",
+  "phaseResplitBody": "This replaces the current {count} segments together with their voice assignments, style settings and generated audio links.",
+  "@phaseResplitBody": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "phaseResplitConfirm": "Re-split",
+  "phaseCharCount": "{count} chars",
+  "@phaseCharCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "phasePlay": "Play",
+  "phasePlayAll": "Play all",
+  "phaseStopPlayback": "Stop",
+  "phaseMoreActions": "More actions"
 }

@@ -1887,4 +1887,176 @@ class AppLocalizationsZh extends AppLocalizations {
   String uiMcpEndpointDescription(Object url) {
     return '允许 Agent 通过 $url（Streamable HTTP）管理服务商、音色与配音任务。若上方设置了 API Key 则需携带。';
   }
+
+  @override
+  String get loudnessAction => '统一音量';
+
+  @override
+  String get loudnessActionTooltip => '把所有已生成音频调整到相同响度';
+
+  @override
+  String get loudnessTitle => '统一音量';
+
+  @override
+  String loudnessIntro(Object count) {
+    return '逐段测量 $count 段已生成音频的感知响度（LUFS），再把每段调整到同一目标。只改变增益，限幅器防止峰值削波。文件原地改写，时间线与导出会自动使用新音量。';
+  }
+
+  @override
+  String get loudnessTarget => '目标响度';
+
+  @override
+  String get loudnessPresetLoud => '响亮';
+
+  @override
+  String get loudnessPresetLoudHint => '-14 LUFS · 短视频、音乐平台';
+
+  @override
+  String get loudnessPresetStandard => '标准';
+
+  @override
+  String get loudnessPresetStandardHint => '-16 LUFS · 播客、有声书、旁白';
+
+  @override
+  String get loudnessPresetSoft => '柔和';
+
+  @override
+  String get loudnessPresetSoftHint => '-20 LUFS · ASMR、助眠、耳语内容';
+
+  @override
+  String get loudnessPresetBroadcast => '广播';
+
+  @override
+  String get loudnessPresetBroadcastHint => '-23 LUFS · EBU R128 广播标准';
+
+  @override
+  String get loudnessPresetCustom => '自定义';
+
+  @override
+  String get loudnessPresetCustomHint => '在 -30 ~ -10 LUFS 之间自选目标';
+
+  @override
+  String get loudnessKeepBackup => '保留原始音频备份';
+
+  @override
+  String get loudnessKeepBackupHint =>
+      '原件存入音频旁的 _original_audio 文件夹；之后再次统一会从原件处理，更换目标也不会叠加音质损失。';
+
+  @override
+  String get loudnessAnalyze => '分析';
+
+  @override
+  String loudnessAnalyzing(Object done, Object total) {
+    return '正在分析 $done / $total';
+  }
+
+  @override
+  String loudnessApplying(Object done, Object total) {
+    return '正在处理 $done / $total';
+  }
+
+  @override
+  String loudnessApply(Object count) {
+    return '统一 $count 段';
+  }
+
+  @override
+  String get loudnessRange => '当前范围';
+
+  @override
+  String get loudnessSpread => '最大差值';
+
+  @override
+  String get loudnessNeedsChange => '需调整';
+
+  @override
+  String loudnessSummary(
+    Object adjusted,
+    Object onTarget,
+    Object silent,
+    Object failed,
+  ) {
+    return '已调整 $adjusted 段 · 已达标 $onTarget 段 · 静音跳过 $silent 段 · 失败 $failed 段';
+  }
+
+  @override
+  String loudnessLastError(Object error) {
+    return '最近错误：$error';
+  }
+
+  @override
+  String get loudnessNoAudio => '还没有可统一的已生成音频。';
+
+  @override
+  String get loudnessFfmpegRequired => '统一音量需要 FFmpeg，请在设置中配置。';
+
+  @override
+  String get loudnessStop => '停止';
+
+  @override
+  String phaseStatsGenerated(Object done, Object total) {
+    return '已生成 $done/$total';
+  }
+
+  @override
+  String phaseStatsFailed(Object count) {
+    return '失败 $count';
+  }
+
+  @override
+  String phaseStatsUnassigned(Object count) {
+    return '未分配音色 $count';
+  }
+
+  @override
+  String get phaseFilterAll => '全部';
+
+  @override
+  String get phaseFilterPending => '待生成';
+
+  @override
+  String get phaseFilterDone => '已生成';
+
+  @override
+  String get phaseFilterFailed => '失败';
+
+  @override
+  String get phaseNoFilterMatches => '没有符合筛选条件的分段。';
+
+  @override
+  String get phaseApplyVoiceToAll => '应用到全部';
+
+  @override
+  String get phaseEditText => '编辑文本';
+
+  @override
+  String get phaseEditTextHint => '保存修改后的文本会清除该段已生成的音频。';
+
+  @override
+  String get phaseResplitTitle => '重新拆分文稿？';
+
+  @override
+  String phaseResplitBody(Object count) {
+    return '这会替换当前 $count 个分段，以及它们的音色分配、风格设置和已生成音频的关联。';
+  }
+
+  @override
+  String get phaseResplitConfirm => '重新拆分';
+
+  @override
+  String phaseCharCount(Object count) {
+    return '$count 字';
+  }
+
+  @override
+  String get phasePlay => '播放';
+
+  @override
+  String get phasePlayAll => '播放全部';
+
+  @override
+  String get phaseStopPlayback => '停止';
+
+  @override
+  String get phaseMoreActions => '更多操作';
 }

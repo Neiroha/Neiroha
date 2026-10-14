@@ -19,6 +19,7 @@ import 'package:neiroha/presentation/widgets/phase_tts/editor_project_bar.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/project_list_header.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/segment_voice_panel.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/script_workspace.dart';
+import 'package:neiroha/presentation/widgets/loudness_normalize_dialog.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/project_settings_dialog.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
@@ -234,7 +235,8 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
             left: PhaseScriptWorkspace(
               controller: _scriptController,
               onScriptChanged: () => _saveScript(project),
-              onAutoSplit: (rule) => _autoSplit(project, rule),
+              onAutoSplit: (rule) =>
+                  unawaited(_autoSplit(project, rule, segments)),
             ),
             rightBuilder: (_) => _buildRightPane(
               project: project,
@@ -269,11 +271,44 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         _markDirty();
         unawaited(ref.read(databaseProvider).deletePhaseTtsSegment(id));
       },
+      onEditText: _editSegmentText,
       onChanged: _markDirty,
       onPlayAll: () => unawaited(_playAll(segments, bankAssets)),
       onGenerateAll: () =>
           unawaited(_generateAll(project, segments, bankAssets)),
+      onNormalize: _generatingAll || _generatingSegmentIds.isNotEmpty
+          ? null
+          : () => unawaited(_normalizeLoudness(segments)),
       generatingAll: _generatingAll,
+    );
+  }
+
+  Future<void> _editSegmentText(db.PhaseTtsSegment segment, String text) async {
+    // The old take no longer matches the words; drop the link so the
+    // segment shows up as pending again (the file itself stays on disk).
+    await ref
+        .read(databaseProvider)
+        .updatePhaseTtsSegment(
+          segment.copyWith(
+            segmentText: text,
+            audioPath: const Value(null),
+            audioDuration: const Value(null),
+            error: const Value(null),
+            missing: false,
+          ),
+        );
+    _markDirty();
+  }
+
+  Future<void> _normalizeLoudness(List<db.PhaseTtsSegment> segments) async {
+    await runLoudnessNormalization(
+      context: context,
+      ref: ref,
+      items: [
+        for (final s in segments)
+          if (s.audioPath != null && !s.missing)
+            LoudnessItem(id: s.id, path: s.audioPath!),
+      ],
     );
   }
 
@@ -466,9 +501,14 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     });
   }
 
-  Future<void> _autoSplit(db.PhaseTtsProject project, SplitRule rule) async {
+  Future<void> _autoSplit(
+    db.PhaseTtsProject project,
+    SplitRule rule,
+    List<db.PhaseTtsSegment> existing,
+  ) async {
     final text = _scriptController.text;
     if (text.trim().isEmpty) return;
+    if (existing.isNotEmpty && !await _confirmResplit(existing.length)) return;
     _markDirty();
 
     final database = ref.read(databaseProvider);
@@ -489,6 +529,28 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         ),
       );
     }
+  }
+
+  Future<bool> _confirmResplit(int count) async {
+    final l10n = AppLocalizations.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.phaseResplitTitle),
+        content: Text(l10n.phaseResplitBody(count)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.uiCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.phaseResplitConfirm),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
   }
 
   Future<void> _applyVoiceToAll(

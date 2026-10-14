@@ -1942,4 +1942,184 @@ class AppLocalizationsEn extends AppLocalizations {
   String uiMcpEndpointDescription(Object url) {
     return 'Lets agents manage providers, voices and dubbing jobs at $url (streamable HTTP). Uses the API key above when set.';
   }
+
+  @override
+  String get loudnessAction => 'Unify loudness';
+
+  @override
+  String get loudnessActionTooltip =>
+      'Bring every generated clip to the same loudness';
+
+  @override
+  String get loudnessTitle => 'Unify Loudness';
+
+  @override
+  String loudnessIntro(Object count) {
+    return 'Measures the perceived loudness (LUFS) of $count generated clips and brings each one to the same target. Only the gain changes; a limiter keeps peaks from clipping. Files are rewritten in place, so timelines and exports pick up the result automatically.';
+  }
+
+  @override
+  String get loudnessTarget => 'TARGET LOUDNESS';
+
+  @override
+  String get loudnessPresetLoud => 'Loud';
+
+  @override
+  String get loudnessPresetLoudHint =>
+      '-14 LUFS · short-video and music platforms';
+
+  @override
+  String get loudnessPresetStandard => 'Standard';
+
+  @override
+  String get loudnessPresetStandardHint =>
+      '-16 LUFS · podcasts, audiobooks, narration';
+
+  @override
+  String get loudnessPresetSoft => 'Soft';
+
+  @override
+  String get loudnessPresetSoftHint =>
+      '-20 LUFS · ASMR, sleep and whisper content';
+
+  @override
+  String get loudnessPresetBroadcast => 'Broadcast';
+
+  @override
+  String get loudnessPresetBroadcastHint =>
+      '-23 LUFS · EBU R128 broadcast standard';
+
+  @override
+  String get loudnessPresetCustom => 'Custom';
+
+  @override
+  String get loudnessPresetCustomHint =>
+      'Pick any target between -30 and -10 LUFS';
+
+  @override
+  String get loudnessKeepBackup => 'Keep original backups';
+
+  @override
+  String get loudnessKeepBackupHint =>
+      'Originals go to an _original_audio folder next to the clips. Later runs always start from them, so you can change the target without stacking quality loss.';
+
+  @override
+  String get loudnessAnalyze => 'Analyze';
+
+  @override
+  String loudnessAnalyzing(Object done, Object total) {
+    return 'Analyzing $done / $total';
+  }
+
+  @override
+  String loudnessApplying(Object done, Object total) {
+    return 'Processing $done / $total';
+  }
+
+  @override
+  String loudnessApply(Object count) {
+    return 'Unify $count clips';
+  }
+
+  @override
+  String get loudnessRange => 'Current range';
+
+  @override
+  String get loudnessSpread => 'Spread';
+
+  @override
+  String get loudnessNeedsChange => 'To adjust';
+
+  @override
+  String loudnessSummary(
+    Object adjusted,
+    Object onTarget,
+    Object silent,
+    Object failed,
+  ) {
+    return 'Adjusted $adjusted · already on target $onTarget · silent, skipped $silent · failed $failed';
+  }
+
+  @override
+  String loudnessLastError(Object error) {
+    return 'Last error: $error';
+  }
+
+  @override
+  String get loudnessNoAudio => 'No generated audio to unify yet.';
+
+  @override
+  String get loudnessFfmpegRequired =>
+      'Unifying loudness needs FFmpeg — configure it in Settings.';
+
+  @override
+  String get loudnessStop => 'Stop';
+
+  @override
+  String phaseStatsGenerated(Object done, Object total) {
+    return '$done/$total generated';
+  }
+
+  @override
+  String phaseStatsFailed(Object count) {
+    return '$count failed';
+  }
+
+  @override
+  String phaseStatsUnassigned(Object count) {
+    return '$count without voice';
+  }
+
+  @override
+  String get phaseFilterAll => 'All';
+
+  @override
+  String get phaseFilterPending => 'Pending';
+
+  @override
+  String get phaseFilterDone => 'Generated';
+
+  @override
+  String get phaseFilterFailed => 'Failed';
+
+  @override
+  String get phaseNoFilterMatches => 'No segments match this filter.';
+
+  @override
+  String get phaseApplyVoiceToAll => 'Apply to all';
+
+  @override
+  String get phaseEditText => 'Edit text';
+
+  @override
+  String get phaseEditTextHint =>
+      'Saving changed text clears the generated audio of this segment.';
+
+  @override
+  String get phaseResplitTitle => 'Re-split the script?';
+
+  @override
+  String phaseResplitBody(Object count) {
+    return 'This replaces the current $count segments together with their voice assignments, style settings and generated audio links.';
+  }
+
+  @override
+  String get phaseResplitConfirm => 'Re-split';
+
+  @override
+  String phaseCharCount(Object count) {
+    return '$count chars';
+  }
+
+  @override
+  String get phasePlay => 'Play';
+
+  @override
+  String get phasePlayAll => 'Play all';
+
+  @override
+  String get phaseStopPlayback => 'Stop';
+
+  @override
+  String get phaseMoreActions => 'More actions';
 }

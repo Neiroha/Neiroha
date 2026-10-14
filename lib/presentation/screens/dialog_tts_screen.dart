@@ -17,6 +17,7 @@ import 'package:neiroha/presentation/widgets/dialog_tts/editor_project_bar.dart'
 import 'package:neiroha/presentation/widgets/dialog_tts/input_bar.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/project_list_header.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/settings_panel.dart';
+import 'package:neiroha/presentation/widgets/loudness_normalize_dialog.dart';
 import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/project_settings_dialog.dart';
@@ -303,6 +304,21 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
                 linesAsync.valueOrNull ?? const [],
                 bankAssets,
               ),
+              onNormalize: _generatingLineIds.isNotEmpty
+                  ? null
+                  : () => unawaited(
+                      runLoudnessNormalization(
+                        context: context,
+                        ref: ref,
+                        items: [
+                          for (final l
+                              in linesAsync.valueOrNull ??
+                                  const <db.DialogTtsLine>[])
+                            if (l.audioPath != null && !l.missing)
+                              LoudnessItem(id: l.id, path: l.audioPath!),
+                        ],
+                      ),
+                    ),
             ),
           ),
         ),

@@ -313,6 +313,20 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
               onExport: segments.isEmpty || _exporting
                   ? null
                   : () => unawaited(_exportBook(project, segments)),
+              onNormalize: () {
+                _stopNovel();
+                unawaited(
+                  runLoudnessNormalization(
+                    context: context,
+                    ref: ref,
+                    items: [
+                      for (final s in segments)
+                        if (s.audioPath != null && !s.missing)
+                          LoudnessItem(id: s.id, path: s.audioPath!),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ),

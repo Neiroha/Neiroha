@@ -193,6 +193,27 @@ extension _VideoDubEditorMediaActions on _VideoDubEditorState {
     }
   }
 
+  /// Even out the generated cue takes. Only TTS cues are touched — A3
+  /// imports are the user's own material.
+  Future<void> _normalizeCueLoudness(List<db.SubtitleCue> cues) async {
+    await runLoudnessNormalization(
+      context: context,
+      ref: ref,
+      items: [
+        for (final c in cues)
+          if (c.audioPath != null && !c.missing)
+            LoudnessItem(id: c.id, path: c.audioPath!),
+      ],
+      // Release media_kit's handles so the files can be rewritten.
+      beforeApply: () async {
+        await _cuePlayer.stop();
+        await _previewPlayer.stop();
+        _activeCueId = null;
+        _updateState(() => _previewCueId = null);
+      },
+    );
+  }
+
   Future<void> _exportSubtitlesAndTts(
     db.VideoDubProject project,
     List<db.SubtitleCue> cues,

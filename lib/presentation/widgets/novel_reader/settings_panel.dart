@@ -32,6 +32,7 @@ class _NovelSettingsPane extends StatelessWidget {
   final ValueChanged<double> onCacheHighlightOpacityChanged;
   final VoidCallback? onGenerateAll;
   final VoidCallback? onExport;
+  final VoidCallback? onNormalize;
 
   const _NovelSettingsPane({
     required this.project,
@@ -65,6 +66,7 @@ class _NovelSettingsPane extends StatelessWidget {
     required this.onCacheHighlightOpacityChanged,
     required this.onGenerateAll,
     required this.onExport,
+    required this.onNormalize,
   });
 
   @override
@@ -211,6 +213,17 @@ class _NovelSettingsPane extends StatelessWidget {
                   )
                 : const Icon(Icons.ios_share_rounded, size: 17),
             label: Text(AppLocalizations.of(context).uiExportBook),
+          ),
+          SizedBox(height: 8),
+          Tooltip(
+            message: AppLocalizations.of(context).loudnessActionTooltip,
+            child: OutlinedButton.icon(
+              onPressed: hasAudio && !exporting && !generatingAll
+                  ? onNormalize
+                  : null,
+              icon: const Icon(Icons.graphic_eq_rounded, size: 17),
+              label: Text(AppLocalizations.of(context).loudnessAction),
+            ),
           ),
           SizedBox(height: 18),
           _PanelTitle(AppLocalizations.of(context).uiPLAYBACK),

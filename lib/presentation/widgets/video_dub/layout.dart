@@ -289,6 +289,14 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                           )
                         : const Icon(Icons.queue_music_rounded, size: 18),
                   ),
+                if (cues.any((c) => c.audioPath != null && !c.missing))
+                  IconButton(
+                    tooltip: AppLocalizations.of(context).loudnessActionTooltip,
+                    onPressed: _generatingAll || _generatingCueIds.isNotEmpty
+                        ? null
+                        : () => unawaited(_normalizeCueLoudness(cues)),
+                    icon: const Icon(Icons.graphic_eq_rounded, size: 18),
+                  ),
                 if (cues.isNotEmpty)
                   IconButton(
                     tooltip: AppLocalizations.of(context).uiClearAllCues,

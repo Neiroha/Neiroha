@@ -51,6 +51,146 @@ extension AppDatabaseProjectQueries on AppDatabase {
     return (delete(phaseTtsSegments)..where((t) => t.id.equals(id))).go();
   });
 
+  /// Rewrite `orderIndex` as 0..n-1 following [ordered].
+  Future<void> _renumberPhaseSegments(List<PhaseTtsSegment> ordered) async {
+    for (var i = 0; i < ordered.length; i++) {
+      if (ordered[i].orderIndex == i) continue;
+      await (update(phaseTtsSegments)..where((t) => t.id.equals(ordered[i].id)))
+          .write(PhaseTtsSegmentsCompanion(orderIndex: Value(i)));
+    }
+  }
+
+  /// Move a segment; indexes are positions in the ordered list.
+  Future<void> reorderPhaseSegment(
+    String projectId,
+    int oldIndex,
+    int newIndex,
+  ) => transaction(() async {
+    final segments = await getPhaseTtsSegments(projectId);
+    if (oldIndex == newIndex ||
+        oldIndex < 0 ||
+        oldIndex >= segments.length ||
+        newIndex < 0 ||
+        newIndex >= segments.length) {
+      return;
+    }
+    segments.insert(newIndex, segments.removeAt(oldIndex));
+    await _renumberPhaseSegments(segments);
+  });
+
+  /// Insert a new segment right after [afterId] (at the top when null).
+  Future<void> insertPhaseSegmentAfter({
+    required String projectId,
+    required String? afterId,
+    required String id,
+    required String text,
+    String? voiceAssetId,
+  }) => transaction(() async {
+    final segments = await getPhaseTtsSegments(projectId);
+    final at = afterId == null
+        ? 0
+        : segments.indexWhere((s) => s.id == afterId) + 1;
+    await into(phaseTtsSegments).insert(
+      PhaseTtsSegmentsCompanion(
+        id: Value(id),
+        projectId: Value(projectId),
+        orderIndex: Value(at),
+        segmentText: Value(text),
+        voiceAssetId: Value(voiceAssetId),
+      ),
+    );
+    final inserted = await (select(
+      phaseTtsSegments,
+    )..where((t) => t.id.equals(id))).getSingle();
+    segments.insert(at.clamp(0, segments.length), inserted);
+    await _renumberPhaseSegments(segments);
+  });
+
+  /// Split [segment] into [head] (keeps the id) and [tail] (new row with
+  /// [tailId], same voice). Both lose their generated audio.
+  Future<void> splitPhaseSegment(
+    PhaseTtsSegment segment,
+    String head,
+    String tail,
+    String tailId,
+  ) => transaction(() async {
+    await updatePhaseTtsSegment(
+      segment.copyWith(
+        segmentText: head,
+        audioPath: const Value(null),
+        audioDuration: const Value(null),
+        error: const Value(null),
+        missing: false,
+      ),
+    );
+    await insertPhaseSegmentAfter(
+      projectId: segment.projectId,
+      afterId: segment.id,
+      id: tailId,
+      text: tail,
+      voiceAssetId: segment.voiceAssetId,
+    );
+  });
+
+  /// Append the next segment's text to [segmentId] and drop the next row.
+  /// Returns false when [segmentId] is the last segment.
+  Future<bool> mergePhaseSegmentWithNext(String projectId, String segmentId) =>
+      transaction(() async {
+        final segments = await getPhaseTtsSegments(projectId);
+        final i = segments.indexWhere((s) => s.id == segmentId);
+        if (i < 0 || i + 1 >= segments.length) return false;
+        final a = segments[i];
+        final b = segments[i + 1];
+        await updatePhaseTtsSegment(
+          a.copyWith(
+            segmentText: _joinSegmentText(a.segmentText, b.segmentText),
+            voiceAssetId: Value(a.voiceAssetId ?? b.voiceAssetId),
+            audioPath: const Value(null),
+            audioDuration: const Value(null),
+            error: const Value(null),
+            missing: false,
+          ),
+        );
+        await deletePhaseTtsSegment(b.id);
+        segments.removeAt(i + 1);
+        await _renumberPhaseSegments(segments);
+        return true;
+      });
+
+  /// CJK text joins without a space; Latin text needs one.
+  static String _joinSegmentText(String a, String b) {
+    final left = a.trimRight();
+    final right = b.trimLeft();
+    if (left.isEmpty || right.isEmpty) return '$left$right';
+    final latin =
+        RegExp(r'[A-Za-z0-9,.;:!?]$').hasMatch(left) &&
+        RegExp(r'^[A-Za-z0-9]').hasMatch(right);
+    return latin ? '$left $right' : '$left$right';
+  }
+
+  Future<void> deletePhaseSegments(String projectId, Iterable<String> ids) =>
+      transaction(() async {
+        for (final id in ids) {
+          await deletePhaseTtsSegment(id);
+        }
+        await _renumberPhaseSegments(await getPhaseTtsSegments(projectId));
+      });
+
+  /// Undo for deletions: put [rows] back at their old positions.
+  Future<void> restorePhaseSegments(
+    String projectId,
+    List<PhaseTtsSegment> rows,
+  ) => transaction(() async {
+    final current = await getPhaseTtsSegments(projectId);
+    final restored = [...rows]
+      ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+    for (final row in restored) {
+      await into(phaseTtsSegments).insertOnConflictUpdate(row);
+      current.insert(row.orderIndex.clamp(0, current.length), row);
+    }
+    await _renumberPhaseSegments(current);
+  });
+
   Future<int> clearPhaseTtsSegments(String projectId) => transaction(() async {
     await _deleteTimelineClipsForProject(projectId, 'phase');
     return (delete(

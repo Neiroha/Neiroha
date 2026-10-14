@@ -10,6 +10,8 @@ import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart';
+import 'package:neiroha/data/services/auto_loudness_service.dart';
+import 'package:neiroha/data/services/loudness_normalizer.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/data/services/video_dub_mix.dart';
 import 'package:neiroha/data/storage/export_prefs.dart';
@@ -38,6 +40,13 @@ class NeirohaMcpTools {
   final FFmpegService _ffmpeg;
   final StorageService _storage;
   final ExportPrefsService _exportPrefs;
+  late final AutoLoudnessService _autoLoudness = AutoLoudnessService(
+    db: db,
+    ffmpeg: _ffmpeg,
+  );
+  late final LoudnessNormalizer _loudness = LoudnessNormalizer(
+    resolveFfmpeg: _ffmpeg.resolvePath,
+  );
   static const _uuid = Uuid();
 
   static const String serverInstructions =
@@ -46,7 +55,9 @@ class NeirohaMcpTools {
       '(reference clips) → create_voice_character → create_voice_bank / '
       'add_characters_to_bank → synthesize_speech to audition → '
       'create_video_dub_project → import_subtitles → update_subtitle_cues '
-      '(assign characters) → generate_video_dub_audio → export_video_dub. '
+      '(assign characters) → generate_video_dub_audio → '
+      'normalize_video_dub_loudness (optional, evens out cue volume) → '
+      'export_video_dub. '
       'All paths are absolute paths on the machine running Neiroha. Call '
       'list_adapter_types to learn how each engine expects model / voice / '
       'reference audio to be configured.';
@@ -316,6 +327,11 @@ class NeirohaMcpTools {
           'name': _str('New name.'),
           'description': _str('New description.'),
           'active': _bool('Active flag.'),
+          'loudness_target_lufs': _num(
+            'Base loudness (LUFS, -30..-10) the cast is normalized to; each '
+            'character adds its loudness_offset_db. -16 suits narration, '
+            '-20 ASMR.',
+          ),
         },
         required: ['bank_id'],
       ),
@@ -327,6 +343,9 @@ class NeirohaMcpTools {
               ? Value(_opt(args, 'description'))
               : Value(bank.description),
           isActive: _bool0(args, 'active') ?? bank.isActive,
+          loudnessTargetLufs:
+              _num0(args, 'loudness_target_lufs')?.clamp(-30.0, -10.0) ??
+              bank.loudnessTargetLufs,
         );
         await db.updateBank(updated);
         return _bankJson(updated);
@@ -535,6 +554,10 @@ class NeirohaMcpTools {
           'prompt_lang': _str('Language of the reference audio.'),
           'instruction': _str('Style / emotion / voice-design text.'),
           'speed': _num('Speech speed multiplier (default 1.0).'),
+          'loudness_offset_db': _num(
+            'Loudness offset in dB on top of the bank target (-12..12), e.g. '
+            '-3 for a narrator that should sit under the cast.',
+          ),
           'bank_ids': _arr(_str('Banks to add the character to.')),
           'clone_on_provider': _bool(
             'ElevenLabs / MiniMax only: clone the reference audio into a '
@@ -564,6 +587,7 @@ class NeirohaMcpTools {
           'prompt_lang': _str('New reference language.'),
           'instruction': _str('New style / emotion / design text.'),
           'speed': _num('New speed.'),
+          'loudness_offset_db': _num('New loudness offset in dB (-12..12).'),
           'enabled': _bool('Enable / disable.'),
         },
         required: ['character_id'],
@@ -644,6 +668,10 @@ class NeirohaMcpTools {
           'name': _str('Project name.'),
           'bank_id': _str('Voice bank id or exact name.'),
           'video_path': _str('Absolute path of the source video.'),
+          'auto_normalize_loudness': _bool(
+            'Normalize every generated cue to the bank / character loudness '
+            'target (default false).',
+          ),
         },
         required: ['name', 'bank_id'],
       ),
@@ -656,6 +684,9 @@ class NeirohaMcpTools {
             id: Value(id),
             name: Value(_req(args, 'name')),
             bankId: Value(bank.id),
+            autoNormalizeLoudness: Value(
+              _bool0(args, 'auto_normalize_loudness') ?? false,
+            ),
             createdAt: Value(now),
             updatedAt: Value(now),
           ),
@@ -848,6 +879,39 @@ class NeirohaMcpTools {
       ),
       openWorld: true,
       handler: _generateDub,
+    ),
+    McpTool(
+      name: 'normalize_video_dub_loudness',
+      title: 'Unify cue loudness',
+      description:
+          'Bring every generated cue of the project to the same perceived '
+          'loudness (EBU R128): the bank loudness target plus each '
+          "character's loudness_offset_db. Static gain + limiter, files are "
+          'rewritten in place and the originals kept in an _original_audio '
+          'folder, so restore: true undoes it. auto_normalize toggles '
+          'normalizing future cues right after generation. Needs ffmpeg.',
+      inputSchema: _obj(
+        {
+          'project_id': _str('Video dub project id.'),
+          'cue_ids': _arr(_str('Only these cues.')),
+          'target_lufs': _num(
+            'Base target in LUFS (-30..-10); defaults to the bank target.',
+          ),
+          'use_character_offsets': _bool(
+            'Apply each character loudness_offset_db (default true).',
+          ),
+          'restore': _bool('Put the original audio back instead.'),
+          'apply': _bool(
+            'Process existing cues (default true). Set false to only change '
+            'auto_normalize.',
+          ),
+          'auto_normalize': _bool(
+            'Also normalize future cues right after generation.',
+          ),
+        },
+        required: ['project_id'],
+      ),
+      handler: _normalizeDubLoudness,
     ),
     McpTool(
       name: 'export_video_dub',
@@ -1126,6 +1190,9 @@ class NeirohaMcpTools {
         voiceInstruction: Value(instruction),
         presetVoiceName: Value(voice),
         speed: Value(_num0(args, 'speed') ?? 1.0),
+        loudnessOffsetDb: Value(
+          (_num0(args, 'loudness_offset_db') ?? 0).clamp(-12.0, 12.0),
+        ),
       ),
     );
     for (final bankRef in _strList(args, 'bank_ids')) {
@@ -1172,6 +1239,9 @@ class NeirohaMcpTools {
           ? Value(_opt(args, 'prompt_lang'))
           : Value(promptLang),
       speed: _num0(args, 'speed') ?? a.speed,
+      loudnessOffsetDb:
+          _num0(args, 'loudness_offset_db')?.clamp(-12.0, 12.0) ??
+          a.loudnessOffsetDb,
       enabled: _bool0(args, 'enabled') ?? a.enabled,
     );
     await db.updateVoiceAsset(updated);
@@ -1445,6 +1515,12 @@ class NeirohaMcpTools {
               source: 'MCP Video Dub',
               label: 'Cue ${cue.orderIndex + 1}: ${cue.cueText}',
             );
+            await _autoLoudness.normalizeGenerated(
+              enabled: project.autoNormalizeLoudness,
+              path: r.path,
+              bankId: project.bankId,
+              voiceAssetId: asset.id,
+            );
             final newEnd = sync && r.durationSec != null
                 ? cue.startMs + (r.durationSec! * 1000).round()
                 : cue.endMs;
@@ -1469,6 +1545,80 @@ class NeirohaMcpTools {
       'generated': done,
       'failed': failures.length,
       'skipped_without_character': unassigned,
+      if (failures.isNotEmpty) 'failures': failures.take(50).toList(),
+    };
+  }
+
+  Future<Object?> _normalizeDubLoudness(Map<String, dynamic> args) async {
+    var project = await _project(_req(args, 'project_id'));
+    if (_bool0(args, 'auto_normalize') case final auto?) {
+      project = project.copyWith(autoNormalizeLoudness: auto);
+      await db.updateVideoDubProject(project);
+    }
+    final only = _strList(args, 'cue_ids').toSet();
+    final targets = [
+      for (final c in await db.getSubtitleCues(project.id))
+        if ((only.isEmpty || only.contains(c.id)) &&
+            c.audioPath != null &&
+            File(c.audioPath!).existsSync())
+          c,
+    ];
+    final summary = <String, Object?>{
+      'project_id': project.id,
+      'auto_normalize_loudness': project.autoNormalizeLoudness,
+    };
+    if (_bool0(args, 'restore') ?? false) {
+      var restored = 0;
+      for (final c in targets) {
+        if (await LoudnessNormalizer.restoreFile(c.audioPath!)) restored++;
+      }
+      return {...summary, 'restored': restored};
+    }
+    if (!(_bool0(args, 'apply') ?? true)) return summary;
+    if (!await _ffmpeg.isAvailable()) {
+      throw const McpToolError(
+        'ffmpeg is required for loudness normalization; set it in Neiroha '
+        'Settings.',
+      );
+    }
+    final bank = await db.getBankById(project.bankId);
+    final base =
+        (_num0(args, 'target_lufs') ?? bank?.loudnessTargetLufs ?? -16.0)
+            .clamp(-30.0, -10.0)
+            .toDouble();
+    final useOffsets = _bool0(args, 'use_character_offsets') ?? true;
+    final assets = {for (final a in await db.getAllVoiceAssets()) a.id: a};
+    final counts = {for (final k in LoudnessOutcomeKind.values) k.name: 0};
+    final failures = <Map<String, String>>[];
+    var next = 0;
+    Future<void> worker() async {
+      while (next < targets.length) {
+        final cue = targets[next++];
+        final offset = useOffsets
+            ? assets[cue.voiceAssetId]?.loudnessOffsetDb ?? 0
+            : 0.0;
+        final outcome = await _loudness.normalizeFile(
+          cue.audioPath!,
+          LoudnessTarget(
+            lufs: LoudnessNormalizer.targetFor(
+              bankLufs: base,
+              offsetDb: offset,
+            ),
+          ),
+        );
+        counts[outcome.kind.name] = counts[outcome.kind.name]! + 1;
+        if (outcome.error case final error?) {
+          failures.add({'cue_id': cue.id, 'error': error});
+        }
+      }
+    }
+
+    await Future.wait([for (var i = 0; i < 4; i++) worker()]);
+    return {
+      ...summary,
+      'target_lufs': base,
+      'use_character_offsets': useOffsets,
+      ...counts,
       if (failures.isNotEmpty) 'failures': failures.take(50).toList(),
     };
   }
@@ -1862,6 +2012,7 @@ class NeirohaMcpTools {
     'prompt_lang': a.promptLang,
     'instruction': a.voiceInstruction,
     'speed': a.speed,
+    'loudness_offset_db': a.loudnessOffsetDb,
     'enabled': a.enabled,
   };
 
@@ -1870,6 +2021,7 @@ class NeirohaMcpTools {
     'name': b.name,
     'description': b.description,
     'active': b.isActive,
+    'loudness_target_lufs': b.loudnessTargetLufs,
   };
 
   Map<String, dynamic> _trackJson(AudioTrack t) => {
@@ -1892,6 +2044,7 @@ class NeirohaMcpTools {
     'bank_id': pr.bankId,
     'video_path': pr.videoPath,
     'video_duration_sec': pr.videoDurationSec,
+    'auto_normalize_loudness': pr.autoNormalizeLoudness,
     'cues': cues.length,
     'cues_with_character': cues.where((c) => c.voiceAssetId != null).length,
     'cues_with_audio': cues.where((c) => c.audioPath != null).length,

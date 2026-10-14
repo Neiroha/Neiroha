@@ -57,6 +57,9 @@ extension AppDatabaseVoiceQueries on AppDatabase {
 
   Future<List<VoiceBank>> getAllBanks() => select(voiceBanks).get();
 
+  Future<VoiceBank?> getBankById(String id) =>
+      (select(voiceBanks)..where((t) => t.id.equals(id))).getSingleOrNull();
+
   Future<int> insertBank(VoiceBanksCompanion bank) =>
       into(voiceBanks).insert(bank);
 

@@ -140,4 +140,46 @@ void main() {
     expect(recent.status, TtsQueueTaskStatus.failed);
     expect(recent.errorMessage, contains('planned failure'));
   });
+  test('cancel token drops queued requests but not the running one', () async {
+    final service = TtsQueueService.instance;
+    final testProvider = provider(
+      id: 'queue-cancel-${DateTime.now().microsecondsSinceEpoch}',
+      maxConcurrency: 1,
+    );
+    final token = TtsCancelToken();
+    final gate = Completer<String>();
+    var secondStarted = false;
+
+    final first = service.enqueue<String>(
+      provider: testProvider,
+      cancelToken: token,
+      task: () => gate.future,
+    );
+    final second = service.enqueue<String>(
+      provider: testProvider,
+      cancelToken: token,
+      task: () async {
+        secondStarted = true;
+        return 'second';
+      },
+    );
+    final secondResult = expectLater(
+      second,
+      throwsA(isA<TtsCancelledException>()),
+    );
+
+    token.cancel();
+    gate.complete('first');
+    expect(await first, 'first');
+    await secondResult;
+    expect(secondStarted, isFalse);
+    await expectLater(
+      service.enqueue<String>(
+        provider: testProvider,
+        cancelToken: token,
+        task: () async => 'late',
+      ),
+      throwsA(isA<TtsCancelledException>()),
+    );
+  });
 }

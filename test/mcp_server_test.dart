@@ -93,6 +93,7 @@ void main() {
         'synthesize_speech',
         'import_subtitles',
         'generate_video_dub_audio',
+        'normalize_video_dub_loudness',
         'export_video_dub',
       ]),
     );
@@ -288,6 +289,23 @@ void main() {
       // 800 samples @ 16 kHz mono 16-bit = 50 ms → end snapped to start+50.
       expect(c['end_ms'], (c['start_ms'] as int) + 50);
     }
+
+    final loudness = await call('normalize_video_dub_loudness', {
+      'project_id': project['id'],
+      'auto_normalize': true,
+      'apply': false,
+    });
+    expect(loudness['auto_normalize_loudness'], isTrue);
+    final restored = await call('normalize_video_dub_loudness', {
+      'project_id': project['id'],
+      'restore': true,
+    });
+    expect(restored['restored'], 0);
+    final retargeted = await call('update_voice_bank', {
+      'bank_id': 'Cast',
+      'loudness_target_lufs': -20,
+    });
+    expect(retargeted['loudness_target_lufs'], -20);
 
     final speech = await call('synthesize_speech', {
       'character_id': 'Villain',

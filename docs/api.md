@@ -179,7 +179,15 @@ Tools: `get_overview`, `list_adapter_types`, `list_providers`,
 `synthesize_speech`, `list_video_dub_projects`, `create_video_dub_project`,
 `attach_video_to_dub_project`, `import_subtitles`, `list_subtitle_cues`,
 `add_subtitle_cues`, `update_subtitle_cues`, `delete_subtitle_cues`,
-`generate_video_dub_audio`, `export_video_dub`, `delete_video_dub_project`.
+`generate_video_dub_audio`, `normalize_video_dub_loudness`, `export_video_dub`,
+`delete_video_dub_project`.
+
+Loudness: `update_voice_bank` takes `loudness_target_lufs` (the cast's base
+loudness), `create_voice_character` / `update_voice_character` take
+`loudness_offset_db` (per-character offset, e.g. `-3` for a narrator), and
+`create_video_dub_project` takes `auto_normalize_loudness`.
+`normalize_video_dub_loudness` evens out existing cues, keeps the originals and
+can restore them (`restore: true`).
 
 Provider API keys are write-only through MCP (`list_providers` returns
 `has_api_key`). A ready-made agent skill lives in

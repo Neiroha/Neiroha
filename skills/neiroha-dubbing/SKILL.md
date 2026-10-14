@@ -142,6 +142,10 @@ For each character, call `create_voice_character` with the following inputs.
     `ES`).
 - `instruction`: the default style or emotion for the character.
 - `bank_ids`: put the whole cast into one bank (`create_voice_bank` first).
+- `loudness_offset_db` (optional, -12..12): how loud this character sits
+  relative to the bank's `loudness_target_lufs` (default -16 LUFS, set with
+  `update_voice_bank`). Keep a narrator a few dB under the cast (`-3`), lift
+  a lead slightly (`+1`). Used whenever loudness is unified.
 
 Audition every character with `synthesize_speech` and one representative
 line before the full run. Check the audition objectively, not only by ear:
@@ -176,11 +180,20 @@ If it sounds wrong, try another or a tighter reference clip, then
    end to the real audio length. It returns failures per cue. Fix the cause
    (disabled provider, missing reference audio, rate limit) and run it again;
    cues that already have audio are skipped unless `regenerate: true`.
-5. Quality pass: in `list_subtitle_cues`, compare `audio_duration_sec` with
+5. Even out the volume. Separate TTS takes come back at different levels
+   (whispered or emotional lines are often 10+ dB apart). Call
+   `normalize_video_dub_loudness` after generation: every cue goes to the
+   bank target plus its character's `loudness_offset_db`; only gain changes
+   and a limiter guards the peaks. Originals are kept, so `restore: true`
+   undoes it. Pass `auto_normalize: true` (or `auto_normalize_loudness` on
+   `create_video_dub_project`) to normalize every future cue right after it
+   is generated. Pick `target_lufs` by use: -14 loud short-video, -16
+   narration / podcast (default), -20 ASMR or sleep content, -23 broadcast.
+6. Quality pass: in `list_subtitle_cues`, compare `audio_duration_sec` with
    the cue window (`end_ms - start_ms`). For lines that overrun badly, shorten
    the text, raise the character `speed`, or move the timing with
    `update_subtitle_cues`, then regenerate those `cue_ids`.
-6. `export_video_dub` with `kind`:
+7. `export_video_dub` with `kind`:
    - `video`: MP4 with the dub mixed over the source video, plus a sidecar
      `.srt`. Use `include_original_audio: true` to keep the original track
      under the dub.
@@ -199,8 +212,12 @@ Synthesize **one call per line**, never the whole script in one call, so that
 each line's timing is measured rather than guessed:
 
 1. For each line *i*, call `synthesize_speech` and keep `duration_sec`.
-2. Join the clips in order with a fixed gap (0.4–0.8 s), for example with
-   ffmpeg `apad=pad_dur=<gap>` per input followed by `concat`.
+2. Even out the levels first (lines synthesized separately differ in
+   loudness), e.g. ffmpeg `loudnorm=print_format=json` to measure each clip,
+   then `volume=<target - input_i>dB,alimiter=limit=0.84:level=disabled`.
+   Then join the clips in order with a fixed gap (0.4–0.8 s), for example with
+   ffmpeg `apad=pad_dur=<gap>` per input followed by `concat`. A 10–30 ms
+   `afade` at each clip edge removes clicks at the cuts.
 3. Line *i* starts at `sum(duration + gap)` of the previous lines. Add the
    clip's leading silence (`silencedetect`) so the timestamp lands on the first
    word.
@@ -225,6 +242,8 @@ timings already come from the project.
 | HTTP 402 / `insufficient_balance` | the provider account is out of credit for that model. Paid add-ons such as ASR can fail while TTS still works; tell the user instead of retrying |
 | Connection refused on `:8976` | the API server is off; ask the user to switch it on or enable **Start API server on launch** |
 | Cloned lines have long silent gaps | the reference clip has long pauses; compress them (section 3) and update the character's `audio_track_id` |
+| Some lines much louder or quieter than others | `normalize_video_dub_loudness`; tune per-character `loudness_offset_db` if one voice should stay softer |
+| Unified loudness sounds wrong | `normalize_video_dub_loudness` with `restore: true` brings the original takes back |
 
 ## Tool reference
 
@@ -236,7 +255,7 @@ timings already come from the project.
 | Reference audio | `list_audio_tracks`, `import_audio_track`, `delete_audio_track` |
 | Characters | `list_voice_characters`, `create_voice_character`, `update_voice_character`, `delete_voice_character` |
 | Speech | `synthesize_speech` |
-| Video dub | `list_video_dub_projects`, `create_video_dub_project`, `attach_video_to_dub_project`, `import_subtitles`, `list_subtitle_cues`, `add_subtitle_cues`, `update_subtitle_cues`, `delete_subtitle_cues`, `generate_video_dub_audio`, `export_video_dub`, `delete_video_dub_project` |
+| Video dub | `list_video_dub_projects`, `create_video_dub_project`, `attach_video_to_dub_project`, `import_subtitles`, `list_subtitle_cues`, `add_subtitle_cues`, `update_subtitle_cues`, `delete_subtitle_cues`, `generate_video_dub_audio`, `normalize_video_dub_loudness`, `export_video_dub`, `delete_video_dub_project` |
 
 Ids and names are interchangeable for providers, characters and banks; ids
 are safer when names repeat. Destructive tools (`delete_*`) cannot be undone,

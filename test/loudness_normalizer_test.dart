@@ -173,6 +173,26 @@ Input #0, wav, from 'a.wav':
       skip: _ffmpegOnPath() ? false : 'ffmpeg not on PATH',
     );
 
+    test('restoreFile brings back the original and drops the backup', () async {
+      final clip = await tone(
+        'restore.wav',
+        'anoisesrc=d=2:c=pink:r=24000:a=0.05',
+      );
+      final original = await File(clip).readAsBytes();
+      await normalizer.normalizeFile(clip, const LoudnessTarget(lufs: -16));
+      expect(LoudnessNormalizer.hasRestorableBackup(clip), isTrue);
+
+      expect(await LoudnessNormalizer.restoreFile(clip), isTrue);
+      expect(await File(clip).readAsBytes(), original);
+      expect(LoudnessNormalizer.hasRestorableBackup(clip), isFalse);
+      expect(await LoudnessNormalizer.restoreFile(clip), isFalse);
+    }, skip: _ffmpegOnPath() ? false : 'ffmpeg not on PATH');
+
+    test('targetFor adds the character offset to the bank target', () {
+      expect(LoudnessNormalizer.targetFor(bankLufs: -16, offsetDb: -3), -19);
+      expect(LoudnessNormalizer.targetFor(bankLufs: -16, offsetDb: 20), -6);
+    });
+
     test('silence is skipped and left untouched', () async {
       final silent = await tone('silent.wav', 'anullsrc=r=24000:cl=mono');
       final before = await File(silent).readAsBytes();

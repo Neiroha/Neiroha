@@ -128,6 +128,26 @@ class LoudnessNormalizer {
     return path;
   }
 
+  /// Whether [path] holds the output of an earlier run whose original is
+  /// still backed up.
+  static bool hasRestorableBackup(String path) => sourcePathFor(path) != path;
+
+  /// Put the pre-normalization original back over [path] and drop the
+  /// backup. Returns false when there is nothing valid to restore.
+  static Future<bool> restoreFile(String path) async {
+    if (!hasRestorableBackup(path)) return false;
+    final backup = File(backupPathFor(path));
+    await backup.copy(path);
+    await _deleteQuietly(backup);
+    await _deleteQuietly(File(_stampPathFor(path)));
+    return true;
+  }
+
+  /// Effective target for one speaker: the bank's base target plus the
+  /// character's offset, kept inside a sane speech range.
+  static double targetFor({required double bankLufs, double offsetDb = 0}) =>
+      (bankLufs + offsetDb).clamp(-40.0, -6.0).toDouble();
+
   static String _fingerprint(File file) {
     final stat = file.statSync();
     return '${stat.size}:${stat.modified.millisecondsSinceEpoch}';
@@ -304,9 +324,8 @@ class LoudnessNormalizer {
     return '$volume,alimiter=limit=$limit:attack=5:release=50$level';
   }
 
-  /// Encoder arguments that keep the file's container and a quality close
-  /// to the TTS original.
-  @visibleForTesting
+  /// Encoder arguments for an output extension, at a quality close to the
+  /// TTS original. Shared with the merge exporter.
   static List<String> encoderArgsFor(String ext) {
     switch (ext) {
       case '.mp3':

@@ -45,7 +45,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 30;
+  int get schemaVersion => 31;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -232,6 +232,32 @@ class AppDatabase extends _$AppDatabase {
       columnName: 'tokens_per_day',
       addColumn: () => m.addColumn(ttsProviders, ttsProviders.tokensPerDay),
     );
+    // v31: loudness targets + Phase TTS merge settings.
+    await _addColumnIfMissing(
+      tableName: 'voice_banks',
+      columnName: 'loudness_target_lufs',
+      addColumn: () => m.addColumn(voiceBanks, voiceBanks.loudnessTargetLufs),
+    );
+    await _addColumnIfMissing(
+      tableName: 'voice_assets',
+      columnName: 'loudness_offset_db',
+      addColumn: () => m.addColumn(voiceAssets, voiceAssets.loudnessOffsetDb),
+    );
+    for (final (table, column) in <(TableInfo, GeneratedColumn)>[
+      (phaseTtsProjects, phaseTtsProjects.autoNormalizeLoudness),
+      (phaseTtsProjects, phaseTtsProjects.mergeGapSeconds),
+      (phaseTtsProjects, phaseTtsProjects.mergeFadeInMs),
+      (phaseTtsProjects, phaseTtsProjects.mergeFadeOutMs),
+      (dialogTtsProjects, dialogTtsProjects.autoNormalizeLoudness),
+      (videoDubProjects, videoDubProjects.autoNormalizeLoudness),
+      (novelProjects, novelProjects.autoNormalizeLoudness),
+    ]) {
+      await _addColumnIfMissing(
+        tableName: table.actualTableName,
+        columnName: column.name,
+        addColumn: () => m.addColumn(table, column),
+      );
+    }
     await _addColumnIfMissing(
       tableName: 'audio_tracks',
       columnName: 'missing',

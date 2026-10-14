@@ -163,7 +163,7 @@ API 以**音色库（Voice Bank）**作为 `model` 的抽象层：
 claude mcp add --transport http neiroha http://127.0.0.1:8976/mcp
 ```
 
-工具列表与英文文档一致（`get_overview`、`create_provider`、`create_voice_character`、`import_audio_track`、`synthesize_speech`、`import_subtitles`、`update_subtitle_cues`、`generate_video_dub_audio`、`export_video_dub` 等共 34 个）。服务商 API Key 通过 MCP 只写不读（`list_providers` 仅返回 `has_api_key`）。配套的英文 Agent 技能见 [`skills/neiroha-dubbing/SKILL.md`](../skills/neiroha-dubbing/SKILL.md)。
+工具列表与英文文档一致（`get_overview`、`create_provider`、`create_voice_character`、`import_audio_track`、`synthesize_speech`、`import_subtitles`、`update_subtitle_cues`、`generate_video_dub_audio`、`normalize_video_dub_loudness`、`export_video_dub` 等共 35 个）。音量相关：`update_voice_bank` 的 `loudness_target_lufs` 设定语音库基准响度，角色的 `loudness_offset_db` 设定相对偏移（如旁白 `-3`），`create_video_dub_project` 的 `auto_normalize_loudness` 让新生成的片段自动统一音量；`normalize_video_dub_loudness` 统一已有片段并保留原件，`restore: true` 可一键还原。服务商 API Key 通过 MCP 只写不读（`list_providers` 仅返回 `has_api_key`）。配套的英文 Agent 技能见 [`skills/neiroha-dubbing/SKILL.md`](../skills/neiroha-dubbing/SKILL.md)。
 ---
 
 ## 2. 上游适配器层

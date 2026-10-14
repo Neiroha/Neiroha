@@ -88,6 +88,9 @@ class VoiceAssets extends Table {
   // Pinned folder name used under voice_asset/quick_tts/. Set once at first
   // generation so renaming the display name doesn't rehome the folder.
   TextColumn get folderSlug => text().nullable()();
+  // Per-character loudness offset (dB) on top of the bank target, e.g. a
+  // narrator a few dB under the cast.
+  RealColumn get loudnessOffsetDb => real().withDefault(const Constant(0.0))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -99,6 +102,10 @@ class VoiceBanks extends Table {
   TextColumn get description => text().nullable()();
   BoolColumn get isActive => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime()();
+  // Base integrated loudness (LUFS) generated audio of this cast is
+  // normalized to. Each character adds its own loudnessOffsetDb.
+  RealColumn get loudnessTargetLufs =>
+      real().withDefault(const Constant(-16.0))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -154,6 +161,14 @@ class PhaseTtsProjects extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   TextColumn get folderSlug => text().nullable()();
+  // Normalize every newly generated clip to the bank / character target.
+  BoolColumn get autoNormalizeLoudness =>
+      boolean().withDefault(const Constant(false))();
+  // Silence between segments in Play All and the merged export.
+  RealColumn get mergeGapSeconds => real().withDefault(const Constant(0.3))();
+  // Per-segment fades applied in the merged export (0 = off).
+  IntColumn get mergeFadeInMs => integer().withDefault(const Constant(10))();
+  IntColumn get mergeFadeOutMs => integer().withDefault(const Constant(30))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -214,6 +229,9 @@ class NovelProjects extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   TextColumn get folderSlug => text().nullable()();
+  // Normalize every newly generated clip to the bank / character target.
+  BoolColumn get autoNormalizeLoudness =>
+      boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -261,6 +279,9 @@ class DialogTtsProjects extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   TextColumn get folderSlug => text().nullable()();
+  // Normalize every newly generated clip to the bank / character target.
+  BoolColumn get autoNormalizeLoudness =>
+      boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -292,6 +313,9 @@ class VideoDubProjects extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   TextColumn get folderSlug => text().nullable()();
+  // Normalize every newly generated clip to the bank / character target.
+  BoolColumn get autoNormalizeLoudness =>
+      boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};

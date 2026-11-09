@@ -90,7 +90,7 @@ Neiroha 也可以作为本地 OpenAI 兼容 TTS 服务运行，由当前激活�
 
 ## macOS
 
-Release 中提供 `neiroha-macOS-Universal-vX.Y.Z.dmg`，同一个通用包同时支持 Apple Silicon 与 Intel Mac（macOS 12 及以上）。打开 DMG，把 **Neiroha** 拖进 **应用程序** 即可。
+Release 中提供两个 DMG（macOS 12 及以上）：Apple Silicon（M 系列芯片）Mac 下载 `neiroha-macOS-ARM64-vX.Y.Z.dmg`，Intel Mac 下载 `neiroha-macOS-AMD64-vX.Y.Z.dmg`。不确定是哪种？打开苹果菜单 →「关于本机」，显示「芯片 Apple M…」选 ARM64，显示「处理器 Intel」选 AMD64。打开 DMG，把 **Neiroha** 拖进 **应用程序** 即可。
 
 应用为 ad-hoc 签名、未经公证，首次启动会被 Gatekeeper 拦截。请在 **系统设置 → 隐私与安全性 → 仍要打开** 中放行一次，或执行：
 
@@ -105,7 +105,7 @@ xattr -dr com.apple.quarantine /Applications/Neiroha.app
 - 使用 Flutter 3.47.7 stable（与 CI 一致），然后运行 `flutter pub get`。
 - 修改 Drift 表结构（`lib/data/database/tables.dart`）或 freezed 模型后，运行 `dart run build_runner build`。
 - 修改 `lib/l10n/app_en.arb` / `app_zh.arb` 后，运行 `flutter gen-l10n`。
-- 构建 macOS 需要 Xcode 与 CocoaPods。先 `flutter build macos --release`，再运行 `tool/package_macos_dmg.sh Release dist/Neiroha.dmg`，脚本会检查包是否为通用二进制且已签名，然后生成 DMG。
+- 构建 macOS 需要 Xcode 与 CocoaPods。先 `FLUTTER_XCODE_ARCHS=arm64 flutter build macos --release`（Intel 用 `x86_64`），再运行 `tool/package_macos_dmg.sh Release arm64 dist/Neiroha.dmg`，脚本会把包裁剪为该架构、校验签名并生成 DMG；`tool/smoke_test_macos_dmg.sh dist/Neiroha.dmg arm64` 可启动应用做快速检查。
 - 运行 `flutter analyze` 与 `flutter test`。音量统一与合并导出的测试会调用真实的 FFmpeg，`PATH` 中没有 `ffmpeg` 时自动跳过。
 - `analysis_options.yaml` 排除了 `build/` 与各平台目录（新版 Flutter 也会自动加入这段配置），避免分析其中生成的插件源码。
 

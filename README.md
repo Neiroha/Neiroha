@@ -89,7 +89,7 @@ The full API reference lives in [docs/api.md](docs/api.md). Installation, backen
 
 ## macOS
 
-Releases include `neiroha-macOS-Universal-vX.Y.Z.dmg`, one universal build for Apple Silicon and Intel Macs (macOS 12 or later). Open the DMG and drag **Neiroha** into **Applications**.
+Releases include two DMGs (macOS 12 or later): `neiroha-macOS-ARM64-vX.Y.Z.dmg` for Apple Silicon (M-series) Macs and `neiroha-macOS-AMD64-vX.Y.Z.dmg` for Intel Macs. Not sure which one? Apple menu → About This Mac: "Chip: Apple M…" means ARM64, "Processor: Intel" means AMD64. Open the DMG and drag **Neiroha** into **Applications**.
 
 The app is ad-hoc signed but not notarized, so Gatekeeper blocks the first launch. Open it once from **System Settings → Privacy & Security → Open Anyway**, or run:
 
@@ -104,7 +104,7 @@ App data lives in `~/Library/Application Support/com.neiroha.neiroha/`. Install 
 - Flutter 3.47.7 stable (the version CI uses), then `flutter pub get`.
 - After changing the Drift tables (`lib/data/database/tables.dart`) or the freezed models, run `dart run build_runner build`.
 - After changing `lib/l10n/app_en.arb` / `app_zh.arb`, run `flutter gen-l10n`.
-- macOS builds need Xcode and CocoaPods. `flutter build macos --release`, then `tool/package_macos_dmg.sh Release dist/Neiroha.dmg` checks that the bundle is universal and signed, and builds the DMG.
+- macOS builds need Xcode and CocoaPods. `FLUTTER_XCODE_ARCHS=arm64 flutter build macos --release` (or `x86_64`), then `tool/package_macos_dmg.sh Release arm64 dist/Neiroha.dmg` thins the bundle to that architecture, checks the signature and builds the DMG; `tool/smoke_test_macos_dmg.sh dist/Neiroha.dmg arm64` launches it as a quick check.
 - `flutter analyze` and `flutter test`. The loudness and merge tests use a real FFmpeg and are skipped when `ffmpeg` is not on `PATH`.
 - `analysis_options.yaml` excludes `build/` and the platform folders (recent Flutter versions add this block automatically), so the generated plugin sources there are not analyzed.
 

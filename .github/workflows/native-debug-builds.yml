@@ -242,8 +242,23 @@ jobs:
           if-no-files-found: error
 
   build-macos:
-    name: macOS desktop (Universal DMG)
-    runs-on: macos-latest
+    name: macOS desktop (${{ matrix.label }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Apple Silicon
+            arch: arm64
+            asset: ARM64
+            runner: macos-15
+          - label: Intel
+            arch: x86_64
+            asset: AMD64
+            runner: macos-15-intel
+    env:
+      # Passed to xcodebuild as ARCHS, so only the target CPU is compiled.
+      FLUTTER_XCODE_ARCHS: ${{ matrix.arch }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -259,9 +274,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.PUB_CACHE }}
-          key: ${{ runner.os }}-pub-${{ hashFiles('pubspec.lock') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.lock') }}
           restore-keys: |
-            ${{ runner.os }}-pub-
+            ${{ runner.os }}-${{ runner.arch }}-pub-
 
       - name: Disable Flutter analytics
         run: flutter config --no-analytics
@@ -278,21 +293,23 @@ jobs:
           version="$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)"
           echo "BUILD_VERSION=v${version}" >> "$GITHUB_ENV"
 
-      # macOS debug builds only contain the runner's own architecture and
-      # need the Flutter tool to launch, so PR testers get a release-mode
-      # universal build that also runs on Intel Macs.
+      # macOS debug builds need the Flutter tool to launch, so PR testers get
+      # a release-mode build that runs on its own.
       - name: Build macOS
         run: flutter build macos --release
 
       - name: Package DMG
         run: |
-          dmg="dist/neiroha-macOS-Universal-${BUILD_VERSION}-dev.dmg"
-          tool/package_macos_dmg.sh Release "$dmg"
-          (cd dist && shasum -a 256 neiroha-macOS-*.dmg > SHA256SUMS-macOS-debug.txt)
+          dmg="dist/neiroha-macOS-${{ matrix.asset }}-${BUILD_VERSION}-dev.dmg"
+          tool/package_macos_dmg.sh Release "${{ matrix.arch }}" "$dmg"
+          (cd dist && shasum -a 256 neiroha-macOS-*.dmg > "SHA256SUMS-macOS-${{ matrix.asset }}-debug.txt")
+
+      - name: Smoke test DMG
+        run: tool/smoke_test_macos_dmg.sh dist/neiroha-macOS-*.dmg "${{ matrix.arch }}"
 
       - name: Upload macOS DMG
         uses: actions/upload-artifact@v4
         with:
-          name: neiroha-macOS-Universal-dev
+          name: neiroha-macOS-${{ matrix.asset }}-dev
           path: dist/**
           if-no-files-found: error

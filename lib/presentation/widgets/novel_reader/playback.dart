@@ -169,27 +169,10 @@ extension _NovelReaderEditorCache on _NovelReaderEditorState {
     ].join('\u001F');
   }
 
-  bool _supportsVoiceInstruction(db.VoiceAsset asset, db.TtsProvider provider) {
-    return switch (provider.adapterType) {
-      'chatCompletionsTts' => _isMimoTtsModel(asset, provider),
-      'cosyvoice' => true,
-      'voxcpm2Native' => true,
-      'geminiTts' => true,
-      'elevenLabs' => true,
-      'minimaxTts' => true,
-      'indexTts' => true,
-      _ => false,
-    };
-  }
-
-  bool _isMimoTtsModel(db.VoiceAsset asset, db.TtsProvider provider) {
-    final model = (asset.modelName ?? provider.defaultModelName).toLowerCase();
-    return provider.adapterType == 'chatCompletionsTts' &&
-        model.contains('mimo') &&
-        (model.contains('tts') ||
-            model.contains('voiceclone') ||
-            model.contains('voicedesign'));
-  }
+  bool _supportsVoiceInstruction(
+    db.VoiceAsset asset,
+    db.TtsProvider provider,
+  ) => VoiceCapabilities.supportsVoiceInstruction(asset, provider);
 }
 
 extension _NovelReaderEditorPlaybackFlow on _NovelReaderEditorState {

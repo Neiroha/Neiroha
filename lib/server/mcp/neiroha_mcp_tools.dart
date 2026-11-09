@@ -2079,6 +2079,7 @@ class NeirohaMcpTools {
 
   static String _defaultBaseUrl(AdapterType t) => switch (t) {
     AdapterType.openaiCompatible => 'http://localhost:8880/v1',
+    AdapterType.openaiTts => 'https://api.openai.com/v1',
     AdapterType.chatCompletionsTts => 'https://api.xiaomimimo.com/v1',
     AdapterType.gptSovits => 'http://127.0.0.1:9880',
     AdapterType.cosyvoice => 'http://127.0.0.1:9880',
@@ -2096,6 +2097,14 @@ class NeirohaMcpTools {
         'Any OpenAI /v1/audio/speech server (also Qwen3-TTS / Kokoro '
         'FastAPI wrappers). model = TTS model id (tts-1, gpt-4o-mini-tts…); '
         'voice = preset voice (alloy…). task_mode presetVoice.',
+    AdapterType.openaiTts:
+        'OpenAI official (api.openai.com, Bearer API key). model = '
+        'gpt-realtime-2.1-mini (default, Realtime API, the official '
+        'replacement) / gpt-realtime-2.1, or the Speech API models '
+        'gpt-4o-mini-tts / tts-1 / tts-1-hd, which OpenAI shuts down on '
+        '2027-01-06. voice = marin / cedar (best) or another built-in voice; '
+        'a custom voice id voice_... also works. instruction = delivery style '
+        '(not for tts-1). Speech API input is limited to 4096 characters.',
     AdapterType.chatCompletionsTts:
         'MiMo-style chat-completions TTS. The model decides the mode: names '
         'containing "voiceclone" need reference audio (cloneWithPrompt), '

@@ -117,6 +117,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
     return t == 'azureTts' ||
         t == 'systemTts' ||
         t == 'openaiCompatible' ||
+        t == 'openaiTts' ||
         t == 'chatCompletionsTts' ||
         t == 'gptSovits' ||
         t == 'geminiTts' ||
@@ -133,6 +134,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
   bool get _hasModelField {
     final t = _selectedProvider?.adapterType ?? '';
     return t == 'openaiCompatible' ||
+        t == 'openaiTts' ||
         t == 'chatCompletionsTts' ||
         t == 'geminiTts' ||
         t == 'elevenLabs' ||
@@ -377,6 +379,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context).uiModelName,
                 hintText: switch (_selectedProvider?.adapterType) {
+                  'openaiTts' => 'e.g. gpt-realtime-2.1-mini',
                   'geminiTts' => 'e.g. gemini-3.8-flash-tts',
                   'elevenLabs' => 'e.g. eleven_v4',
                   'minimaxTts' => 'e.g. speech-2.8-hd',
@@ -396,6 +399,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
             ),
           ],
           if (const {
+            'openaiTts',
             'geminiTts',
             'elevenLabs',
             'minimaxTts',

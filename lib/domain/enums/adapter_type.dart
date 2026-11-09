@@ -1,5 +1,6 @@
 enum AdapterType {
   openaiCompatible,
+  openaiTts,
   gptSovits,
   cosyvoice,
   voxcpm2Native,
@@ -13,6 +14,7 @@ enum AdapterType {
 
   String get displayName => switch (this) {
     openaiCompatible => 'OpenAI TTS API Compatible',
+    openaiTts => 'OpenAI TTS (Official)',
     gptSovits => 'GPT-SoVITS',
     cosyvoice => 'CosyVoice Native',
     voxcpm2Native => 'VoxCPM2 Native',
@@ -27,6 +29,7 @@ enum AdapterType {
 
   String get defaultModel => switch (this) {
     openaiCompatible => 'tts-1',
+    openaiTts => 'gpt-realtime-2.1-mini',
     gptSovits => 'default',
     cosyvoice => 'default',
     voxcpm2Native => 'default',
@@ -42,6 +45,7 @@ enum AdapterType {
   /// Whether this adapter type fetches models (synthesis engines) from the API.
   bool get supportsModelQuery => switch (this) {
     openaiCompatible => true,
+    openaiTts => true,
     chatCompletionsTts => true,
     gptSovits => true,
     // Gemini / MiniMax publish no model-list endpoint for TTS — the
@@ -57,6 +61,7 @@ enum AdapterType {
     azureTts => true,
     systemTts => true,
     openaiCompatible => true,
+    openaiTts => true,
     chatCompletionsTts => true,
     gptSovits => true,
     geminiTts => true,
@@ -70,6 +75,7 @@ enum AdapterType {
   /// When true the provider screen and character dialog show separate sections.
   bool get hasSeparateModelAndVoice => switch (this) {
     openaiCompatible => true,
+    openaiTts => true,
     chatCompletionsTts => true,
     gptSovits => true,
     geminiTts => true,
@@ -96,6 +102,7 @@ enum AdapterType {
   /// Whether to show the default model name field in the provider editor.
   bool get showDefaultModelField => switch (this) {
     openaiCompatible => false,
+    openaiTts => false,
     chatCompletionsTts => false,
     azureTts => false,
     systemTts => false,

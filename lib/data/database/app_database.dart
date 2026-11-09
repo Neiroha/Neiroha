@@ -45,7 +45,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 31;
+  int get schemaVersion => 32;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -127,6 +127,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 30) {
         await _seedProviders2026Q4();
+      }
+      if (from < 32) {
+        await _seedOpenAiOfficialProvider();
       }
     },
     beforeOpen: (_) async {
@@ -653,6 +656,26 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Disabled starter row for the official OpenAI provider (v32). Separate
+  /// from the "OpenAI Compatible" row, which targets self-hosted servers.
+  Future<void> _seedOpenAiOfficialProvider() async {
+    final maxPos = await customSelect(
+      'SELECT COALESCE(MAX(position), -1) AS p FROM tts_providers',
+    ).getSingle();
+    await into(ttsProviders).insert(
+      TtsProvidersCompanion(
+        id: const Value('default-openai-official'),
+        name: const Value('OpenAI'),
+        adapterType: const Value('openaiTts'),
+        baseUrl: const Value('https://api.openai.com/v1'),
+        defaultModelName: const Value('gpt-realtime-2.1-mini'),
+        enabled: const Value(false),
+        position: Value((maxPos.data['p'] as int? ?? -1) + 1),
+      ),
+      mode: InsertMode.insertOrIgnore,
+    );
+  }
+
   /// Disabled starter rows for the providers added in 0.4 (ElevenLabs,
   /// MiniMax, IndexTTS WebUI). `insertOrIgnore` keeps user edits intact when
   /// an upgrade runs after the user already created rows with these ids.
@@ -813,6 +836,7 @@ class AppDatabase extends _$AppDatabase {
     );
 
     await _seedProviders2026Q4();
+    await _seedOpenAiOfficialProvider();
 
     // ── Default voice character ──
     const defaultCharId = 'default-character';

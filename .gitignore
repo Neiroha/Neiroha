@@ -13,6 +13,11 @@
 .swiftpm/
 .vscode/
 
+# Local secrets (API keys)
+.env
+.env.*
+!.env.example
+
 # temp files
 .codex-temp/
 captures/

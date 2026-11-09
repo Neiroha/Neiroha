@@ -60,6 +60,7 @@ Always start with:
 |---|---|---|
 | Best cloud quality, many languages, cloning | `elevenLabs` | model `eleven_v4`; voice `Name [voice_id]`; reference audio without a voice creates an instant clone on the account |
 | Strong Chinese, cheap cloning | `minimaxTts` | model `speech-2.8-hd`; instruction = one emotion keyword; clones expire after 7 days unused; mainland accounts use `https://api.minimaxi.com` |
+| OpenAI voices, verbatim narration | `openaiTts` | model `gpt-realtime-2.1-mini` (default; the Speech API models `gpt-4o-mini-tts` / `tts-1` shut down 2027-01-06); voice `marin` or `cedar`; instruction = delivery style |
 | Free or low-cost, no cloning | `geminiTts` | model `gemini-3.8-flash-tts`; 30 prebuilt voices (Kore, Puck, Charon...); instruction = delivery style |
 | Local zero-shot cloning, no cloud | `indexTts` | IndexTTS 2.5 WebUI from a community one-click package (`start-webui.bat`, port 7860); every character needs reference audio |
 | Local, other | `cosyvoice`, `gptSovits`, `voxcpm2Native`, `openaiCompatible` | see each guide |

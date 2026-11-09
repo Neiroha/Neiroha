@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/adapters/openai_compatible_adapter.dart';
+import 'package:neiroha/data/adapters/openai_tts_adapter.dart';
 import 'package:neiroha/data/adapters/chat_completions_tts_adapter.dart';
 import 'package:neiroha/data/adapters/cosyvoice_adapter.dart';
 import 'package:neiroha/data/adapters/voxcpm2_native_adapter.dart';
@@ -31,7 +32,7 @@ class TtsRequest {
   // control (MiMo chat-completions TTS, CosyVoice instruct, VoxCPM2, Gemini).
   final String? voiceInstruction;
 
-  // OpenAI-compatible preset
+  // OpenAI-compatible / OpenAI official preset (`voice_…` = custom voice)
   final String? presetVoiceName;
 
   // MiMo V2.5 VoiceClone: data:audio/mpeg;base64,... or data:audio/wav;base64,...
@@ -124,6 +125,12 @@ TtsAdapter createAdapter(db.TtsProvider provider, {String? modelName}) {
   switch (provider.adapterType) {
     case 'openaiCompatible':
       return OpenAiCompatibleAdapter(
+        baseUrl: provider.baseUrl,
+        apiKey: provider.apiKey,
+        modelName: model,
+      );
+    case 'openaiTts':
+      return OpenAiTtsAdapter(
         baseUrl: provider.baseUrl,
         apiKey: provider.apiKey,
         modelName: model,

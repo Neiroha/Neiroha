@@ -188,6 +188,7 @@ Provider 与媒体能力会按当前运行平台过滤：
 | 外部 FFmpeg CLI 路径 / PATH 检测 | 是 | 是 | 否 |
 | 本地波形提取、裁剪、混音导出 | 是 | 是 | 禁用 |
 | Windows SAPI 系统 TTS | 是 | 否 | 否 |
+| 麦克风录制参考音频 | 是 | 否（请导入音频文件） | 否 |
 
 新增 Provider 时不会列出当前平台不支持的适配器。若数据库中已有来自
 其他平台的记录，则会显示为“当前平台不可用”，不能启用或执行健康检查。
@@ -383,6 +384,20 @@ Neiroha 暂未发布 IndexTTS 一键包，本适配器对接社区一键整合�
 - 自动兼容无 `/gradio_api` 前缀的 Gradio 4。参数按名称填充，未知采样参数保留 WebUI 默认值。
 - 角色每次都基于参考音频零样本克隆；`modelName` 存放输出语言（`auto`、`ZH`、`EN`、`JA`、`AR`、`ES`）。
 - 语速映射为 2.5 的 `duration_factor`（`1 / speed`）；仅当 WebUI 开启实验性情感文本模式时，指令才作为情感描述发送。
+### 2.11 OpenAI 官方（`openaiTts`）
+
+对接 OpenAI 官方 TTS 模型（`https://api.openai.com/v1`，`Authorization: Bearer` 标准 API Key）。自建的兼容服务请用 `openaiCompatible`。模型 ID 决定调用方式：
+
+| 模型 | 调用方式 | 说明 |
+|---|---|---|
+| `gpt-realtime-2.1-mini`（默认） | Realtime API WebSocket | OpenAI 官方推荐的 Speech API 替代品 |
+| `gpt-realtime-2.1` | Realtime API WebSocket | 更大的 Realtime 模型 |
+| `gpt-4o-mini-tts`、`gpt-4o-mini-tts-2025-12-15` | `POST /audio/speech` | OpenAI 将于 **2027-01-06** 下线 |
+| `tts-1`、`tts-1-hd` | `POST /audio/speech` | **2027-01-06** 下线；不支持 `instructions`，音色较少 |
+
+- Realtime：依次发送 `session.update`（仅音频输出、24 kHz `audio/pcm`、`turn_detection: null`、音色，以及要求逐字朗读的 instructions）、`conversation.item.create`（文本作为 `input_text`）、`response.create`；收集 `response.output_audio.delta` 直到 `response.done`，返回 WAV。角色指令作为演绎方式追加；语速限制在 0.25–1.5。
+- Speech API：发送 `{model, input, voice, instructions?, speed?, response_format}`；输入最多 4096 字符，语速 0.25–4。
+- 音色：`marin`、`cedar`（推荐）以及 `alloy`、`ash`、`ballad`、`coral`、`echo`、`sage`、`shimmer`、`verse` 全模型可用；`fable`、`nova`、`onyx` 仅 Speech API；`tts-1` / `tts-1-hd` 支持 `alloy`、`ash`、`coral`、`echo`、`fable`、`nova`、`onyx`、`sage`、`shimmer`。用同意录音创建的自定义音色直接填写其 ID（`voice_…`），以 `{"id": "voice_…"}` 发送；OpenAI 没有列出自定义音色的接口。
 ---
 
 ## 3. 模型管理
@@ -401,6 +416,7 @@ Neiroha 暂未发布 IndexTTS 一键包，本适配器对接社区一键整合�
 | 适配器类型 | 支持模型查询 | 支持语音查询 |
 |---|---|---|
 | `openaiCompatible` | 是 | 是 |
+| `openaiTts` | 是，内置 TTS 模型列表 | 是，内置音色 |
 | `chatCompletionsTts` | 是 | 是 |
 | `azureTts` | 通过语音列表返回 locale | 是 |
 | `systemTts` | 否 | 是，仅 Windows |

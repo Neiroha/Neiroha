@@ -136,11 +136,13 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   bool get _isPresetVoiceProvider =>
       _adapterType == 'chatCompletionsTts' ||
       _adapterType == 'openaiCompatible' ||
+      _isOpenAiTts ||
       _adapterType == 'azureTts' ||
       _adapterType == 'systemTts' ||
       _adapterType == 'geminiTts' ||
       _isCloudCloneProvider;
   bool get _isGeminiTts => _adapterType == 'geminiTts';
+  bool get _isOpenAiTts => _adapterType == 'openaiTts';
   bool get _isIndexTts => _adapterType == 'indexTts';
 
   /// ElevenLabs / MiniMax: preset voices plus optional server-side cloning
@@ -151,6 +153,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   /// Providers whose characters pick a model first, then a voice.
   bool get _usesModelThenVoice =>
       _adapterType == 'openaiCompatible' ||
+      _isOpenAiTts ||
       _adapterType == 'chatCompletionsTts' ||
       _isGeminiTts ||
       _isCloudCloneProvider;
@@ -279,7 +282,8 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       final modelList =
           cachedModels
               .map((b) => b.modelKey)
-              .where((k) => _isTtsModel(k))
+              // OpenAI official caches a curated TTS list (incl. gpt-realtime-*).
+              .where((k) => _isOpenAiTts || _isTtsModel(k))
               .toList()
             ..sort();
 
@@ -841,7 +845,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                             ),
                             onChanged: (_) => _autoFillName(),
                           ),
-                          if (_isGeminiTts || _isCloudCloneProvider) ...[
+                          if (_isGeminiTts ||
+                              _isOpenAiTts ||
+                              _isCloudCloneProvider) ...[
                             SizedBox(height: 16),
                             VoiceCharacterSectionLabel(
                               'STYLE INSTRUCTION (optional)',
@@ -858,6 +864,8 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                                     ? MiniMaxTtsAdapter.kEmotions.join(' / ')
                                     : _adapterType == 'elevenLabs'
                                     ? 'e.g. whispers, excited (v3 / v4 audio tag)'
+                                    : _isOpenAiTts
+                                    ? 'e.g. calm, warm narrator; slightly slow (not for tts-1)'
                                     : AppLocalizations.of(
                                         context,
                                       ).uiEGSpeakSoftlyAndSlowlyPrependedToTheText,

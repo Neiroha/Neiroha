@@ -347,7 +347,11 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
 
   /// Whether a model key is a TTS model (vs LLM/ASR/multimodal).
   bool _isTtsModelKey(String modelKey) {
-    if (_adapterType == AdapterType.gptSovits) return true;
+    // GPT-SoVITS and OpenAI official return curated TTS-only model lists.
+    if (_adapterType == AdapterType.gptSovits ||
+        _adapterType == AdapterType.openaiTts) {
+      return true;
+    }
     final k = modelKey.toLowerCase();
     return k.contains('tts') ||
         k.contains('gpt-sovits') ||
@@ -669,6 +673,7 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     AdapterType.gptSovits => 'http://127.0.0.1:9880',
     AdapterType.cosyvoice => 'http://127.0.0.1:9880',
     AdapterType.voxcpm2Native => 'http://127.0.0.1:8000',
+    AdapterType.openaiTts => 'https://api.openai.com/v1',
     AdapterType.geminiTts => 'https://generativelanguage.googleapis.com',
     AdapterType.elevenLabs => 'https://api.elevenlabs.io',
     AdapterType.minimaxTts =>

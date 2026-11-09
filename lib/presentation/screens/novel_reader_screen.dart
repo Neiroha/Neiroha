@@ -13,6 +13,7 @@ import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/audio_merge_service.dart';
 import 'package:neiroha/data/services/loudness_normalizer.dart';
+import 'package:neiroha/domain/voice_capabilities.dart';
 import 'package:neiroha/data/storage/novel_dialogue_rules_service.dart';
 import 'package:neiroha/data/storage/novel_import_service.dart';
 import 'package:neiroha/data/storage/novel_text_filter_rules_service.dart';

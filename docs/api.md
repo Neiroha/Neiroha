@@ -216,6 +216,7 @@ Provider and media capabilities are filtered by the running platform:
 | External FFmpeg CLI path / PATH detection | yes | yes | no |
 | Local waveform extraction, trimming and muxed export | yes | yes | disabled |
 | Windows SAPI system TTS | yes | no | no |
+| Microphone recording for reference audio | yes | no (import audio files instead) | no |
 
 Unsupported providers are not offered in the Add Provider dialog. Existing
 database rows from another platform remain visible as unavailable and cannot be
@@ -482,6 +483,43 @@ reference audio. `modelName` holds the output language (`auto`, `ZH`, `EN`,
 `JA`, `AR`, `ES`; `auto` detects from the text). Speed maps to the 2.5
 `duration_factor` (`1 / speed`). The instruction is sent as emotion text
 only when the WebUI exposes the experimental emotion-text mode.
+### 2.11 OpenAI Official (`openaiTts`)
+
+OpenAI's own TTS models on `https://api.openai.com/v1` with a standard API key
+(`Authorization: Bearer`). Use `openaiCompatible` for self-hosted servers that
+mimic the API. The model id selects the transport:
+
+| Model | Transport | Notes |
+|---|---|---|
+| `gpt-realtime-2.1-mini` (default) | Realtime API WebSocket | OpenAI's recommended replacement for the Speech API models |
+| `gpt-realtime-2.1` | Realtime API WebSocket | larger Realtime model |
+| `gpt-4o-mini-tts`, `gpt-4o-mini-tts-2025-12-15` | `POST /audio/speech` | shut down by OpenAI on **2027-01-06** |
+| `tts-1`, `tts-1-hd` | `POST /audio/speech` | shut down on **2027-01-06**; no `instructions`; fewer voices |
+
+| Operation | Method | Path | Status |
+|---|---|---|---|
+| Synthesize (Speech API models) | `POST` | `/audio/speech` | **Implemented** |
+| Synthesize (Realtime models) | WebSocket | `wss://…/v1/realtime?model={model}` | **Implemented** |
+| Health check | `GET` | `/models` | **Implemented** |
+| List models / voices | — | built-in lists | **Implemented** |
+
+**Realtime synthesis** sends `session.update` (audio-only output,
+`audio/pcm` at 24 kHz, `turn_detection: null`, voice, and instructions that
+make the model read the text verbatim), then `conversation.item.create` with
+the text as `input_text`, then `response.create`. The adapter collects
+`response.output_audio.delta` chunks until `response.done` and returns WAV.
+The character's instruction is appended as delivery direction. Speed is
+clamped to 0.25–1.5.
+
+**Speech API synthesis** sends `{model, input, voice, instructions?, speed?,
+response_format}`. Input is limited to 4096 characters and speed to 0.25–4.
+
+**Voices:** `marin` and `cedar` (recommended), `alloy`, `ash`, `ballad`,
+`coral`, `echo`, `sage`, `shimmer`, `verse` on every model; `fable`, `nova`,
+`onyx` on the Speech API only. `tts-1` / `tts-1-hd` accept `alloy`, `ash`,
+`coral`, `echo`, `fable`, `nova`, `onyx`, `sage`, `shimmer`. A custom voice
+created from a consent recording is entered as its id (`voice_…`) and sent as
+`{"id": "voice_…"}`. OpenAI has no endpoint for listing custom voices.
 ---
 
 ## 3. Model Management
@@ -498,6 +536,7 @@ Supported adapters:
 | Adapter type | Model query | Voice query |
 |---|---|---|
 | `openaiCompatible` | yes | yes |
+| `openaiTts` | yes, built-in TTS model list | yes, built-in voices |
 | `chatCompletionsTts` | yes | yes |
 | `azureTts` | locales via voice list | yes |
 | `systemTts` | no | yes, Windows only |

@@ -15,7 +15,10 @@ import 'package:path_provider/path_provider.dart';
 /// - `{voiceAssetRoot}/voice_character_ref/`
 ///
 /// `{root}` is the executable directory when writable (portable mode),
-/// otherwise falls back to the OS app-support dir. `{voiceAssetRoot}`
+/// otherwise falls back to the OS app-support dir. macOS always uses the
+/// app-support dir (`~/Library/Application Support/com.neiroha.neiroha`):
+/// the executable lives inside the signed `.app` bundle, and writing there
+/// would break the signature and lose user data when the app is replaced. `{voiceAssetRoot}`
 /// defaults to `{root}/voice_asset` but can be overridden by the user.
 class PathService {
   PathService._();
@@ -47,7 +50,7 @@ class PathService {
     _legacyAppSupportDir = await getApplicationSupportDirectory();
 
     final exeDir = File(Platform.resolvedExecutable).parent;
-    _portable = await _isWritable(exeDir);
+    _portable = !Platform.isMacOS && await _isWritable(exeDir);
     _appRoot = _portable ? exeDir : _legacyAppSupportDir;
 
     // Flutter desktop bundles already use `{exeDir}/data` for app.so,

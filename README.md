@@ -7,7 +7,7 @@
 **AI Audio Middleware & Dubbing Workstation**
 
 [![Language](https://img.shields.io/badge/language-Dart%20%2F%20Flutter-0553B1?logo=flutter&logoColor=white)](https://flutter.dev)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
 [![Version](https://img.shields.io/badge/version-v0.4.1-blue)](https://github.com/Neiroha/Neiroha/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Neiroha/Neiroha?style=social)](https://github.com/Neiroha/Neiroha/stargazers)
@@ -28,7 +28,7 @@ It brings local inference wrappers, cloud speech APIs, voice cloning, reusable v
 
 | Strength | What it gives you |
 |---|---|
-| **Multi-engine by design** | Use OpenAI-compatible TTS, Azure Speech, Gemini TTS, GPT-SoVITS, CosyVoice, VoxCPM2, MiMo-style chat TTS, Windows SAPI, and similar backends from one app. |
+| **Multi-engine by design** | Use OpenAI TTS (official and compatible servers), Azure Speech, Gemini TTS, GPT-SoVITS, CosyVoice, VoxCPM2, MiMo-style chat TTS, Windows SAPI, and similar backends from one app. |
 | **Characters, not raw params** | Save provider, model, voice, speed, reference audio, prompt text, and style instructions as reusable voice characters. |
 | **Voice banks for projects** | Reuse a whole cast across scripts, novels, dialog sessions, video dubbing, and external API calls. |
 | **Built for long work** | Queue synthesis, cache generated audio, prefetch novel segments, inspect failures, monitor tasks, and keep local GPU backends under control. |
@@ -87,11 +87,24 @@ Neiroha can also run as a local OpenAI-compatible TTS service backed by the acti
 
 The full API reference lives in [docs/api.md](docs/api.md). Installation, backend defaults, API keys, model configuration, and workflow guides live in the [Wiki](https://github.com/Neiroha/Neiroha/wiki).
 
+## macOS
+
+Releases include `neiroha-macOS-Universal-vX.Y.Z.dmg`, one universal build for Apple Silicon and Intel Macs (macOS 12 or later). Open the DMG and drag **Neiroha** into **Applications**.
+
+The app is ad-hoc signed but not notarized, so Gatekeeper blocks the first launch. Open it once from **System Settings → Privacy & Security → Open Anyway**, or run:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Neiroha.app
+```
+
+App data lives in `~/Library/Application Support/com.neiroha.neiroha/`. Install FFmpeg with `brew install ffmpeg`; Homebrew's Apple Silicon (`/opt/homebrew/bin`) and Intel (`/usr/local/bin`) locations are detected automatically. Microphone recording is Windows-only for now, so import reference audio as files.
+
 ## Development
 
 - Flutter 3.47.7 stable (the version CI uses), then `flutter pub get`.
 - After changing the Drift tables (`lib/data/database/tables.dart`) or the freezed models, run `dart run build_runner build`.
 - After changing `lib/l10n/app_en.arb` / `app_zh.arb`, run `flutter gen-l10n`.
+- macOS builds need Xcode and CocoaPods. `flutter build macos --release`, then `tool/package_macos_dmg.sh Release dist/Neiroha.dmg` checks that the bundle is universal and signed, and builds the DMG.
 - `flutter analyze` and `flutter test`. The loudness and merge tests use a real FFmpeg and are skipped when `ffmpeg` is not on `PATH`.
 - `analysis_options.yaml` excludes `build/` and the platform folders (recent Flutter versions add this block automatically), so the generated plugin sources there are not analyzed.
 

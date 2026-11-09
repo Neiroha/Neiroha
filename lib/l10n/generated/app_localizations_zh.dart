@@ -261,6 +261,9 @@ class AppLocalizationsZh extends AppLocalizations {
       '应用支持目录 fallback（安装目录只读）';
 
   @override
+  String get uiAppSupportMacOs => '应用支持目录（macOS 标准位置）';
+
+  @override
   String get uiAppend => '追加';
 
   @override
@@ -932,6 +935,10 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get uiLeaveBlankToAutoDetectEGCFfmpegBinFfmpegExe =>
       '留空自动检测（例如 C:\\ffmpeg\\bin\\ffmpeg.exe）';
+
+  @override
+  String get uiLeaveBlankToAutoDetectMacOsFfmpeg =>
+      '留空自动检测（例如 /opt/homebrew/bin/ffmpeg）';
 
   @override
   String get uiLine => '行距';

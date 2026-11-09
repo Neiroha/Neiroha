@@ -276,6 +276,67 @@ jobs:
           path: dist/**
           if-no-files-found: error
 
+  build-macos:
+    name: macOS desktop release (Universal DMG)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Restore Pub cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: ${{ runner.os }}-pub-${{ hashFiles('pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Disable Flutter analytics
+        run: flutter config --no-analytics
+
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Resolve release version
+        shell: bash
+        run: |
+          version="${RELEASE_TAG#v}"
+          if [[ "$version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            version="${version}.0"
+          fi
+          echo "BUILD_NAME=$version" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+          echo "ASSET_VERSION=v$version" >> "$GITHUB_ENV"
+
+      # Release builds are universal (arm64 + x86_64) and ad-hoc signed.
+      - name: Build macOS
+        run: flutter build macos --release --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER"
+
+      - name: Package DMG
+        run: tool/package_macos_dmg.sh Release "dist/neiroha-macOS-Universal-${ASSET_VERSION}.dmg"
+
+      - name: Attest macOS provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/neiroha-macOS-Universal-*.dmg
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: neiroha-macOS-Universal-release
+          path: dist/**
+          if-no-files-found: error
+
   publish-release:
     name: Publish GitHub Release
     runs-on: ubuntu-latest
@@ -283,6 +344,7 @@ jobs:
       - build-android
       - build-linux
       - build-windows
+      - build-macos
     steps:
       - name: Checkout release history
         uses: actions/checkout@v4

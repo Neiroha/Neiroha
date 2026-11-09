@@ -240,3 +240,59 @@ jobs:
           name: neiroha-Windows-AMD64-debug
           path: dist/**
           if-no-files-found: error
+
+  build-macos:
+    name: macOS desktop (Universal DMG)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Restore Pub cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: ${{ runner.os }}-pub-${{ hashFiles('pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Disable Flutter analytics
+        run: flutter config --no-analytics
+
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Resolve package version
+        shell: bash
+        run: |
+          version="$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)"
+          echo "BUILD_VERSION=v${version}" >> "$GITHUB_ENV"
+
+      # macOS debug builds only contain the runner's own architecture and
+      # need the Flutter tool to launch, so PR testers get a release-mode
+      # universal build that also runs on Intel Macs.
+      - name: Build macOS
+        run: flutter build macos --release
+
+      - name: Package DMG
+        run: |
+          dmg="dist/neiroha-macOS-Universal-${BUILD_VERSION}-dev.dmg"
+          tool/package_macos_dmg.sh Release "$dmg"
+          (cd dist && shasum -a 256 neiroha-macOS-*.dmg > SHA256SUMS-macOS-debug.txt)
+
+      - name: Upload macOS DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: neiroha-macOS-Universal-dev
+          path: dist/**
+          if-no-files-found: error

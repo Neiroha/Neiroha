@@ -7,7 +7,7 @@
 **AI 音频中间件与配音工作站**
 
 [![语言](https://img.shields.io/badge/语言-Dart%20%2F%20Flutter-0553B1?logo=flutter&logoColor=white)](https://flutter.dev)
-[![平台](https://img.shields.io/badge/平台-Windows%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
+[![平台](https://img.shields.io/badge/平台-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
 [![版本](https://img.shields.io/badge/版本-v0.4.1-blue)](https://github.com/Neiroha/Neiroha/releases)
 [![许可证：MIT](https://img.shields.io/badge/许可证-MIT-green)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Neiroha/Neiroha?style=social)](https://github.com/Neiroha/Neiroha/stargazers)
@@ -28,7 +28,7 @@ Neiroha 是一个 Flutter 应用，面向需要大量角色音色、多种 TTS �
 
 | 强项 | 能解决什么 |
 |---|---|
-| **多引擎统一管理** | 在一个应用里使用 OpenAI 兼容 TTS、Azure Speech、Gemini TTS、GPT-SoVITS、CosyVoice、VoxCPM2、MiMo 风格 Chat TTS 和 Windows SAPI等 |
+| **多引擎统一管理** | 在一个应用里使用 OpenAI TTS（官方与兼容服务）、Azure Speech、Gemini TTS、GPT-SoVITS、CosyVoice、VoxCPM2、MiMo 风格 Chat TTS 和 Windows SAPI等 |
 | **把参数变成角色** | 把服务商、模型、音色、语速、参考音频、提示文本、风格指令保存成可复用的语音角色 |
 | **用语音库组织项目** | 一整套角色可以在脚本、小说、对话、视频配音和外部 API 调用之间复用。 |
 | **为长任务设计** | 支持生成队列、音频缓存、小说预取、失败检查、任务监控和本地 GPU 后端的限流控制。 |
@@ -88,11 +88,24 @@ Neiroha 也可以作为本地 OpenAI 兼容 TTS 服务运行，由当前激活�
 
 完整接口见 [docs/api-zh.md](docs/api-zh.md)。安装、后端默认值、API Key、模型配置和使用教程放在 [Wiki](https://github.com/Neiroha/Neiroha/wiki)。
 
+## macOS
+
+Release 中提供 `neiroha-macOS-Universal-vX.Y.Z.dmg`，同一个通用包同时支持 Apple Silicon 与 Intel Mac（macOS 12 及以上）。打开 DMG，把 **Neiroha** 拖进 **应用程序** 即可。
+
+应用为 ad-hoc 签名、未经公证，首次启动会被 Gatekeeper 拦截。请在 **系统设置 → 隐私与安全性 → 仍要打开** 中放行一次，或执行：
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Neiroha.app
+```
+
+应用数据位于 `~/Library/Application Support/com.neiroha.neiroha/`。FFmpeg 可用 `brew install ffmpeg` 安装，会自动识别 Homebrew 在 Apple Silicon（`/opt/homebrew/bin`）与 Intel（`/usr/local/bin`）上的路径。麦克风录制暂仅支持 Windows，参考音频请以文件导入。
+
 ## 开发
 
 - 使用 Flutter 3.47.7 stable（与 CI 一致），然后运行 `flutter pub get`。
 - 修改 Drift 表结构（`lib/data/database/tables.dart`）或 freezed 模型后，运行 `dart run build_runner build`。
 - 修改 `lib/l10n/app_en.arb` / `app_zh.arb` 后，运行 `flutter gen-l10n`。
+- 构建 macOS 需要 Xcode 与 CocoaPods。先 `flutter build macos --release`，再运行 `tool/package_macos_dmg.sh Release dist/Neiroha.dmg`，脚本会检查包是否为通用二进制且已签名，然后生成 DMG。
 - 运行 `flutter analyze` 与 `flutter test`。音量统一与合并导出的测试会调用真实的 FFmpeg，`PATH` 中没有 `ffmpeg` 时自动跳过。
 - `analysis_options.yaml` 排除了 `build/` 与各平台目录（新版 Flutter 也会自动加入这段配置），避免分析其中生成的插件源码。
 

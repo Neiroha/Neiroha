@@ -554,6 +554,12 @@ abstract class AppLocalizations {
   /// **'App-support fallback (install dir is read-only)'**
   String get uiAppSupportFallbackInstallDirIsReadOnly;
 
+  /// No description provided for @uiAppSupportMacOs.
+  ///
+  /// In en, this message translates to:
+  /// **'Application Support (standard macOS location)'**
+  String get uiAppSupportMacOs;
+
   /// No description provided for @uiAppend.
   ///
   /// In en, this message translates to:
@@ -1783,6 +1789,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Leave blank to auto-detect (e.g. C:\\ffmpeg\\bin\\ffmpeg.exe)'**
   String get uiLeaveBlankToAutoDetectEGCFfmpegBinFfmpegExe;
+
+  /// No description provided for @uiLeaveBlankToAutoDetectMacOsFfmpeg.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave blank to auto-detect (e.g. /opt/homebrew/bin/ffmpeg)'**
+  String get uiLeaveBlankToAutoDetectMacOsFfmpeg;
 
   /// No description provided for @uiLine.
   ///

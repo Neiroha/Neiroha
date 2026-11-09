@@ -272,6 +272,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'App-support fallback (install dir is read-only)';
 
   @override
+  String get uiAppSupportMacOs =>
+      'Application Support (standard macOS location)';
+
+  @override
   String get uiAppend => 'Append';
 
   @override
@@ -959,6 +963,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get uiLeaveBlankToAutoDetectEGCFfmpegBinFfmpegExe =>
       'Leave blank to auto-detect (e.g. C:\\ffmpeg\\bin\\ffmpeg.exe)';
+
+  @override
+  String get uiLeaveBlankToAutoDetectMacOsFfmpeg =>
+      'Leave blank to auto-detect (e.g. /opt/homebrew/bin/ffmpeg)';
 
   @override
   String get uiLine => 'Line';

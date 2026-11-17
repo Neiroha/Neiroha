@@ -4327,6 +4327,612 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Import novel folder'**
   String get novelImportFolderTitle;
+
+  /// No description provided for @uiPreferStreaming.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto: prefer streaming'**
+  String get uiPreferStreaming;
+
+  /// No description provided for @uiStopSynthesis.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop synthesis'**
+  String get uiStopSynthesis;
+
+  /// No description provided for @uiAudioBuffering.
+  ///
+  /// In en, this message translates to:
+  /// **'Buffering…'**
+  String get uiAudioBuffering;
+
+  /// No description provided for @roleReadMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get roleReadMode;
+
+  /// No description provided for @roleReviewMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Role review'**
+  String get roleReviewMode;
+
+  /// No description provided for @roleCharacters.
+  ///
+  /// In en, this message translates to:
+  /// **'Characters'**
+  String get roleCharacters;
+
+  /// No description provided for @roleAddCharacter.
+  ///
+  /// In en, this message translates to:
+  /// **'Add character'**
+  String get roleAddCharacter;
+
+  /// No description provided for @roleName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get roleName;
+
+  /// No description provided for @roleAliases.
+  ///
+  /// In en, this message translates to:
+  /// **'Aliases (comma separated)'**
+  String get roleAliases;
+
+  /// No description provided for @roleDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get roleDescription;
+
+  /// No description provided for @roleNoCharacter.
+  ///
+  /// In en, this message translates to:
+  /// **'Unassigned'**
+  String get roleNoCharacter;
+
+  /// No description provided for @roleVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get roleVoice;
+
+  /// No description provided for @roleDefaultVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Use project default'**
+  String get roleDefaultVoice;
+
+  /// No description provided for @roleChapterOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Override voice in this chapter'**
+  String get roleChapterOverride;
+
+  /// No description provided for @roleSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Review selected sentence'**
+  String get roleSelected;
+
+  /// No description provided for @rolePickSentence.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a sentence to review'**
+  String get rolePickSentence;
+
+  /// No description provided for @roleCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get roleCategory;
+
+  /// No description provided for @roleNarrator.
+  ///
+  /// In en, this message translates to:
+  /// **'Narration'**
+  String get roleNarrator;
+
+  /// No description provided for @roleDialogue.
+  ///
+  /// In en, this message translates to:
+  /// **'Dialogue'**
+  String get roleDialogue;
+
+  /// No description provided for @roleThought.
+  ///
+  /// In en, this message translates to:
+  /// **'Thought'**
+  String get roleThought;
+
+  /// No description provided for @roleSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get roleSystem;
+
+  /// No description provided for @roleScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to'**
+  String get roleScope;
+
+  /// No description provided for @roleOnlySentence.
+  ///
+  /// In en, this message translates to:
+  /// **'This sentence'**
+  String get roleOnlySentence;
+
+  /// No description provided for @roleChapterUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Same character in this chapter, unlocked'**
+  String get roleChapterUnlocked;
+
+  /// No description provided for @roleLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock manual result'**
+  String get roleLock;
+
+  /// No description provided for @roleApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply changes'**
+  String get roleApply;
+
+  /// No description provided for @roleUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo last annotation edit'**
+  String get roleUndo;
+
+  /// No description provided for @rolePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get rolePending;
+
+  /// No description provided for @roleInferred.
+  ///
+  /// In en, this message translates to:
+  /// **'Inferred from context'**
+  String get roleInferred;
+
+  /// No description provided for @roleConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflicting evidence'**
+  String get roleConflict;
+
+  /// No description provided for @roleConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Manually confirmed'**
+  String get roleConfirmed;
+
+  /// No description provided for @roleInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence style override (optional)'**
+  String get roleInstruction;
+
+  /// No description provided for @roleSentenceVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence voice override'**
+  String get roleSentenceVoice;
+
+  /// No description provided for @roleMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge character'**
+  String get roleMerge;
+
+  /// No description provided for @roleMergeInto.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge into'**
+  String get roleMergeInto;
+
+  /// No description provided for @roleManualReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual review'**
+  String get roleManualReason;
+
+  /// No description provided for @roleCached.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio cache ready'**
+  String get roleCached;
+
+  /// No description provided for @roleStaleCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio needs regeneration'**
+  String get roleStaleCache;
+
+  /// No description provided for @roleNoCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio not generated'**
+  String get roleNoCache;
+
+  /// No description provided for @roleRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit character'**
+  String get roleRename;
+
+  /// No description provided for @rolePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview selected sentence'**
+  String get rolePreview;
+
+  /// No description provided for @rolePendingList.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentences to review'**
+  String get rolePendingList;
+
+  /// No description provided for @roleNoPending.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending sentences in this chapter'**
+  String get roleNoPending;
+
+  /// No description provided for @roleAnalysisModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Role analysis model (text model ID)'**
+  String get roleAnalysisModel;
+
+  /// No description provided for @roleAnalysisProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis connection'**
+  String get roleAnalysisProvider;
+
+  /// No description provided for @roleAnalysisStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyze current chapter'**
+  String get roleAnalysisStart;
+
+  /// No description provided for @roleAnalysisResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm roster and continue / resume'**
+  String get roleAnalysisResume;
+
+  /// No description provided for @roleAnalysisPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause analysis'**
+  String get roleAnalysisPause;
+
+  /// No description provided for @roleAnalysisFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Character or review feedback'**
+  String get roleAnalysisFeedback;
+
+  /// No description provided for @roleAnalysisReplan.
+  ///
+  /// In en, this message translates to:
+  /// **'Replan roster from feedback'**
+  String get roleAnalysisReplan;
+
+  /// No description provided for @roleAnalysisBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Current chapter only. Up to 12 model requests per run; charges may apply. Locked and manually confirmed sentences are preserved.'**
+  String get roleAnalysisBudget;
+
+  /// No description provided for @roleAnalysisOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure a connection in Providers before choosing an analysis model.'**
+  String get roleAnalysisOffline;
+
+  /// No description provided for @modelDiscover.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover models / capabilities'**
+  String get modelDiscover;
+
+  /// No description provided for @modelRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh from connection'**
+  String get modelRefresh;
+
+  /// No description provided for @modelManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this model manually'**
+  String get modelManual;
+
+  /// No description provided for @modelUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get modelUnknown;
+
+  /// No description provided for @modelSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Supported'**
+  String get modelSupported;
+
+  /// No description provided for @modelUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported'**
+  String get modelUnsupported;
+
+  /// No description provided for @modelCapabilityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Catalog facts describe capability. Account availability is verified by actual successful use. No paid probes are automatic.'**
+  String get modelCapabilityHint;
+
+  /// No description provided for @modelOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Override task capability for this route'**
+  String get modelOverride;
+
+  /// No description provided for @modelNoModels.
+  ///
+  /// In en, this message translates to:
+  /// **'No cached models. Refresh or enter a model ID.'**
+  String get modelNoModels;
+
+  /// No description provided for @roleStagePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Planning characters'**
+  String get roleStagePlan;
+
+  /// No description provided for @roleStageRoster.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for roster review'**
+  String get roleStageRoster;
+
+  /// No description provided for @roleStageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Labeling sentences'**
+  String get roleStageLabel;
+
+  /// No description provided for @roleStageValidate.
+  ///
+  /// In en, this message translates to:
+  /// **'Validating labels'**
+  String get roleStageValidate;
+
+  /// No description provided for @roleStageReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewing uncertain labels'**
+  String get roleStageReview;
+
+  /// No description provided for @roleStageReplan.
+  ///
+  /// In en, this message translates to:
+  /// **'Replanning from feedback'**
+  String get roleStageReplan;
+
+  /// No description provided for @roleStagePaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get roleStagePaused;
+
+  /// No description provided for @roleStageCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get roleStageCompleted;
+
+  /// No description provided for @roleStageFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis failed'**
+  String get roleStageFailed;
+
+  /// No description provided for @roleAnalysisSentences.
+  ///
+  /// In en, this message translates to:
+  /// **'sentences'**
+  String get roleAnalysisSentences;
+
+  /// No description provided for @roleAnalysisCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'calls'**
+  String get roleAnalysisCalls;
+
+  /// No description provided for @roleSplitText.
+  ///
+  /// In en, this message translates to:
+  /// **'Split text'**
+  String get roleSplitText;
+
+  /// No description provided for @roleSplitTextHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a range to isolate it, or place the cursor at a split point. All text and labels are preserved.'**
+  String get roleSplitTextHelp;
+
+  /// No description provided for @roleMergeText.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge text'**
+  String get roleMergeText;
+
+  /// No description provided for @roleMergeTextHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge from the current segment through the chosen end. Mixed labels become unassigned and pending. Old audio is retained but no longer used.'**
+  String get roleMergeTextHelp;
+
+  /// No description provided for @roleMergeUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge through'**
+  String get roleMergeUntil;
+
+  /// No description provided for @roleMergeNewline.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert newlines between segments'**
+  String get roleMergeNewline;
+
+  /// No description provided for @roleUndoStructure.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo last text split/merge'**
+  String get roleUndoStructure;
+
+  /// No description provided for @roleStyleMatrix.
+  ///
+  /// In en, this message translates to:
+  /// **'Character styles by category'**
+  String get roleStyleMatrix;
+
+  /// No description provided for @roleStyleHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave fields empty to inherit defaults. Clear both fields to remove this override.'**
+  String get roleStyleHelp;
+
+  /// No description provided for @roleSplitCharacter.
+  ///
+  /// In en, this message translates to:
+  /// **'Split character'**
+  String get roleSplitCharacter;
+
+  /// No description provided for @roleSplitCharacterHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move selected lines in this chapter to a new character and copy voice bindings. Annotation undo restores attribution and retains the new identity.'**
+  String get roleSplitCharacterHelp;
+
+  /// No description provided for @roleIdentityKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity type'**
+  String get roleIdentityKind;
+
+  /// No description provided for @roleIdentityNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Named character'**
+  String get roleIdentityNamed;
+
+  /// No description provided for @roleIdentityAnonymous.
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous speaker'**
+  String get roleIdentityAnonymous;
+
+  /// No description provided for @roleIdentityGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Group'**
+  String get roleIdentityGroup;
+
+  /// No description provided for @roleDirectionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Each director action runs one bounded model task. Review before applying. Casting preserves bindings; tone handles up to 30 unconfirmed, unlocked segments without delivery instructions.'**
+  String get roleDirectionHelp;
+
+  /// No description provided for @roleSuggestCast.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest voice casting'**
+  String get roleSuggestCast;
+
+  /// No description provided for @roleSuggestTone.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest delivery'**
+  String get roleSuggestTone;
+
+  /// No description provided for @roleDirectionReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review suggestions'**
+  String get roleDirectionReview;
+
+  /// No description provided for @roleDirectionEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'The model returned no applicable suggestions.'**
+  String get roleDirectionEmpty;
+
+  /// No description provided for @taskProfiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Task model profiles'**
+  String get taskProfiles;
+
+  /// No description provided for @taskProfilesHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure separate connections, models and protocols for analysis, casting, delivery and narration. Narration overrides the novel model/protocol while retaining character voices and references. Unconfigured tasks use existing selections.'**
+  String get taskProfilesHelp;
+
+  /// No description provided for @taskSynthesis.
+  ///
+  /// In en, this message translates to:
+  /// **'Novel narration'**
+  String get taskSynthesis;
+
+  /// No description provided for @taskProtocol.
+  ///
+  /// In en, this message translates to:
+  /// **'Service protocol'**
+  String get taskProtocol;
+
+  /// No description provided for @taskEndpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Relative endpoint path (blank for protocol default)'**
+  String get taskEndpoint;
+
+  /// No description provided for @taskKeyHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'API key header name'**
+  String get taskKeyHeader;
+
+  /// No description provided for @taskUseDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore task defaults'**
+  String get taskUseDefaults;
+
+  /// No description provided for @modelReadDeclaration.
+  ///
+  /// In en, this message translates to:
+  /// **'Read backend capability declaration'**
+  String get modelReadDeclaration;
+
+  /// No description provided for @uiLiveSentencePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Live preview and save complete audio'**
+  String get uiLiveSentencePreview;
 }
 
 class _AppLocalizationsDelegate

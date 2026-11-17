@@ -23,6 +23,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
   bool _generatingAll = false;
   bool _exporting = false;
   bool _editing = false;
+  bool _reviewingRoles = false;
   bool _cacheOnlyPlayback = false;
   int? _activePlaybackGlobalIndex;
   int? _localCurrentGlobalIndex;
@@ -34,6 +35,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
   StreamSubscription<String>? _androidMediaControlSub;
   final Set<String> _generatingSegmentIds = <String>{};
   final Map<String, Future<String>> _audioTasks = <String, Future<String>>{};
+  final _streamGenerationTokens = <TtsCancelToken>{};
 
   String get _playbackSourceTag =>
       novelReaderPlaybackSourceFor(widget.projectId);
@@ -64,6 +66,16 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    final roleData = ref.watch(novelRoleSnapshotProvider(project.id));
+    final profiles = ref.watch(novelTaskProfilesProvider(project.id));
+    if (profiles.hasError) return Center(child: Text('${profiles.error}'));
+    if (!profiles.hasValue) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (roleData.hasError) return Center(child: Text('${roleData.error}'));
+    if (!roleData.hasValue) {
+      return const Center(child: CircularProgressIndicator());
+    }
     final chapters =
         ref.watch(novelChaptersStreamProvider(project.id)).value ??
         const <db.NovelChapter>[];
@@ -133,6 +145,28 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
     return Column(
       children: [
         _NovelEditorBar(project: project, onBack: widget.onClose),
+        SegmentedButton<bool>(
+          segments: [
+            ButtonSegment(
+              value: false,
+              label: Text(AppLocalizations.of(context).roleReadMode),
+              icon: const Icon(Icons.menu_book),
+            ),
+            ButtonSegment(
+              value: true,
+              label: Text(AppLocalizations.of(context).roleReviewMode),
+              icon: const Icon(Icons.people_outline),
+            ),
+          ],
+          selected: {_reviewingRoles},
+          onSelectionChanged: (selection) {
+            _stopNovel();
+            setState(() {
+              _reviewingRoles = selection.single;
+              _editing = false;
+            });
+          },
+        ),
         const Divider(height: 1),
         Expanded(
           child: ResizableSplitPane(
@@ -140,7 +174,22 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
             compactRightIcon: Icons.tune_rounded,
             compactRightLabel: AppLocalizations.of(context).navSettings,
             compactHandleBottomInset: 158,
-            left: _editing
+            left: _reviewingRoles
+                ? NovelRoleReviewReader(
+                    project: project,
+                    roles: roleData.requireValue,
+                    segments: chapterSegments,
+                    cacheStates: segmentCacheStates.map(
+                      (id, state) => MapEntry(id, state.name),
+                    ),
+                    selectedId: currentSegment?.id,
+                    playingIndex: _activePlaybackGlobalIndex,
+                    onSelect: (s) =>
+                        unawaited(_jumpTo(project, s, syncPage: true)),
+                    onPreview: (s) =>
+                        unawaited(_previewRoleSegment(project, s, bankAssets)),
+                  )
+                : _editing
                 ? _ChapterEditPane(
                     project: project,
                     chapter: visibleChapter,
@@ -202,141 +251,185 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
                     ),
                     onStop: () => _stopNovel(),
                   ),
-            rightBuilder: (_) => _NovelSettingsPane(
-              project: project,
-              bankAssets: bankAssets,
-              segments: segments,
-              generatingSegmentIds: _generatingSegmentIds,
-              importing: _importing,
-              exporting: _exporting,
-              hasAudio: segments.any((s) => s.audioPath != null && !s.missing),
-              generatingAll: _generatingAll,
-              editing: _editing,
-              cacheComplete: cacheComplete,
-              cacheOnlyPlayback: cacheOnlyPlayback,
-              onNarratorChanged: (id) => _updateProject(
-                project.copyWith(narratorVoiceAssetId: Value(id)),
-              ),
-              onDialogueChanged: (id) => _updateProject(
-                project.copyWith(dialogueVoiceAssetId: Value(id)),
-              ),
-              onAutoTurnPageChanged: (v) => _updateProject(
-                project.copyWith(autoTurnPage: v, updatedAt: DateTime.now()),
-              ),
-              onAutoAdvanceChaptersChanged: (v) => _updateProject(
-                project.copyWith(
-                  autoAdvanceChapters: v,
-                  updatedAt: DateTime.now(),
-                ),
-              ),
-              onEditingChanged: (v) {
-                _stopNovel();
-                setState(() {
-                  _editing = v;
-                  _manualPageIndex = null;
-                });
-              },
-              onAutoSliceChanged: (v) => _updateProject(
-                project.copyWith(
-                  autoSliceLongSegments: v,
-                  updatedAt: DateTime.now(),
-                ),
-              ),
-              onSliceOnlyAtPunctuationChanged: (v) => _updateProject(
-                project.copyWith(
-                  sliceOnlyAtPunctuation: v,
-                  updatedAt: DateTime.now(),
-                ),
-              ),
-              onMaxSliceCharsChanged: (v) => _updateProject(
-                project.copyWith(maxSliceChars: v, updatedAt: DateTime.now()),
-              ),
-              onPrefetchSegmentsChanged: (v) => _updateProject(
-                project.copyWith(
-                  prefetchSegments: v,
-                  updatedAt: DateTime.now(),
-                ),
-              ),
-              onPlaybackGapChanged: (v) => _updateProject(
-                project.copyWith(
-                  playbackGapSeconds: v,
-                  updatedAt: DateTime.now(),
-                ),
-              ),
-              onOverwriteWhilePlayingChanged: (v) => _updateProject(
-                project.copyWith(
-                  overwriteCacheWhilePlaying: v,
-                  updatedAt: DateTime.now(),
-                ),
-              ),
-              onCacheOnlyPlaybackChanged: (v) =>
-                  setState(() => _cacheOnlyPlayback = v),
-              onSkipPunctuationOnlyChanged: (v) => _updateProject(
-                project.copyWith(
-                  skipPunctuationOnlySegments: v,
-                  updatedAt: DateTime.now(),
-                ),
-              ),
-              onManageDialogueRules: () =>
-                  unawaited(_manageDialogueRules(project, segments)),
-              onManageTextFilters: () => unawaited(_manageTextFilterRules()),
-              onCacheCurrentColorChanged: (color) => _updateProject(
-                project.copyWith(
-                  cacheCurrentColor: color,
-                  updatedAt: DateTime.now(),
-                ),
-              ),
-              onCacheStaleColorChanged: (color) => _updateProject(
-                project.copyWith(
-                  cacheStaleColor: color,
-                  updatedAt: DateTime.now(),
-                ),
-              ),
-              onCacheHighlightOpacityChanged: (opacity) => _updateProject(
-                project.copyWith(
-                  cacheHighlightOpacity: opacity,
-                  updatedAt: DateTime.now(),
-                ),
-              ),
-              onGenerateAll: segments.isEmpty || bankAssets.isEmpty
-                  ? null
-                  : () => unawaited(
-                      _generateAllMissing(
-                        project,
-                        segments,
-                        bankAssets,
-                        force: false,
+            rightBuilder: (_) => _reviewingRoles
+                ? NovelRoleReviewPanel(
+                    projectId: project.id,
+                    chapterId: visibleChapterId,
+                    roles: roleData.requireValue,
+                    assets: bankAssets,
+                    segments: segments,
+                    selected: currentSegment,
+                    beforeChange: _stopNovel,
+                    onSelect: (s) =>
+                        unawaited(_jumpTo(project, s, syncPage: true)),
+                    onPreview: (s) =>
+                        unawaited(_previewRoleSegment(project, s, bankAssets)),
+                  )
+                : _NovelSettingsPane(
+                    project: project,
+                    bankAssets: bankAssets,
+                    segments: segments,
+                    generatingSegmentIds: _generatingSegmentIds,
+                    importing: _importing,
+                    exporting: _exporting,
+                    hasAudio: segments.any(
+                      (s) => s.audioPath != null && !s.missing,
+                    ),
+                    generatingAll: _generatingAll,
+                    editing: _editing,
+                    cacheComplete: cacheComplete,
+                    cacheOnlyPlayback: cacheOnlyPlayback,
+                    onNarratorChanged: (id) => _updateProject(
+                      project.copyWith(narratorVoiceAssetId: Value(id)),
+                    ),
+                    onDialogueChanged: (id) => _updateProject(
+                      project.copyWith(dialogueVoiceAssetId: Value(id)),
+                    ),
+                    onAutoTurnPageChanged: (v) => _updateProject(
+                      project.copyWith(
+                        autoTurnPage: v,
+                        updatedAt: DateTime.now(),
                       ),
                     ),
-              onExport: segments.isEmpty || _exporting
-                  ? null
-                  : () => unawaited(_exportBook(project, segments)),
-              onNormalize: () {
-                _stopNovel();
-                unawaited(
-                  runLoudnessNormalization(
-                    context: context,
-                    ref: ref,
-                    bankId: project.bankId,
-                    items: [
-                      for (final s in segments)
-                        if (s.audioPath != null && !s.missing)
-                          LoudnessItem(
-                            id: s.id,
-                            path: s.audioPath!,
-                            voiceAssetId: s.segmentType == 'dialogue'
-                                ? project.dialogueVoiceAssetId
-                                : project.narratorVoiceAssetId,
+                    onAutoAdvanceChaptersChanged: (v) => _updateProject(
+                      project.copyWith(
+                        autoAdvanceChapters: v,
+                        updatedAt: DateTime.now(),
+                      ),
+                    ),
+                    onEditingChanged: (v) {
+                      _stopNovel();
+                      setState(() {
+                        _editing = v;
+                        _manualPageIndex = null;
+                      });
+                    },
+                    onAutoSliceChanged: (v) => _updateProject(
+                      project.copyWith(
+                        autoSliceLongSegments: v,
+                        updatedAt: DateTime.now(),
+                      ),
+                    ),
+                    onSliceOnlyAtPunctuationChanged: (v) => _updateProject(
+                      project.copyWith(
+                        sliceOnlyAtPunctuation: v,
+                        updatedAt: DateTime.now(),
+                      ),
+                    ),
+                    onMaxSliceCharsChanged: (v) => _updateProject(
+                      project.copyWith(
+                        maxSliceChars: v,
+                        updatedAt: DateTime.now(),
+                      ),
+                    ),
+                    onPrefetchSegmentsChanged: (v) => _updateProject(
+                      project.copyWith(
+                        prefetchSegments: v,
+                        updatedAt: DateTime.now(),
+                      ),
+                    ),
+                    onPlaybackGapChanged: (v) => _updateProject(
+                      project.copyWith(
+                        playbackGapSeconds: v,
+                        updatedAt: DateTime.now(),
+                      ),
+                    ),
+                    onOverwriteWhilePlayingChanged: (v) => _updateProject(
+                      project.copyWith(
+                        overwriteCacheWhilePlaying: v,
+                        updatedAt: DateTime.now(),
+                      ),
+                    ),
+                    onCacheOnlyPlaybackChanged: (v) =>
+                        setState(() => _cacheOnlyPlayback = v),
+                    onSkipPunctuationOnlyChanged: (v) => _updateProject(
+                      project.copyWith(
+                        skipPunctuationOnlySegments: v,
+                        updatedAt: DateTime.now(),
+                      ),
+                    ),
+                    onManageDialogueRules: () =>
+                        unawaited(_manageDialogueRules(project, segments)),
+                    onManageTextFilters: () =>
+                        unawaited(_manageTextFilterRules()),
+                    onCacheCurrentColorChanged: (color) => _updateProject(
+                      project.copyWith(
+                        cacheCurrentColor: color,
+                        updatedAt: DateTime.now(),
+                      ),
+                    ),
+                    onCacheStaleColorChanged: (color) => _updateProject(
+                      project.copyWith(
+                        cacheStaleColor: color,
+                        updatedAt: DateTime.now(),
+                      ),
+                    ),
+                    onCacheHighlightOpacityChanged: (opacity) => _updateProject(
+                      project.copyWith(
+                        cacheHighlightOpacity: opacity,
+                        updatedAt: DateTime.now(),
+                      ),
+                    ),
+                    onGenerateAll: segments.isEmpty || bankAssets.isEmpty
+                        ? null
+                        : () => unawaited(
+                            _generateAllMissing(
+                              project,
+                              segments,
+                              bankAssets,
+                              force: false,
+                            ),
                           ),
-                    ],
+                    onExport: segments.isEmpty || _exporting
+                        ? null
+                        : () => unawaited(_exportBook(project, segments)),
+                    onNormalize: () {
+                      _stopNovel();
+                      unawaited(
+                        runLoudnessNormalization(
+                          context: context,
+                          ref: ref,
+                          bankId: project.bankId,
+                          items: [
+                            for (final s in segments)
+                              if (s.audioPath != null && !s.missing)
+                                LoudnessItem(
+                                  id: s.id,
+                                  path: s.audioPath!,
+                                  voiceAssetId: _voiceForSegment(project, s),
+                                ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ),
       ],
     );
+  }
+
+  Future<void> _previewRoleSegment(
+    db.NovelProject project,
+    db.NovelSegment segment,
+    List<db.VoiceAsset> bankAssets,
+  ) async {
+    _stopNovel();
+    final run = _playRunId;
+    try {
+      final path = await _ensureAudioForSegment(project, segment, bankAssets);
+      if (!mounted || run != _playRunId) return;
+      await ref
+          .read(playbackNotifierProvider.notifier)
+          .load(
+            path,
+            segment.segmentText,
+            subtitle: _segmentSubtitle(segment),
+            sourceTag: _playbackSourceTag,
+          );
+    } catch (e) {
+      if (mounted) _snack('$e');
+    }
   }
 
   Future<void> _updateProject(db.NovelProject project) async {

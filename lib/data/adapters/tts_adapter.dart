@@ -1,4 +1,8 @@
-import 'dart:typed_data';
+import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
+import 'package:neiroha/domain/synthesis/tts_event.dart';
+import 'package:neiroha/domain/capabilities/model_capability.dart';
+import 'package:neiroha/domain/synthesis/tts_request.dart';
+export 'package:neiroha/domain/synthesis/tts_request.dart';
 
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/adapters/openai_compatible_adapter.dart';
@@ -15,56 +19,6 @@ import 'package:neiroha/data/adapters/minimax_tts_adapter.dart';
 import 'package:neiroha/data/adapters/index_tts_adapter.dart';
 import 'package:neiroha/domain/platform/platform_capabilities.dart';
 
-/// Request payload for TTS synthesis, unified across all adapters.
-class TtsRequest {
-  final String text;
-  final String voice;
-  final double speed;
-  final String? responseFormat;
-
-  // GPT-SoVITS specific
-  final String? refAudioPath;
-  final String? promptText;
-  final String? promptLang;
-  final String? textLang;
-
-  // Per-call style / direction text for adapters that expose instruction
-  // control (MiMo chat-completions TTS, CosyVoice instruct, VoxCPM2, Gemini).
-  final String? voiceInstruction;
-
-  // OpenAI-compatible / OpenAI official preset (`voice_…` = custom voice)
-  final String? presetVoiceName;
-
-  // MiMo V2.5 VoiceClone: data:audio/mpeg;base64,... or data:audio/wav;base64,...
-  final String? voiceClonePromptBase64;
-
-  // Audio tag prefix prepended to text, e.g. "(磁性)" or "(兴奋|颤抖)"
-  final String? audioTagPrefix;
-
-  const TtsRequest({
-    required this.text,
-    required this.voice,
-    this.speed = 1.0,
-    this.responseFormat,
-    this.refAudioPath,
-    this.promptText,
-    this.promptLang,
-    this.textLang,
-    this.voiceInstruction,
-    this.presetVoiceName,
-    this.voiceClonePromptBase64,
-    this.audioTagPrefix,
-  });
-}
-
-/// Result of a TTS synthesis call.
-class TtsResult {
-  final Uint8List audioBytes;
-  final String contentType;
-
-  const TtsResult({required this.audioBytes, required this.contentType});
-}
-
 /// Describes a model available from a provider.
 class ModelInfo {
   final String id;
@@ -78,6 +32,27 @@ class ModelInfo {
 
 /// Base class for all TTS provider adapters.
 abstract class TtsAdapter {
+  ServiceRoute get serviceRoute => ServiceRoute.native;
+
+  /// True only when audio is delivered before the upstream result completes.
+  bool get supportsStreaming => false;
+
+  /// Compatibility path for file-only adapters. It deliberately retains the
+  /// queue slot until the non-cancellable legacy request actually completes.
+  Stream<TtsEvent> synthesizeStream(
+    TtsRequest request, {
+    required TtsCancelToken cancellation,
+  }) async* {
+    cancellation.throwIfCancelled();
+    final result = await synthesize(request);
+    cancellation.throwIfCancelled();
+    yield TtsAudioStarted(
+      TtsAudioFormat.fromFileBytes(result.audioBytes, result.contentType),
+    );
+    yield TtsAudioChunk(result.audioBytes);
+    yield const TtsSynthesisCompleted();
+  }
+
   Future<TtsResult> synthesize(TtsRequest request);
   Future<bool> healthCheck();
 

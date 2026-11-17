@@ -1,0 +1,379 @@
+import 'dart:convert';
+
+import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
+import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/services/capabilities/capability_repository.dart';
+import 'package:neiroha/data/services/tts_queue_service.dart';
+import 'package:neiroha/domain/capabilities/model_capability.dart';
+import 'package:neiroha/domain/capabilities/task_profile.dart';
+import 'package:neiroha/data/services/capabilities/task_profile_repository.dart';
+import 'package:neiroha/domain/novel/role_models.dart';
+
+import 'annotation_repository.dart';
+import 'character_repository.dart';
+import 'novel_text_revision.dart';
+import 'role_analysis_checkpoint.dart';
+import 'role_analysis_protocol.dart';
+import 'role_skill_repository.dart';
+
+/// Persisted, bounded Dart workflow. No Python/LangGraph runtime is required.
+/// Inference is opt-in; constructing this service never sends story content.
+class RoleAnalysisService {
+  RoleAnalysisService(
+    this.database,
+    this.characters,
+    this.annotations,
+    this.queue, {
+    this.capabilities,
+    RoleSkillLoader? loadSkill,
+  }) : _loadSkill = loadSkill ?? RoleSkillRepository().load;
+  final db.AppDatabase database;
+  final CharacterRepository characters;
+  final AnnotationRepository annotations;
+  final TtsQueueService queue;
+  final CapabilityRepository? capabilities;
+  final RoleSkillLoader _loadSkill;
+  final Map<String, TtsCancelToken> _active = {};
+  RoleAnalysisCheckpointStore get checkpoints =>
+      RoleAnalysisCheckpointStore(database);
+  bool isRunning(String projectId) => _active.containsKey(projectId);
+  void pause(String projectId) => _active[projectId]?.cancel();
+  void dispose() {
+    for (final token in _active.values) {
+      token.cancel();
+    }
+  }
+
+  Future<void> run({
+    required String projectId,
+    required String chapterId,
+    required db.TtsProvider provider,
+    required String model,
+    bool restart = false,
+    bool confirmRoster = false,
+    String feedback = '',
+    int maxCalls = 12,
+    int batchSize = 20,
+    LlmChatAdapter? client,
+  }) async {
+    final binding = await TaskProfileRepository(
+      database,
+    ).resolve(projectId, ModelTask.analysis, provider);
+    provider = binding.provider;
+    model = binding.profile?.model ?? model;
+    final route = binding.profile?.route ?? ServiceRoute.chatCompletions;
+    if (isRunning(projectId)) {
+      throw StateError('Analysis is already running for this novel.');
+    }
+    if (model.trim().isEmpty) {
+      throw ArgumentError('Choose a text analysis model.');
+    }
+    if (maxCalls < 1 || maxCalls > 100 || batchSize < 1 || batchSize > 30) {
+      throw ArgumentError('Invalid analysis budget.');
+    }
+    final skill = await _loadSkill();
+    final all = await database.getNovelSegmentsForChapter(chapterId);
+    if (all.isEmpty || all.any((s) => s.projectId != projectId)) {
+      throw StateError('No chapter text to analyze.');
+    }
+    if (all.any((s) => s.segmentText.length > 12000)) {
+      throw StateError('Split very long paragraphs before analysis.');
+    }
+    final signature = novelTextRevision(
+      jsonEncode([
+        for (final s in all) [s.id, s.segmentText],
+        skill.identity,
+        if (binding.profile != null) binding.profile!.toJson(),
+      ]),
+    );
+    final previous = restart
+        ? null
+        : await checkpoints.load(projectId, chapterId);
+    if (previous != null && previous.skillDigest != skill.digest) {
+      throw StateError(
+        'Analysis skill changed or the saved analysis is unversioned. Start a new analysis.',
+      );
+    }
+    if (previous != null && previous.signature != signature) {
+      throw StateError('Chapter text changed. Start a new analysis.');
+    }
+    if (previous != null &&
+        (previous.providerId != provider.id || previous.model != model)) {
+      throw StateError(
+        'Resume with the saved provider and model, or start a new analysis.',
+      );
+    }
+    final checkpoint =
+        previous ??
+        RoleAnalysisCheckpoint(
+          signature: signature,
+          providerId: provider.id,
+          model: model,
+          skillName: skill.name,
+          skillVersion: skill.version,
+          skillDigest: skill.digest,
+          sceneSummary: await checkpoints.recentScene(projectId, chapterId),
+        );
+    if (checkpoint.stage == 'completed' && !restart) return;
+    final cancellation = TtsCancelToken();
+    // Recheck after asynchronous loads; only one chapter may write a roster.
+    if (_active.containsKey(projectId)) {
+      throw StateError('Analysis is already running.');
+    }
+    _active[projectId] = cancellation;
+    final llm =
+        client ?? TaskProfileRepository.llm(provider, model, binding.profile);
+    final callLimit = checkpoint.calls + maxCalls;
+    Future<LlmStructuredResult> invoke(
+      String prompt,
+      Map<String, Object?> schema,
+      Map<String, Object?> input,
+    ) async {
+      cancellation.throwIfCancelled();
+      if (checkpoint.calls >= callLimit) throw const _BudgetReached();
+      checkpoint.calls++;
+      await checkpoints.save(projectId, chapterId, checkpoint);
+      try {
+        final result = await queue.enqueue(
+          provider: provider,
+          source: 'Novel role analysis',
+          label: checkpoint.stage,
+          cancelToken: cancellation,
+          estimatedTokens: (jsonEncode(input).length / 2).ceil(),
+          task: () => llm.structured(
+            schemaName: 'novel_${checkpoint.stage}',
+            schema: schema,
+            cancellation: cancellation,
+            messages: [
+              LlmChatMessage(role: 'system', content: prompt),
+              LlmChatMessage(role: 'user', content: jsonEncode(input)),
+            ],
+          ),
+        );
+        try {
+          await capabilities?.markSuccess(provider, model, route, [
+            'text',
+            if (result.responseFormat == 'json_schema') 'structuredOutput',
+          ]);
+        } catch (_) {}
+        return result;
+      } on LlmChatException catch (error) {
+        if (error.transportFailure) {
+          try {
+            await capabilities?.markFailure(
+              provider,
+              model,
+              route,
+              error.statusCode,
+            );
+          } catch (_) {}
+        }
+        rethrow;
+      }
+    }
+
+    try {
+      checkpoint.error = null;
+      if (!checkpoint.rosterReady || feedback.trim().isNotEmpty) {
+        checkpoint.stage = feedback.trim().isEmpty ? 'planCast' : 'replanCast';
+        checkpoint.feedback = feedback.trim();
+        final roles = await characters.load(projectId);
+        final excerpt = all.map((s) => s.segmentText).join('\n');
+        final plan = await invoke(
+          skill.prompt('planner'),
+          RoleAnalysisProtocol.rosterSchema,
+          {
+            'knownCharacters': _roster(roles),
+            'recentScene': checkpoint.sceneSummary,
+            'userFeedback': checkpoint.feedback,
+            'chapterExcerpt': excerpt.length > 18000
+                ? excerpt.substring(0, 18000)
+                : excerpt,
+          },
+        );
+        await _applyRoster(projectId, plan.object, roles, cancellation);
+        checkpoint.rosterReady = true;
+        checkpoint.rosterConfirmed = false;
+        checkpoint.stage = 'rosterReview';
+        await checkpoints.save(projectId, chapterId, checkpoint);
+        return; // Always let the user review new/replanned characters first.
+      }
+      checkpoint.rosterConfirmed |= confirmRoster;
+      if (!checkpoint.rosterConfirmed) {
+        checkpoint.stage = 'rosterReview';
+        await checkpoints.save(projectId, chapterId, checkpoint);
+        return;
+      }
+      while (checkpoint.nextSegment < all.length) {
+        cancellation.throwIfCancelled();
+        checkpoint.stage = 'labelChunk';
+        final end = (checkpoint.nextSegment + batchSize).clamp(0, all.length);
+        final roles = await characters.load(projectId);
+        final batch = all.sublist(checkpoint.nextSegment, end).where((s) {
+          final a = roles.annotations[s.id];
+          return !(a?.locked ?? false) &&
+              !(a?.reviewState == NovelReviewState.confirmed &&
+                  a?.textRevision == novelTextRevision(s.segmentText));
+        }).toList();
+        if (batch.isNotEmpty) {
+          final result = await invoke(
+            skill.prompt('executor'),
+            RoleAnalysisProtocol.labelsSchema,
+            {
+              'roster': _roster(roles),
+              'recentScene': checkpoint.sceneSummary,
+              'userFeedback': checkpoint.feedback,
+              'segments': _source(batch),
+              'precedingContext': _source(
+                all.sublist(
+                  (checkpoint.nextSegment - 3).clamp(0, all.length),
+                  checkpoint.nextSegment,
+                ),
+              ),
+            },
+          );
+          checkpoint.stage = 'validate';
+          final labels = RoleAnalysisProtocol.parseLabels(
+            result.object,
+            batch,
+            roles,
+          );
+          cancellation.throwIfCancelled();
+          await annotations.apply(projectId, labels, fromAi: true);
+          final doubtfulIds = labels
+              .where(
+                (a) =>
+                    a.reviewState == NovelReviewState.conflict ||
+                    a.reviewState == NovelReviewState.pending,
+              )
+              .map((a) => a.segmentId)
+              .toSet();
+          if (doubtfulIds.isNotEmpty && checkpoint.calls < callLimit) {
+            checkpoint.stage = 'review';
+            final doubtful = batch
+                .where((s) => doubtfulIds.contains(s.id))
+                .toList();
+            final review = await invoke(
+              skill.prompt('reviewer'),
+              RoleAnalysisProtocol.labelsSchema,
+              {
+                'roster': _roster(roles),
+                'segments': _source(doubtful),
+                'surroundingContext': _source(batch),
+              },
+            );
+            final reviewed = RoleAnalysisProtocol.parseLabels(
+              review.object,
+              doubtful,
+              roles,
+            );
+            cancellation.throwIfCancelled();
+            await annotations.apply(projectId, reviewed, fromAi: true);
+          }
+          final summary = result.object['sceneSummary'];
+          if (summary is String) {
+            checkpoint.sceneSummary = summary.substring(
+              0,
+              summary.length.clamp(0, 500),
+            );
+          }
+        }
+        checkpoint.nextSegment = end;
+        await checkpoints.save(projectId, chapterId, checkpoint);
+      }
+      checkpoint.stage = 'completed';
+    } on TtsCancelledException {
+      checkpoint.stage = 'paused';
+    } on _BudgetReached {
+      checkpoint.stage = 'paused';
+      checkpoint.error =
+          'Call budget reached; resume explicitly to authorize another bounded run.';
+    } catch (error) {
+      checkpoint.stage = 'failed';
+      checkpoint.error = '$error';
+      rethrow;
+    } finally {
+      if (identical(_active[projectId], cancellation)) {
+        _active.remove(projectId);
+      }
+      await checkpoints.save(projectId, chapterId, checkpoint);
+    }
+  }
+
+  List<Map<String, Object?>> _roster(NovelRoleSnapshot roles) => [
+    for (final c in roles.characters)
+      {
+        'id': c.id,
+        'name': c.name,
+        'aliases': c.aliases,
+        'description': c.description,
+        'identityKind': c.identityKind.name,
+      },
+  ];
+  List<Map<String, Object?>> _source(List<db.NovelSegment> segments) => [
+    for (final s in segments) {'id': s.id, 'text': s.segmentText},
+  ];
+
+  Future<void> _applyRoster(
+    String projectId,
+    Map<String, dynamic> object,
+    NovelRoleSnapshot roles,
+    TtsCancelToken cancellation,
+  ) async {
+    final raw = object['characters'];
+    if (raw is! List || raw.length > 100) {
+      throw const FormatException('Invalid character roster.');
+    }
+    const pronouns = {
+      '我',
+      '你',
+      '他',
+      '她',
+      '它',
+      '我们',
+      '你们',
+      '他们',
+      '她们',
+      '吾',
+      '大家',
+      '众人',
+    };
+    final names = {
+      for (final c in roles.characters) ...[c.name, ...c.aliases],
+    };
+    await database.transaction(() async {
+      for (final item in raw) {
+        cancellation.throwIfCancelled();
+        if (item is! Map ||
+            item['name'] is! String ||
+            item['aliases'] is! List ||
+            item['description'] is! String) {
+          throw const FormatException('Malformed character.');
+        }
+        final name = (item['name'] as String).trim();
+        if (name.isEmpty || name.length > 80 || pronouns.contains(name)) {
+          continue;
+        }
+        if (!names.add(name)) {
+          continue; // Never overwrite manually edited metadata.
+        }
+        await characters.saveCharacter(
+          projectId: projectId,
+          name: name,
+          aliases: (item['aliases'] as List)
+              .cast<String>()
+              .where((s) => !pronouns.contains(s.trim()))
+              .toList(),
+          description: item['description'] as String,
+          identityKind: CharacterIdentityKind.values.byName(
+            item['identityKind'] as String? ?? 'named',
+          ),
+        );
+      }
+    });
+  }
+}
+
+class _BudgetReached implements Exception {
+  const _BudgetReached();
+}

@@ -2409,4 +2409,318 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get novelImportFolderTitle => 'Import novel folder';
+
+  @override
+  String get uiPreferStreaming => 'Auto: prefer streaming';
+
+  @override
+  String get uiStopSynthesis => 'Stop synthesis';
+
+  @override
+  String get uiAudioBuffering => 'Buffering…';
+
+  @override
+  String get roleReadMode => 'Read';
+
+  @override
+  String get roleReviewMode => 'Role review';
+
+  @override
+  String get roleCharacters => 'Characters';
+
+  @override
+  String get roleAddCharacter => 'Add character';
+
+  @override
+  String get roleName => 'Name';
+
+  @override
+  String get roleAliases => 'Aliases (comma separated)';
+
+  @override
+  String get roleDescription => 'Description';
+
+  @override
+  String get roleNoCharacter => 'Unassigned';
+
+  @override
+  String get roleVoice => 'Voice';
+
+  @override
+  String get roleDefaultVoice => 'Use project default';
+
+  @override
+  String get roleChapterOverride => 'Override voice in this chapter';
+
+  @override
+  String get roleSelected => 'Review selected sentence';
+
+  @override
+  String get rolePickSentence => 'Select a sentence to review';
+
+  @override
+  String get roleCategory => 'Category';
+
+  @override
+  String get roleNarrator => 'Narration';
+
+  @override
+  String get roleDialogue => 'Dialogue';
+
+  @override
+  String get roleThought => 'Thought';
+
+  @override
+  String get roleSystem => 'System';
+
+  @override
+  String get roleScope => 'Apply to';
+
+  @override
+  String get roleOnlySentence => 'This sentence';
+
+  @override
+  String get roleChapterUnlocked => 'Same character in this chapter, unlocked';
+
+  @override
+  String get roleLock => 'Lock manual result';
+
+  @override
+  String get roleApply => 'Apply changes';
+
+  @override
+  String get roleUndo => 'Undo last annotation edit';
+
+  @override
+  String get rolePending => 'Pending';
+
+  @override
+  String get roleInferred => 'Inferred from context';
+
+  @override
+  String get roleConflict => 'Conflicting evidence';
+
+  @override
+  String get roleConfirmed => 'Manually confirmed';
+
+  @override
+  String get roleInstruction => 'Sentence style override (optional)';
+
+  @override
+  String get roleSentenceVoice => 'Sentence voice override';
+
+  @override
+  String get roleMerge => 'Merge character';
+
+  @override
+  String get roleMergeInto => 'Merge into';
+
+  @override
+  String get roleManualReason => 'Manual review';
+
+  @override
+  String get roleCached => 'Audio cache ready';
+
+  @override
+  String get roleStaleCache => 'Audio needs regeneration';
+
+  @override
+  String get roleNoCache => 'Audio not generated';
+
+  @override
+  String get roleRename => 'Edit character';
+
+  @override
+  String get rolePreview => 'Preview selected sentence';
+
+  @override
+  String get rolePendingList => 'Sentences to review';
+
+  @override
+  String get roleNoPending => 'No pending sentences in this chapter';
+
+  @override
+  String get roleAnalysisModel => 'Role analysis model (text model ID)';
+
+  @override
+  String get roleAnalysisProvider => 'Analysis connection';
+
+  @override
+  String get roleAnalysisStart => 'Analyze current chapter';
+
+  @override
+  String get roleAnalysisResume => 'Confirm roster and continue / resume';
+
+  @override
+  String get roleAnalysisPause => 'Pause analysis';
+
+  @override
+  String get roleAnalysisFeedback => 'Character or review feedback';
+
+  @override
+  String get roleAnalysisReplan => 'Replan roster from feedback';
+
+  @override
+  String get roleAnalysisBudget =>
+      'Current chapter only. Up to 12 model requests per run; charges may apply. Locked and manually confirmed sentences are preserved.';
+
+  @override
+  String get roleAnalysisOffline =>
+      'Configure a connection in Providers before choosing an analysis model.';
+
+  @override
+  String get modelDiscover => 'Discover models / capabilities';
+
+  @override
+  String get modelRefresh => 'Refresh from connection';
+
+  @override
+  String get modelManual => 'Use this model manually';
+
+  @override
+  String get modelUnknown => 'Unknown';
+
+  @override
+  String get modelSupported => 'Supported';
+
+  @override
+  String get modelUnsupported => 'Unsupported';
+
+  @override
+  String get modelCapabilityHint =>
+      'Catalog facts describe capability. Account availability is verified by actual successful use. No paid probes are automatic.';
+
+  @override
+  String get modelOverride => 'Override task capability for this route';
+
+  @override
+  String get modelNoModels => 'No cached models. Refresh or enter a model ID.';
+
+  @override
+  String get roleStagePlan => 'Planning characters';
+
+  @override
+  String get roleStageRoster => 'Waiting for roster review';
+
+  @override
+  String get roleStageLabel => 'Labeling sentences';
+
+  @override
+  String get roleStageValidate => 'Validating labels';
+
+  @override
+  String get roleStageReview => 'Reviewing uncertain labels';
+
+  @override
+  String get roleStageReplan => 'Replanning from feedback';
+
+  @override
+  String get roleStagePaused => 'Paused';
+
+  @override
+  String get roleStageCompleted => 'Completed';
+
+  @override
+  String get roleStageFailed => 'Analysis failed';
+
+  @override
+  String get roleAnalysisSentences => 'sentences';
+
+  @override
+  String get roleAnalysisCalls => 'calls';
+
+  @override
+  String get roleSplitText => 'Split text';
+
+  @override
+  String get roleSplitTextHelp =>
+      'Select a range to isolate it, or place the cursor at a split point. All text and labels are preserved.';
+
+  @override
+  String get roleMergeText => 'Merge text';
+
+  @override
+  String get roleMergeTextHelp =>
+      'Merge from the current segment through the chosen end. Mixed labels become unassigned and pending. Old audio is retained but no longer used.';
+
+  @override
+  String get roleMergeUntil => 'Merge through';
+
+  @override
+  String get roleMergeNewline => 'Insert newlines between segments';
+
+  @override
+  String get roleUndoStructure => 'Undo last text split/merge';
+
+  @override
+  String get roleStyleMatrix => 'Character styles by category';
+
+  @override
+  String get roleStyleHelp =>
+      'Leave fields empty to inherit defaults. Clear both fields to remove this override.';
+
+  @override
+  String get roleSplitCharacter => 'Split character';
+
+  @override
+  String get roleSplitCharacterHelp =>
+      'Move selected lines in this chapter to a new character and copy voice bindings. Annotation undo restores attribution and retains the new identity.';
+
+  @override
+  String get roleIdentityKind => 'Identity type';
+
+  @override
+  String get roleIdentityNamed => 'Named character';
+
+  @override
+  String get roleIdentityAnonymous => 'Anonymous speaker';
+
+  @override
+  String get roleIdentityGroup => 'Group';
+
+  @override
+  String get roleDirectionHelp =>
+      'Each director action runs one bounded model task. Review before applying. Casting preserves bindings; tone handles up to 30 unconfirmed, unlocked segments without delivery instructions.';
+
+  @override
+  String get roleSuggestCast => 'Suggest voice casting';
+
+  @override
+  String get roleSuggestTone => 'Suggest delivery';
+
+  @override
+  String get roleDirectionReview => 'Review suggestions';
+
+  @override
+  String get roleDirectionEmpty =>
+      'The model returned no applicable suggestions.';
+
+  @override
+  String get taskProfiles => 'Task model profiles';
+
+  @override
+  String get taskProfilesHelp =>
+      'Configure separate connections, models and protocols for analysis, casting, delivery and narration. Narration overrides the novel model/protocol while retaining character voices and references. Unconfigured tasks use existing selections.';
+
+  @override
+  String get taskSynthesis => 'Novel narration';
+
+  @override
+  String get taskProtocol => 'Service protocol';
+
+  @override
+  String get taskEndpoint =>
+      'Relative endpoint path (blank for protocol default)';
+
+  @override
+  String get taskKeyHeader => 'API key header name';
+
+  @override
+  String get taskUseDefaults => 'Restore task defaults';
+
+  @override
+  String get modelReadDeclaration => 'Read backend capability declaration';
+
+  @override
+  String get uiLiveSentencePreview => 'Live preview and save complete audio';
 }

@@ -1,19 +1,21 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:neiroha/domain/platform/platform_capabilities.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
 import '../storage/path_service.dart';
 import 'tables.dart';
+import 'novel_role_tables.dart';
+import 'database_connection.dart';
 
 part 'app_database.g.dart';
 part 'queries/providers.dart';
 part 'queries/voice.dart';
 part 'queries/tts.dart';
 part 'queries/projects.dart';
+part 'queries/novel.dart';
 part 'queries/storage.dart';
 
 @DriftDatabase(
@@ -31,6 +33,10 @@ part 'queries/storage.dart';
     NovelProjects,
     NovelChapters,
     NovelSegments,
+    NovelCharacters,
+    NovelAnnotations,
+    NovelVoiceBindings,
+    NovelRoleEdits,
     DialogTtsProjects,
     DialogTtsLines,
     VideoDubProjects,
@@ -45,7 +51,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 32;
+  int get schemaVersion => 33;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -131,6 +137,19 @@ class AppDatabase extends _$AppDatabase {
       if (from < 32) {
         await _seedOpenAiOfficialProvider();
       }
+      if (from < 33) {
+        for (final table in <TableInfo>[
+          novelCharacters,
+          novelAnnotations,
+          novelVoiceBindings,
+          novelRoleEdits,
+        ]) {
+          await _createTableIfMissing(
+            table.actualTableName,
+            () => m.createTable(table),
+          );
+        }
+      }
     },
     beforeOpen: (_) async {
       await _repairMissingCurrentSchema(Migrator(this));
@@ -138,77 +157,13 @@ class AppDatabase extends _$AppDatabase {
   );
 
   Future<void> _repairMissingCurrentSchema(Migrator m) async {
-    await _createTableIfMissing(
-      'app_settings',
-      () => m.createTable(appSettings),
-    );
-    await _createTableIfMissing(
-      'tts_providers',
-      () => m.createTable(ttsProviders),
-    );
-    await _createTableIfMissing(
-      'model_bindings',
-      () => m.createTable(modelBindings),
-    );
-    await _createTableIfMissing(
-      'voice_assets',
-      () => m.createTable(voiceAssets),
-    );
-    await _createTableIfMissing('voice_banks', () => m.createTable(voiceBanks));
-    await _createTableIfMissing(
-      'voice_bank_members',
-      () => m.createTable(voiceBankMembers),
-    );
-    await _createTableIfMissing('tts_jobs', () => m.createTable(ttsJobs));
-    await _createTableIfMissing(
-      'quick_tts_histories',
-      () => m.createTable(quickTtsHistories),
-    );
-    await _createTableIfMissing(
-      'phase_tts_projects',
-      () => m.createTable(phaseTtsProjects),
-    );
-    await _createTableIfMissing(
-      'phase_tts_segments',
-      () => m.createTable(phaseTtsSegments),
-    );
-    await _createTableIfMissing(
-      'novel_projects',
-      () => m.createTable(novelProjects),
-    );
-    await _createTableIfMissing(
-      'novel_chapters',
-      () => m.createTable(novelChapters),
-    );
-    await _createTableIfMissing(
-      'novel_segments',
-      () => m.createTable(novelSegments),
-    );
-    await _createTableIfMissing(
-      'dialog_tts_projects',
-      () => m.createTable(dialogTtsProjects),
-    );
-    await _createTableIfMissing(
-      'dialog_tts_lines',
-      () => m.createTable(dialogTtsLines),
-    );
-    await _createTableIfMissing(
-      'video_dub_projects',
-      () => m.createTable(videoDubProjects),
-    );
-    await _createTableIfMissing(
-      'subtitle_cues',
-      () => m.createTable(subtitleCues),
-    );
-    await _createTableIfMissing(
-      'audio_tracks',
-      () => m.createTable(audioTracks),
-    );
-    await _createTableIfMissing(
-      'timeline_clips',
-      () => m.createTable(timelineClips),
-    );
-
+    // Declaration order keeps referenced tables ahead of their dependants.
+    for (final table in allTables) {
+      await _createTableIfMissing(
+        table.actualTableName,
+        () => m.createTable(table),
+      );
+    }
     await _addColumnIfMissing(
       tableName: 'tts_providers',
       columnName: 'max_concurrency',
@@ -903,7 +858,7 @@ LazyDatabase _openConnection() {
     await PathService.instance.init();
     final dataDir = PathService.instance.dataRoot;
     final file = await _resolveDatabaseFile(dataDir);
-    return NativeDatabase.createInBackground(file);
+    return openNeirohaDatabase(file);
   });
 }
 

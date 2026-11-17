@@ -1,3 +1,4 @@
+import 'package:neiroha/providers/model_capability_providers.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -421,71 +422,9 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
             ? _adapterType.defaultModel
             : _modelCtrl.text.trim(),
       );
-      final adapter = createAdapter(tmp);
-      final db_ = ref.read(databaseProvider);
-
-      // Fetch models
-      final fetchedModels = await adapter.getModels();
-      if (!mounted) return;
-      if (fetchedModels.isNotEmpty) {
-        final fetchedModelKeys = fetchedModels.map((m) => m.id).toSet();
-        for (final existing in _models) {
-          if (!fetchedModelKeys.contains(existing.modelKey)) {
-            await db_.deleteBinding(existing.id);
-          }
-        }
-      }
-      final existingModels = fetchedModels.isNotEmpty
-          ? _models
-                .where((m) => fetchedModels.any((f) => f.id == m.modelKey))
-                .map((m) => m.modelKey)
-                .toSet()
-          : _models.map((m) => m.modelKey).toSet();
-      for (final m in fetchedModels) {
-        if (!existingModels.contains(m.id)) {
-          await db_.insertBinding(
-            db.ModelBindingsCompanion(
-              id: Value(const Uuid().v4()),
-              providerId: Value(widget.provider.id),
-              modelKey: Value(m.id),
-              // model entries use default supportedTaskModes = ''
-            ),
-          );
-        }
-      }
-
-      // For adapters with separate voices, also fetch and cache voices.
-      if (_adapterType.hasSeparateModelAndVoice) {
-        final fetchedVoices = await adapter.getSpeakers();
-        if (!mounted) return;
-        if (fetchedVoices.isNotEmpty) {
-          final fetchedVoiceKeys = fetchedVoices.toSet();
-          for (final existing in _voices) {
-            if (!fetchedVoiceKeys.contains(existing.modelKey)) {
-              await db_.deleteBinding(existing.id);
-            }
-          }
-        }
-        final existingVoices = fetchedVoices.isNotEmpty
-            ? _voices
-                  .where((v) => fetchedVoices.contains(v.modelKey))
-                  .map((v) => v.modelKey)
-                  .toSet()
-            : _voices.map((v) => v.modelKey).toSet();
-        for (final v in fetchedVoices) {
-          if (!existingVoices.contains(v)) {
-            await db_.insertBinding(
-              db.ModelBindingsCompanion(
-                id: Value(const Uuid().v4()),
-                providerId: Value(widget.provider.id),
-                modelKey: Value(v),
-                supportedTaskModes: const Value('voice'),
-              ),
-            );
-          }
-        }
-      }
-
+      await ref
+          .read(providerModelInventoryProvider)
+          .refresh(tmp, separateVoices: _adapterType.hasSeparateModelAndVoice);
       await _loadModels();
     } catch (e) {
       if (mounted) {

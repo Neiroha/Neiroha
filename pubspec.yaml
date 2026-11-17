@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 0.4.2+8
 
 environment:
-  sdk: ^3.11.4
+  sdk: ^3.12.0
 
 dependencies:
   flutter:
@@ -33,10 +33,12 @@ dependencies:
 
   # Audio playback
   audioplayers: ^6.0.0
+  flutter_soloud: 5.3.0
 
-  # Windows microphone recording (MediaFoundation, without federated record pkg)
-  record_platform_interface: ^2.1.0
+  # Native microphone backends; no federated Linux recording dependency
+  record_platform_interface: ^2.2.0
   record_windows: ^2.3.0
+  record_darwin: ^2.0.0
 
   # Video playback (libmpv-based — desktop-capable across Win/macOS/Linux)
   media_kit: ^1.1.11
@@ -48,6 +50,8 @@ dependencies:
 
   # Utilities
   intl: any
+  crypto: ^3.0.7
+  yaml: ^3.1.4
   uuid: ^4.5.1
   path_provider: ^2.1.5
   path: ^1.9.1
@@ -69,4 +73,7 @@ flutter:
   generate: true
   uses-material-design: true
   assets:
-    - assets/
+    - assets/icon/
+    - assets/model_catalog/
+    - assets/skills/neiroha-dubbing/
+    - assets/skills/novel-role-assign/

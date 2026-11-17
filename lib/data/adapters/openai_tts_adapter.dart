@@ -1,12 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 
 import 'tts_adapter.dart';
 import 'wav_utils.dart';
+import 'openai_realtime_stream.dart';
+import 'openai_speech_stream.dart';
+import 'package:neiroha/domain/capabilities/service_endpoint.dart';
+import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
+import 'package:neiroha/domain/synthesis/tts_event.dart';
+import 'package:neiroha/domain/capabilities/model_capability.dart';
 
 /// Adapter for OpenAI's own text-to-speech models (api.openai.com).
 ///
@@ -33,6 +38,9 @@ class OpenAiTtsAdapter extends TtsAdapter {
   final String baseUrl;
   final String apiKey;
   final String modelName;
+  final ServiceRoute? explicitRoute;
+  final String? endpointPath;
+  final String apiKeyHeader;
 
   /// Upper bound for one Realtime synthesis (connect + full response).
   final Duration realtimeTimeout;
@@ -132,11 +140,27 @@ class OpenAiTtsAdapter extends TtsAdapter {
     required this.apiKey,
     this.modelName = defaultModel,
     this.realtimeTimeout = const Duration(minutes: 3),
+    this.explicitRoute,
+    this.endpointPath,
+    this.apiKeyHeader = 'Authorization',
   }) {
+    if (explicitRoute != null &&
+        explicitRoute != ServiceRoute.speech &&
+        explicitRoute != ServiceRoute.realtime) {
+      throw ArgumentError('Choose Speech or Realtime for this adapter.');
+    }
+    if (endpointPath != null) ServiceEndpoint.validatePath(endpointPath!);
+    ServiceEndpoint.validateHeader(apiKeyHeader);
     _dio = Dio(
       BaseOptions(
         baseUrl: _normalizedBase,
-        headers: {if (apiKey.isNotEmpty) 'Authorization': 'Bearer $apiKey'},
+        followRedirects: false,
+        headers: {
+          if (apiKey.isNotEmpty)
+            apiKeyHeader: apiKeyHeader.toLowerCase() == 'authorization'
+                ? 'Bearer $apiKey'
+                : apiKey,
+        },
       ),
     );
   }
@@ -204,9 +228,9 @@ class OpenAiTtsAdapter extends TtsAdapter {
     final voice = voiceIdFromLabel(rawVoice).isEmpty
         ? voicesForModel(model).first
         : voiceIdFromLabel(rawVoice);
-    _checkVoice(model, voice);
+    if (explicitRoute == null) _checkVoice(model, voice);
 
-    if (usesRealtime(model)) {
+    if (serviceRoute == ServiceRoute.realtime) {
       return _synthesizeRealtime(model, voice, request);
     }
     return _synthesizeSpeech(model, voice, request);
@@ -245,7 +269,8 @@ class OpenAiTtsAdapter extends TtsAdapter {
       'model': model,
       'input': request.text,
       'voice': voiceParam(voice),
-      if (instructions.isNotEmpty && supportsInstructions(model))
+      if (instructions.isNotEmpty &&
+          (explicitRoute != null || supportsInstructions(model)))
         'instructions': instructions,
       if (request.speed != 1.0) 'speed': request.speed.clamp(0.25, 4.0),
       // pcm is wrapped locally so callers always get a playable file.
@@ -253,7 +278,7 @@ class OpenAiTtsAdapter extends TtsAdapter {
     };
     try {
       final resp = await _dio.post<List<int>>(
-        'audio/speech',
+        endpointPath ?? 'audio/speech',
         data: body,
         options: Options(responseType: ResponseType.bytes),
       );
@@ -289,147 +314,116 @@ class OpenAiTtsAdapter extends TtsAdapter {
 
   // ── Realtime API ──
 
+  @override
+  bool get supportsStreaming => true;
+
+  @override
+  ServiceRoute get serviceRoute =>
+      explicitRoute ??
+      (usesRealtime(_model) ? ServiceRoute.realtime : ServiceRoute.speech);
+
+  @override
+  Stream<TtsEvent> synthesizeStream(
+    TtsRequest request, {
+    required TtsCancelToken cancellation,
+  }) {
+    if (request.refAudioPath?.isNotEmpty ?? false) {
+      throw ArgumentError('OpenAI TTS cannot clone from reference audio here.');
+    }
+    if (request.text.trim().isEmpty) {
+      throw ArgumentError('OpenAI TTS: text is empty.');
+    }
+    final raw = request.presetVoiceName?.trim().isNotEmpty == true
+        ? request.presetVoiceName!
+        : request.voice;
+    final voice = voiceIdFromLabel(raw).isEmpty
+        ? voicesForModel(_model).first
+        : voiceIdFromLabel(raw);
+    if (explicitRoute == null) _checkVoice(_model, voice);
+    if (serviceRoute == ServiceRoute.speech) {
+      if (request.text.length > maxSpeechInputChars) {
+        throw ArgumentError('Speech input too long.');
+      }
+      final format = _speechFormat(request.responseFormat);
+      return openAiSpeechStream(
+        baseUrl: _normalizedBase,
+        apiKey: apiKey,
+        path: endpointPath ?? 'audio/speech',
+        apiKeyHeader: apiKeyHeader,
+        cancellation: cancellation,
+        format: format == 'pcm'
+            ? const TtsAudioFormat(
+                AudioEncoding.pcmS16le,
+                sampleRate: realtimeSampleRate,
+                channels: 1,
+              )
+            : TtsAudioFormat.fromContentType(_mimeFor(format)),
+        body: {
+          'model': _model,
+          'input': request.text,
+          'voice': voiceParam(voice),
+          'response_format': format,
+          'speed': request.speed.clamp(0.25, 4.0),
+          if (request.voiceInstruction?.trim().isNotEmpty == true &&
+              (explicitRoute != null || supportsInstructions(_model)))
+            'instructions': request.voiceInstruction!.trim(),
+        },
+      );
+    }
+    return _realtimeEvents(_model, voice, request, cancellation);
+  }
+
+  Stream<TtsEvent> _realtimeEvents(
+    String model,
+    String voice,
+    TtsRequest request,
+    TtsCancelToken cancellation,
+  ) {
+    final style = request.voiceInstruction?.trim() ?? '';
+    return openAiRealtimeStream(
+      uri: endpointPath == null
+          ? realtimeUri(baseUrl, model)
+          : Uri.parse(_normalizedBase)
+                .resolve(endpointPath!)
+                .replace(
+                  scheme: Uri.parse(_normalizedBase).scheme == 'http'
+                      ? 'ws'
+                      : 'wss',
+                  queryParameters: {
+                    ...Uri.parse(endpointPath!).queryParameters,
+                    'model': model,
+                  },
+                ),
+      apiKey: apiKey,
+      apiKeyHeader: apiKeyHeader,
+      voiceInstructions: style.isEmpty
+          ? realtimeReaderInstructions
+          : '$realtimeReaderInstructions\nDelivery: $style',
+      voice: voiceParam(voice),
+      text: request.text,
+      speed: request.speed,
+      sampleRate: realtimeSampleRate,
+      timeout: realtimeTimeout,
+      cancellation: cancellation,
+    );
+  }
+
   Future<TtsResult> _synthesizeRealtime(
     String model,
     String voice,
     TtsRequest request,
   ) async {
-    final style = <String>[
-      if (request.voiceInstruction?.trim().isNotEmpty ?? false)
-        request.voiceInstruction!.trim(),
-    ].join(', ');
-    final instructions = style.isEmpty
-        ? realtimeReaderInstructions
-        : '$realtimeReaderInstructions\nDelivery: $style';
-
-    final uri = realtimeUri(baseUrl, model);
-    final WebSocket ws;
-    try {
-      ws = await WebSocket.connect(
-        uri.toString(),
-        headers: {if (apiKey.isNotEmpty) 'Authorization': 'Bearer $apiKey'},
-      ).timeout(const Duration(seconds: 30));
-    } on TimeoutException {
-      throw Exception('OpenAI Realtime: connection to ${uri.host} timed out.');
-    } on Object catch (e) {
-      throw Exception('OpenAI Realtime: could not connect — $e');
-    }
-
     final pcm = BytesBuilder(copy: false);
-    final finished = Completer<void>();
-    void fail(String message) {
-      if (!finished.isCompleted) {
-        finished.completeError(Exception('OpenAI Realtime: $message'));
-      }
-    }
-
-    final sub = ws.listen(
-      (message) {
-        if (message is! String) return;
-        final Object? decoded;
-        try {
-          decoded = jsonDecode(message);
-        } catch (_) {
-          return;
-        }
-        if (decoded is! Map) return;
-        switch (decoded['type']) {
-          case 'response.output_audio.delta':
-            final delta = decoded['delta'];
-            if (delta is String && delta.isNotEmpty) {
-              pcm.add(base64Decode(delta));
-            }
-          case 'error':
-            final err = decoded['error'];
-            fail(
-              err is Map
-                  ? [
-                      err['code'],
-                      err['message'],
-                    ].where((v) => v != null).join(' — ')
-                  : jsonEncode(decoded),
-            );
-          case 'response.done':
-            final response = decoded['response'];
-            final status = response is Map ? response['status'] : null;
-            if (status == 'completed') {
-              if (!finished.isCompleted) finished.complete();
-            } else {
-              final details = response is Map
-                  ? response['status_details']
-                  : null;
-              fail(
-                'response $status'
-                '${details == null ? '' : ': ${jsonEncode(details)}'}',
-              );
-            }
-        }
-      },
-      onError: (Object e) => fail('$e'),
-      onDone: () => fail(
-        'connection closed before the response finished'
-        '${ws.closeCode == null ? '' : ' (${ws.closeCode} ${ws.closeReason ?? ''})'}',
-      ),
-    );
-
-    ws.add(
-      jsonEncode({
-        'type': 'session.update',
-        'session': {
-          'type': 'realtime',
-          'output_modalities': ['audio'],
-          'instructions': instructions,
-          'audio': {
-            'input': {'turn_detection': null},
-            'output': {
-              'format': {'type': 'audio/pcm', 'rate': realtimeSampleRate},
-              'voice': voiceParam(voice),
-              if (request.speed != 1.0) 'speed': request.speed.clamp(0.25, 1.5),
-            },
-          },
-        },
-      }),
-    );
-    ws.add(
-      jsonEncode({
-        'type': 'conversation.item.create',
-        'item': {
-          'type': 'message',
-          'role': 'user',
-          'content': [
-            {'type': 'input_text', 'text': request.text},
-          ],
-        },
-      }),
-    );
-    ws.add(
-      jsonEncode({
-        'type': 'response.create',
-        'response': {
-          'output_modalities': ['audio'],
-        },
-      }),
-    );
-
-    try {
-      await finished.future.timeout(
-        realtimeTimeout,
-        onTimeout: () => throw Exception(
-          'OpenAI Realtime: no complete response within '
-          '${realtimeTimeout.inSeconds} s.',
-        ),
-      );
-    } finally {
-      await sub.cancel();
-      await ws.close(WebSocketStatus.normalClosure);
-    }
-
-    final bytes = pcm.takeBytes();
-    if (bytes.isEmpty) {
-      throw Exception('OpenAI Realtime: the response contained no audio.');
+    await for (final event in _realtimeEvents(
+      model,
+      voice,
+      request,
+      TtsCancelToken(),
+    )) {
+      if (event is TtsAudioChunk) pcm.add(event.bytes);
     }
     return TtsResult(
-      audioBytes: wrapPcmAsWav(bytes, sampleRate: realtimeSampleRate),
+      audioBytes: wrapPcmAsWav(pcm.takeBytes(), sampleRate: realtimeSampleRate),
       contentType: 'audio/wav',
     );
   }

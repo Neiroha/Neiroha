@@ -4,6 +4,10 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_providers.dart';
+import 'package:neiroha/data/services/synthesis/soloud_audio_sink.dart';
+import 'package:neiroha/data/services/synthesis/synthesis_service.dart';
+import 'package:neiroha/domain/synthesis/streaming_audio_sink.dart';
+import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 
 const voiceBankQuickTestPlaybackSource = 'voice_bank.quick_tts';
 const phaseTtsPlaybackSource = 'phase_tts.preview';
@@ -22,6 +26,15 @@ class PlaybackState {
   final String? subtitle;
   final String? sourceTag;
   final bool isPlaying;
+  final bool isStreaming;
+  final bool isBuffering;
+  final bool isPaused;
+  final bool generationComplete;
+  final Duration bufferedUntil;
+  final String? error;
+  bool get canSeek => !isStreaming && duration > Duration.zero;
+  bool get hasMedia => audioPath != null || isStreaming;
+
   final Duration position;
   final Duration duration;
 
@@ -31,6 +44,13 @@ class PlaybackState {
     this.subtitle,
     this.sourceTag,
     this.isPlaying = false,
+    this.isStreaming = false,
+    this.isBuffering = false,
+    this.isPaused = false,
+    this.generationComplete = false,
+    this.bufferedUntil = Duration.zero,
+    this.error,
+
     this.position = Duration.zero,
     this.duration = Duration.zero,
   });
@@ -41,6 +61,13 @@ class PlaybackState {
     String? subtitle,
     String? sourceTag,
     bool? isPlaying,
+    bool? isStreaming,
+    bool? isBuffering,
+    bool? isPaused,
+    bool? generationComplete,
+    Duration? bufferedUntil,
+    String? error,
+
     Duration? position,
     Duration? duration,
     bool clearMedia = false,
@@ -54,6 +81,13 @@ class PlaybackState {
           ? null
           : (sourceTag ?? this.sourceTag),
       isPlaying: isPlaying ?? this.isPlaying,
+      isStreaming: isStreaming ?? this.isStreaming,
+      isBuffering: isBuffering ?? this.isBuffering,
+      isPaused: isPaused ?? this.isPaused,
+      generationComplete: generationComplete ?? this.generationComplete,
+      bufferedUntil: bufferedUntil ?? this.bufferedUntil,
+      error: error,
+
       position: position ?? this.position,
       duration: duration ?? this.duration,
     );
@@ -62,36 +96,46 @@ class PlaybackState {
 
 class PlaybackNotifier extends Notifier<PlaybackState> {
   static const _positionPublishInterval = Duration(milliseconds: 100);
-  static const _androidSessionProgressInterval = Duration(seconds: 1);
+  static const _mediaSessionProgressInterval = Duration(seconds: 1);
 
   late final AudioPlayer _player;
+  StreamingAudioSink? _streamSink;
+  TtsCancelToken? _streamCancellation;
+  Timer? _streamPoll;
+  int _streamRunId = 0;
+  int _operationId = 0;
+
   StreamSubscription<void>? _completeSub;
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<Duration>? _durationSub;
   Completer<void>? _sequenceCancelCompleter;
   DateTime _lastPositionPublishedAt = DateTime.fromMillisecondsSinceEpoch(0);
-  DateTime _lastAndroidSessionSyncedAt = DateTime.fromMillisecondsSinceEpoch(0);
+  DateTime _lastMediaSessionSyncedAt = DateTime.fromMillisecondsSinceEpoch(0);
   int _sequenceRunId = 0;
 
   @override
   PlaybackState build() {
     _player = ref.read(audioPlayerProvider);
     _completeSub = _player.onPlayerComplete.listen((_) {
+      if (state.isStreaming) return;
       _resetPositionPublishClock();
       state = state.copyWith(isPlaying: false, position: Duration.zero);
-      unawaited(_syncAndroidNovelSession(force: true));
+      unawaited(_syncNovelMediaSession(force: true));
     });
     _positionSub = _player.onPositionChanged.listen((pos) {
-      _publishPosition(pos);
+      if (!state.isStreaming) _publishPosition(pos);
     });
     _durationSub = _player.onDurationChanged.listen((dur) {
-      if (state.duration == dur) return;
+      if (state.isStreaming || state.duration == dur) return;
       state = state.copyWith(duration: dur);
       if (isNovelReaderPlaybackSource(state.sourceTag)) {
-        unawaited(_syncAndroidNovelSession(force: true));
+        unawaited(_syncNovelMediaSession(force: true));
       }
     });
     ref.onDispose(() {
+      _streamPoll?.cancel();
+      _streamCancellation?.cancel();
+      unawaited(_streamSink?.stop());
       _completeSub?.cancel();
       _positionSub?.cancel();
       _durationSub?.cancel();
@@ -120,9 +164,12 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
     String? subtitle,
     String? sourceTag,
   }) async {
+    final operation = ++_operationId;
+    await _stopStreaming();
     await _player.stop();
+    if (operation != _operationId) return;
     _resetPositionPublishClock();
-    state = state.copyWith(
+    state = const PlaybackState().copyWith(
       audioPath: audioPath,
       title: title,
       subtitle: subtitle,
@@ -132,30 +179,144 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
       isPlaying: true,
     );
     await _player.play(DeviceFileSource(audioPath));
-    await _syncAndroidNovelSession(force: true);
+    if (operation == _operationId) await _syncNovelMediaSession(force: true);
   }
 
   Future<void> togglePlay() async {
+    if (_streamSink != null) {
+      final paused = !state.isPaused;
+      await _streamSink!.pause(paused);
+      state = state.copyWith(isPaused: paused, isPlaying: !paused);
+      await _syncNovelMediaSession(force: true);
+      return;
+    }
     if (state.audioPath == null) return;
     if (state.isPlaying) {
       await _player.pause();
       state = state.copyWith(isPlaying: false);
     } else {
-      await _player.resume();
+      if (state.generationComplete && state.position == Duration.zero) {
+        await _player.play(DeviceFileSource(state.audioPath!));
+      } else {
+        await _player.resume();
+      }
       state = state.copyWith(isPlaying: true);
     }
-    await _syncAndroidNovelSession(force: true);
+    await _syncNovelMediaSession(force: true);
   }
 
   Future<void> stop() async {
+    final operation = ++_operationId;
     final previousSourceTag = state.sourceTag;
     _cancelActiveSequence();
+    await _stopStreaming();
     await _player.stop();
+    if (operation != _operationId) return;
     _resetPositionPublishClock();
     state = const PlaybackState();
     if (isNovelReaderPlaybackSource(previousSourceTag)) {
       await ref.read(androidMediaSessionServiceProvider).stopNovelSession();
     }
+  }
+
+  /// Returns when generation/cache commit finishes. The speaker may still
+  /// have buffered audio; state switches to the saved file only after drain.
+  Future<SynthesisReceipt> playSynthesis({
+    required Future<SynthesisReceipt> Function(StreamingAudioSink) generate,
+    required TtsCancelToken cancellation,
+    required String title,
+    required String sourceTag,
+    String? subtitle,
+    StreamingAudioSink? sink,
+  }) async {
+    final operation = ++_operationId;
+    _cancelActiveSequence();
+    await _stopStreaming();
+    await _player.stop();
+    if (operation != _operationId) {
+      cancellation.cancel();
+      throw const TtsCancelledException();
+    }
+    cancellation.throwIfCancelled();
+    final run = ++_streamRunId;
+    final output = sink ?? SoloudAudioSink();
+    _streamSink = output;
+    _streamCancellation = cancellation;
+    final removeCancel = cancellation.onCancel(() => unawaited(output.stop()));
+    state = PlaybackState(
+      title: title,
+      subtitle: subtitle,
+      sourceTag: sourceTag,
+      isStreaming: true,
+      isBuffering: true,
+      isPlaying: true,
+    );
+    _streamPoll = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (run != _streamRunId) return;
+      state = state.copyWith(
+        position: output.position,
+        bufferedUntil: output.bufferedUntil,
+        isBuffering: output.isBuffering,
+      );
+      if (isNovelReaderPlaybackSource(state.sourceTag)) {
+        unawaited(_syncNovelMediaSession());
+      }
+    });
+    try {
+      final receipt = await generate(output);
+      if (run != _streamRunId) return receipt;
+      state = state.copyWith(
+        audioPath: receipt.audioPath,
+        generationComplete: true,
+      );
+      unawaited(
+        output.drained.then((_) async {
+          if (run != _streamRunId) return;
+          _streamPoll?.cancel();
+          final duration = output.bufferedUntil;
+          state = PlaybackState(
+            audioPath: receipt.audioPath,
+            title: title,
+            subtitle: subtitle,
+            sourceTag: sourceTag,
+            duration: duration,
+            generationComplete: true,
+          );
+          _streamSink = null;
+          _streamCancellation = null;
+          removeCancel();
+          await output.stop();
+        }),
+      );
+      return receipt;
+    } catch (error) {
+      if (run == _streamRunId) {
+        await _stopStreaming();
+        if (operation != _operationId) rethrow;
+        state = error is TtsCancelledException
+            ? const PlaybackState()
+            : PlaybackState(
+                title: title,
+                sourceTag: sourceTag,
+                error: '$error',
+              );
+      }
+      rethrow;
+    } finally {
+      // Cancellation after generation must still stop buffered playback.
+      if (run != _streamRunId) removeCancel();
+    }
+  }
+
+  Future<void> _stopStreaming() async {
+    _streamRunId++;
+    _streamPoll?.cancel();
+    final sink = _streamSink;
+    _streamSink = null;
+    final token = _streamCancellation;
+    _streamCancellation = null;
+    token?.cancel();
+    await sink?.stop();
   }
 
   Future<void> stopIfSourceTag(String sourceTag) async {
@@ -169,7 +330,7 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
   }
 
   Future<void> seek(Duration position) async {
-    if (state.audioPath == null) return;
+    if (!state.canSeek) return;
     await _player.seek(position);
     _publishPosition(position, force: true);
   }
@@ -228,29 +389,28 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
     _lastPositionPublishedAt = now;
     state = state.copyWith(position: position);
     if (isNovelReaderPlaybackSource(state.sourceTag)) {
-      unawaited(_syncAndroidNovelSession(force: force));
+      unawaited(_syncNovelMediaSession(force: force));
     }
   }
 
   void _resetPositionPublishClock() {
     _lastPositionPublishedAt = DateTime.fromMillisecondsSinceEpoch(0);
-    _lastAndroidSessionSyncedAt = DateTime.fromMillisecondsSinceEpoch(0);
+    _lastMediaSessionSyncedAt = DateTime.fromMillisecondsSinceEpoch(0);
   }
 
-  Future<void> _syncAndroidNovelSession({bool force = false}) async {
+  Future<void> _syncNovelMediaSession({bool force = false}) async {
     final session = ref.read(androidMediaSessionServiceProvider);
-    if (!isNovelReaderPlaybackSource(state.sourceTag) ||
-        state.audioPath == null) {
+    if (!isNovelReaderPlaybackSource(state.sourceTag) || !state.hasMedia) {
       await session.stopNovelSession();
       return;
     }
     final now = DateTime.now();
     if (!force &&
-        now.difference(_lastAndroidSessionSyncedAt) <
-            _androidSessionProgressInterval) {
+        now.difference(_lastMediaSessionSyncedAt) <
+            _mediaSessionProgressInterval) {
       return;
     }
-    _lastAndroidSessionSyncedAt = now;
+    _lastMediaSessionSyncedAt = now;
     await session.startOrUpdateNovelSession(
       title: state.title ?? 'Novel Reader',
       subtitle: state.subtitle,

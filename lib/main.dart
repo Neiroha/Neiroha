@@ -1,3 +1,6 @@
+import 'dart:ui' show AppExitResponse;
+import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/providers/novel_role_providers.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -52,11 +55,26 @@ class NeirohaApp extends ConsumerStatefulWidget {
 }
 
 class _NeirohaAppState extends ConsumerState<NeirohaApp> {
+  late final AppLifecycleListener _lifecycle;
   @override
   void initState() {
     super.initState();
+    _lifecycle = AppLifecycleListener(
+      onExitRequested: () async {
+        ref.read(roleAnalysisServiceProvider).dispose();
+        await ref.read(playbackNotifierProvider.notifier).stop();
+        await ref.read(apiServerProvider).stop();
+        return AppExitResponse.exit;
+      },
+    );
     Future.microtask(_loadAppSettings);
     Future.microtask(_autoStartApiServer);
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
   }
 
   /// Honour Settings → API Server → "Start on launch" so agents can reach

@@ -10,11 +10,10 @@ import 'package:neiroha/data/storage/ffmpeg_service.dart';
 /// turning the segment into an error.
 class AutoLoudnessService {
   AutoLoudnessService({
-    required AppDatabase db,
+    required this._db,
     required FFmpegService ffmpeg,
     LoudnessNormalizer? normalizer,
-  }) : _db = db,
-       _ffmpeg = ffmpeg,
+  }) : _ffmpeg = ffmpeg,
        _normalizer =
            normalizer ?? LoudnessNormalizer(resolveFfmpeg: ffmpeg.resolvePath);
 

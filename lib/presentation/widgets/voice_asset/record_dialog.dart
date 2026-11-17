@@ -1,6 +1,9 @@
+import 'package:neiroha/data/services/recording/recording_backend.dart';
+import 'package:neiroha/data/services/recording/recording_take.dart';
+import 'package:uuid/uuid.dart';
+import 'recording_indicator.dart';
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
@@ -11,9 +14,8 @@ import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 
-/// Mic-recording modal. Uses the Windows record plugin directly through its
-/// platform interface (MediaFoundation), avoiding the federated `record`
-/// package's Linux dependency while also avoiding ffmpeg DirectShow capture.
+/// Recording UI shared by Windows and macOS; capture/file lifetime is owned
+/// by RecordingTake and platform registration is hidden by RecordingBackend.
 class RecordDialog extends StatefulWidget {
   const RecordDialog({super.key});
 
@@ -25,8 +27,8 @@ enum _Phase { idle, recording, preview }
 
 class _RecordDialogState extends State<RecordDialog>
     with SingleTickerProviderStateMixin {
-  final _recorder = RecordPlatform.instance;
-  final _recorderId = 'voice_asset_record_dialog';
+  final _recorder = RecordingBackend.platform();
+  late final RecordingTake _take;
   final _previewer = AudioPlayer();
 
   late final AnimationController _pulseCtrl;
@@ -46,13 +48,6 @@ class _RecordDialogState extends State<RecordDialog>
   bool _previewPlaying = false;
   double _levelNorm = 0;
 
-  File? _recordFile;
-  RandomAccessFile? _recordRaf;
-  Future<void> _recordWriteChain = Future.value();
-  Completer<void>? _recordStreamDone;
-  StreamSubscription<Uint8List>? _recordStreamSub;
-  int _recordedBytes = 0;
-  int _peakSampleAbs = 0;
   DateTime _lastLevelPaint = DateTime.fromMillisecondsSinceEpoch(0);
 
   Timer? _elapsedTimer;
@@ -63,6 +58,18 @@ class _RecordDialogState extends State<RecordDialog>
   @override
   void initState() {
     super.initState();
+    _take = RecordingTake(
+      _recorder,
+      onLevel: (level) {
+        final now = DateTime.now();
+        if (mounted &&
+            now.difference(_lastLevelPaint) >
+                const Duration(milliseconds: 80)) {
+          _lastLevelPaint = now;
+          setState(() => _levelNorm = level);
+        }
+      },
+    );
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -87,21 +94,20 @@ class _RecordDialogState extends State<RecordDialog>
       });
     });
 
-    if (!Platform.isWindows) {
+    if (!_recorder.supported) {
       if (!mounted) return;
       setState(() {
         _initializing = false;
-        _initError =
-            'Recording via MediaFoundation is only available on Windows.';
+        _initError = 'Microphone recording is available on Windows and macOS.';
       });
       return;
     }
 
     try {
-      await _recorder.create(_recorderId);
-      _hasPermission = await _recorder.hasPermission(_recorderId);
+      await _recorder.initialize();
+      _hasPermission = await _recorder.hasPermission();
       if (_hasPermission) {
-        _devices = await _recorder.listInputDevices(_recorderId);
+        _devices = await _recorder.devices();
         _selectedDevice = _preferredInputDevice(_devices);
       }
     } catch (e) {
@@ -125,9 +131,7 @@ class _RecordDialogState extends State<RecordDialog>
   void dispose() {
     _elapsedTimer?.cancel();
     _pulseCtrl.dispose();
-    unawaited(_recorder.dispose(_recorderId));
-    unawaited(_recordStreamSub?.cancel());
-    unawaited(_recordRaf?.close());
+    unawaited(_take.dispose());
     unawaited(_previewPosSub?.cancel());
     unawaited(_previewDurSub?.cancel());
     unawaited(_previewCompleteSub?.cancel());
@@ -144,45 +148,11 @@ class _RecordDialogState extends State<RecordDialog>
       final dir = await PathService.instance.voiceCharacterRefDir();
       final path = p.join(
         dir.path,
-        'recording_${PathService.formatTimestamp()}.wav',
+        'recording_${PathService.formatTimestamp()}_${const Uuid().v4()}.wav',
       );
 
-      final file = File(path);
-      final raf = await file.open(mode: FileMode.write);
-      await raf.writeFrom(_wavHeader(0));
-      _recordFile = file;
-      _recordRaf = raf;
-
-      final stream = await _recorder.startStream(
-        _recorderId,
-        RecordConfig(
-          encoder: AudioEncoder.pcm16bits,
-          sampleRate: 48000,
-          numChannels: 1,
-          device: _selectedDevice,
-        ),
-      );
-
-      _recordWriteChain = Future.value();
-      _recordStreamDone = Completer<void>();
-      _recordedBytes = 0;
-      _peakSampleAbs = 0;
+      await _take.start(path, _selectedDevice);
       _levelNorm = 0;
-      _recordStreamSub = stream.listen(
-        _handlePcmChunk,
-        onError: (Object e) {
-          if (!(_recordStreamDone?.isCompleted ?? true)) {
-            _recordStreamDone?.completeError(e);
-          }
-        },
-        onDone: () {
-          if (!(_recordStreamDone?.isCompleted ?? true)) {
-            _recordStreamDone?.complete();
-          }
-        },
-        cancelOnError: true,
-      );
-
       _recordedPath = path;
       _elapsed = Duration.zero;
       _previewDuration = null;
@@ -195,7 +165,7 @@ class _RecordDialogState extends State<RecordDialog>
 
       setState(() => _phase = _Phase.recording);
     } catch (e) {
-      await _cleanupPartialRecording();
+      await _take.abort();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -205,32 +175,6 @@ class _RecordDialogState extends State<RecordDialog>
       }
     } finally {
       if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  void _handlePcmChunk(Uint8List chunk) {
-    if (chunk.isEmpty) return;
-    _recordedBytes += chunk.length;
-
-    var localPeak = 0;
-    for (var i = 0; i + 1 < chunk.length; i += 2) {
-      var sample = (chunk[i + 1] << 8) | chunk[i];
-      if (sample >= 0x8000) sample -= 0x10000;
-      final abs = sample.abs();
-      if (abs > localPeak) localPeak = abs;
-    }
-    if (localPeak > _peakSampleAbs) _peakSampleAbs = localPeak;
-
-    final raf = _recordRaf;
-    if (raf != null) {
-      _recordWriteChain = _recordWriteChain.then((_) => raf.writeFrom(chunk));
-    }
-
-    final now = DateTime.now();
-    if (mounted &&
-        now.difference(_lastLevelPaint) > const Duration(milliseconds: 80)) {
-      _lastLevelPaint = now;
-      setState(() => _levelNorm = (localPeak / 32768.0).clamp(0.0, 1.0));
     }
   }
 
@@ -271,70 +215,10 @@ class _RecordDialogState extends State<RecordDialog>
     }
   }
 
-  Future<String?> _finishRecording({required bool keepFile}) async {
-    final path = _recordedPath;
-    if (path == null) return null;
-
+  Future<String?> _finishRecording({required bool keepFile}) {
     _elapsedTimer?.cancel();
     _elapsedTimer = null;
-    await _recorder.stop(_recorderId);
-    try {
-      await _recordStreamDone?.future.timeout(const Duration(seconds: 2));
-    } on TimeoutException {
-      // Some plugin versions stop the stream without completing the Dart
-      // event channel promptly. The write chain below still captures every
-      // chunk that reached Dart before stop returned.
-    }
-    await _recordStreamSub?.cancel();
-    _recordStreamSub = null;
-    await _recordWriteChain;
-
-    final file = _recordFile ?? File(path);
-    final raf = _recordRaf;
-    if (raf != null) {
-      await raf.setPosition(0);
-      await raf.writeFrom(_wavHeader(_recordedBytes));
-      await raf.close();
-    }
-    _recordRaf = null;
-    _recordFile = null;
-
-    if (!keepFile) {
-      await _deleteIfExists(file);
-      return null;
-    }
-
-    if (_recordedBytes == 0 ||
-        !await file.exists() ||
-        await file.length() <= 44) {
-      await _deleteIfExists(file);
-      throw 'No audio samples were captured. Try another input device or enable Windows microphone access.';
-    }
-    if (_peakSampleAbs == 0) {
-      await _deleteIfExists(file);
-      throw 'Only digital silence was captured. Try another microphone input.';
-    }
-    return file.path;
-  }
-
-  Future<void> _cleanupPartialRecording() async {
-    try {
-      await _recordStreamSub?.cancel();
-    } catch (_) {}
-    _recordStreamSub = null;
-    try {
-      await _recordWriteChain;
-    } catch (_) {}
-    try {
-      await _recordRaf?.close();
-    } catch (_) {}
-    final file = _recordFile;
-    _recordRaf = null;
-    _recordFile = null;
-    _recordStreamDone = null;
-    _recordedBytes = 0;
-    _peakSampleAbs = 0;
-    if (file != null) await _deleteIfExists(file);
+    return _take.stop(keepFile: keepFile);
   }
 
   Future<void> _deleteIfExists(File file) async {
@@ -427,9 +311,30 @@ class _RecordDialogState extends State<RecordDialog>
             else ...[
               _buildDeviceRow(),
               SizedBox(height: 16),
-              _buildRecordingIndicator(),
+              RecordingIndicator(
+                active: _phase == _Phase.recording,
+                level: _phase == _Phase.recording ? _levelNorm : 0,
+                pulse: _pulseCtrl,
+                status: _phase == _Phase.recording
+                    ? AppLocalizations.of(context).statusWritingWav
+                    : _phase == _Phase.preview
+                    ? AppLocalizations.of(context).statusPreview
+                    : AppLocalizations.of(context).statusIdle,
+              ),
               SizedBox(height: 12),
-              _buildTimerRow(),
+              RecordingTimerRow(
+                status: _phase == _Phase.recording
+                    ? AppLocalizations.of(context).statusWritingWav
+                    : _phase == _Phase.preview
+                    ? AppLocalizations.of(context).statusPreview
+                    : AppLocalizations.of(context).statusIdle,
+                time: _fmt(
+                  _phase == _Phase.preview
+                      ? _previewDuration ?? _elapsed
+                      : _elapsed,
+                ),
+                recording: _phase == _Phase.recording,
+              ),
               SizedBox(height: 16),
               if (_phase == _Phase.preview) _buildPreviewRow(),
             ],
@@ -524,166 +429,6 @@ class _RecordDialogState extends State<RecordDialog>
         lower.contains('oculus') ||
         lower.contains('desktop audio') ||
         lower.contains('streaming');
-  }
-
-  Widget _buildRecordingIndicator() {
-    final active = _phase == _Phase.recording;
-    final level = active ? _levelNorm : 0.0;
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceBright,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          AnimatedBuilder(
-            animation: _pulseCtrl,
-            builder: (context, child) {
-              final t = active ? _pulseCtrl.value : 0.0;
-              return Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.redAccent.withValues(alpha: 0.10 + t * 0.18),
-                ),
-                child: Center(
-                  child: Transform.scale(
-                    scale: active ? 0.75 + t * 0.25 : 0.75,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: active
-                            ? Colors.redAccent.shade200
-                            : Colors.white.withValues(alpha: 0.25),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  _phase == _Phase.recording
-                      ? 'Recording'
-                      : (_phase == _Phase.preview ? 'Preview ready' : 'Ready'),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: active
-                        ? Colors.redAccent.shade100
-                        : Colors.white.withValues(alpha: 0.58),
-                  ),
-                ),
-                SizedBox(height: 5),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
-                  child: SizedBox(
-                    height: 5,
-                    child: Stack(
-                      children: [
-                        Container(color: Colors.white.withValues(alpha: 0.08)),
-                        FractionallySizedBox(
-                          widthFactor: level,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppTheme.accentColor,
-                                  level > 0.85
-                                      ? Colors.redAccent
-                                      : AppTheme.accentColor.withValues(
-                                          alpha: 0.72,
-                                        ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Uint8List _wavHeader(
-    int dataLength, {
-    int sampleRate = 48000,
-    int channels = 1,
-    int bitsPerSample = 16,
-  }) {
-    final out = Uint8List(44);
-    final data = ByteData.view(out.buffer);
-    void ascii(int offset, String value) {
-      for (var i = 0; i < value.length; i++) {
-        out[offset + i] = value.codeUnitAt(i);
-      }
-    }
-
-    final byteRate = sampleRate * channels * bitsPerSample ~/ 8;
-    final blockAlign = channels * bitsPerSample ~/ 8;
-
-    ascii(0, 'RIFF');
-    data.setUint32(4, 36 + dataLength, Endian.little);
-    ascii(8, 'WAVE');
-    ascii(12, 'fmt ');
-    data.setUint32(16, 16, Endian.little);
-    data.setUint16(20, 1, Endian.little);
-    data.setUint16(22, channels, Endian.little);
-    data.setUint32(24, sampleRate, Endian.little);
-    data.setUint32(28, byteRate, Endian.little);
-    data.setUint16(32, blockAlign, Endian.little);
-    data.setUint16(34, bitsPerSample, Endian.little);
-    ascii(36, 'data');
-    data.setUint32(40, dataLength, Endian.little);
-    return out;
-  }
-
-  Widget _buildTimerRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          _phase == _Phase.recording
-              ? AppLocalizations.of(context).statusWritingWav
-              : (_phase == _Phase.preview
-                    ? AppLocalizations.of(context).statusPreview
-                    : AppLocalizations.of(context).statusIdle),
-          style: TextStyle(
-            fontSize: 12,
-            color: _phase == _Phase.recording
-                ? Colors.redAccent.shade200
-                : Colors.white.withValues(alpha: 0.5),
-          ),
-        ),
-        Text(
-          _fmt(
-            _phase == _Phase.preview && _previewDuration != null
-                ? _previewDuration!
-                : _elapsed,
-          ),
-          style: const TextStyle(
-            fontSize: 13,
-            fontFeatures: [FontFeature.tabularFigures()],
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildPreviewRow() {

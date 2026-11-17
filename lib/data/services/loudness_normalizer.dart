@@ -89,8 +89,7 @@ class LoudnessException implements Exception {
 /// into [backupDirName]; later runs always start from that pristine copy,
 /// so re-targeting never stacks lossy re-encodes.
 class LoudnessNormalizer {
-  LoudnessNormalizer({required Future<String> Function() resolveFfmpeg})
-    : _resolveFfmpeg = resolveFfmpeg;
+  LoudnessNormalizer({required this._resolveFfmpeg});
 
   final Future<String> Function() _resolveFfmpeg;
 

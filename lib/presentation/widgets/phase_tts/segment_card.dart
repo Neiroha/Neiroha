@@ -205,13 +205,7 @@ class _SegmentCard extends StatelessWidget {
               ),
             ),
           ),
-        if (hasAudio)
-          _CardAction(
-            tooltip: isPlaying ? l10n.phaseStopPlayback : l10n.phasePlay,
-            icon: isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
-            color: isPlaying ? AppTheme.accentColor : null,
-            onPressed: onTogglePlay,
-          ),
+        LiveSentencePreviewButton.phase(segment, disabled: isGenerating),
         if (isGenerating)
           const SizedBox(
             width: 34,

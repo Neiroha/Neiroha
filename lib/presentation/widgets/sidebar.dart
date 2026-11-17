@@ -38,7 +38,7 @@ class Sidebar extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: SvgPicture.asset(
-              'assets/neiroha_logo.svg',
+              'assets/icon/neiroha_logo.svg',
               width: 42,
               height: 42,
             ),
@@ -98,7 +98,7 @@ class AppNavigationDrawer extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: SvgPicture.asset(
-                      'assets/neiroha_logo.svg',
+                      'assets/icon/neiroha_logo.svg',
                       width: 40,
                       height: 40,
                     ),

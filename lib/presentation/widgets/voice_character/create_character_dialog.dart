@@ -158,21 +158,6 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       _isGeminiTts ||
       _isCloudCloneProvider;
 
-  /// Whether a model key is a TTS model (not LLM/multimodal).
-  /// Used to filter the model picker in the voice character dialog.
-  static bool _isTtsModel(String modelKey) {
-    final k = modelKey.toLowerCase();
-    return k.contains('tts') ||
-        k.contains('gpt-sovits') ||
-        k.contains('sovits') ||
-        k.contains('speech-synthesis') ||
-        k.contains('voiceclone') ||
-        k.contains('voicedesign') ||
-        k.startsWith('eleven_') ||
-        k.startsWith('speech-') ||
-        k.endsWith('-voice');
-  }
-
   /// Detect TTS model type from model name.
   /// Returns 'clone', 'design', or 'preset'.
   static String _detectTtsModelType(String modelKey) {
@@ -275,7 +260,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     }
 
     if (hasSeparate) {
-      // Models from cache — filter to TTS-only models
+      // Inventory includes unknown/new models; users may enter an explicit ID.
       final cachedModels = await widget.database.getModelEntriesForProvider(
         _selectedProviderId,
       );
@@ -283,7 +268,6 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
           cachedModels
               .map((b) => b.modelKey)
               // OpenAI official caches a curated TTS list (incl. gpt-realtime-*).
-              .where((k) => _isOpenAiTts || _isTtsModel(k))
               .toList()
             ..sort();
 

@@ -53,6 +53,9 @@ class PlatformCapabilities {
 
   bool get supportsLocalAudioMuxing => supportsFfmpegCli;
 
+  bool get supportsMicrophoneRecording =>
+      platform == NeirohaPlatform.windows || platform == NeirohaPlatform.macos;
+
   /// Only Windows SAPI is implemented today. Android/Apple system TTS should
   /// be added behind native MethodChannels before becoming visible here.
   bool get supportsSystemTtsAdapter => platform == NeirohaPlatform.windows;

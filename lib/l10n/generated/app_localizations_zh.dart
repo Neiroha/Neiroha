@@ -2340,4 +2340,310 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get novelImportFolderTitle => '导入小说文件夹';
+
+  @override
+  String get uiPreferStreaming => '自动：优先流式';
+
+  @override
+  String get uiStopSynthesis => '停止生成';
+
+  @override
+  String get uiAudioBuffering => '正在缓冲…';
+
+  @override
+  String get roleReadMode => '阅读';
+
+  @override
+  String get roleReviewMode => '角色校对';
+
+  @override
+  String get roleCharacters => '作品角色';
+
+  @override
+  String get roleAddCharacter => '添加人物';
+
+  @override
+  String get roleName => '人物名';
+
+  @override
+  String get roleAliases => '别名（用逗号分隔）';
+
+  @override
+  String get roleDescription => '人物描述';
+
+  @override
+  String get roleNoCharacter => '未确定人物';
+
+  @override
+  String get roleVoice => '音色';
+
+  @override
+  String get roleDefaultVoice => '使用项目默认音色';
+
+  @override
+  String get roleChapterOverride => '仅覆盖当前章节的音色';
+
+  @override
+  String get roleSelected => '校对所选句';
+
+  @override
+  String get rolePickSentence => '点选正文中的一句开始校对';
+
+  @override
+  String get roleCategory => '类型';
+
+  @override
+  String get roleNarrator => '旁白';
+
+  @override
+  String get roleDialogue => '对白';
+
+  @override
+  String get roleThought => '心理活动';
+
+  @override
+  String get roleSystem => '系统文本';
+
+  @override
+  String get roleScope => '修改范围';
+
+  @override
+  String get roleOnlySentence => '仅这一句';
+
+  @override
+  String get roleChapterUnlocked => '本章同人物的未锁定句';
+
+  @override
+  String get roleLock => '锁定人工结果';
+
+  @override
+  String get roleApply => '应用修改';
+
+  @override
+  String get roleUndo => '撤销上次台词修改';
+
+  @override
+  String get rolePending => '待确认';
+
+  @override
+  String get roleInferred => '根据上下文推断';
+
+  @override
+  String get roleConflict => '存在冲突';
+
+  @override
+  String get roleConfirmed => '人工已确认';
+
+  @override
+  String get roleInstruction => '本句风格覆盖（可留空）';
+
+  @override
+  String get roleSentenceVoice => '本句音色覆盖';
+
+  @override
+  String get roleMerge => '合并人物';
+
+  @override
+  String get roleMergeInto => '合并到';
+
+  @override
+  String get roleManualReason => '人工校对';
+
+  @override
+  String get roleCached => '音频缓存有效';
+
+  @override
+  String get roleStaleCache => '音频需要重新生成';
+
+  @override
+  String get roleNoCache => '尚未生成音频';
+
+  @override
+  String get roleRename => '编辑人物';
+
+  @override
+  String get rolePreview => '试听所选句';
+
+  @override
+  String get rolePendingList => '待确认台词';
+
+  @override
+  String get roleNoPending => '当前章节无待确认台词';
+
+  @override
+  String get roleAnalysisModel => '角色分析模型（文本模型 ID）';
+
+  @override
+  String get roleAnalysisProvider => '分析连接';
+
+  @override
+  String get roleAnalysisStart => '分析当前章节';
+
+  @override
+  String get roleAnalysisResume => '确认角色表并继续 / 恢复';
+
+  @override
+  String get roleAnalysisPause => '暂停分析';
+
+  @override
+  String get roleAnalysisFeedback => '补充人物或校对意见';
+
+  @override
+  String get roleAnalysisReplan => '按意见重新规划角色表';
+
+  @override
+  String get roleAnalysisBudget => '仅分析当前章节；每次最多 12 次模型请求，可能计费。人工锁定与已确认句会保留。';
+
+  @override
+  String get roleAnalysisOffline => '在服务商页配置连接后，再选择分析模型。';
+
+  @override
+  String get modelDiscover => '发现模型 / 能力';
+
+  @override
+  String get modelRefresh => '从当前连接刷新';
+
+  @override
+  String get modelManual => '手动使用此模型';
+
+  @override
+  String get modelUnknown => '未知';
+
+  @override
+  String get modelSupported => '支持';
+
+  @override
+  String get modelUnsupported => '不支持';
+
+  @override
+  String get modelCapabilityHint => '目录描述能力；当前账号是否可用，需要实际成功调用确认。不会自动发起付费探测。';
+
+  @override
+  String get modelOverride => '覆盖此路由的任务能力';
+
+  @override
+  String get modelNoModels => '暂无缓存模型，可刷新或手填模型 ID。';
+
+  @override
+  String get roleStagePlan => '规划人物';
+
+  @override
+  String get roleStageRoster => '等待角色表复核';
+
+  @override
+  String get roleStageLabel => '标注台词';
+
+  @override
+  String get roleStageValidate => '校验结果';
+
+  @override
+  String get roleStageReview => '复核疑点';
+
+  @override
+  String get roleStageReplan => '按反馈调整角色';
+
+  @override
+  String get roleStagePaused => '已暂停';
+
+  @override
+  String get roleStageCompleted => '已完成';
+
+  @override
+  String get roleStageFailed => '分析失败';
+
+  @override
+  String get roleAnalysisSentences => '句';
+
+  @override
+  String get roleAnalysisCalls => '次调用';
+
+  @override
+  String get roleSplitText => '拆分正文';
+
+  @override
+  String get roleSplitTextHelp => '选择正文范围可拆出该段，或将光标放在拆分点；保留所有原文和现有标注。';
+
+  @override
+  String get roleMergeText => '合并正文';
+
+  @override
+  String get roleMergeTextHelp =>
+      '合并从当前片段到所选末段。人物或风格不一致时清除归属并标记待确认；旧音频保留但不再使用。';
+
+  @override
+  String get roleMergeUntil => '合并至';
+
+  @override
+  String get roleMergeNewline => '片段间保留换行';
+
+  @override
+  String get roleUndoStructure => '撤销最近正文拆并';
+
+  @override
+  String get roleStyleMatrix => '人物类别风格';
+
+  @override
+  String get roleStyleHelp => '留空继承默认音色或风格；全部留空会移除此项覆盖。';
+
+  @override
+  String get roleSplitCharacter => '拆分人物';
+
+  @override
+  String get roleSplitCharacterHelp => '将本章所选台词移至新人物，复制原音色绑定；可用标注撤销恢复归属，新人物保留。';
+
+  @override
+  String get roleIdentityKind => '人物身份类型';
+
+  @override
+  String get roleIdentityNamed => '具名人物';
+
+  @override
+  String get roleIdentityAnonymous => '匿名说话人';
+
+  @override
+  String get roleIdentityGroup => '群体';
+
+  @override
+  String get roleDirectionHelp =>
+      '选角与语气每次各发起一个有界模型任务；先审阅建议再应用。选角保留已有绑定，语气仅处理最多 30 条未确认、未锁定且没有风格的片段。';
+
+  @override
+  String get roleSuggestCast => '自动音色选角';
+
+  @override
+  String get roleSuggestTone => '语气导演';
+
+  @override
+  String get roleDirectionReview => '审阅建议';
+
+  @override
+  String get roleDirectionEmpty => '模型没有提出可应用建议。';
+
+  @override
+  String get taskProfiles => '任务模型配置';
+
+  @override
+  String get taskProfilesHelp =>
+      '分别设置分角、选角、语气和朗读的连接、模型、协议。朗读配置覆盖本作品的模型/协议，人物音色和参考音频仍来自绑定音色。未配置的任务沿用现有选择。';
+
+  @override
+  String get taskSynthesis => '小说朗读';
+
+  @override
+  String get taskProtocol => '服务协议';
+
+  @override
+  String get taskEndpoint => '相对端点路径（留空使用协议默认值）';
+
+  @override
+  String get taskKeyHeader => 'API key 请求头名称';
+
+  @override
+  String get taskUseDefaults => '恢复此任务默认配置';
+
+  @override
+  String get modelReadDeclaration => '读取后端能力声明';
+
+  @override
+  String get uiLiveSentencePreview => '即时试听并保存完整音频';
 }

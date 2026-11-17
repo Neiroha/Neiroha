@@ -1,0 +1,13 @@
+{
+  "id": "chat",
+  "roster": [
+    {"name": "周柏", "aliases": ["老周"]},
+    {"name": "许宁", "aliases": []},
+    {"name": "林舟", "aliases": []}
+  ],
+  "gold": [
+    {"match": "我是许宁，刚进群。", "category": "dialogue", "speaker": "许宁"},
+    {"match": "许宁，等等我。", "category": "dialogue", "speaker": "林舟"},
+    {"match": "门卫老周在一旁听着，没有说话。", "category": "narrator"}
+  ]
+}

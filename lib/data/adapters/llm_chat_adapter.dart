@@ -33,6 +33,7 @@ class LlmChatAdapter {
     this.apiKeyHeader = 'Authorization',
     this.route = ServiceRoute.chatCompletions,
     this.endpointPath,
+    HttpClientAdapter? httpClientAdapter,
   }) {
     if (route != ServiceRoute.chatCompletions &&
         route != ServiceRoute.responses) {
@@ -52,6 +53,7 @@ class LlmChatAdapter {
         },
       ),
     );
+    if (httpClientAdapter != null) _dio.httpClientAdapter = httpClientAdapter;
   }
 
   /// Build an adapter from one of the rows in the `TtsProviders` table.
@@ -293,14 +295,20 @@ class LlmChatAdapter {
     return body.contains('response_format');
   }
 
-  static String _describeDioError(DioException e) {
+  String _describeDioError(DioException e) {
     final status = e.response?.statusCode;
-    final body = e.response?.data?.toString();
+    String redact(String value) =>
+        (apiKey.isEmpty ? value : value.replaceAll(apiKey, '[REDACTED]'))
+            .replaceAll(RegExp(r'sk-[A-Za-z0-9_-]+'), '[REDACTED]');
+    final body = e.response?.data == null
+        ? null
+        : redact(e.response!.data.toString());
     final preview = body == null
         ? ''
         : ' — ${body.length > 300 ? '${body.substring(0, 300)}…' : body}';
     if (status != null) return 'LLM HTTP $status$preview';
-    return 'LLM request failed: ${e.message ?? e.type.name}';
+    final detail = e.error?.toString() ?? e.message ?? e.type.name;
+    return 'LLM request failed (${e.type.name}): ${redact(detail)}';
   }
 
   static String _extractContent(dynamic data) {

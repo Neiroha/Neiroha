@@ -1,0 +1,60 @@
+{
+  "id": "quality_multilingual",
+  "title": "英文、日本语与收件人",
+  "text": "Mira Chen checked the radio. Ken Ito stood next to her, listening.\n\"Ken, stay by the door,\" Mira said.\nKen nodded without speaking. A message arrived: 【Lea: Mira, the east gate is clear.】\n\"I will take the west stairs,\" Ken replied.\nMira thought, \"Lea cannot see the west side from there.\"\n【Ken Ito：ミラ、こちらは安全です。】\n【システム通知：通信が再接続されました】\n\"We heard you, Ken,\" Lea said through the radio.",
+  "roster": [
+    {
+      "name": "Mira Chen",
+      "aliases": [
+        "Mira",
+        "ミラ"
+      ]
+    },
+    {
+      "name": "Ken Ito",
+      "aliases": [
+        "Ken"
+      ]
+    },
+    {
+      "name": "Lea",
+      "aliases": []
+    }
+  ],
+  "gold": [
+    {
+      "match": "Ken, stay by the door",
+      "category": "dialogue",
+      "speaker": "Mira Chen"
+    },
+    {
+      "match": "Mira, the east gate is clear.",
+      "category": "dialogue",
+      "speaker": "Lea"
+    },
+    {
+      "match": "I will take the west stairs",
+      "category": "dialogue",
+      "speaker": "Ken Ito"
+    },
+    {
+      "match": "Lea cannot see the west side from there.",
+      "category": "thought",
+      "speaker": "Mira Chen"
+    },
+    {
+      "match": "ミラ、こちらは安全です。",
+      "category": "dialogue",
+      "speaker": "Ken Ito"
+    },
+    {
+      "match": "通信が再接続されました",
+      "category": "system"
+    },
+    {
+      "match": "We heard you, Ken",
+      "category": "dialogue",
+      "speaker": "Lea"
+    }
+  ]
+}

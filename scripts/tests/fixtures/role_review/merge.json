@@ -1,0 +1,11 @@
+{
+  "id": "merge",
+  "roster": [
+    {"name": "周柏", "aliases": ["老周"]},
+    {"name": "许宁", "aliases": []},
+    {"name": "林舟", "aliases": []}
+  ],
+  "gold": [
+    {"match": "我就是周柏，这不是另一个人。", "category": "dialogue", "speaker": "周柏"}
+  ]
+}

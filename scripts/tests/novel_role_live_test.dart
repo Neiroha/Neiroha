@@ -14,9 +14,11 @@ import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/data/storage/novel_import_service.dart';
 import 'package:neiroha/domain/novel/role_evaluation.dart';
 import 'package:neiroha/domain/novel/role_models.dart';
+import 'package:neiroha/domain/text/novel_semantic_segmenter.dart';
 
 import 'support/novel_fixture.dart';
 import 'support/role_skill_fixture.dart';
+import 'support/measured_role_llm.dart';
 
 /// Opt-in paid evaluation through the production importer and analysis service.
 /// Gold labels/rosters are used only for scoring, never sent to the model.
@@ -35,7 +37,10 @@ void main() {
       .where((s) => s.isNotEmpty)
       .toList();
   final files =
-      Directory('scripts/tests/fixtures/role_assign')
+      Directory(
+            Platform.environment['NEIROHA_ROLE_FIXTURES'] ??
+                'scripts/tests/fixtures/role_assign',
+          )
           .listSync()
           .whereType<File>()
           .where((f) => f.path.endsWith('.json'))
@@ -75,6 +80,12 @@ void main() {
               reason: 'Use a new output directory for another skill.',
             );
           }
+          if (!replayOnly) {
+            expect(
+              cached['segmentationVersion'],
+              NovelSemanticSegmenter.version,
+            );
+          }
           _evaluate(
             fixture,
             (cached['labels'] as List).cast<Map<String, dynamic>>(),
@@ -96,7 +107,26 @@ void main() {
           loadSkill: loadTestRoleSkill,
         );
         List<dynamic>? replay;
+        var paidPrefix = <dynamic>[];
         Map<String, dynamic> inferenceSkill = skill.identity;
+        final previousMetrics = File('${output.path}/$id.metrics.json');
+        if (!replayOnly &&
+            Platform.environment['NEIROHA_EVAL_RESUME'] == '1' &&
+            previousMetrics.existsSync()) {
+          final saved =
+              jsonDecode(previousMetrics.readAsStringSync())
+                  as Map<String, dynamic>;
+          expect(saved['model'], model);
+          expect(saved['fixture'], id);
+          expect(saved['sourceRevision'], novelTextRevision(text));
+          expect(saved['skill'], skill.identity);
+          paidPrefix = (saved['requests'] as List)
+              .takeWhile((r) => r['output'] is Map)
+              .toList();
+          stdout.writeln(
+            '$id: reconstructing ${paidPrefix.length} saved stages offline, then continuing within the shared budget.',
+          );
+        }
         if (replayOnly) {
           final capture =
               jsonDecode(
@@ -115,12 +145,16 @@ void main() {
         }
         final metrics = <String, Object?>{
           'model': model,
+          'segmentationVersion': NovelSemanticSegmenter.version,
+          'protocol': 'chatCompletions',
+          'parameters': {'batchSize': 20, 'maxOutputTokens': 4096},
           'fixture': id,
           'skill': inferenceSkill,
           'processingSkill': skill.identity,
           'sourceRevision': novelTextRevision(text),
           'startedAt': DateTime.now().toUtc().toIso8601String(),
           'requests': <Map<String, Object?>>[],
+          'resumedPrefixCalls': paidPrefix.length,
         };
         void saveMetrics() =>
             File(
@@ -128,7 +162,7 @@ void main() {
             ).writeAsStringSync(
               const JsonEncoder.withIndent('  ').convert(metrics),
             );
-        final client = _MeasuredLlm(
+        final client = MeasuredRoleLlm(
           key,
           model,
           (entry) {
@@ -136,11 +170,16 @@ void main() {
             saveMetrics();
           },
           () {
-            if (++calls > 72) {
+            if (++calls >
+                (int.tryParse(
+                      Platform.environment['NEIROHA_EVAL_MAX_CALLS'] ?? '',
+                    ) ??
+                    72)) {
               throw StateError('Global evaluation call budget reached.');
             }
           },
           replay: replay,
+          paidPrefix: paidPrefix,
         );
         try {
           await seedNovelFixture(database);
@@ -198,7 +237,12 @@ void main() {
             model: model,
             client: client,
             confirmRoster: true,
-            maxCalls: 11,
+            maxCalls:
+                (int.tryParse(
+                      Platform.environment['NEIROHA_EVAL_CASE_CALLS'] ?? '',
+                    ) ??
+                    12) -
+                1,
           );
           final checkpoint = await service.checkpoints.load(
             'book',
@@ -222,6 +266,7 @@ void main() {
           artifact.writeAsStringSync(
             const JsonEncoder.withIndent('  ').convert({
               'model': model,
+              'segmentationVersion': NovelSemanticSegmenter.version,
               'skill': inferenceSkill,
               'processingSkill': skill.identity,
               'sourceRevision': novelTextRevision(text),
@@ -248,6 +293,9 @@ void main() {
           metrics.addAll({
             'status': 'completed',
             'calls': checkpoint.calls,
+            'reviewedSegments': checkpoint.reviewedSegments,
+            'reviewChanges': checkpoint.reviewChanges,
+            'sceneState': checkpoint.scene.toJson(),
             'segments': source.length,
             'rosterResume': true,
             'sourceUnchanged': true,
@@ -344,76 +392,4 @@ List<Map<String, dynamic>> _partition(
     });
   }
   return labels;
-}
-
-class _MeasuredLlm extends LlmChatAdapter {
-  _MeasuredLlm(
-    String key,
-    String model,
-    this.record,
-    this.before, {
-    this.replay,
-  }) : super(
-         baseUrl: 'https://api.openai.com/v1',
-         apiKey: key,
-         modelName: model,
-       );
-  final void Function(Map<String, Object?>) record;
-  final void Function() before;
-  final List<dynamic>? replay;
-  int replayIndex = 0;
-  void verifyReplayComplete() {
-    if (replay != null && replayIndex != replay!.length) {
-      throw StateError('Replay did not consume the captured request sequence.');
-    }
-  }
-
-  @override
-  Future<LlmStructuredResult> structured({
-    required List<LlmChatMessage> messages,
-    required String schemaName,
-    required Map<String, Object?> schema,
-    required TtsCancelToken cancellation,
-    int maxOutputTokens = 4096,
-    bool allowFormatFallback = true,
-    Duration timeout = const Duration(minutes: 2),
-  }) async {
-    // Explicit offline mode: incomplete captures fail without network fallback.
-    if (replay != null) {
-      if (replayIndex >= replay!.length) {
-        throw StateError('Incomplete capture.');
-      }
-      final entry = replay![replayIndex++] as Map<String, dynamic>;
-      if (entry['stage'] != schemaName) {
-        throw StateError('Capture stage mismatch.');
-      }
-      record({...entry, 'replayed': true});
-      return LlmStructuredResult(
-        entry['output'] as Map<String, dynamic>,
-        finishReason: entry['finishReason'] as String,
-        responseFormat: entry['format'] as String,
-        usage: entry['usage'] as Map<String, dynamic>,
-      );
-    }
-    before();
-    final watch = Stopwatch()..start();
-    final result = await super.structured(
-      messages: messages,
-      schemaName: schemaName,
-      schema: schema,
-      cancellation: cancellation,
-      maxOutputTokens: maxOutputTokens,
-      allowFormatFallback: allowFormatFallback,
-      timeout: timeout,
-    );
-    record({
-      'stage': schemaName,
-      'elapsedMs': watch.elapsedMilliseconds,
-      'usage': result.usage,
-      'format': result.responseFormat,
-      'finishReason': result.finishReason,
-      'output': result.object,
-    });
-    return result;
-  }
 }

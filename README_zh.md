@@ -109,6 +109,9 @@ xattr -dr com.apple.quarantine /Applications/Neiroha.app
 - 修改 `lib/l10n/app_en.arb` / `app_zh.arb` 后，运行 `flutter gen-l10n`。
 - 构建 macOS 需要 Xcode 与 CocoaPods。先 `FLUTTER_XCODE_ARCHS=arm64 flutter build macos --release`（Intel 用 `x86_64`），再运行 `bash scripts/tools/package_macos_dmg.sh Release arm64 dist/Neiroha.dmg`，脚本会把包裁剪为该架构、校验签名并生成 DMG；`bash scripts/tools/smoke_test_macos_dmg.sh dist/Neiroha.dmg arm64` 可启动应用做快速检查。
 - 运行 `flutter analyze` 与 `flutter test scripts/tests`。音量统一与合并导出的测试会调用真实的 FFmpeg，`PATH` 中没有 `ffmpeg` 时自动跳过。
+- 单元与协议测试在 Windows、macOS、Linux CI 中运行，媒体通道按平台模拟。原生音频测试需显式设置 `NEIROHA_AUDIO_SMOKE=1`；PCM 不依赖 FFmpeg，MP3 编码检查缺少 FFmpeg 时单独跳过，仍需可用的音频输出设备。
+- Android 在普通 push/PR 中额外检查能力契约并编译 ARM64 APK；原有 PR/手动的通用与分架构 APK、版本发布 APK 流程继续保留。模拟器/真机验收单列，不由桌面测试代替。
+- 真实 API 测试使用跨平台入口：`dart scripts/tools/run_live_tests.dart streaming`（3 项流式播放/取消）、`dart scripts/tools/run_live_tests.dart speech`（整段合成）、`dart scripts/tools/run_live_tests.dart roles`（12 组分角，最多 72 次结构化调用）。从本地 `.env` 读取 key，输出脱敏；可用 `--output` 指定新目录，`roles --replay` 只回放已有捕获，不访问推理服务。详见[开发说明](assets/docs/streaming-and-roles-zh.md)。
 - `analysis_options.yaml` 排除了 `build/` 与各平台目录（新版 Flutter 也会自动加入这段配置），避免分析其中生成的插件源码。
 
 ## 项目入口
@@ -128,7 +131,9 @@ scripts/
   tools/            检查、评测、目录更新与打包工具
 ```
 
-首版两个 skill：[外部 agent 调用配音](assets/skills/neiroha-dubbing/SKILL.md)、[内置小说分角](assets/skills/novel-role-assign/SKILL.md)。两者各附 `EVALUATION.md`。内置 skill 的五个阶段由运行时加载，版本与 SHA-256 写入分析检查点；规则变化后需重新开始分析。旧的未版本化捕获只用于回归参考。
+首版两个 skill：[外部 agent 调用配音](assets/skills/neiroha-dubbing/SKILL.md)、[内置小说分角](assets/skills/novel-role-assign/SKILL.md)。两者各附 `EVALUATION.md`。内置分角 skill 现为七个阶段，版本与 SHA-256 写入分析检查点；规则变化后需重新开始分析。旧的未版本化捕获只用于回归参考。
+
+“设置 → 分角色 AI”支持默认 gpt-6-luna、多个配置、逐阶段提示词编辑、复制新增与一键还原。小说校对和长文本共用；长文本脚本工具栏的“AI 自动分角色”可输入配音意图，预览人物/类别后按角色选音色，应用时保留原文。21 种文本的三轮基线/候选真实测试使用共享 50 美元预算账本，详见[开发说明](assets/docs/streaming-and-roles-zh.md)。
 
 - [Wiki](https://neiroha.github.io/)：安装、后端配置和使用教程。
 - [API 文档](assets/docs/api-zh.md)：本地 HTTP 集成说明。

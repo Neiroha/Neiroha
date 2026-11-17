@@ -8,15 +8,19 @@
 
 音频由公共 `SynthesisService` 编排，格式由适配器声明；PCM 必须提供真实采样率和声道，压缩音频在同一个解码器中持续消费。队列并发占用持续到整个请求清理结束。小说当前句、Dialog/Phase/视频单句试听及本地 API 已接公共流服务。小说首块到达后预取后续句；完整缓存命中时直接播放文件，旧适配器继续整段生成。CosyVoice 后端接入继续跳过。
 
-2026-11-17 已用用户提供的本地凭据通过 Speech 与 Realtime 的真实流式播放、完整缓存、暂停恢复和取消检查。默认测试仍只使用本地假服务；真实测试须主动执行 `pwsh -File scripts/tools/test_openai_streaming.ps1`，凭据由本地 `.env` 的 `OPENAI_KEY` / `OPENAI_API_KEY` / `OPENAI_TEST_API_KEY` 读取，只传给测试进程，不写入源码或音频。音频与测量结果保存在 Git 忽略的 `.dart_tool/live-streaming/`。这不替代 Mac 实机或分角效果验收。
+2026-11-17 已用用户提供的本地凭据通过 Speech 与 Realtime 的真实流式播放、完整缓存、暂停恢复和取消检查。默认测试仍只使用本地假服务；真实测试须主动执行 `dart scripts/tools/run_live_tests.dart streaming`，凭据由本地 `.env` 的 `OPENAI_KEY` / `OPENAI_API_KEY` / `OPENAI_TEST_API_KEY` 读取，只传给测试进程，不写入源码或音频。音频与测量结果保存在 Git 忽略的 `.dart_tool/live-streaming/`。这不替代麦克风、媒体按键等硬件验收或分角效果评分。
 
 ## 小说角色校对
+
+新导入内容使用 semantic-v2：保留原始空白和段落，按引号层级、发言边界和带发送者的括号消息划分语义段。原始文本完整保留，TTS 的字数切片由音频流程单独处理。已有工程不会自动重写片段；旧混段会被独立规则提示，需人工按语义拆分。新分段与 skill 版本会使旧分析检查点要求重新开始，但不因此覆盖已确认或锁定标签。
 
 进入小说后切换到“角色校对”。先创建作品人物并绑定语音库中的音色，再选择片段，修改人物、类别、句级音色或风格。应用范围可选当前句或本章同角色的未锁定片段。人工修改会标记为已确认；锁定内容不会被 AI 覆盖。可撤销最近 20 次标注动作，角色合并和音色绑定不属于标注撤销范围。
 
 侧栏可修改人物名称、别名和描述、合并人物、查看台词数，并设置作品通用或本章声音。待确认列表可定位原句，片段可单独试听。音色优先级依次为：句级覆盖、章节人物绑定、作品人物绑定、语义类别默认、项目另一默认音色。阅读、试听、生成与导出使用同一解析规则。
 
 自动分析需主动选择 Provider 和文本模型。首次规划后会暂停，供用户复核角色表；确认继续才进入批次标注和疑点复核。每次启动有调用上限，达到上限或暂停后可恢复，关闭面板不会丢失 checkpoint。正文或模型更改后须重新分析。AI 只返回稳定片段 ID 的标签，不返回替换正文；人工确认和锁定在公共写入层保护。角色身份可选具名、匿名或群体。自动选角与语气导演分别使用独立任务模型，每次一个有界任务，建议需审阅后应用。选角保留已有绑定；语气只处理最多 30 条未确认、未锁定且没有风格的片段，输入超过本地预算时拒绝发起调用。正文、角色或声音变化后，旧建议不能覆盖新编辑。
+
+规划同时保存第一人称叙述者、在场人物、嵌套讲述者与消息渠道，使用稳定人物 ID；“场景理解”展示人物名称及证据，可通过反馈重新规划。标注同时获得前后文、引号/消息结构和已有标签。独立规则提示发送者/听者、提示语、混段与重名身份问题，并在预算内抽查部分 inferred；规则不直接改人，AI 复核也不等于人工确认。单次请求最多 64000 个 UTF-16 单位；批次按正文量缩小，背景上下文截短时明确标记，待标注的原文不截断。跨章场景只读取顺序上更早且已完成的章节。
 
 长段正文应先整理：单段超过 12000 个 UTF-16 单位会被分析器拒绝，以防无界输入。在校对面板选择正文范围，可将其拆为独立语义段；相邻多个片段也可合并。字符与空白完整保留，禁止切开 UTF-16 代理对；合并归属不一致时改为待确认。最近一次正文拆并可持久化撤销，后续正文、标注或音频变化后会拒绝恢复。人物拆分可选择本章多条台词，复制原声音绑定；标注撤销会恢复归属并保留新人物。人物类别风格支持章节类别 → 章节通用 → 作品类别 → 作品通用，再回退项目类别默认；音色和风格可各自继承，句级设置优先。
 
@@ -44,7 +48,7 @@ dart scripts/tools/refresh_model_catalog.dart
 
 录音使用 `record_darwin`，与 Windows 共用采集/文件生命周期。Mac 工程加入麦克风用途说明及音频输入 entitlement。系统媒体桥接支持播放、暂停、切句和停止；关闭窗口会保留小说播放与本地 API，Dock 可重开窗口；真正退出时清理服务。
 
-这些代码尚未在本机 Windows 上完成 Mac 编译或硬件验收。首次在 Mac 上构建需正常执行 Flutter/CocoaPods 依赖安装并检查 `Podfile.lock` 变化，然后验证录音权限、媒体键、关窗/Dock、蓝牙与睡眠恢复。
+2026-11-17 已在 Apple Silicon macOS 26.6 上完成 Release 构建、基础窗口交互、原生 PCM/MP3 与真实 Speech/Realtime 流播验证；新增插件由 Swift Package Manager 解析，`Podfile.lock` 无变化。麦克风授权、媒体键、关窗/Dock、蓝牙与睡眠恢复仍需逐项实机验收。
 
 正式签名打包在 Mac 的 Bash 中显式设置：
 
@@ -61,6 +65,10 @@ bash scripts/tools/package_macos_dmg.sh Release arm64 build/Neiroha.dmg
 
 工具链跟随 CI：Flutter 3.47.7，Dart 3.13.5；最低 Dart 3.12。
 
+默认单元与协议测试在 Windows、macOS、Linux CI 上执行，不读取 `.env`，不调用付费服务。播放状态测试注入媒体会话替身；macOS/Android 通道契约分别模拟，默认通道路由则随实际宿主验证。硬件音频测试仅在桌面宿主显式开启，缺少 FFmpeg 只跳过 MP3 编码，不跳过 PCM。音频输出设备不可用时，显式开启的硬件检查会报错，不将其算作通过。
+
+Android 是编译目标，CI 宿主使用 Ubuntu。普通 push/PR 增加 Android 能力契约和 ARM64 debug APK 编译；原 PR/手动多架构 APK 打包及 tag Release APK 流程继续保留。这些不替代模拟器/真机的前台服务、通知、媒体键与后台播放验收。
+
 ```powershell
 dart scripts/tools/check_code_size.dart
 flutter analyze
@@ -68,7 +76,7 @@ flutter test scripts/tests
 flutter build windows --debug
 ```
 
-原生音频冒烟会播放轻声音调，需有 Windows 音频设备及可运行的 FFmpeg，默认不运行：
+原生音频冒烟会播放轻声音调，需有 Windows/macOS/Linux 音频输出设备，MP3 测试另需 FFmpeg，默认不运行：
 
 ```powershell
 $env:NEIROHA_AUDIO_SMOKE = '1'
@@ -77,6 +85,78 @@ Remove-Item Env:NEIROHA_AUDIO_SMOKE
 ```
 
 十二组上游分角评测保留来源与 Apache-2.0 许可证。当前 fixture 测试验证原文和标注数据的确定性约束，不代表真实模型归属准确率。
+
+跨平台真实测试入口（从仓库根目录执行，自动读取本地 `.env`，不执行其中命令）：
+
+```bash
+dart scripts/tools/run_live_tests.dart streaming --output .dart_tool/live-check/streaming
+dart scripts/tools/run_live_tests.dart speech --output .dart_tool/live-check/speech
+dart scripts/tools/run_live_tests.dart roles --output .dart_tool/live-check/roles
+dart scripts/tools/evaluate_role_assignments.dart .dart_tool/live-check/roles .dart_tool/live-check/roles/report.md
+```
+
+支持 `OPENAI_TEST_API_KEY`、`OPENAI_API_KEY`、`OPENAI_KEY`（按此顺序取非空值），只传给子进程并脱敏其输出，不写入报告。分角默认使用 `gpt-6-luna`，可用 `--model`、`--cases id1,id2` 缩小运行范围；总上限 72 次结构化调用。`roles --replay --output 已有目录` 不需要 key。真实推理时应使用新目录；已有完整用例会复用捕获并明确提示，不代表一次新推理。Windows PowerShell 入口继续保留。
+
+角色运行器和评分器均支持 `--fixtures scripts/tests/fixtures/role_holdout` 选择新增留出集。模型、协议、参数、skill SHA、分段版本、usage 与阶段耗时进入捕获；金标只在本地评分。留出集三轮对照是功能验证，更多题材和长章节的效果验收仍需继续。
+
+## P1 局部工具校对与补人/合并
+
+在小说“角色校对 → AI 分析 → 局部工具校对”中使用同一分析连接/模型（任务配置中的分角设置优先）。选中句子后默认只查当前片段，也可切换到本章疑点，最多 8 段/1,500 UTF-16 单位；长混段请先用正文结构工具拆开。校对独立按需运行，不会在普通分角的每个批次追加付费调用。
+
+每轮最多 3 次模型调用、20,000 token 预算、6 次本地读取、8 条提案，单次输出上限 1,600 tokens。模型可读前后两段、在本章做字面搜索、查询本作品人物，以及提出标签修改、补人、合并或结束。查询结果只在输入字节预算内发送；超限停止，不隐式增大预算。每次发送前持久化调用数与保守 token 预留；正整数 usage 返回后对账，失败/取消时未知用量保留。暂停/恢复共享原预算；新一轮是明确的新付费任务。
+
+提案持久化，关闭再开仍可审阅。勾选默认清空；依赖 `new:<key>` 的重标需要同时选补人。证据必须是模型实际看到的正文短引文，命名人物及别名需要字面证据。采纳在一个事务中完成，仍标为 AI inferred/conflict，不替代人工确认。正文、标注、角色、音色库/绑定或 skill 改变后拒绝旧提案。现有锁定/已确认内容受保护。
+
+合并会把来源人物的未确认标注迁到目标人物、并入别名和兼容绑定、删除来源身份；审阅框列出所有受影响片段。超过 30 条、包含人工保护或旧版本标注、群体与个人合并、声音/风格冲突，以及新增绑定会改变目标回退播放时，必须先用人工人物工具处理。应用不删除已有音频文件；缓存是否可复用仍由真实合成指纹判断。
+
+本地设置保留会话与动作记录，数据库租约阻止同章重复运行。暂不提供整次人物合并的一键撤销；请在勾选前检查证据及影响列表。内置 skill 已升级为 1.3.0 七阶段内容指纹，旧分析检查点须重启，已有人工标注保留。
+
+真实微型测试需显式运行，读取本地 `.env`，默认两个短样本总上限 6 次调用/40,000 保守预算 tokens；不会重跑十二组全文。另选 `--cases merge` 仅单目标、最多 1 次；每次命令是独立预算，运行多个命令时须累计成本。
+
+```bash
+dart scripts/tools/run_live_tests.dart review --model gpt-6-luna --output .dart_tool/review-check
+dart scripts/tools/evaluate_role_review.dart .dart_tool/review-check/capture.json
+```
+
+报告按带金标范围统计改对/改坏/净收益、人物召回/重复、送审精确率/召回率、用量及耗时，未做的多轮一致率显示 null。微型用例的初始错标由测试植入，金标不发送给模型；它验证补人/合并链路，不代表完整小说准确率。详情见 [评测标准](../skills/novel-role-assign/EVALUATION.md)。
+
+## 可编辑的分角色配置
+
+打开“设置 → 分角色 AI”。内置默认模型为 `gpt-6-luna`，可选择默认连接、编辑模型并复制出多个配置，保存后启用。小说阅读器与长文本入口共用；作品的专属任务设置及入口手动选择优先。默认模型用于新任务，暂停任务仍按记录的连接/模型恢复。
+
+七个提示阶段分别为人物规划、批次标注、疑点复核、工具校对、反馈重规划、音色选角和语气建议。当前 Flutter 客户端用 Dart 状态机执行这些节点；语义分段、数据库保护和确定性验证继续由程序执行。提示词编译打包在 `assets/skills/novel-role-assign/SKILL.md`，用户覆盖保存于本地设置，不修改应用资源。配置数量最多 20，每个阶段最多 16,000 UTF-16 单位；实际任务还有独立输入/调用预算。
+
+“还原此阶段提示词”清除当前阶段覆盖，再保存生效；“一键还原当前配置”立即恢复该配置的内置提示词、默认模型及入口连接规则并保存，保留其他配置。切换配置或修改提示词会改变有效 skill 指纹；进行中的小说/工具校对收到配置变更会取消，旧检查点与旧提案不能静默套用。
+
+## 长文本自动分角色
+
+在长文本项目的脚本工具栏点击“AI 自动分角色”，填写配音意图并分析。例如同一段嵌套故事，可选择“全部引用由现场讲述者朗读”，也可选择“广播剧演绎，内层直接引语另分角色”。用户意图进入规划、标注与复核，正文始终按原文 UTF-16 分区。
+
+分析在临时内存工作区复用小说人物规划、语义分段、疑点检测与 Reviewer，不创建持久化阅读器工程。最多 360 个语义片段、64,000 UTF-16 单位、40 次调用；可取消，不会触发音频生成。先预览逐段人物/类别/证据，再按人物选择本音色库的音色（同名唯一匹配可预填），未分配音色保留待选。
+
+点击“应用分角与音色”才一次事务替换当前分段并写入人物标签，之后使用原有逐句/批量生成。原正文保持不变、旧音频文件保留。正文、分段、音色库或提示词变化后拒绝旧分析；已有时间线片段时拒绝覆盖，先处理引用。生成列表显示人物标签；AI inferred/conflict 信息保留在分析记录中，不冒充人工确认。
+
+## 扩大分角质量评测与费用账本
+
+`run_role_quality.dart` 固定使用 `gpt-6-luna`，冻结 skill 和 21 组原文/金标，分别运行基线/候选各三轮。六组新增原创样本含台本、混合语言、身份揭晓、心理/信件和两篇跨批次长章节；不把金标发给模型。已有完成捕获复用，失效配置拒绝混跑。
+
+```bash
+dart scripts/tools/run_role_quality.dart --variant baseline --skill-file scripts/tests/fixtures/role_skill_history/SKILL.md --runs 3
+dart scripts/tools/run_role_quality.dart --variant candidate --skill-file assets/skills/novel-role-assign/SKILL.md --runs 3
+dart scripts/tools/evaluate_role_quality.dart .dart_tool/role-quality-2026-11-17
+```
+
+所有矩阵与额外意图测试共用 `.dart_tool/role-quality-2026-11-17/budget.json` 的 50 美元上限。调用前按 UTF-8 输入字节、schema、输出上限和余量保守预留，再按返回 usage 对账；失败或中断的未知用量不退款。并发进程用阻塞文件锁；价格守门按每百万总 tokens 2 美元计算，高于本轮核对的标准 Luna 文本价格。另列已知 usage 的标准价格上界估算，不能替代服务商账单。程序不自动切换昂贵模型。
+
+传输失败的指标与原始输出在重启前复制到 `failed-attempts/`。再次显式启动同一矩阵时，先验证原文、模型和 skill 指纹，离线重建成功阶段，再在共享预算内继续；纯 `roles --replay` 仍绝不回退到联网。中断时需等旧进程结束，再续跑同一目录。
+
+测试进程可显式设置 `NEIROHA_EVAL_PROXY=http://127.0.0.1:端口` 使用现有本地代理，不修改系统或应用网络设置。额外的同文不同配音意图真实测试也需启用共享账本：
+
+```bash
+NEIROHA_EVAL_BUDGET_FILE=.dart_tool/role-quality-2026-11-17/budget.json dart scripts/tools/run_live_tests.dart text-roles --model gpt-6-luna --output .dart_tool/text-intent
+```
+
+结果同时记录完成率、配对数、严格类别/人物分数、人物召回/重复、Reviewer 改对/改坏、抽查集合精确率/召回率、三轮一致率及 tokens/耗时。失败单列；无分母为 null。嵌套引语的表演策略差异保留原始严格分数，不通过改金标或事后改名掩盖。参考本轮读取的 [旧项目节点与 skill 快照](https://github.com/Moeary/CosyVoiceDesktop/tree/df564890eb1cffb42bd87ab7cd2c2aa1f13e9ad0/core/role_agent)。
 
 ## 后端能力声明
 

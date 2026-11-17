@@ -106,6 +106,9 @@ App data lives in `~/Library/Application Support/com.neiroha.neiroha/`. Install 
 - After changing `lib/l10n/app_en.arb` / `app_zh.arb`, run `flutter gen-l10n`.
 - macOS builds need Xcode and CocoaPods. `FLUTTER_XCODE_ARCHS=arm64 flutter build macos --release` (or `x86_64`), then `bash scripts/tools/package_macos_dmg.sh Release arm64 dist/Neiroha.dmg` thins the bundle to that architecture, checks the signature and builds the DMG; `bash scripts/tools/smoke_test_macos_dmg.sh dist/Neiroha.dmg arm64` launches it as a quick check.
 - `flutter analyze` and `flutter test scripts/tests`. The loudness and merge tests use a real FFmpeg and are skipped when `ffmpeg` is not on `PATH`.
+- Unit/protocol tests run in Windows, macOS and Linux CI with mocked media channels. Set `NEIROHA_AUDIO_SMOKE=1` to opt into native playback with an audio output device; PCM needs no FFmpeg, while the MP3 encoding check skips separately if FFmpeg is missing.
+- Android capability contracts and an ARM64 APK compile check also run on ordinary pushes/PRs, hosted on Ubuntu. Universal/split APK builds and release APK workflows remain in place; emulator/device acceptance is tracked separately.
+- Cross-platform live API launcher: `dart scripts/tools/run_live_tests.dart streaming` (3 playback/cancellation checks), `dart scripts/tools/run_live_tests.dart speech` (complete synthesis), or `dart scripts/tools/run_live_tests.dart roles` (12 role cases, at most 72 structured calls). It reads the local `.env` and redacts output. Use `--output` for a fresh capture directory; `roles --replay` replays existing captures without inference requests.
 - `analysis_options.yaml` excludes `build/` and the platform folders (recent Flutter versions add this block automatically), so the generated plugin sources there are not analyzed.
 
 ## Project Links
@@ -122,9 +125,16 @@ Assets are grouped under `assets/todo`, `assets/icon`, `assets/images`, `assets/
 
 The first two skills are [external-agent dubbing](assets/skills/neiroha-dubbing/SKILL.md)
 and [internal novel role assignment](assets/skills/novel-role-assign/SKILL.md), each
-with an `EVALUATION.md`. The application loads the internal skill's five stages
+with an `EVALUATION.md`. The application loads the internal skill's seven stages
 and records its version and SHA-256 in checkpoints. A changed skill requires a
 new analysis; legacy captures remain explicitly unversioned regression references.
+
+**Settings → Role assignment AI** provides a `gpt-6-luna` default, multiple profiles,
+per-stage prompt editing, duplication and one-click restoration. Novel review and
+long-text TTS share these profiles. In the long-text script toolbar, **AI role
+assignment** takes dubbing intent, previews exact-text roles and lets you choose
+voices before applying. The repeated 21-text quality matrix uses a shared USD 50
+guard; see the [development notes](assets/docs/streaming-and-roles-zh.md).
 
 ## User Agreement & Disclaimer
 

@@ -43,8 +43,11 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Check handwritten code size
+        run: dart scripts/tools/check_code_size.dart
+
       - name: Analyze
         run: flutter analyze
 
       - name: Test
-        run: flutter test
+        run: flutter test scripts/tests

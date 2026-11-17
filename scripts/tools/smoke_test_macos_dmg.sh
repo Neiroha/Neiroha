@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Launch the app shipped in a DMG and check that it starts and stays up.
 #
-#   tool/smoke_test_macos_dmg.sh <Neiroha.dmg> <arm64|x86_64> [seconds]
+#   scripts/tools/smoke_test_macos_dmg.sh <Neiroha.dmg> <arm64|x86_64> [seconds]
 #
 # Run on a Mac of the given architecture (CI uses native runners). Checks:
 #   * the main executable is built for exactly that architecture;

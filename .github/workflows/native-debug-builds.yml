@@ -301,11 +301,11 @@ jobs:
       - name: Package DMG
         run: |
           dmg="dist/neiroha-macOS-${{ matrix.asset }}-${BUILD_VERSION}-dev.dmg"
-          tool/package_macos_dmg.sh Release "${{ matrix.arch }}" "$dmg"
+          bash scripts/tools/package_macos_dmg.sh Release "${{ matrix.arch }}" "$dmg"
           (cd dist && shasum -a 256 neiroha-macOS-*.dmg > "SHA256SUMS-macOS-${{ matrix.asset }}-debug.txt")
 
       - name: Smoke test DMG
-        run: tool/smoke_test_macos_dmg.sh dist/neiroha-macOS-*.dmg "${{ matrix.arch }}"
+        run: bash scripts/tools/smoke_test_macos_dmg.sh dist/neiroha-macOS-*.dmg "${{ matrix.arch }}"
 
       - name: Upload macOS DMG
         uses: actions/upload-artifact@v4

@@ -337,10 +337,10 @@ jobs:
         run: flutter build macos --release --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER"
 
       - name: Package DMG
-        run: tool/package_macos_dmg.sh Release "${{ matrix.arch }}" "dist/neiroha-macOS-${{ matrix.asset }}-${ASSET_VERSION}.dmg"
+        run: bash scripts/tools/package_macos_dmg.sh Release "${{ matrix.arch }}" "dist/neiroha-macOS-${{ matrix.asset }}-${ASSET_VERSION}.dmg"
 
       - name: Smoke test DMG
-        run: tool/smoke_test_macos_dmg.sh "dist/neiroha-macOS-${{ matrix.asset }}-${ASSET_VERSION}.dmg" "${{ matrix.arch }}"
+        run: bash scripts/tools/smoke_test_macos_dmg.sh "dist/neiroha-macOS-${{ matrix.asset }}-${ASSET_VERSION}.dmg" "${{ matrix.arch }}"
 
       - name: Attest macOS provenance
         uses: actions/attest-build-provenance@v2

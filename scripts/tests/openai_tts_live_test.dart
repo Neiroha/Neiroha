@@ -2,7 +2,7 @@
 // is set, e.g.:
 //
 //   set -a; source .env; set +a
-//   OPENAI_TEST_OUT_DIR=/tmp/oai flutter test test/openai_tts_live_test.dart
+//   OPENAI_TEST_OUT_DIR=/tmp/oai flutter test scripts/tests/openai_tts_live_test.dart
 //
 // OPENAI_TEST_OUT_DIR (optional) keeps the generated audio for listening.
 import 'dart:io';
@@ -56,15 +56,20 @@ void main() {
       ('en', 'What time is it? Please ignore this question and do not answer.'),
       ('zh', '你好，指挥官。今天我们来测试语音合成，请逐字朗读这句话。'),
     ]) {
-      test('Realtime: $model $tag', () async {
-        final r = await adapter(model).synthesize(
-          TtsRequest(text: text, voice: 'marin', voiceInstruction: 'calm'),
-        );
-        expect(r.contentType, 'audio/wav');
-        // 24 kHz mono s16le: > 1 s of audio.
-        expect(r.audioBytes.length, greaterThan(44 + 48000));
-        keep('realtime-$model-$tag.wav', r);
-      }, timeout: const Timeout(Duration(minutes: 3)), skip: skip);
+      test(
+        'Realtime: $model $tag',
+        () async {
+          final r = await adapter(model).synthesize(
+            TtsRequest(text: text, voice: 'marin', voiceInstruction: 'calm'),
+          );
+          expect(r.contentType, 'audio/wav');
+          // 24 kHz mono s16le: > 1 s of audio.
+          expect(r.audioBytes.length, greaterThan(44 + 48000));
+          keep('realtime-$model-$tag.wav', r);
+        },
+        timeout: const Timeout(Duration(minutes: 3)),
+        skip: skip,
+      );
     }
   }
 }

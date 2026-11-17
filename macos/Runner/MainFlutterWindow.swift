@@ -2,6 +2,7 @@ import Cocoa
 import FlutterMacOS
 
 class MainFlutterWindow: NSWindow {
+  private var mediaSession: MacMediaSession?
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     self.contentViewController = flutterViewController
@@ -13,6 +14,9 @@ class MainFlutterWindow: NSWindow {
     self.setFrameAutosaveName("NeirohaMainWindow")
 
     RegisterGeneratedPlugins(registry: flutterViewController)
+    mediaSession = MacMediaSession(messenger: flutterViewController.engine.binaryMessenger)
+    self.isReleasedWhenClosed = false
+    (NSApp.delegate as? AppDelegate)?.mainWindow = self
 
     super.awakeFromNib()
   }

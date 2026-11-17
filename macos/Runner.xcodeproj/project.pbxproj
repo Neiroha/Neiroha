@@ -30,6 +30,7 @@
 		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
 		B783665BD802594BF8499B40 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01C70EB785B0767AC80DE53F /* Pods_Runner.framework */; };
 		EFC34F6C01EDC200B3DAF7ED /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4690E0E3AECEBBC98F748E36 /* Pods_RunnerTests.framework */; };
+		A11517170000000000000001 /* MacMediaSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11517170000000000000002 /* MacMediaSession.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -90,6 +91,7 @@
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		C2AECD53802E491BAB5FF619 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		C6E7D2C43D49450B9F081245 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
+		A11517170000000000000002 /* MacMediaSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacMediaSession.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -181,6 +183,7 @@
 			children = (
 				33CC10F02044A3C60003C045 /* AppDelegate.swift */,
 				33CC11122044BFA00003C045 /* MainFlutterWindow.swift */,
+				A11517170000000000000002 /* MacMediaSession.swift */,
 				33E51913231747F40026EE4D /* DebugProfile.entitlements */,
 				33E51914231749380026EE4D /* Release.entitlements */,
 				33CC11242044D66E0003C045 /* Resources */,
@@ -448,6 +451,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */,
+				A11517170000000000000001 /* MacMediaSession.swift in Sources */,
 				33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */,
 				335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */,
 			);

@@ -13,6 +13,7 @@ import 'general_settings.dart';
 import 'media_settings.dart';
 import 'storage_settings.dart';
 import 'task_settings.dart';
+import 'role_skill_settings.dart';
 
 const double _settingsContentMaxWidth = 920;
 
@@ -211,6 +212,7 @@ class SettingsSectionContent extends ConsumerWidget {
         HealthCheckTimeoutSettingsCard(),
       ],
       SettingsSection.tasks => const <Widget>[TaskMonitorSettingsCard()],
+      SettingsSection.roleAi => const <Widget>[RoleSkillSettingsCard()],
       SettingsSection.api => const <Widget>[ApiServerSettingsCard()],
       SettingsSection.storage => <Widget>[
         StorageSettingsCard(startup: ref.watch(storageStartupProvider)),

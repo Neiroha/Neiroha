@@ -79,12 +79,14 @@ class PhaseScriptWorkspace extends ConsumerStatefulWidget {
   final ScriptHighlightController controller;
   final VoidCallback onScriptChanged;
   final void Function(SplitRule rule) onAutoSplit;
+  final Widget? roleAction;
 
   const PhaseScriptWorkspace({
     super.key,
     required this.controller,
     required this.onScriptChanged,
     required this.onAutoSplit,
+    this.roleAction,
   });
 
   @override
@@ -167,6 +169,7 @@ class _PhaseScriptWorkspaceState extends ConsumerState<PhaseScriptWorkspace> {
             spacing: 12,
             runSpacing: 6,
             children: [
+              if (widget.roleAction != null) widget.roleAction!,
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

@@ -62,6 +62,7 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
     _lifecycle = AppLifecycleListener(
       onExitRequested: () async {
         ref.read(roleAnalysisServiceProvider).dispose();
+        ref.read(roleReviewServiceProvider).dispose();
         await ref.read(playbackNotifierProvider.notifier).stop();
         await ref.read(apiServerProvider).stop();
         return AppExitResponse.exit;

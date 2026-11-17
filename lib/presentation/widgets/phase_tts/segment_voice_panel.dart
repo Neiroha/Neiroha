@@ -3,9 +3,9 @@ import 'package:neiroha/presentation/widgets/live_sentence_preview_button.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'speaker_label.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
 import 'package:neiroha/domain/voice_capabilities.dart';

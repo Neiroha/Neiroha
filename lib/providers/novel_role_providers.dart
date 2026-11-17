@@ -1,4 +1,8 @@
+import 'dart:convert';
 import 'model_capability_providers.dart';
+import 'package:neiroha/data/services/novel/role_skill_profiles_repository.dart';
+import 'package:neiroha/data/services/novel/role_review_service.dart';
+import 'package:neiroha/domain/novel/role_review.dart';
 import 'package:neiroha/data/services/novel/role_analysis_service.dart';
 import 'package:neiroha/data/services/novel/role_analysis_checkpoint.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +16,13 @@ import 'package:neiroha/data/services/novel/character_split_service.dart';
 import 'package:neiroha/data/services/novel/role_direction_service.dart';
 import 'package:neiroha/data/services/capabilities/task_profile_repository.dart';
 import 'package:neiroha/data/services/novel/novel_streaming_service.dart';
+
+final roleSkillProfilesRepositoryProvider = Provider(
+  (ref) => RoleSkillProfilesRepository(ref.watch(databaseProvider)),
+);
+final roleSkillConfigurationProvider = StreamProvider(
+  (ref) => ref.watch(roleSkillProfilesRepositoryProvider).watch(),
+);
 
 final novelStreamingServiceProvider = Provider(
   (ref) => NovelStreamingService(
@@ -66,6 +77,14 @@ final roleAnalysisServiceProvider = Provider((ref) {
     capabilities: ref.watch(capabilityRepositoryProvider),
   );
   ref.onDispose(service.dispose);
+  ref.listen(roleSkillConfigurationProvider, (before, after) {
+    if (before?.value != null &&
+        after.value != null &&
+        jsonEncode(before!.value!.toJson()) !=
+            jsonEncode(after.value!.toJson())) {
+      service.dispose();
+    }
+  });
   return service;
 });
 final roleAnalysisCheckpointProvider =
@@ -76,5 +95,32 @@ final roleAnalysisCheckpointProvider =
       (ref, key) => ref
           .watch(roleAnalysisServiceProvider)
           .checkpoints
+          .watch(key.projectId, key.chapterId),
+    );
+
+final roleReviewServiceProvider = Provider((ref) {
+  final service = RoleReviewService(
+    ref.watch(databaseProvider),
+    ref.watch(ttsQueueServiceProvider),
+  );
+  ref.onDispose(service.dispose);
+  ref.listen(roleSkillConfigurationProvider, (before, after) {
+    if (before?.value != null &&
+        after.value != null &&
+        jsonEncode(before!.value!.toJson()) !=
+            jsonEncode(after.value!.toJson())) {
+      service.dispose();
+    }
+  });
+  return service;
+});
+final roleReviewSessionProvider =
+    StreamProvider.family<
+      RoleReviewSession?,
+      ({String projectId, String chapterId})
+    >(
+      (ref, key) => ref
+          .watch(roleReviewServiceProvider)
+          .repository
           .watch(key.projectId, key.chapterId),
     );

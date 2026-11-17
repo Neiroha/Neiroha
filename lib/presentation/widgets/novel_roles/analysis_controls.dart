@@ -1,6 +1,10 @@
 import 'role_labels.dart';
 import 'direction_controls.dart';
 import 'task_profiles_dialog.dart';
+import 'scene_summary.dart';
+import 'tool_review_controls.dart';
+import 'package:neiroha/domain/novel/role_skill_profile.dart';
+import 'package:neiroha/domain/novel/role_models.dart';
 import 'package:neiroha/domain/capabilities/model_capability.dart';
 import 'package:neiroha/presentation/widgets/model_capability_picker.dart';
 import 'package:flutter/material.dart';
@@ -15,10 +19,12 @@ class NovelRoleAnalysisControls extends ConsumerStatefulWidget {
     required this.projectId,
     required this.chapterId,
     required this.beforeChange,
+    this.selectedSegmentId,
   });
   final String projectId;
   final String chapterId;
   final VoidCallback beforeChange;
+  final String? selectedSegmentId;
   @override
   ConsumerState<NovelRoleAnalysisControls> createState() =>
       _NovelRoleAnalysisControlsState();
@@ -41,6 +47,9 @@ class _NovelRoleAnalysisControlsState
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final providers = ref.watch(ttsProvidersStreamProvider).value ?? [];
+    final skillConfig = ref.watch(roleSkillConfigurationProvider);
+    final defaults =
+        (skillConfig.value ?? const RoleSkillConfiguration()).active;
     final saved = ref.watch(
       roleAnalysisCheckpointProvider((
         projectId: widget.projectId,
@@ -48,13 +57,27 @@ class _NovelRoleAnalysisControlsState
       )),
     );
     if (providers.isEmpty) return Text(l.roleAnalysisOffline);
-    final selected = providers.any((p) => p.id == _providerId)
-        ? _providerId!
+    final preferred = _providerId ?? defaults.providerId;
+    final selected = providers.any((p) => p.id == preferred)
+        ? preferred!
         : providers.first.id;
     final checkpoint = saved.value;
-    final running =
+    ref.watch(
+      roleReviewSessionProvider((
+        projectId: widget.projectId,
+        chapterId: widget.chapterId,
+      )),
+    );
+    final roles =
+        ref.watch(novelRoleSnapshotProvider(widget.projectId)).value ??
+        const NovelRoleSnapshot();
+    final analysisRunning =
         _busy ||
         ref.read(roleAnalysisServiceProvider).isRunning(widget.projectId);
+    final running =
+        skillConfig.isLoading ||
+        analysisRunning ||
+        ref.read(roleReviewServiceProvider).isRunning(widget.projectId);
     return ExpansionTile(
       tilePadding: EdgeInsets.zero,
       title: Text(l.roleAnalysisStart),
@@ -89,10 +112,11 @@ class _NovelRoleAnalysisControlsState
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             labelText: l.roleAnalysisModel,
+            hintText: defaults.model,
             suffixIcon: IconButton(
               tooltip: l.modelDiscover,
               icon: const Icon(Icons.manage_search),
-              onPressed: _busy
+              onPressed: running
                   ? null
                   : () async {
                       final value = await showDialog<String>(
@@ -122,7 +146,18 @@ class _NovelRoleAnalysisControlsState
           chapterId: widget.chapterId,
           provider: providers.firstWhere((p) => p.id == selected),
           model: _model.text.trim().isEmpty
-              ? checkpoint?.model ?? ''
+              ? checkpoint?.model ?? defaults.model
+              : _model.text.trim(),
+          disabled: running,
+          beforeChange: widget.beforeChange,
+        ),
+        NovelToolReviewControls(
+          projectId: widget.projectId,
+          chapterId: widget.chapterId,
+          selectedSegmentId: widget.selectedSegmentId,
+          provider: providers.firstWhere((p) => p.id == selected),
+          model: _model.text.trim().isEmpty
+              ? checkpoint?.model ?? defaults.model
               : _model.text.trim(),
           disabled: running,
           beforeChange: widget.beforeChange,
@@ -139,6 +174,10 @@ class _NovelRoleAnalysisControlsState
             checkpoint!.error!,
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
+        if (checkpoint != null &&
+            (checkpoint.scene.evidence.isNotEmpty ||
+                checkpoint.scene.firstPersonId != null))
+          NovelRoleSceneSummary(scene: checkpoint.scene, roles: roles),
         const SizedBox(height: 8),
         FilledButton(
           onPressed: running ? null : () => _run(restart: true),
@@ -149,7 +188,7 @@ class _NovelRoleAnalysisControlsState
             onPressed: running ? null : () => _run(resume: true),
             child: Text(l.roleAnalysisResume),
           ),
-        if (running)
+        if (analysisRunning)
           OutlinedButton(
             onPressed: () =>
                 ref.read(roleAnalysisServiceProvider).pause(widget.projectId),
@@ -161,7 +200,7 @@ class _NovelRoleAnalysisControlsState
           decoration: InputDecoration(labelText: l.roleAnalysisFeedback),
         ),
         TextButton(
-          onPressed: _busy
+          onPressed: running
               ? null
               : () =>
                     _run(resume: checkpoint != null, feedback: _feedback.text),
@@ -185,10 +224,25 @@ class _NovelRoleAnalysisControlsState
     if (!mounted) return;
     final provider =
         providers
-            .where((p) => p.id == (checkpoint?.providerId ?? _providerId))
+            .where(
+              (p) =>
+                  p.id ==
+                  (checkpoint?.providerId ??
+                      _providerId ??
+                      ref
+                          .read(roleSkillConfigurationProvider)
+                          .value
+                          ?.active
+                          .providerId),
+            )
             .firstOrNull ??
         providers.first;
-    final model = checkpoint?.model ?? _model.text.trim();
+    final model =
+        checkpoint?.model ??
+        (_model.text.trim().isNotEmpty
+            ? _model.text.trim()
+            : ref.read(roleSkillConfigurationProvider).value?.active.model ??
+                  'gpt-6-luna');
     widget.beforeChange();
     setState(() => _busy = true);
     try {

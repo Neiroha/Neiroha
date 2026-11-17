@@ -4933,6 +4933,288 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Live preview and save complete audio'**
   String get uiLiveSentencePreview;
+
+  /// No description provided for @roleSceneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scene understanding'**
+  String get roleSceneTitle;
+
+  /// No description provided for @roleSceneFirstPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'First-person narrator'**
+  String get roleSceneFirstPerson;
+
+  /// No description provided for @roleScenePresent.
+  ///
+  /// In en, this message translates to:
+  /// **'Characters in the scene'**
+  String get roleScenePresent;
+
+  /// No description provided for @roleSceneNested.
+  ///
+  /// In en, this message translates to:
+  /// **'Quoted storytellers'**
+  String get roleSceneNested;
+
+  /// No description provided for @roleSceneHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Check these identities with the cast. Use feedback and re-plan to correct the scene before continuing.'**
+  String get roleSceneHelp;
+
+  /// No description provided for @roleToolReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Local tool review'**
+  String get roleToolReview;
+
+  /// No description provided for @roleToolBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Per session: up to 3 calls, 20,000 budgeted tokens, 6 local reads, 8 proposals, and 1,600 output tokens per call. Unknown usage stays reserved; resuming keeps the budget.'**
+  String get roleToolBudget;
+
+  /// No description provided for @roleToolCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current segment only'**
+  String get roleToolCurrent;
+
+  /// No description provided for @roleToolDoubts.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapter doubts (up to 8 segments)'**
+  String get roleToolDoubts;
+
+  /// No description provided for @roleToolStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new local review'**
+  String get roleToolStart;
+
+  /// No description provided for @roleToolReviewProposals.
+  ///
+  /// In en, this message translates to:
+  /// **'Review character and label proposals'**
+  String get roleToolReviewProposals;
+
+  /// No description provided for @roleToolApplyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select proposals to apply. Accepted labels remain AI inferred. Text, locked and confirmed labels are protected. Merging moves the listed labels and compatible voice bindings, then removes the source identity.'**
+  String get roleToolApplyHint;
+
+  /// No description provided for @roleToolDependency.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the new character proposal required by the label change.'**
+  String get roleToolDependency;
+
+  /// No description provided for @roleToolAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add character'**
+  String get roleToolAdd;
+
+  /// No description provided for @roleToolPatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Change label'**
+  String get roleToolPatch;
+
+  /// No description provided for @roleToolMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge identities'**
+  String get roleToolMerge;
+
+  /// No description provided for @roleToolReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready for review'**
+  String get roleToolReady;
+
+  /// No description provided for @roleToolBudgetExhausted.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget exhausted'**
+  String get roleToolBudgetExhausted;
+
+  /// No description provided for @roleToolApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected proposals applied'**
+  String get roleToolApplied;
+
+  /// No description provided for @roleToolEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No changes proposed'**
+  String get roleToolEmpty;
+
+  /// No description provided for @roleToolEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Text evidence'**
+  String get roleToolEvidence;
+
+  /// No description provided for @roleToolAffected.
+  ///
+  /// In en, this message translates to:
+  /// **'Affected segments'**
+  String get roleToolAffected;
+
+  /// No description provided for @roleToolReserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget usage (including unknown reservations)'**
+  String get roleToolReserved;
+
+  /// No description provided for @settingsRoleAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Role assignment AI'**
+  String get settingsRoleAi;
+
+  /// No description provided for @settingsRoleAiDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared models, profiles and stage prompts for novels and long text'**
+  String get settingsRoleAiDescription;
+
+  /// No description provided for @roleSkillSettingsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a profile and edit each stage prompt. Novel review and long-text role assignment share it; project task settings and explicit model choices take priority. Defaults ship with the app. Restoring the current profile saves immediately. Prompt changes require unfinished analyses to restart.'**
+  String get roleSkillSettingsHint;
+
+  /// No description provided for @roleSkillProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Role profile'**
+  String get roleSkillProfile;
+
+  /// No description provided for @roleSkillDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in default profile'**
+  String get roleSkillDefault;
+
+  /// No description provided for @roleSkillClone.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate as new profile'**
+  String get roleSkillClone;
+
+  /// No description provided for @roleSkillRestoreProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore current profile'**
+  String get roleSkillRestoreProfile;
+
+  /// No description provided for @roleSkillProfileName.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile name'**
+  String get roleSkillProfileName;
+
+  /// No description provided for @roleSkillUseEntryConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the connection selected in the workspace'**
+  String get roleSkillUseEntryConnection;
+
+  /// No description provided for @roleSkillNode.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis stage'**
+  String get roleSkillNode;
+
+  /// No description provided for @roleSkillPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Stage prompt'**
+  String get roleSkillPrompt;
+
+  /// No description provided for @roleSkillRestoreNode.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore this stage prompt'**
+  String get roleSkillRestoreNode;
+
+  /// No description provided for @roleSkillSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and activate profiles'**
+  String get roleSkillSave;
+
+  /// No description provided for @phaseAutoRoles.
+  ///
+  /// In en, this message translates to:
+  /// **'AI role assignment'**
+  String get phaseAutoRoles;
+
+  /// No description provided for @phaseRoleIntent.
+  ///
+  /// In en, this message translates to:
+  /// **'Dubbing intent (optional)'**
+  String get phaseRoleIntent;
+
+  /// No description provided for @phaseRoleIntentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example: keep the exact text, give characters distinct voices, and keep story quotations with the storyteller.'**
+  String get phaseRoleIntentHint;
+
+  /// No description provided for @phaseRoleReviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis leaves the project untouched. Review characters, exact text and voices before applying. Unassigned voices remain pending. Applying replaces the current segments; existing audio remains on disk.'**
+  String get phaseRoleReviewHint;
+
+  /// No description provided for @phaseRoleAnalyze.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyze and preview'**
+  String get phaseRoleAnalyze;
+
+  /// No description provided for @phaseRoleApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply roles and voices'**
+  String get phaseRoleApply;
+
+  /// No description provided for @phaseRoleUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unresolved speaker'**
+  String get phaseRoleUnknown;
+
+  /// No description provided for @phaseRoleNarrator.
+  ///
+  /// In en, this message translates to:
+  /// **'Default narration voice'**
+  String get phaseRoleNarrator;
+
+  /// No description provided for @phaseRoleNoVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a voice later'**
+  String get phaseRoleNoVoice;
+
+  /// No description provided for @phaseRoleStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'See the task monitor for analysis progress. Up to 40 calls, cancellable during analysis. Audio synthesis starts separately.'**
+  String get phaseRoleStatus;
+
+  /// No description provided for @phaseRoleStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Text, segments, voice bank or role configuration changed. Analyze again.'**
+  String get phaseRoleStale;
 }
 
 class _AppLocalizationsDelegate

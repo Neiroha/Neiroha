@@ -26,6 +26,11 @@ enum NavTab {
 
 enum SettingsSection {
   general(Icons.tune_rounded, 'General', 'Startup and workspace behavior'),
+  roleAi(
+    Icons.psychology_alt_rounded,
+    'Role assignment AI',
+    'Profiles, stage prompts and defaults',
+  ),
   tasks(
     Icons.task_alt_rounded,
     'Tasks',

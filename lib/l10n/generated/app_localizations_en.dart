@@ -2723,4 +2723,157 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get uiLiveSentencePreview => 'Live preview and save complete audio';
+
+  @override
+  String get roleSceneTitle => 'Scene understanding';
+
+  @override
+  String get roleSceneFirstPerson => 'First-person narrator';
+
+  @override
+  String get roleScenePresent => 'Characters in the scene';
+
+  @override
+  String get roleSceneNested => 'Quoted storytellers';
+
+  @override
+  String get roleSceneHelp =>
+      'Check these identities with the cast. Use feedback and re-plan to correct the scene before continuing.';
+
+  @override
+  String get roleToolReview => 'Local tool review';
+
+  @override
+  String get roleToolBudget =>
+      'Per session: up to 3 calls, 20,000 budgeted tokens, 6 local reads, 8 proposals, and 1,600 output tokens per call. Unknown usage stays reserved; resuming keeps the budget.';
+
+  @override
+  String get roleToolCurrent => 'Current segment only';
+
+  @override
+  String get roleToolDoubts => 'Chapter doubts (up to 8 segments)';
+
+  @override
+  String get roleToolStart => 'Start a new local review';
+
+  @override
+  String get roleToolReviewProposals => 'Review character and label proposals';
+
+  @override
+  String get roleToolApplyHint =>
+      'Select proposals to apply. Accepted labels remain AI inferred. Text, locked and confirmed labels are protected. Merging moves the listed labels and compatible voice bindings, then removes the source identity.';
+
+  @override
+  String get roleToolDependency =>
+      'Select the new character proposal required by the label change.';
+
+  @override
+  String get roleToolAdd => 'Add character';
+
+  @override
+  String get roleToolPatch => 'Change label';
+
+  @override
+  String get roleToolMerge => 'Merge identities';
+
+  @override
+  String get roleToolReady => 'Ready for review';
+
+  @override
+  String get roleToolBudgetExhausted => 'Budget exhausted';
+
+  @override
+  String get roleToolApplied => 'Selected proposals applied';
+
+  @override
+  String get roleToolEmpty => 'No changes proposed';
+
+  @override
+  String get roleToolEvidence => 'Text evidence';
+
+  @override
+  String get roleToolAffected => 'Affected segments';
+
+  @override
+  String get roleToolReserved =>
+      'Budget usage (including unknown reservations)';
+
+  @override
+  String get settingsRoleAi => 'Role assignment AI';
+
+  @override
+  String get settingsRoleAiDescription =>
+      'Shared models, profiles and stage prompts for novels and long text';
+
+  @override
+  String get roleSkillSettingsHint =>
+      'Choose a profile and edit each stage prompt. Novel review and long-text role assignment share it; project task settings and explicit model choices take priority. Defaults ship with the app. Restoring the current profile saves immediately. Prompt changes require unfinished analyses to restart.';
+
+  @override
+  String get roleSkillProfile => 'Role profile';
+
+  @override
+  String get roleSkillDefault => 'Built-in default profile';
+
+  @override
+  String get roleSkillClone => 'Duplicate as new profile';
+
+  @override
+  String get roleSkillRestoreProfile => 'Restore current profile';
+
+  @override
+  String get roleSkillProfileName => 'Profile name';
+
+  @override
+  String get roleSkillUseEntryConnection =>
+      'Use the connection selected in the workspace';
+
+  @override
+  String get roleSkillNode => 'Analysis stage';
+
+  @override
+  String get roleSkillPrompt => 'Stage prompt';
+
+  @override
+  String get roleSkillRestoreNode => 'Restore this stage prompt';
+
+  @override
+  String get roleSkillSave => 'Save and activate profiles';
+
+  @override
+  String get phaseAutoRoles => 'AI role assignment';
+
+  @override
+  String get phaseRoleIntent => 'Dubbing intent (optional)';
+
+  @override
+  String get phaseRoleIntentHint =>
+      'For example: keep the exact text, give characters distinct voices, and keep story quotations with the storyteller.';
+
+  @override
+  String get phaseRoleReviewHint =>
+      'Analysis leaves the project untouched. Review characters, exact text and voices before applying. Unassigned voices remain pending. Applying replaces the current segments; existing audio remains on disk.';
+
+  @override
+  String get phaseRoleAnalyze => 'Analyze and preview';
+
+  @override
+  String get phaseRoleApply => 'Apply roles and voices';
+
+  @override
+  String get phaseRoleUnknown => 'Unresolved speaker';
+
+  @override
+  String get phaseRoleNarrator => 'Default narration voice';
+
+  @override
+  String get phaseRoleNoVoice => 'Choose a voice later';
+
+  @override
+  String get phaseRoleStatus =>
+      'See the task monitor for analysis progress. Up to 40 calls, cancellable during analysis. Audio synthesis starts separately.';
+
+  @override
+  String get phaseRoleStale =>
+      'Text, segments, voice bank or role configuration changed. Analyze again.';
 }

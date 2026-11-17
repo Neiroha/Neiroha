@@ -47,8 +47,8 @@ part 'queries/storage.dart';
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
-
   AppDatabase.forTesting(super.e);
+  AppDatabase.temporary(super.e);
 
   @override
   int get schemaVersion => 33;

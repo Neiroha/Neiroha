@@ -52,6 +52,9 @@ class NovelRoleReviewPanel extends ConsumerWidget {
             key: ValueKey('$projectId:$chapterId'),
             projectId: projectId,
             chapterId: chapterId!,
+            selectedSegmentId: selected?.chapterId == chapterId
+                ? selected?.id
+                : null,
             beforeChange: beforeChange,
           ),
         NovelCharacterList(

@@ -147,7 +147,10 @@ void main() {
           },
         ),
       );
-      document = document.replaceFirst('1.0.0', '1.0.1');
+      document = document.replaceFirst(
+        RegExp(r'version: "\d+\.\d+\.\d+"'),
+        'version: "9.9.9"',
+      );
       await expectLater(
         director.apply(proposal, {character}),
         throwsStateError,

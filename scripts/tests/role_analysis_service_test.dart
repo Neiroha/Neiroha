@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:drift/drift.dart' show Value;
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -70,6 +71,69 @@ const _roster = {
 };
 
 void main() {
+  test(
+    'an anonymous first-person canonical identity is scoped to the scene, never a shared alias',
+    () async {
+      final database = db.AppDatabase.forTesting(NativeDatabase.memory());
+      await seedNovelFixture(database);
+      addTearDown(database.close);
+      final characters = CharacterRepository(database);
+      final service = RoleAnalysisService(
+        database,
+        characters,
+        AnnotationRepository(database),
+        TtsQueueService.instance,
+        loadSkill: loadTestRoleSkill,
+      );
+      addTearDown(service.dispose);
+      final provider = (await database.getAllProviders()).firstWhere(
+        (p) => p.id == 'test-provider',
+      );
+      await service.run(
+        projectId: 'book',
+        chapterId: 'book-chapter',
+        provider: provider,
+        model: 'fake',
+        maxCalls: 1,
+        client: _Llm(
+          (stage, input, token) async => {
+            'characters': [
+              {
+                'name': '我',
+                'aliases': ['我', '你'],
+                'description': '未具名叙述者',
+                'identityKind': 'anonymous',
+              },
+              {
+                'name': '你',
+                'aliases': <String>[],
+                'description': '不能创建的代词身份',
+                'identityKind': 'named',
+              },
+            ],
+            'scene': {
+              'firstPersonName': '我',
+              'presentCharacterNames': ['我'],
+              'nestedNarratorNames': <String>[],
+              'messageChannels': ['spoken'],
+              'evidence': '第一人称',
+            },
+          },
+        ),
+      );
+      final roles = await characters.load('book');
+      expect(roles.characters, hasLength(1));
+      expect(roles.characters.single.name, '我');
+      expect(roles.characters.single.aliases, isEmpty);
+      expect(
+        (await service.checkpoints.load(
+          'book',
+          'book-chapter',
+        ))!.scene.firstPersonId,
+        roles.characters.single.id,
+      );
+    },
+  );
   late db.AppDatabase database;
   late CharacterRepository characters;
   late AnnotationRepository annotations;
@@ -163,6 +227,14 @@ void main() {
       final role = await characters.saveCharacter(
         projectId: 'book',
         name: '林舟',
+      );
+      await database.insertNovelChapter(
+        const db.NovelChaptersCompanion(
+          id: Value('previous-chapter'),
+          projectId: Value('book'),
+          orderIndex: Value(-1),
+          title: Value('Previous'),
+        ),
       );
       await service.checkpoints.save(
         'book',

@@ -22,8 +22,7 @@ void main() {
       () {
         final text = data['text'] as String;
         final segments = splitNovelText(text);
-        String compact(String source) => source.replaceAll(RegExp(r'\s+'), '');
-        expect(compact(segments.map((s) => s.text).join()), compact(text));
+        expect(segments.map((s) => s.text).join(), text);
         for (final gold in data['gold'] as List) {
           expect(
             text.contains(gold['match'] as String),

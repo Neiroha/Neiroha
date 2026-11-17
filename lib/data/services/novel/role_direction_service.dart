@@ -13,12 +13,13 @@ import 'character_repository.dart';
 import 'novel_text_revision.dart';
 import 'role_analysis_protocol.dart';
 import 'role_skill_repository.dart';
+import 'role_skill_profiles_repository.dart';
 
 /// Bounded, opt-in director stages. A model proposes; the user chooses which
 /// entries to apply. Proposal signatures reject changes made during inference.
 class RoleDirectionService {
   RoleDirectionService(this.database, this.queue, {RoleSkillLoader? loadSkill})
-    : _loadSkill = loadSkill ?? RoleSkillRepository().load;
+    : _loadSkill = loadSkill ?? RoleSkillProfilesRepository(database).loadSkill;
   final db.AppDatabase database;
   final TtsQueueService queue;
   final RoleSkillLoader _loadSkill;

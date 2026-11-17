@@ -13,11 +13,13 @@ void main() {
     expect(
       segments.any(
         (segment) =>
-            segment.type == 'dialogue' && segment.text == '“好险好险，差点就成落汤鸡了……”',
+            segment.type == 'dialogue' &&
+            segment.text.trim() == '“好险好险，差点就成落汤鸡了……”',
       ),
       isTrue,
     );
-    expect(segments.first.text, '一。');
+    expect(segments.first.text.trim(), '一。');
+    expect(reconstructed, source);
   });
 
   test('splitNovelText marks English double quotes as dialogue', () {
@@ -74,7 +76,7 @@ void main() {
 
       expect(segments.any((segment) => segment.text == '”'), isFalse);
       expect(
-        segments.first.text.endsWith('？”'),
+        RegExp(r'？\s*”\s*$').hasMatch(segments.first.text),
         isTrue,
         reason: segments.map((segment) => '[${segment.text}]').join(' | '),
       );

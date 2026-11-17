@@ -13,7 +13,9 @@ class NovelRoleSkill {
     'reviewer',
     'caster',
     'director',
+    'tool_reviewer',
   ];
+  static const stages = [...requiredStages, 'replanner'];
   final String name;
   final String version;
   final String digest;
@@ -21,7 +23,30 @@ class NovelRoleSkill {
 
   String prompt(String stage) =>
       _prompts[stage] ??
+      (stage == 'replanner' ? _prompts['planner'] : null) ??
       (throw ArgumentError.value(stage, 'stage', 'Unknown role skill stage'));
+
+  NovelRoleSkill customize(String profileId, Map<String, String> overrides) {
+    for (final entry in overrides.entries) {
+      if (!stages.contains(entry.key) ||
+          entry.value.trim().isEmpty ||
+          entry.value.length > 16000) {
+        throw const FormatException('Invalid role prompt override.');
+      }
+    }
+    if (overrides.isEmpty && profileId == 'default') return this;
+    final prompts = {
+      for (final stage in stages) stage: overrides[stage] ?? prompt(stage),
+    };
+    return NovelRoleSkill._(
+      name,
+      version,
+      sha256
+          .convert(utf8.encode(jsonEncode([identity, profileId, prompts])))
+          .toString(),
+      Map.unmodifiable(prompts),
+    );
+  }
 
   Map<String, String> get identity => {
     'name': name,
@@ -57,7 +82,7 @@ class NovelRoleSkill {
     final prompts = <String, String>{};
     for (var i = 0; i < headings.length; i++) {
       final stage = headings[i].group(1)!;
-      if (!requiredStages.contains(stage)) continue;
+      if (!stages.contains(stage)) continue;
       if (prompts.containsKey(stage)) {
         throw FormatException('Duplicate role skill stage: $stage');
       }

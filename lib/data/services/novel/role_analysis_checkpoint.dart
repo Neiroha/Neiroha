@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/domain/novel/role_scene_state.dart';
 
 class RoleAnalysisCheckpoint {
   RoleAnalysisCheckpoint({
@@ -18,6 +19,10 @@ class RoleAnalysisCheckpoint {
     this.sceneSummary = '',
     this.error,
     this.feedback = '',
+    this.segmentationVersion = '',
+    this.scene = const RoleSceneState(),
+    this.reviewedSegments = 0,
+    this.reviewChanges = 0,
   });
   final String signature;
   final String providerId;
@@ -33,6 +38,10 @@ class RoleAnalysisCheckpoint {
   String sceneSummary;
   String? error;
   String feedback;
+  final String segmentationVersion;
+  RoleSceneState scene;
+  int reviewedSegments;
+  int reviewChanges;
 
   Map<String, Object?> toJson() => {
     'version': 1,
@@ -51,6 +60,10 @@ class RoleAnalysisCheckpoint {
     'sceneSummary': sceneSummary,
     'error': error,
     'feedback': feedback,
+    'segmentationVersion': segmentationVersion,
+    'scene': scene.toJson(),
+    'reviewedSegments': reviewedSegments,
+    'reviewChanges': reviewChanges,
   };
   factory RoleAnalysisCheckpoint.fromJson(Map<String, dynamic> json) {
     if (json['version'] != 1) {
@@ -71,6 +84,12 @@ class RoleAnalysisCheckpoint {
       sceneSummary: json['sceneSummary'] as String,
       error: json['error'] as String?,
       feedback: json['feedback'] as String? ?? '',
+      segmentationVersion: json['segmentationVersion'] as String? ?? '',
+      scene: RoleSceneState.fromJson(
+        (json['scene'] as Map?)?.cast<String, dynamic>() ?? {},
+      ),
+      reviewedSegments: json['reviewedSegments'] as int? ?? 0,
+      reviewChanges: json['reviewChanges'] as int? ?? 0,
     );
   }
 }
@@ -100,23 +119,40 @@ class RoleAnalysisCheckpointStore {
     key(projectId, chapterId),
     jsonEncode(checkpoint.toJson()),
   );
-  Future<String> recentScene(String projectId, String chapterId) async {
-    final rows = await database.getSettingsWithPrefix(
-      'novel.roleAnalysis.$projectId.',
-    );
-    var updated = '';
-    var scene = '';
-    for (final row in rows.entries) {
-      if (row.key == key(projectId, chapterId)) continue;
-      final object = jsonDecode(row.value) as Map<String, dynamic>;
-      if (object['version'] == 1 &&
-          object['stage'] == 'completed' &&
-          (object['updatedAt'] as String? ?? '').compareTo(updated) > 0) {
-        updated = object['updatedAt'] as String;
-        scene = object['sceneSummary'] as String? ?? '';
+  Future<Map<String, dynamic>?> _previousCompleted(
+    String projectId,
+    String chapterId,
+  ) async {
+    final chapters = await database.getNovelChapters(projectId);
+    final current = chapters.where((c) => c.id == chapterId).firstOrNull;
+    if (current == null) return null;
+    final previous =
+        chapters.where((c) => c.orderIndex < current.orderIndex).toList()
+          ..sort((a, b) => b.orderIndex.compareTo(a.orderIndex));
+    for (final chapter in previous) {
+      final value = await database.getSetting(key(projectId, chapter.id));
+      if (value == null) continue;
+      final object = jsonDecode(value) as Map<String, dynamic>;
+      if (object['version'] == 1 && object['stage'] == 'completed') {
+        return object;
       }
     }
-    return scene;
+    return null;
+  }
+
+  Future<String> recentScene(String projectId, String chapterId) async =>
+      (await _previousCompleted(projectId, chapterId))?['sceneSummary']
+          as String? ??
+      '';
+
+  Future<RoleSceneState> recentSceneState(
+    String projectId,
+    String chapterId,
+  ) async {
+    final previous = await _previousCompleted(projectId, chapterId);
+    return RoleSceneState.fromJson(
+      (previous?['scene'] as Map?)?.cast<String, dynamic>() ?? {},
+    );
   }
 
   Stream<RoleAnalysisCheckpoint?> watch(String projectId, String chapterId) =>

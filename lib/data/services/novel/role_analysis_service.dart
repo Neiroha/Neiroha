@@ -8,6 +8,8 @@ import 'package:neiroha/domain/capabilities/model_capability.dart';
 import 'package:neiroha/domain/capabilities/task_profile.dart';
 import 'package:neiroha/data/services/capabilities/task_profile_repository.dart';
 import 'package:neiroha/domain/novel/role_models.dart';
+import 'package:neiroha/domain/novel/role_scene_state.dart';
+import 'package:neiroha/domain/text/novel_semantic_segmenter.dart';
 
 import 'annotation_repository.dart';
 import 'character_repository.dart';
@@ -15,6 +17,9 @@ import 'novel_text_revision.dart';
 import 'role_analysis_checkpoint.dart';
 import 'role_analysis_protocol.dart';
 import 'role_skill_repository.dart';
+import 'role_skill_profiles_repository.dart';
+import 'role_analysis_context.dart';
+import 'role_doubt_detector.dart';
 
 /// Persisted, bounded Dart workflow. No Python/LangGraph runtime is required.
 /// Inference is opt-in; constructing this service never sends story content.
@@ -26,7 +31,8 @@ class RoleAnalysisService {
     this.queue, {
     this.capabilities,
     RoleSkillLoader? loadSkill,
-  }) : _loadSkill = loadSkill ?? RoleSkillRepository().load;
+  }) : _loadSkill =
+           loadSkill ?? RoleSkillProfilesRepository(database).loadSkill;
   final db.AppDatabase database;
   final CharacterRepository characters;
   final AnnotationRepository annotations;
@@ -55,6 +61,7 @@ class RoleAnalysisService {
     int maxCalls = 12,
     int batchSize = 20,
     LlmChatAdapter? client,
+    TtsCancelToken? cancelToken,
   }) async {
     final binding = await TaskProfileRepository(
       database,
@@ -83,6 +90,7 @@ class RoleAnalysisService {
       jsonEncode([
         for (final s in all) [s.id, s.segmentText],
         skill.identity,
+        NovelSemanticSegmenter.version,
         if (binding.profile != null) binding.profile!.toJson(),
       ]),
     );
@@ -93,6 +101,10 @@ class RoleAnalysisService {
       throw StateError(
         'Analysis skill changed or the saved analysis is unversioned. Start a new analysis.',
       );
+    }
+    if (previous != null &&
+        previous.segmentationVersion != NovelSemanticSegmenter.version) {
+      throw StateError('Semantic segmentation changed. Start a new analysis.');
     }
     if (previous != null && previous.signature != signature) {
       throw StateError('Chapter text changed. Start a new analysis.');
@@ -112,10 +124,13 @@ class RoleAnalysisService {
           skillName: skill.name,
           skillVersion: skill.version,
           skillDigest: skill.digest,
+          segmentationVersion: NovelSemanticSegmenter.version,
           sceneSummary: await checkpoints.recentScene(projectId, chapterId),
+          scene: await checkpoints.recentSceneState(projectId, chapterId),
         );
+    final context = RoleAnalysisContext(all);
     if (checkpoint.stage == 'completed' && !restart) return;
-    final cancellation = TtsCancelToken();
+    final cancellation = cancelToken ?? TtsCancelToken();
     // Recheck after asynchronous loads; only one chapter may write a roster.
     if (_active.containsKey(projectId)) {
       throw StateError('Analysis is already running.');
@@ -131,6 +146,12 @@ class RoleAnalysisService {
     ) async {
       cancellation.throwIfCancelled();
       if (checkpoint.calls >= callLimit) throw const _BudgetReached();
+      final encodedInput = jsonEncode(input);
+      if (encodedInput.length > 64000) {
+        throw StateError(
+          'Analysis input exceeds the local 64000 UTF-16 budget. Reduce the batch or cast.',
+        );
+      }
       checkpoint.calls++;
       await checkpoints.save(projectId, chapterId, checkpoint);
       try {
@@ -139,7 +160,7 @@ class RoleAnalysisService {
           source: 'Novel role analysis',
           label: checkpoint.stage,
           cancelToken: cancellation,
-          estimatedTokens: (jsonEncode(input).length / 2).ceil(),
+          estimatedTokens: (encodedInput.length / 2).ceil(),
           task: () => llm.structured(
             schemaName: 'novel_${checkpoint.stage}',
             schema: schema,
@@ -175,23 +196,30 @@ class RoleAnalysisService {
     try {
       checkpoint.error = null;
       if (!checkpoint.rosterReady || feedback.trim().isNotEmpty) {
-        checkpoint.stage = feedback.trim().isEmpty ? 'planCast' : 'replanCast';
+        final replanning = checkpoint.rosterReady;
+        checkpoint.stage = replanning ? 'replanCast' : 'planCast';
         checkpoint.feedback = feedback.trim();
         final roles = await characters.load(projectId);
         final excerpt = all.map((s) => s.segmentText).join('\n');
         final plan = await invoke(
-          skill.prompt('planner'),
+          skill.prompt(replanning ? 'replanner' : 'planner'),
           RoleAnalysisProtocol.rosterSchema,
           {
             'knownCharacters': _roster(roles),
             'recentScene': checkpoint.sceneSummary,
             'userFeedback': checkpoint.feedback,
-            'chapterExcerpt': excerpt.length > 18000
-                ? excerpt.substring(0, 18000)
-                : excerpt,
+            'chapterExcerpt': RoleAnalysisContext.excerpt(excerpt, 18000),
+            'structure': context.summary,
+            'sceneState': checkpoint.scene.forRoster(roles),
           },
         );
-        await _applyRoster(projectId, plan.object, roles, cancellation);
+        await database.transaction(() async {
+          await _applyRoster(projectId, plan.object, roles, cancellation);
+          checkpoint.scene = RoleSceneState.fromPlan(
+            plan.object['scene'],
+            await characters.load(projectId),
+          );
+        });
         checkpoint.rosterReady = true;
         checkpoint.rosterConfirmed = false;
         checkpoint.stage = 'rosterReview';
@@ -207,7 +235,17 @@ class RoleAnalysisService {
       while (checkpoint.nextSegment < all.length) {
         cancellation.throwIfCancelled();
         checkpoint.stage = 'labelChunk';
-        final end = (checkpoint.nextSegment + batchSize).clamp(0, all.length);
+        var end = checkpoint.nextSegment;
+        var charactersInBatch = 0;
+        while (end < all.length && end - checkpoint.nextSegment < batchSize) {
+          final length = all[end].segmentText.length;
+          if (end > checkpoint.nextSegment &&
+              charactersInBatch + length > 24000) {
+            break;
+          }
+          charactersInBatch += length;
+          end++;
+        }
         final roles = await characters.load(projectId);
         final batch = all.sublist(checkpoint.nextSegment, end).where((s) {
           final a = roles.annotations[s.id];
@@ -223,31 +261,38 @@ class RoleAnalysisService {
               'roster': _roster(roles),
               'recentScene': checkpoint.sceneSummary,
               'userFeedback': checkpoint.feedback,
-              'segments': _source(batch),
-              'precedingContext': _source(
+              'sceneState': checkpoint.scene.forRoster(roles),
+              'segments': context.describe(batch, roles),
+              'precedingContext': context.describe(
                 all.sublist(
                   (checkpoint.nextSegment - 3).clamp(0, all.length),
                   checkpoint.nextSegment,
                 ),
+                roles,
+                contextOnly: true,
+              ),
+              'followingContext': context.describe(
+                all.sublist(end, (end + 3).clamp(0, all.length)),
+                roles,
+                contextOnly: true,
               ),
             },
           );
           checkpoint.stage = 'validate';
-          final labels = RoleAnalysisProtocol.parseLabels(
+          var labels = RoleAnalysisProtocol.parseLabels(
             result.object,
             batch,
             roles,
           );
+          final doubts = RoleDoubtDetector.inspect(
+            labels: labels,
+            roles: roles,
+            context: context,
+          );
+          labels = RoleDoubtDetector.flag(labels, doubts);
           cancellation.throwIfCancelled();
           await annotations.apply(projectId, labels, fromAi: true);
-          final doubtfulIds = labels
-              .where(
-                (a) =>
-                    a.reviewState == NovelReviewState.conflict ||
-                    a.reviewState == NovelReviewState.pending,
-              )
-              .map((a) => a.segmentId)
-              .toSet();
+          final doubtfulIds = doubts.map((d) => d.segmentId).toSet();
           if (doubtfulIds.isNotEmpty && checkpoint.calls < callLimit) {
             checkpoint.stage = 'review';
             final doubtful = batch
@@ -258,17 +303,50 @@ class RoleAnalysisService {
               RoleAnalysisProtocol.labelsSchema,
               {
                 'roster': _roster(roles),
-                'segments': _source(doubtful),
-                'surroundingContext': _source(batch),
+                if (checkpoint.feedback.isNotEmpty)
+                  'userFeedback': checkpoint.feedback,
+                'sceneState': checkpoint.scene.forRoster(roles),
+                'segments': context.describe(
+                  doubtful,
+                  await characters.load(projectId),
+                ),
+                'surroundingContext': context.describe(
+                  all.sublist(
+                    (checkpoint.nextSegment - 3).clamp(0, all.length),
+                    (end + 3).clamp(0, all.length),
+                  ),
+                  roles,
+                  contextOnly: true,
+                ),
+                'doubts': doubts.map((d) => d.toJson()).toList(),
               },
             );
-            final reviewed = RoleAnalysisProtocol.parseLabels(
+            var reviewed = RoleAnalysisProtocol.parseLabels(
               review.object,
               doubtful,
               roles,
             );
+            reviewed = RoleDoubtDetector.flag(
+              reviewed,
+              RoleDoubtDetector.inspect(
+                labels: reviewed,
+                roles: roles,
+                context: context,
+                audit: false,
+              ),
+            );
             cancellation.throwIfCancelled();
             await annotations.apply(projectId, reviewed, fromAi: true);
+            checkpoint.reviewedSegments += reviewed.length;
+            checkpoint.reviewChanges += reviewed
+                .where(
+                  (r) => labels.any(
+                    (a) =>
+                        a.segmentId == r.segmentId &&
+                        (a.characterId != r.characterId || a.kind != r.kind),
+                  ),
+                )
+                .length;
           }
           final summary = result.object['sceneSummary'];
           if (summary is String) {
@@ -310,10 +388,6 @@ class RoleAnalysisService {
         'identityKind': c.identityKind.name,
       },
   ];
-  List<Map<String, Object?>> _source(List<db.NovelSegment> segments) => [
-    for (final s in segments) {'id': s.id, 'text': s.segmentText},
-  ];
-
   Future<void> _applyRoster(
     String projectId,
     Map<String, dynamic> object,
@@ -325,6 +399,7 @@ class RoleAnalysisService {
       throw const FormatException('Invalid character roster.');
     }
     const pronouns = {
+      'I',
       '我',
       '你',
       '他',
@@ -351,7 +426,20 @@ class RoleAnalysisService {
           throw const FormatException('Malformed character.');
         }
         final name = (item['name'] as String).trim();
-        if (name.isEmpty || name.length > 80 || pronouns.contains(name)) {
+        final kind = CharacterIdentityKind.values.byName(
+          item['identityKind'] as String? ?? 'named',
+        );
+        final scene = object['scene'];
+        final anonymousNarrator =
+            (name == '我' || name == 'I') &&
+            kind == CharacterIdentityKind.anonymous &&
+            scene is Map &&
+            scene['firstPersonName'] == name;
+        final collective =
+            ['大家', '众人'].contains(name) && kind == CharacterIdentityKind.group;
+        if (name.isEmpty ||
+            name.length > 80 ||
+            (pronouns.contains(name) && !anonymousNarrator && !collective)) {
           continue;
         }
         if (!names.add(name)) {
@@ -365,9 +453,7 @@ class RoleAnalysisService {
               .where((s) => !pronouns.contains(s.trim()))
               .toList(),
           description: item['description'] as String,
-          identityKind: CharacterIdentityKind.values.byName(
-            item['identityKind'] as String? ?? 'named',
-          ),
+          identityKind: kind,
         );
       }
     });

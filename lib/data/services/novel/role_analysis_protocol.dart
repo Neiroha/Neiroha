@@ -1,5 +1,6 @@
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/novel/role_models.dart';
+import 'package:neiroha/domain/novel/role_scene_state.dart';
 
 import 'novel_text_revision.dart';
 
@@ -17,6 +18,16 @@ class RoleAnalysisProtocol {
     'type': ['string', 'null'],
   };
   static Map<String, Object?> get rosterSchema => object({
+    'scene': object({
+      'firstPersonName': nullableString,
+      'presentCharacterNames': {'type': 'array', 'items': string},
+      'nestedNarratorNames': {'type': 'array', 'items': string},
+      'messageChannels': {
+        'type': 'array',
+        'items': {'type': 'string', 'enum': RoleSceneState.channels},
+      },
+      'evidence': string,
+    }),
     'characters': {
       'type': 'array',
       'items': object({

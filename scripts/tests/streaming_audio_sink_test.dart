@@ -6,9 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
 import 'package:neiroha/data/services/synthesis/soloud_audio_sink.dart';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
+import 'support/test_capabilities.dart';
 
 /// Explicit opt-in: plays quiet tones on the test machine.
 void main() {
+  final capabilities = TestCapabilities.current();
   TestWidgetsFlutterBinding.ensureInitialized();
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(
@@ -64,7 +66,7 @@ void main() {
       await sink.drained.timeout(const Duration(seconds: 3));
       expect(sink.bufferedUntil.inMilliseconds, closeTo(2000, 130));
     },
-    skip: Platform.environment['NEIROHA_AUDIO_SMOKE'] != '1',
+    skip: capabilities.audioSkipReason(requiresFfmpeg: true),
   );
 
   test('native PCM sink starts before EOF, pauses, drains and stops', () async {
@@ -101,5 +103,5 @@ void main() {
     expect(sink.bufferedUntil.inMilliseconds, closeTo(600, 100));
     await sink.stop();
     await sink.stop();
-  }, skip: Platform.environment['NEIROHA_AUDIO_SMOKE'] != '1');
+  }, skip: capabilities.audioSkipReason());
 }

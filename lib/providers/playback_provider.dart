@@ -133,6 +133,11 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
       }
     });
     ref.onDispose(() {
+      // Invalidate pending generation/drain callbacks before stopping the sink,
+      // since stop() also completes its drained future.
+      _streamRunId++;
+      _operationId++;
+      _cancelActiveSequence();
       _streamPoll?.cancel();
       _streamCancellation?.cancel();
       unawaited(_streamSink?.stop());

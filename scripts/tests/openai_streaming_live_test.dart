@@ -12,18 +12,20 @@ import 'package:neiroha/data/services/synthesis/soloud_audio_sink.dart';
 import 'package:neiroha/data/services/synthesis/synthesis_service.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
+import 'support/test_capabilities.dart';
 
 void main() {
   final key = Platform.environment['OPENAI_TEST_API_KEY'] ?? '';
   final enabled =
       Platform.environment['NEIROHA_LIVE_STREAMING'] == '1' && key.isNotEmpty;
-  final skip = enabled
-      ? false
-      : 'Explicit live streaming opt-in and API key required';
+  final unavailable = TestCapabilities.current().nativeAudioUnavailableReason;
+  final skip = !enabled
+      ? 'Explicit live streaming opt-in and API key required'
+      : unavailable ?? false;
   final output = Directory(
     Platform.environment['OPENAI_TEST_OUT_DIR'] ?? '.dart_tool/live-streaming',
   );
-  if (enabled) {
+  if (enabled && unavailable == null) {
     // Native audio needs a binding; retain the real HTTP implementation for
     // these explicitly enabled live tests instead of the widget-test mock.
     final http = HttpOverrides.current;

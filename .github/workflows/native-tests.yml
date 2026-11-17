@@ -16,8 +16,12 @@ env:
 
 jobs:
   test:
-    name: Analyze and test
-    runs-on: ubuntu-latest
+    name: Analyze and test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,3 +55,58 @@ jobs:
 
       - name: Test
         run: flutter test scripts/tests
+
+  android:
+    name: Android ARM64 APK check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Restore Pub cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: ${{ runner.os }}-pub-${{ hashFiles('pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Restore Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check Android capability contracts
+        run: flutter test scripts/tests/android_capabilities_test.dart scripts/tests/media_session_service_test.dart
+
+      - name: Compile Android native plugins and app
+        run: flutter build apk --debug --target-platform android-arm64
+
+      - name: Upload check APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: neiroha-Android-ci-arm64
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7
+          if-no-files-found: error

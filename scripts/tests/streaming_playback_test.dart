@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:neiroha/data/services/media_session_service.dart';
 import 'package:neiroha/data/services/synthesis/synthesis_service.dart';
 import 'package:neiroha/domain/synthesis/streaming_audio_sink.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
@@ -56,7 +57,14 @@ void main() {
   late ProviderContainer container;
   setUp(
     () => container = ProviderContainer(
-      overrides: [audioPlayerProvider.overrideWithValue(_Player())],
+      overrides: [
+        audioPlayerProvider.overrideWithValue(_Player()),
+        androidMediaSessionServiceProvider.overrideWith((ref) {
+          final session = MediaSessionService(supported: false);
+          ref.onDispose(session.dispose);
+          return session;
+        }),
+      ],
     ),
   );
   tearDown(() => container.dispose());
@@ -86,6 +94,50 @@ void main() {
     expect(state.audioPath, 'result.wav');
     expect(sink.stopped, isTrue);
   });
+
+  test(
+    'disposing buffered playback cancels without updating disposed state',
+    () async {
+      final notifier = container.read(playbackNotifierProvider.notifier);
+      final sink = _Sink();
+      final token = TtsCancelToken();
+      await notifier.playSynthesis(
+        generate: (_) async => _receipt('result.wav'),
+        cancellation: token,
+        title: 'text',
+        sourceTag: 'test',
+        sink: sink,
+      );
+      container.dispose();
+      await pumpEventQueue();
+      expect(token.isCancelled, isTrue);
+      expect(sink.stopped, isTrue);
+    },
+  );
+
+  test(
+    'late generation completion after disposal cannot publish playback',
+    () async {
+      final notifier = container.read(playbackNotifierProvider.notifier);
+      final sink = _Sink();
+      final token = TtsCancelToken();
+      final generation = Completer<SynthesisReceipt>();
+      final playback = notifier.playSynthesis(
+        generate: (_) => generation.future,
+        cancellation: token,
+        title: 'text',
+        sourceTag: 'test',
+        sink: sink,
+      );
+      await pumpEventQueue();
+      container.dispose();
+      generation.complete(_receipt('late.wav'));
+      expect((await playback).audioPath, 'late.wav');
+      await pumpEventQueue();
+      expect(token.isCancelled, isTrue);
+      expect(sink.stopped, isTrue);
+    },
+  );
 
   test(
     'stop cancels generation and obsolete completion cannot replace new playback',

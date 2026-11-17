@@ -12,7 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Neiroha/Neiroha?style=social)](https://github.com/Neiroha/Neiroha/stargazers)
 
-[English](README.md) · [中文](README_zh.md) · [Wiki](https://neiroha.github.io/) · [API](docs/api.md)
+[English](README.md) · [中文](README_zh.md) · [Wiki](https://neiroha.github.io/) · [API](assets/docs/api.md)
 
 </div>
 
@@ -85,7 +85,7 @@ Lines synthesized one by one rarely come back at the same level; whispered or em
 
 Neiroha can also run as a local OpenAI-compatible TTS service backed by the active voice bank. This makes it useful as a voice middleware layer for editors, agents, scripts, and other tools. The same server exposes an MCP endpoint (`/mcp`) so AI agents can manage providers, characters, voice banks and dubbing projects, including loudness unification.
 
-The full API reference lives in [docs/api.md](docs/api.md). Installation, backend defaults, API keys, model configuration, and workflow guides live in the [Wiki](https://github.com/Neiroha/Neiroha/wiki).
+The full API reference lives in [assets/docs/api.md](assets/docs/api.md). Installation, backend defaults, API keys, model configuration, and workflow guides live in the [Wiki](https://github.com/Neiroha/Neiroha/wiki).
 
 ## macOS
 
@@ -97,22 +97,34 @@ The app is ad-hoc signed but not notarized, so Gatekeeper blocks the first launc
 xattr -dr com.apple.quarantine /Applications/Neiroha.app
 ```
 
-App data lives in `~/Library/Application Support/com.neiroha.neiroha/`. Install FFmpeg with `brew install ffmpeg`; Homebrew's Apple Silicon (`/opt/homebrew/bin`) and Intel (`/usr/local/bin`) locations are detected automatically. Microphone recording is Windows-only for now, so import reference audio as files.
+App data lives in `~/Library/Application Support/com.neiroha.neiroha/`. Install FFmpeg with `brew install ffmpeg`; Homebrew's Apple Silicon (`/opt/homebrew/bin`) and Intel (`/usr/local/bin`) locations are detected automatically. The macOS microphone backend and permissions are implemented; recording still awaits validation on a Mac.
 
 ## Development
 
 - Flutter 3.47.7 stable (the version CI uses), then `flutter pub get`.
 - After changing the Drift tables (`lib/data/database/tables.dart`) or the freezed models, run `dart run build_runner build`.
 - After changing `lib/l10n/app_en.arb` / `app_zh.arb`, run `flutter gen-l10n`.
-- macOS builds need Xcode and CocoaPods. `FLUTTER_XCODE_ARCHS=arm64 flutter build macos --release` (or `x86_64`), then `tool/package_macos_dmg.sh Release arm64 dist/Neiroha.dmg` thins the bundle to that architecture, checks the signature and builds the DMG; `tool/smoke_test_macos_dmg.sh dist/Neiroha.dmg arm64` launches it as a quick check.
-- `flutter analyze` and `flutter test`. The loudness and merge tests use a real FFmpeg and are skipped when `ffmpeg` is not on `PATH`.
+- macOS builds need Xcode and CocoaPods. `FLUTTER_XCODE_ARCHS=arm64 flutter build macos --release` (or `x86_64`), then `bash scripts/tools/package_macos_dmg.sh Release arm64 dist/Neiroha.dmg` thins the bundle to that architecture, checks the signature and builds the DMG; `bash scripts/tools/smoke_test_macos_dmg.sh dist/Neiroha.dmg arm64` launches it as a quick check.
+- `flutter analyze` and `flutter test scripts/tests`. The loudness and merge tests use a real FFmpeg and are skipped when `ffmpeg` is not on `PATH`.
 - `analysis_options.yaml` excludes `build/` and the platform folders (recent Flutter versions add this block automatically), so the generated plugin sources there are not analyzed.
 
 ## Project Links
 
 - [Wiki](https://neiroha.github.io/) for installation, backend setup, and usage guides.
-- [API Reference](docs/api.md) for local HTTP integration.
+- [API Reference](assets/docs/api.md) for local HTTP integration.
 - [Releases](https://github.com/Neiroha/Neiroha/releases) for packaged builds.
+
+[Development progress and macOS handoff](assets/todo/todo.md) are tracked with the branch.
+
+Assets are grouped under `assets/todo`, `assets/icon`, `assets/images`, `assets/model_catalog`,
+`assets/docs` and `assets/skills`. Tests and developer tools live under
+`scripts/tests` and `scripts/tools`; run `flutter test scripts/tests` from the repository root.
+
+The first two skills are [external-agent dubbing](assets/skills/neiroha-dubbing/SKILL.md)
+and [internal novel role assignment](assets/skills/novel-role-assign/SKILL.md), each
+with an `EVALUATION.md`. The application loads the internal skill's five stages
+and records its version and SHA-256 in checkpoints. A changed skill requires a
+new analysis; legacy captures remain explicitly unversioned regression references.
 
 ## User Agreement & Disclaimer
 

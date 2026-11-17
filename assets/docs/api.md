@@ -191,7 +191,7 @@ can restore them (`restore: true`).
 
 Provider API keys are write-only through MCP (`list_providers` returns
 `has_api_key`). A ready-made agent skill lives in
-[`skills/neiroha-dubbing/SKILL.md`](../skills/neiroha-dubbing/SKILL.md).
+[`assets/skills/neiroha-dubbing/SKILL.md`](../skills/neiroha-dubbing/SKILL.md).
 ---
 
 ## 2. Upstream Adapter Layer

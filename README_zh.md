@@ -12,7 +12,7 @@
 [![许可证：MIT](https://img.shields.io/badge/许可证-MIT-green)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Neiroha/Neiroha?style=social)](https://github.com/Neiroha/Neiroha/stargazers)
 
-[English](README.md) · [中文](README_zh.md) · [Wiki](https://neiroha.github.io/) · [API](docs/api-zh.md)
+[English](README.md) · [中文](README_zh.md) · [Wiki](https://neiroha.github.io/) · [API](assets/docs/api-zh.md)
 
 </div>
 
@@ -36,6 +36,8 @@ Neiroha 是一个 Flutter 应用，面向需要大量角色音色、多种 TTS �
 | **也能作为中间件** | 将当前激活的语音库暴露为本地 OpenAI 兼容 TTS API，让编辑器、Agent、脚本和外部工具直接调用。 |
 
 ## 功能亮点
+
+未发布的流式 Quick TTS、小说角色校对与自动分析、动态模型目录及 macOS 改动，见[使用与开发说明](assets/docs/streaming-and-roles-zh.md)。
 
 ### 服务商中枢
 
@@ -86,7 +88,7 @@ Neiroha 是一个 Flutter 应用，面向需要大量角色音色、多种 TTS �
 
 Neiroha 也可以作为本地 OpenAI 兼容 TTS 服务运行，由当前激活的语音库提供模型和音色。这让它可以作为编辑器、Agent、脚本和其他工具的语音中间件。同一服务还提供 MCP 端点（`/mcp`），AI Agent 可借此管理服务商、角色、语音库和配音工程，包括音量统一。
 
-完整接口见 [docs/api-zh.md](docs/api-zh.md)。安装、后端默认值、API Key、模型配置和使用教程放在 [Wiki](https://github.com/Neiroha/Neiroha/wiki)。
+完整接口见 [assets/docs/api-zh.md](assets/docs/api-zh.md)。安装、后端默认值、API Key、模型配置和使用教程放在 [Wiki](https://github.com/Neiroha/Neiroha/wiki)。
 
 ## macOS
 
@@ -98,21 +100,38 @@ Release 中提供两个 DMG（macOS 12 及以上）：Apple Silicon（M 系列�
 xattr -dr com.apple.quarantine /Applications/Neiroha.app
 ```
 
-应用数据位于 `~/Library/Application Support/com.neiroha.neiroha/`。FFmpeg 可用 `brew install ffmpeg` 安装，会自动识别 Homebrew 在 Apple Silicon（`/opt/homebrew/bin`）与 Intel（`/usr/local/bin`）上的路径。麦克风录制暂仅支持 Windows，参考音频请以文件导入。
+应用数据位于 `~/Library/Application Support/com.neiroha.neiroha/`。FFmpeg 可用 `brew install ffmpeg` 安装，会自动识别 Homebrew 在 Apple Silicon（`/opt/homebrew/bin`）与 Intel（`/usr/local/bin`）上的路径。macOS 麦克风录制已加入后端、用途说明和输入权限，实际授权及录音效果仍待 Mac 验收。
 
 ## 开发
 
 - 使用 Flutter 3.47.7 stable（与 CI 一致），然后运行 `flutter pub get`。
 - 修改 Drift 表结构（`lib/data/database/tables.dart`）或 freezed 模型后，运行 `dart run build_runner build`。
 - 修改 `lib/l10n/app_en.arb` / `app_zh.arb` 后，运行 `flutter gen-l10n`。
-- 构建 macOS 需要 Xcode 与 CocoaPods。先 `FLUTTER_XCODE_ARCHS=arm64 flutter build macos --release`（Intel 用 `x86_64`），再运行 `tool/package_macos_dmg.sh Release arm64 dist/Neiroha.dmg`，脚本会把包裁剪为该架构、校验签名并生成 DMG；`tool/smoke_test_macos_dmg.sh dist/Neiroha.dmg arm64` 可启动应用做快速检查。
-- 运行 `flutter analyze` 与 `flutter test`。音量统一与合并导出的测试会调用真实的 FFmpeg，`PATH` 中没有 `ffmpeg` 时自动跳过。
+- 构建 macOS 需要 Xcode 与 CocoaPods。先 `FLUTTER_XCODE_ARCHS=arm64 flutter build macos --release`（Intel 用 `x86_64`），再运行 `bash scripts/tools/package_macos_dmg.sh Release arm64 dist/Neiroha.dmg`，脚本会把包裁剪为该架构、校验签名并生成 DMG；`bash scripts/tools/smoke_test_macos_dmg.sh dist/Neiroha.dmg arm64` 可启动应用做快速检查。
+- 运行 `flutter analyze` 与 `flutter test scripts/tests`。音量统一与合并导出的测试会调用真实的 FFmpeg，`PATH` 中没有 `ffmpeg` 时自动跳过。
 - `analysis_options.yaml` 排除了 `build/` 与各平台目录（新版 Flutter 也会自动加入这段配置），避免分析其中生成的插件源码。
 
 ## 项目入口
 
+当前进度、Mac 验收步骤和下一阶段开发顺序见 [开发清单](assets/todo/todo.md)。
+
+```text
+assets/
+  icon/             SVG 标志
+  images/           截图与图片
+  model_catalog/    模型能力快照及许可证
+  docs/             API 与开发文档
+  skills/           外部配音、内置小说 agent 的 skill 与评测标准
+  todo/             开发清单与 Mac 接续记录
+scripts/
+  tests/            单元、组件、集成测试和评测样本
+  tools/            检查、评测、目录更新与打包工具
+```
+
+首版两个 skill：[外部 agent 调用配音](assets/skills/neiroha-dubbing/SKILL.md)、[内置小说分角](assets/skills/novel-role-assign/SKILL.md)。两者各附 `EVALUATION.md`。内置 skill 的五个阶段由运行时加载，版本与 SHA-256 写入分析检查点；规则变化后需重新开始分析。旧的未版本化捕获只用于回归参考。
+
 - [Wiki](https://neiroha.github.io/)：安装、后端配置和使用教程。
-- [API 文档](docs/api-zh.md)：本地 HTTP 集成说明。
+- [API 文档](assets/docs/api-zh.md)：本地 HTTP 集成说明。
 - [Releases](https://github.com/Neiroha/Neiroha/releases)：发布包下载。
 
 

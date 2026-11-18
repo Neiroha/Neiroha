@@ -105,7 +105,8 @@ jobs:
 
   build-linux:
     name: Linux desktop release
-    runs-on: ubuntu-latest
+    # Keep a stable glibc baseline for the distributed binary.
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4

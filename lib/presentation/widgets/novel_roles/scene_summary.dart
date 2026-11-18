@@ -8,9 +8,11 @@ class NovelRoleSceneSummary extends StatelessWidget {
     super.key,
     required this.scene,
     required this.roles,
+    this.showHelp = true,
   });
   final RoleSceneState scene;
   final NovelRoleSnapshot roles;
+  final bool showHelp;
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -23,14 +25,19 @@ class NovelRoleSceneSummary extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l.roleSceneTitle, style: Theme.of(context).textTheme.titleSmall),
+          if (showHelp)
+            Text(
+              l.roleSceneTitle,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
           Text('${l.roleSceneFirstPerson}：${name(scene.firstPersonId)}'),
           if (scene.presentCharacterIds.isNotEmpty)
             Text('${l.roleScenePresent}：${names(scene.presentCharacterIds)}'),
           if (scene.nestedNarratorIds.isNotEmpty)
             Text('${l.roleSceneNested}：${names(scene.nestedNarratorIds)}'),
           if (scene.evidence.isNotEmpty) Text(scene.evidence),
-          Text(l.roleSceneHelp, style: Theme.of(context).textTheme.bodySmall),
+          if (showHelp)
+            Text(l.roleSceneHelp, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );

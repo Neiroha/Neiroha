@@ -2,8 +2,10 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/services/capabilities/capability_repository.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/domain/novel/text_role_plan.dart';
+import 'package:neiroha/domain/novel/dubbing_intent.dart';
 import 'package:neiroha/domain/text/novel_semantic_segmenter.dart';
 import 'annotation_repository.dart';
 import 'character_repository.dart';
@@ -13,9 +15,15 @@ import 'role_skill_repository.dart';
 /// Runs the same novel workflow without creating a reader project on disk.
 /// Story text is partitioned and classified, never generated or paraphrased.
 class TextRoleAnalysisService {
-  TextRoleAnalysisService(this.queue, {required this.loadSkill});
+  TextRoleAnalysisService(
+    this.queue, {
+    required this.loadSkill,
+    this.capabilities,
+  });
   final TtsQueueService queue;
   final RoleSkillLoader loadSkill;
+  final CapabilityRepository? capabilities;
+  static const maxTextLength = 64000, maxSegments = 360, maxCalls = 40;
   Future<TextRolePlan> analyze({
     required String text,
     required String intent,
@@ -23,14 +31,15 @@ class TextRoleAnalysisService {
     required String model,
     required TtsCancelToken cancellation,
     LlmChatAdapter? client,
+    void Function(RoleAnalysisProgress)? onProgress,
   }) async {
-    if (text.length > 64000 || intent.length > 2000) {
+    if (text.length > maxTextLength || intent.length > 2000) {
       throw ArgumentError(
         'Choose up to 64000 UTF-16 units and a short dubbing intent.',
       );
     }
     final source = NovelSemanticSegmenter.split(text);
-    if (source.isEmpty || source.length > 360) {
+    if (source.isEmpty || source.length > maxSegments) {
       throw ArgumentError(
         'Choose 1–360 semantic segments, up to 64000 UTF-16 units, and a short dubbing intent.',
       );
@@ -44,6 +53,7 @@ class TextRoleAnalysisService {
       characters,
       AnnotationRepository(database),
       queue,
+      capabilities: capabilities,
       loadSkill: () async => skill,
     );
     const projectId = 'text-role-analysis', chapterId = 'text-role-chapter';
@@ -99,6 +109,7 @@ class TextRoleAnalysisService {
         maxCalls: 1,
         client: client,
         cancelToken: cancellation,
+        onProgress: onProgress,
       );
       cancellation.throwIfCancelled();
       await service.run(
@@ -107,9 +118,10 @@ class TextRoleAnalysisService {
         provider: provider,
         model: model,
         confirmRoster: true,
-        maxCalls: 39,
+        maxCalls: maxCalls - 1,
         client: client,
         cancelToken: cancellation,
+        onProgress: onProgress,
       );
       cancellation.throwIfCancelled();
       final checkpoint = (await service.checkpoints.load(
@@ -127,6 +139,7 @@ class TextRoleAnalysisService {
         skillDigest: skill.digest,
         calls: checkpoint.calls,
         characters: roles.characters,
+        scene: checkpoint.scene,
         units: [
           for (var i = 0; i < source.length; i++)
             TextRoleUnit(

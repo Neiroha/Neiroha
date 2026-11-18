@@ -756,8 +756,8 @@
   "roleAnalysisResume": "确认角色表并继续 / 恢复",
   "roleAnalysisPause": "暂停分析",
   "roleAnalysisFeedback": "补充人物或校对意见",
-  "roleAnalysisReplan": "按意见重新规划角色表",
-  "roleAnalysisBudget": "仅分析当前章节；每次最多 12 次模型请求，可能计费。人工锁定与已确认句会保留。",
+  "roleAnalysisReplan": "按新意图重规划角色表",
+  "roleAnalysisBudget": "仅分析当前章节；每次最多 12 次分析请求，未验证模型另有一次工具检查，可能计费。人工锁定与已确认句会保留。",
   "roleAnalysisOffline": "在服务商页配置连接后，再选择分析模型。",
   "modelDiscover": "发现模型 / 能力",
   "modelRefresh": "从当前连接刷新",
@@ -765,6 +765,7 @@
   "modelUnknown": "未知",
   "modelSupported": "支持",
   "modelUnsupported": "不支持",
+  "roleToolModelHint": "仅使用支持文本与函数调用的模型。首次使用能力未知的模型时，会先用短示例验证工具调用。",
   "modelCapabilityHint": "目录描述能力；当前账号是否可用，需要实际成功调用确认。不会自动发起付费探测。",
   "modelOverride": "覆盖此路由的任务能力",
   "modelNoModels": "暂无缓存模型，可刷新或手填模型 ID。",
@@ -854,5 +855,102 @@
   "phaseRoleNarrator": "旁白默认音色",
   "phaseRoleNoVoice": "稍后选择音色",
   "phaseRoleStatus": "分析调用与预算内进度见任务监视器。最多 40 次调用，分析期间可取消；不会自动合成音频。",
-  "phaseRoleStale": "正文、已有分段、音色库或分角配置已变化，请重新分析。"
+  "phaseRoleStale": "正文、已有分段、音色库或分角配置已变化，请重新分析。",
+  "dubbingMode": "配音模式",
+  "dubbingModeAutomatic": "自动判断",
+  "dubbingModeStoryteller": "讲述者朗读",
+  "dubbingModeDramatized": "广播剧演绎",
+  "dubbingModeScript": "台本与聊天",
+  "dubbingModeAutomaticHelp": "根据叙述视角、发言提示和上下文判断归属。",
+  "dubbingModeStorytellerHelp": "故事中的引用沿用外层讲述者的声音。",
+  "dubbingModeDramatizedHelp": "为人物明确的直接引语分配角色声线，引语结束后回到讲述者。",
+  "dubbingModeScriptHelp": "按人物前缀或发送者分配对白，舞台说明归旁白。",
+  "phaseRoleEditSegment": "调整片段归属",
+  "phaseRoleModelEvidence": "AI 原始依据",
+  "phaseRoleContext": "查看前后文",
+  "phaseRolePrevious": "前一段",
+  "phaseRoleFollowing": "后一段",
+  "phaseRoleCategory": "片段类别",
+  "phaseRoleSpeaker": "归属人物",
+  "phaseRoleNoCharacter": "暂不指定人物",
+  "phaseRoleAddCharacter": "新增人物",
+  "phaseRoleCharacterName": "人物名称",
+  "phaseRoleNameRequired": "请输入未使用的人物名称",
+  "phaseRoleSegments": "片段",
+  "phaseRoleVoices": "角色音色",
+  "phaseRoleNeedsReview": "待核对",
+  "phaseRoleSearch": "搜索正文或人物",
+  "phaseRoleVoiceHelp": "为同一角色的所有片段选择音色。也可以稍后在生成列表中分配。",
+  "phaseRoleNoMatches": "没有符合条件的片段。",
+  "phaseRoleEdited": "已手动调整",
+  "phaseRolePreviewTitle": "审阅角色归属",
+  "phaseRoleStop": "停止分析",
+  "phaseRoleStopping": "正在停止…",
+  "phaseRoleStopped": "分析已停止。可以调整后再试。",
+  "phaseRolePreparing": "正在准备文本…",
+  "phaseRoleAdjustIntent": "调整配音意图",
+  "phaseRoleBackToPreview": "返回已有预览",
+  "phaseRoleLengthLimit": "文本超出单次分析上限（360 段或 64,000 UTF-16 单位），请拆成较短的文本。",
+  "phaseRoleConnectionSettings": "连接与分析模型",
+  "phaseRoleRestoreSuggestion": "还原 AI 建议",
+  "roleAnalysisPanelTitle": "AI 自动分角色",
+  "roleAnalysisApproveRoster": "确认人物并分配台词",
+  "roleAnalysisResumeShort": "继续分析",
+  "roleAnalysisRestart": "重新分析",
+  "roleAnalysisRosterHint": "先核对下方人物表和场景判断，再继续分配台词。",
+  "rolePollOnlyUncertain": "只看疑点",
+  "roleNoUncertain": "当前章节没有需要优先核对的疑点。",
+  "phaseRoleReviewSummary": "{total} 个片段 · {uncertain} 段待核对 · {missing} 类归属未分音色",
+  "@phaseRoleReviewSummary": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "uncertain": {
+        "type": "int"
+      },
+      "missing": {
+        "type": "int"
+      }
+    }
+  },
+  "phaseRoleReplaceExisting": "应用后将替换现有的 {count} 个片段。原始脚本和已生成音频文件会保留。",
+  "@phaseRoleReplaceExisting": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phaseRoleKeepUncertain": "还有 {count} 个片段待核对。可返回调整，或将当前归属带入生成列表。",
+  "@phaseRoleKeepUncertain": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phaseRoleInputSummary": "已识别 {count} 个语义片段。分析最多发起 40 次模型调用。未验证模型会额外发起一次工具检查。",
+  "@phaseRoleInputSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phaseRoleProgress": "已处理 {processed}/{total} 段 · 已发起 {calls} 次调用",
+  "@phaseRoleProgress": {
+    "placeholders": {
+      "processed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "calls": {
+        "type": "int"
+      }
+    }
+  },
+  "roleShowMorePending": "显示更多待确认片段"
 }

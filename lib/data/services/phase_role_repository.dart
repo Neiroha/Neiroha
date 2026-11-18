@@ -97,6 +97,7 @@ class PhaseRoleRepository {
               'characterId': u.characterId,
               'review': u.review.name,
               'reason': u.reason,
+              if (u.manuallyEdited) 'manuallyEdited': true,
             },
         ],
         'characters': [

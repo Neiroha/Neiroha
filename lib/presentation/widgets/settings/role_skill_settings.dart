@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:neiroha/domain/novel/novel_role_skill.dart';
+import 'package:neiroha/data/services/capabilities/role_ai_connection.dart';
 import 'package:neiroha/domain/novel/role_skill_profile.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/novel_role_providers.dart';
 import '../novel_roles/skill_stage_labels.dart';
+import '../novel_roles/model_discover_button.dart';
 
 class RoleSkillSettingsCard extends ConsumerStatefulWidget {
   const RoleSkillSettingsCard({super.key});
@@ -88,7 +90,10 @@ class _RoleSkillSettingsCardState extends ConsumerState<RoleSkillSettingsCard> {
           : const Center(child: CircularProgressIndicator());
     }
     final p = _draft!.active;
-    final providers = ref.watch(ttsProvidersStreamProvider).value ?? [];
+    final providers = (ref.watch(ttsProvidersStreamProvider).value ?? [])
+        .where((p) => p.supportsRoleAi)
+        .toList();
+    final selected = providers.where((v) => v.id == p.providerId).firstOrNull;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -174,8 +179,8 @@ class _RoleSkillSettingsCardState extends ConsumerState<RoleSkillSettingsCard> {
                   setState(() => _replace(_draft!.active.copyWith(name: v))),
             ),
             DropdownButtonFormField<String>(
-              key: ValueKey('provider:${p.id}:$_revision'),
-              initialValue: p.providerId ?? '',
+              key: ValueKey('provider:${p.id}:${selected?.id}:$_revision'),
+              initialValue: selected?.id ?? '',
               isExpanded: true,
               decoration: InputDecoration(labelText: l.roleAnalysisProvider),
               items: [
@@ -187,12 +192,6 @@ class _RoleSkillSettingsCardState extends ConsumerState<RoleSkillSettingsCard> {
                   DropdownMenuItem(
                     value: provider.id,
                     child: Text(provider.name),
-                  ),
-                if (p.providerId != null &&
-                    !providers.any((v) => v.id == p.providerId))
-                  DropdownMenuItem(
-                    value: p.providerId!,
-                    child: Text(p.providerId!),
                   ),
               ],
               onChanged: _busy
@@ -216,7 +215,17 @@ class _RoleSkillSettingsCardState extends ConsumerState<RoleSkillSettingsCard> {
               initialValue: p.model,
               enabled: !_busy,
               maxLength: 150,
-              decoration: InputDecoration(labelText: l.roleAnalysisModel),
+              decoration: InputDecoration(
+                labelText: l.roleAnalysisModel,
+                suffixIcon: RoleModelDiscoverButton(
+                  provider: selected ?? providers.firstOrNull,
+                  enabled: !_busy,
+                  onSelected: (model) => setState(() {
+                    _replace(_draft!.active.copyWith(model: model));
+                    _refresh();
+                  }),
+                ),
+              ),
               onChanged: (v) =>
                   setState(() => _replace(_draft!.active.copyWith(model: v))),
             ),

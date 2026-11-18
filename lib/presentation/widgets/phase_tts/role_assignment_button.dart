@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/data/services/phase_role_repository.dart';
+import 'package:neiroha/data/services/capabilities/role_ai_connection.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/novel_role_providers.dart';
+import 'package:neiroha/providers/model_capability_providers.dart';
 import 'role_assignment_dialog.dart';
 
 class PhaseRoleAssignmentButton extends ConsumerStatefulWidget {
@@ -40,13 +42,18 @@ class _PhaseRoleAssignmentButtonState
         throw StateError('Save the current script before analysis.');
       }
       final signature = await repository.signature(widget.projectId);
+      final existingSegments = (await database.getPhaseTtsSegments(
+        widget.projectId,
+      )).length;
       final members = (await database.getBankMembers(
         project.bankId,
       )).map((m) => m.voiceAssetId).toSet();
       final voices = (await database.getAllVoiceAssets())
           .where((a) => a.enabled && members.contains(a.id))
           .toList();
-      final providers = await database.getAllProviders();
+      final providers = (await database.getAllProviders())
+          .where((p) => p.supportsRoleAi)
+          .toList();
       final config = (await skills.load()).active;
       if (!mounted) return;
       final selection = await showDialog<RoleAssignmentSelection>(
@@ -59,6 +66,8 @@ class _PhaseRoleAssignmentButtonState
           config: config,
           queue: ref.read(ttsQueueServiceProvider),
           loadSkill: skills.loadSkill,
+          capabilities: ref.read(capabilityRepositoryProvider),
+          existingSegments: existingSegments,
         ),
       );
       if (selection == null || !mounted) return;

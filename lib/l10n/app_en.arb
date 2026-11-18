@@ -1148,8 +1148,8 @@
   "roleAnalysisResume": "Confirm roster and continue / resume",
   "roleAnalysisPause": "Pause analysis",
   "roleAnalysisFeedback": "Character or review feedback",
-  "roleAnalysisReplan": "Replan roster from feedback",
-  "roleAnalysisBudget": "Current chapter only. Up to 12 model requests per run; charges may apply. Locked and manually confirmed sentences are preserved.",
+  "roleAnalysisReplan": "Replan cast with new intent",
+  "roleAnalysisBudget": "Current chapter only. Up to 12 analysis requests per run, plus one tool check for an unverified model. Charges may apply. Locked and manually confirmed sentences are preserved.",
   "roleAnalysisOffline": "Configure a connection in Providers before choosing an analysis model.",
   "modelDiscover": "Discover models / capabilities",
   "modelRefresh": "Refresh from connection",
@@ -1157,6 +1157,7 @@
   "modelUnknown": "Unknown",
   "modelSupported": "Supported",
   "modelUnsupported": "Unsupported",
+  "roleToolModelHint": "Choose a text model with function calling. Unknown models get a short tool check before processing your text.",
   "modelCapabilityHint": "Catalog facts describe capability. Account availability is verified by actual successful use. No paid probes are automatic.",
   "modelOverride": "Override task capability for this route",
   "modelNoModels": "No cached models. Refresh or enter a model ID.",
@@ -1246,5 +1247,102 @@
   "phaseRoleNarrator": "Default narration voice",
   "phaseRoleNoVoice": "Choose a voice later",
   "phaseRoleStatus": "See the task monitor for analysis progress. Up to 40 calls, cancellable during analysis. Audio synthesis starts separately.",
-  "phaseRoleStale": "Text, segments, voice bank or role configuration changed. Analyze again."
+  "phaseRoleStale": "Text, segments, voice bank or role configuration changed. Analyze again.",
+  "dubbingMode": "Dubbing mode",
+  "dubbingModeAutomatic": "Automatic",
+  "dubbingModeStoryteller": "Storyteller",
+  "dubbingModeDramatized": "Dramatized",
+  "dubbingModeScript": "Script & chat",
+  "dubbingModeAutomaticHelp": "Infer roles from viewpoint, speech cues, and context.",
+  "dubbingModeStorytellerHelp": "Keep the storyteller’s voice for quotations within their story.",
+  "dubbingModeDramatizedHelp": "Give clearly attributed quotes their own voices and return to the storyteller afterward.",
+  "dubbingModeScriptHelp": "Use speaker headers or message senders for dialogue and narration for stage directions.",
+  "phaseRoleEditSegment": "Edit assignment",
+  "phaseRoleModelEvidence": "Original AI reasoning",
+  "phaseRoleContext": "Show context",
+  "phaseRolePrevious": "Previous segment",
+  "phaseRoleFollowing": "Next segment",
+  "phaseRoleCategory": "Segment category",
+  "phaseRoleSpeaker": "Character",
+  "phaseRoleNoCharacter": "No character assigned",
+  "phaseRoleAddCharacter": "Add character",
+  "phaseRoleCharacterName": "Character name",
+  "phaseRoleNameRequired": "Enter a name that is not already in use",
+  "phaseRoleSegments": "Segments",
+  "phaseRoleVoices": "Character voices",
+  "phaseRoleNeedsReview": "Needs review",
+  "phaseRoleSearch": "Search text or characters",
+  "phaseRoleVoiceHelp": "Choose a voice for all segments of a character. You can also assign voices later in the generation list.",
+  "phaseRoleNoMatches": "No matching segments.",
+  "phaseRoleEdited": "Edited manually",
+  "phaseRolePreviewTitle": "Review role assignments",
+  "phaseRoleStop": "Stop analysis",
+  "phaseRoleStopping": "Stopping…",
+  "phaseRoleStopped": "Analysis stopped. You can adjust your settings and try again.",
+  "phaseRolePreparing": "Preparing text…",
+  "phaseRoleAdjustIntent": "Adjust dubbing intent",
+  "phaseRoleBackToPreview": "Back to preview",
+  "phaseRoleLengthLimit": "This text exceeds 360 segments or 64,000 UTF-16 units. Analyze it in shorter sections.",
+  "phaseRoleConnectionSettings": "Connection and model",
+  "phaseRoleRestoreSuggestion": "Restore AI suggestion",
+  "roleAnalysisPanelTitle": "AI role assignment",
+  "roleAnalysisApproveRoster": "Confirm cast and assign lines",
+  "roleAnalysisResumeShort": "Resume analysis",
+  "roleAnalysisRestart": "Analyze again",
+  "roleAnalysisRosterHint": "Check the cast and scene below before assigning lines.",
+  "rolePollOnlyUncertain": "Only uncertain segments",
+  "roleNoUncertain": "No uncertain segments in this chapter.",
+  "phaseRoleReviewSummary": "{total} segments · {uncertain} to review · {missing} voice groups unassigned",
+  "@phaseRoleReviewSummary": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "uncertain": {
+        "type": "int"
+      },
+      "missing": {
+        "type": "int"
+      }
+    }
+  },
+  "phaseRoleReplaceExisting": "Applying replaces {count} existing segments. The script and generated audio files are retained.",
+  "@phaseRoleReplaceExisting": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phaseRoleKeepUncertain": "{count} segments still need review. Go back to edit, or apply their current assignments.",
+  "@phaseRoleKeepUncertain": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phaseRoleInputSummary": "Detected {count} semantic segments. Analysis uses up to 40 model calls, plus one tool check for an unverified model.",
+  "@phaseRoleInputSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phaseRoleProgress": "{processed}/{total} segments processed · {calls} calls started",
+  "@phaseRoleProgress": {
+    "placeholders": {
+      "processed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "calls": {
+        "type": "int"
+      }
+    }
+  },
+  "roleShowMorePending": "Show more segments to review"
 }

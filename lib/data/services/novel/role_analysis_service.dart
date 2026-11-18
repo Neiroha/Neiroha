@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/capabilities/capability_repository.dart';
+import 'package:neiroha/data/services/capabilities/role_ai_model.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/domain/capabilities/model_capability.dart';
 import 'package:neiroha/domain/capabilities/task_profile.dart';
 import 'package:neiroha/data/services/capabilities/task_profile_repository.dart';
 import 'package:neiroha/domain/novel/role_models.dart';
+import 'package:neiroha/domain/novel/dubbing_intent.dart';
 import 'package:neiroha/domain/novel/role_scene_state.dart';
 import 'package:neiroha/domain/text/novel_semantic_segmenter.dart';
 
@@ -21,7 +23,6 @@ import 'role_skill_profiles_repository.dart';
 import 'role_analysis_context.dart';
 import 'role_doubt_detector.dart';
 
-/// Persisted, bounded Dart workflow. No Python/LangGraph runtime is required.
 /// Inference is opt-in; constructing this service never sends story content.
 class RoleAnalysisService {
   RoleAnalysisService(
@@ -57,11 +58,13 @@ class RoleAnalysisService {
     required String model,
     bool restart = false,
     bool confirmRoster = false,
+    bool replan = false,
     String feedback = '',
     int maxCalls = 12,
     int batchSize = 20,
     LlmChatAdapter? client,
     TtsCancelToken? cancelToken,
+    void Function(RoleAnalysisProgress)? onProgress,
   }) async {
     final binding = await TaskProfileRepository(
       database,
@@ -129,7 +132,12 @@ class RoleAnalysisService {
           scene: await checkpoints.recentSceneState(projectId, chapterId),
         );
     final context = RoleAnalysisContext(all);
-    if (checkpoint.stage == 'completed' && !restart) return;
+    if (checkpoint.stage == 'completed' &&
+        !restart &&
+        !replan &&
+        feedback.trim().isEmpty) {
+      return;
+    }
     final cancellation = cancelToken ?? TtsCancelToken();
     // Recheck after asynchronous loads; only one chapter may write a roster.
     if (_active.containsKey(projectId)) {
@@ -139,6 +147,16 @@ class RoleAnalysisService {
     final llm =
         client ?? TaskProfileRepository.llm(provider, model, binding.profile);
     final callLimit = checkpoint.calls + maxCalls;
+    final priorStage = checkpoint.stage;
+    final requestedIntent = feedback.trim();
+    void progress() => onProgress?.call(
+      RoleAnalysisProgress(
+        stage: checkpoint.stage,
+        processed: checkpoint.nextSegment,
+        total: all.length,
+        calls: checkpoint.calls,
+      ),
+    );
     Future<LlmStructuredResult> invoke(
       String prompt,
       Map<String, Object?> schema,
@@ -154,6 +172,7 @@ class RoleAnalysisService {
       }
       checkpoint.calls++;
       await checkpoints.save(projectId, chapterId, checkpoint);
+      progress();
       try {
         final result = await queue.enqueue(
           provider: provider,
@@ -194,11 +213,19 @@ class RoleAnalysisService {
     }
 
     try {
+      if (client == null) {
+        await RoleAiModel(
+          capabilities ?? CapabilityRepository(database),
+        ).requireForTask(provider, model, binding.profile, cancellation);
+      }
       checkpoint.error = null;
-      if (!checkpoint.rosterReady || feedback.trim().isNotEmpty) {
+      if (!checkpoint.rosterReady || replan || requestedIntent.isNotEmpty) {
         final replanning = checkpoint.rosterReady;
         checkpoint.stage = replanning ? 'replanCast' : 'planCast';
-        checkpoint.feedback = feedback.trim();
+        if (!replanning && requestedIntent.isNotEmpty) {
+          checkpoint.feedback = requestedIntent;
+        }
+        final planIntent = replanning ? requestedIntent : checkpoint.feedback;
         final roles = await characters.load(projectId);
         final excerpt = all.map((s) => s.segmentText).join('\n');
         final plan = await invoke(
@@ -207,7 +234,7 @@ class RoleAnalysisService {
           {
             'knownCharacters': _roster(roles),
             'recentScene': checkpoint.sceneSummary,
-            'userFeedback': checkpoint.feedback,
+            'userFeedback': planIntent,
             'chapterExcerpt': RoleAnalysisContext.excerpt(excerpt, 18000),
             'structure': context.summary,
             'sceneState': checkpoint.scene.forRoster(roles),
@@ -220,10 +247,13 @@ class RoleAnalysisService {
             await characters.load(projectId),
           );
         });
+        checkpoint.feedback = planIntent;
         checkpoint.rosterReady = true;
         checkpoint.rosterConfirmed = false;
+        if (replanning) checkpoint.nextSegment = 0;
         checkpoint.stage = 'rosterReview';
         await checkpoints.save(projectId, chapterId, checkpoint);
+        progress();
         return; // Always let the user review new/replanned characters first.
       }
       checkpoint.rosterConfirmed |= confirmRoster;
@@ -358,16 +388,21 @@ class RoleAnalysisService {
         }
         checkpoint.nextSegment = end;
         await checkpoints.save(projectId, chapterId, checkpoint);
+        progress();
       }
       checkpoint.stage = 'completed';
     } on TtsCancelledException {
-      checkpoint.stage = 'paused';
+      checkpoint.stage = checkpoint.stage == 'replanCast'
+          ? priorStage
+          : 'paused';
     } on _BudgetReached {
       checkpoint.stage = 'paused';
       checkpoint.error =
           'Call budget reached; resume explicitly to authorize another bounded run.';
     } catch (error) {
-      checkpoint.stage = 'failed';
+      checkpoint.stage = checkpoint.stage == 'replanCast'
+          ? priorStage
+          : 'failed';
       checkpoint.error = '$error';
       rethrow;
     } finally {

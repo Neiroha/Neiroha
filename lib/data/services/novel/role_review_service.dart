@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/tts_queue_service.dart';
+import 'package:neiroha/data/services/capabilities/capability_repository.dart';
+import 'package:neiroha/data/services/capabilities/role_ai_model.dart';
 import 'package:neiroha/data/services/capabilities/task_profile_repository.dart';
 import 'package:neiroha/domain/capabilities/task_profile.dart';
 import 'package:neiroha/domain/novel/role_review.dart';
@@ -112,6 +114,11 @@ class RoleReviewService {
       });
       final llm =
           client ?? TaskProfileRepository.llm(provider, model, binding.profile);
+      if (client == null) {
+        await RoleAiModel(
+          CapabilityRepository(database),
+        ).requireForTask(provider, model, binding.profile, cancellation);
+      }
       while (session.status == 'running') {
         cancellation.throwIfCancelled();
         if (session.calls >= session.budget.maxCalls) {

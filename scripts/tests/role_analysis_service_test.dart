@@ -13,6 +13,7 @@ import 'package:neiroha/data/services/novel/role_analysis_checkpoint.dart';
 import 'package:neiroha/data/services/novel/role_analysis_service.dart';
 import 'package:neiroha/data/services/novel/role_analysis_protocol.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
+import 'package:neiroha/domain/novel/dubbing_intent.dart';
 import 'package:neiroha/domain/novel/role_models.dart';
 import 'package:neiroha/domain/novel/voice_resolver.dart';
 
@@ -208,6 +209,8 @@ void main() {
   Future<void> run(
     _Llm client, {
     bool resume = false,
+    bool replan = false,
+    String feedback = '',
     int budget = 12,
     int batchSize = 20,
   }) => service.run(
@@ -216,6 +219,8 @@ void main() {
     provider: provider,
     model: 'fake',
     confirmRoster: resume,
+    replan: replan,
+    feedback: feedback,
     client: client,
     maxCalls: budget,
     batchSize: batchSize,
@@ -291,6 +296,82 @@ void main() {
       );
       expect((await characters.load('book')).annotations, hasLength(3));
       expect(calls, ['novel_planCast', 'novel_labelChunk']);
+    },
+  );
+
+  test(
+    'replanning a completed chapter resets editable labels after roster approval',
+    () async {
+      final intent = dubbingIntent(DubbingMode.storyteller, '林舟讲故事。');
+      expect(readDubbingIntent(intent), (DubbingMode.storyteller, '林舟讲故事。'));
+      final client = _Llm((stage, input, _) async {
+        expect(input['userFeedback'], intent);
+        return stage == 'novel_planCast' ? Map.of(_roster) : _labels(input);
+      });
+      await run(client, feedback: intent);
+      await run(client, resume: true);
+      final source = await database.getNovelSegments('book');
+      final first = (await characters.load(
+        'book',
+      )).annotations[source.first.id]!;
+      await annotations.apply('book', [
+        SegmentAnnotation(
+          segmentId: first.segmentId,
+          projectId: 'book',
+          textRevision: first.textRevision,
+          characterId: first.characterId,
+          locked: true,
+        ),
+      ]);
+      final failure = _Llm((stage, _, _) async {
+        expect(stage, 'novel_replanCast');
+        throw const FormatException('Invalid roster');
+      });
+      await expectLater(run(failure, replan: true), throwsFormatException);
+      final preserved = (await service.checkpoints.load(
+        'book',
+        'book-chapter',
+      ))!;
+      expect(preserved.stage, 'completed');
+      expect(preserved.feedback, intent);
+      expect(preserved.nextSegment, source.length);
+      final stages = <String>[];
+      final revised = _Llm((stage, input, _) async {
+        stages.add(stage);
+        expect(input['userFeedback'], '');
+        if (stage == 'novel_replanCast') {
+          return {
+            'characters': [
+              {'name': '门外人', 'aliases': <String>[], 'description': '来客'},
+            ],
+          };
+        }
+        expect((input['segments'] as List).map((s) => s['id']), [
+          source[1].id,
+          source[2].id,
+        ]);
+        final output = _labels(input);
+        for (final label in output['labels'] as List) {
+          label['characterName'] = '门外人';
+        }
+        return output;
+      });
+      await run(revised, replan: true);
+      final ready = (await service.checkpoints.load('book', 'book-chapter'))!;
+      expect(ready.stage, 'rosterReview');
+      expect(ready.nextSegment, 0);
+      expect(ready.feedback, isEmpty);
+      expect(stages, ['novel_replanCast']);
+      await run(revised, resume: true);
+      expect(stages, ['novel_replanCast', 'novel_labelChunk']);
+      final roles = await characters.load('book');
+      final newSpeaker = roles.characters.singleWhere((c) => c.name == '门外人');
+      expect(roles.annotations[source.first.id]!.locked, isTrue);
+      expect(
+        roles.annotations[source.first.id]!.characterId,
+        first.characterId,
+      );
+      expect(roles.annotations[source.last.id]!.characterId, newSpeaker.id);
     },
   );
 

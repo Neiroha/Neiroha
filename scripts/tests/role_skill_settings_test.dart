@@ -28,7 +28,19 @@ void main() {
           overrides: [
             roleSkillProfilesRepositoryProvider.overrideWithValue(repo),
             ttsProvidersStreamProvider.overrideWith(
-              (_) => Stream.value([f.provider]),
+              (_) => Stream.value([
+                f.provider,
+                f.provider.copyWith(
+                  id: 'tts-only',
+                  name: 'CosyVoice',
+                  adapterType: 'cosyvoice',
+                ),
+                f.provider.copyWith(
+                  id: 'gemini',
+                  name: 'Google AI Studio',
+                  adapterType: 'geminiTts',
+                ),
+              ]),
             ),
           ],
           child: MaterialApp(
@@ -52,6 +64,17 @@ void main() {
       }
 
       await settleIo();
+      final providerMenu = find.widgetWithText(
+        DropdownButtonFormField<String>,
+        '使用当前入口选择的连接',
+      );
+      await tester.ensureVisible(providerMenu);
+      await tester.tap(providerMenu);
+      await tester.pumpAndSettle();
+      expect(find.text('Google AI Studio'), findsOneWidget);
+      expect(find.text('CosyVoice'), findsNothing);
+      await tester.tap(find.text('使用当前入口选择的连接').last);
+      await tester.pumpAndSettle();
       final clone = find.text('复制为新配置');
       await tester.ensureVisible(clone);
       await tester.tap(clone);

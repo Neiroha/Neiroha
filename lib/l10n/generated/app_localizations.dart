@@ -4625,13 +4625,13 @@ abstract class AppLocalizations {
   /// No description provided for @roleAnalysisReplan.
   ///
   /// In en, this message translates to:
-  /// **'Replan roster from feedback'**
+  /// **'Replan cast with new intent'**
   String get roleAnalysisReplan;
 
   /// No description provided for @roleAnalysisBudget.
   ///
   /// In en, this message translates to:
-  /// **'Current chapter only. Up to 12 model requests per run; charges may apply. Locked and manually confirmed sentences are preserved.'**
+  /// **'Current chapter only. Up to 12 analysis requests per run, plus one tool check for an unverified model. Charges may apply. Locked and manually confirmed sentences are preserved.'**
   String get roleAnalysisBudget;
 
   /// No description provided for @roleAnalysisOffline.
@@ -4675,6 +4675,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unsupported'**
   String get modelUnsupported;
+
+  /// No description provided for @roleToolModelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a text model with function calling. Unknown models get a short tool check before processing your text.'**
+  String get roleToolModelHint;
 
   /// No description provided for @modelCapabilityHint.
   ///
@@ -5215,6 +5221,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Text, segments, voice bank or role configuration changed. Analyze again.'**
   String get phaseRoleStale;
+
+  /// No description provided for @dubbingMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Dubbing mode'**
+  String get dubbingMode;
+
+  /// No description provided for @dubbingModeAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get dubbingModeAutomatic;
+
+  /// No description provided for @dubbingModeStoryteller.
+  ///
+  /// In en, this message translates to:
+  /// **'Storyteller'**
+  String get dubbingModeStoryteller;
+
+  /// No description provided for @dubbingModeDramatized.
+  ///
+  /// In en, this message translates to:
+  /// **'Dramatized'**
+  String get dubbingModeDramatized;
+
+  /// No description provided for @dubbingModeScript.
+  ///
+  /// In en, this message translates to:
+  /// **'Script & chat'**
+  String get dubbingModeScript;
+
+  /// No description provided for @dubbingModeAutomaticHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Infer roles from viewpoint, speech cues, and context.'**
+  String get dubbingModeAutomaticHelp;
+
+  /// No description provided for @dubbingModeStorytellerHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the storyteller’s voice for quotations within their story.'**
+  String get dubbingModeStorytellerHelp;
+
+  /// No description provided for @dubbingModeDramatizedHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Give clearly attributed quotes their own voices and return to the storyteller afterward.'**
+  String get dubbingModeDramatizedHelp;
+
+  /// No description provided for @dubbingModeScriptHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Use speaker headers or message senders for dialogue and narration for stage directions.'**
+  String get dubbingModeScriptHelp;
+
+  /// No description provided for @phaseRoleEditSegment.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit assignment'**
+  String get phaseRoleEditSegment;
+
+  /// No description provided for @phaseRoleModelEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Original AI reasoning'**
+  String get phaseRoleModelEvidence;
+
+  /// No description provided for @phaseRoleContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Show context'**
+  String get phaseRoleContext;
+
+  /// No description provided for @phaseRolePrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous segment'**
+  String get phaseRolePrevious;
+
+  /// No description provided for @phaseRoleFollowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Next segment'**
+  String get phaseRoleFollowing;
+
+  /// No description provided for @phaseRoleCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Segment category'**
+  String get phaseRoleCategory;
+
+  /// No description provided for @phaseRoleSpeaker.
+  ///
+  /// In en, this message translates to:
+  /// **'Character'**
+  String get phaseRoleSpeaker;
+
+  /// No description provided for @phaseRoleNoCharacter.
+  ///
+  /// In en, this message translates to:
+  /// **'No character assigned'**
+  String get phaseRoleNoCharacter;
+
+  /// No description provided for @phaseRoleAddCharacter.
+  ///
+  /// In en, this message translates to:
+  /// **'Add character'**
+  String get phaseRoleAddCharacter;
+
+  /// No description provided for @phaseRoleCharacterName.
+  ///
+  /// In en, this message translates to:
+  /// **'Character name'**
+  String get phaseRoleCharacterName;
+
+  /// No description provided for @phaseRoleNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name that is not already in use'**
+  String get phaseRoleNameRequired;
+
+  /// No description provided for @phaseRoleSegments.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments'**
+  String get phaseRoleSegments;
+
+  /// No description provided for @phaseRoleVoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Character voices'**
+  String get phaseRoleVoices;
+
+  /// No description provided for @phaseRoleNeedsReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs review'**
+  String get phaseRoleNeedsReview;
+
+  /// No description provided for @phaseRoleSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search text or characters'**
+  String get phaseRoleSearch;
+
+  /// No description provided for @phaseRoleVoiceHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a voice for all segments of a character. You can also assign voices later in the generation list.'**
+  String get phaseRoleVoiceHelp;
+
+  /// No description provided for @phaseRoleNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching segments.'**
+  String get phaseRoleNoMatches;
+
+  /// No description provided for @phaseRoleEdited.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited manually'**
+  String get phaseRoleEdited;
+
+  /// No description provided for @phaseRolePreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review role assignments'**
+  String get phaseRolePreviewTitle;
+
+  /// No description provided for @phaseRoleStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop analysis'**
+  String get phaseRoleStop;
+
+  /// No description provided for @phaseRoleStopping.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopping…'**
+  String get phaseRoleStopping;
+
+  /// No description provided for @phaseRoleStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis stopped. You can adjust your settings and try again.'**
+  String get phaseRoleStopped;
+
+  /// No description provided for @phaseRolePreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing text…'**
+  String get phaseRolePreparing;
+
+  /// No description provided for @phaseRoleAdjustIntent.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust dubbing intent'**
+  String get phaseRoleAdjustIntent;
+
+  /// No description provided for @phaseRoleBackToPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to preview'**
+  String get phaseRoleBackToPreview;
+
+  /// No description provided for @phaseRoleLengthLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'This text exceeds 360 segments or 64,000 UTF-16 units. Analyze it in shorter sections.'**
+  String get phaseRoleLengthLimit;
+
+  /// No description provided for @phaseRoleConnectionSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection and model'**
+  String get phaseRoleConnectionSettings;
+
+  /// No description provided for @phaseRoleRestoreSuggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore AI suggestion'**
+  String get phaseRoleRestoreSuggestion;
+
+  /// No description provided for @roleAnalysisPanelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI role assignment'**
+  String get roleAnalysisPanelTitle;
+
+  /// No description provided for @roleAnalysisApproveRoster.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm cast and assign lines'**
+  String get roleAnalysisApproveRoster;
+
+  /// No description provided for @roleAnalysisResumeShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume analysis'**
+  String get roleAnalysisResumeShort;
+
+  /// No description provided for @roleAnalysisRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyze again'**
+  String get roleAnalysisRestart;
+
+  /// No description provided for @roleAnalysisRosterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the cast and scene below before assigning lines.'**
+  String get roleAnalysisRosterHint;
+
+  /// No description provided for @rolePollOnlyUncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'Only uncertain segments'**
+  String get rolePollOnlyUncertain;
+
+  /// No description provided for @roleNoUncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'No uncertain segments in this chapter.'**
+  String get roleNoUncertain;
+
+  /// No description provided for @phaseRoleReviewSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{total} segments · {uncertain} to review · {missing} voice groups unassigned'**
+  String phaseRoleReviewSummary(int total, int uncertain, int missing);
+
+  /// No description provided for @phaseRoleReplaceExisting.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying replaces {count} existing segments. The script and generated audio files are retained.'**
+  String phaseRoleReplaceExisting(int count);
+
+  /// No description provided for @phaseRoleKeepUncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} segments still need review. Go back to edit, or apply their current assignments.'**
+  String phaseRoleKeepUncertain(int count);
+
+  /// No description provided for @phaseRoleInputSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Detected {count} semantic segments. Analysis uses up to 40 model calls, plus one tool check for an unverified model.'**
+  String phaseRoleInputSummary(int count);
+
+  /// No description provided for @phaseRoleProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{processed}/{total} segments processed · {calls} calls started'**
+  String phaseRoleProgress(int processed, int total, int calls);
+
+  /// No description provided for @roleShowMorePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more segments to review'**
+  String get roleShowMorePending;
 }
 
 class _AppLocalizationsDelegate

@@ -1,4 +1,5 @@
 import 'role_models.dart';
+import 'role_scene_state.dart';
 
 /// Shared, exact-text output for reader, long-text and future dubbing surfaces.
 class TextRoleUnit {
@@ -10,13 +11,36 @@ class TextRoleUnit {
     required this.review,
     required this.reason,
     this.characterId,
+    this.manuallyEdited = false,
   });
   final String text, reason;
   final int start, end;
   final String? characterId;
   final NovelSegmentKind kind;
   final NovelReviewState review;
+  final bool manuallyEdited;
+  bool get needsReview =>
+      review == NovelReviewState.pending ||
+      review == NovelReviewState.conflict ||
+      (characterId == null && _needsSpeaker(kind));
   String get voiceKey => characterId ?? '@${kind.name}';
+
+  TextRoleUnit withAssignment(NovelSegmentKind kind, String? characterId) =>
+      TextRoleUnit(
+        text: text,
+        start: start,
+        end: end,
+        kind: kind,
+        characterId: characterId,
+        reason: '',
+        manuallyEdited: true,
+        review: characterId == null && _needsSpeaker(kind)
+            ? NovelReviewState.conflict
+            : NovelReviewState.inferred,
+      );
+
+  static bool _needsSpeaker(NovelSegmentKind kind) =>
+      kind == NovelSegmentKind.dialogue || kind == NovelSegmentKind.thought;
 }
 
 class TextRolePlan {
@@ -26,11 +50,13 @@ class TextRolePlan {
     required this.calls,
     required this.characters,
     required this.units,
+    this.scene,
   });
   final String text, skillDigest;
   final int calls;
   final List<StoryCharacter> characters;
   final List<TextRoleUnit> units;
+  final RoleSceneState? scene;
   void validate() {
     var offset = 0;
     final ids = characters.map((c) => c.id).toSet();

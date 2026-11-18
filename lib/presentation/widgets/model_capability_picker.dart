@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/capabilities/model_discovery_service.dart';
+import 'package:neiroha/data/services/capabilities/role_ai_connection.dart';
+import 'package:neiroha/data/services/capabilities/role_ai_model.dart';
 import 'package:neiroha/domain/capabilities/model_capability.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/providers/model_capability_providers.dart';
@@ -28,6 +30,7 @@ class _ModelCapabilityPickerState extends ConsumerState<ModelCapabilityPicker> {
   List<DiscoveredModel> _models = [];
   bool _busy = true;
   String? _error;
+  bool get _requiresTools => widget.feature == roleAiToolCapability;
   @override
   void initState() {
     super.initState();
@@ -47,15 +50,30 @@ class _ModelCapabilityPickerState extends ConsumerState<ModelCapabilityPicker> {
     });
     try {
       final service = ref.read(modelDiscoveryServiceProvider);
-      final models = refresh
-          ? await service.discover(widget.provider, widget.route)
-          : await service.cached(widget.provider, widget.route);
-      if (mounted) setState(() => _models = models);
+      final cached = await service.cached(widget.provider, widget.route);
+      final suggested = _requiresTools
+          ? await service.suggestedRoleModel(widget.provider, widget.route)
+          : null;
+      if (!mounted) return;
+      if (cached.isNotEmpty) {
+        setState(() => _models = cached);
+      } else if (suggested != null && _models.isEmpty) {
+        setState(() => _models = [suggested]);
+      }
+      if (refresh || (_requiresTools && cached.isEmpty)) {
+        final models = await service.discover(widget.provider, widget.route);
+        if (mounted) setState(() => _models = models);
+      }
     } catch (error) {
-      if (mounted) setState(() => _error = '$error');
+      if (mounted) setState(() => _error = _redact(error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  String _redact(Object error) {
+    final key = widget.provider.apiKey;
+    return key.isEmpty ? '$error' : '$error'.replaceAll(key, '[REDACTED]');
   }
 
   String _label(AppLocalizations l, CapabilitySupport support) =>
@@ -69,13 +87,27 @@ class _ModelCapabilityPickerState extends ConsumerState<ModelCapabilityPicker> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final query = _model.text.toLowerCase();
-    final models = _models
-        .where(
-          (m) =>
-              m.id.toLowerCase().contains(query) ||
-              m.name.toLowerCase().contains(query),
-        )
-        .toList();
+    final models = _models.where((m) {
+      if (_requiresTools &&
+          (RoleAiModel.documented(widget.provider, m.id, widget.route) ==
+                  CapabilitySupport.unsupported ||
+              m.capability.support('text') == CapabilitySupport.unsupported ||
+              m.capability.support(roleAiToolCapability) ==
+                  CapabilitySupport.unsupported)) {
+        return false;
+      }
+      return m.id.toLowerCase().contains(query) ||
+          m.name.toLowerCase().contains(query);
+    }).toList();
+    if (_requiresTools) {
+      models.sort((a, b) {
+        final verified = b.capability
+            .support(roleAiToolCapability)
+            .index
+            .compareTo(a.capability.support(roleAiToolCapability).index);
+        return verified != 0 ? verified : a.id.compareTo(b.id);
+      });
+    }
     return AlertDialog(
       title: Text(l.modelDiscover),
       content: SizedBox(
@@ -111,14 +143,14 @@ class _ModelCapabilityPickerState extends ConsumerState<ModelCapabilityPicker> {
                           );
                         }
                       } catch (e) {
-                        if (mounted) setState(() => _error = '$e');
+                        if (mounted) setState(() => _error = _redact(e));
                       } finally {
                         if (mounted) setState(() => _busy = false);
                       }
                     },
             ),
             Text(
-              l.modelCapabilityHint,
+              _requiresTools ? l.roleToolModelHint : l.modelCapabilityHint,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             TextField(

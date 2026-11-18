@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/domain/capabilities/model_capability.dart';
+import 'package:neiroha/data/services/capabilities/role_ai_connection.dart';
 import 'package:neiroha/domain/capabilities/task_profile.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/providers/app_providers.dart';
@@ -25,7 +26,7 @@ class _TaskProfilesDialogState extends ConsumerState<TaskProfilesDialog> {
   String? _provider;
   final _model = TextEditingController();
   final _path = TextEditingController();
-  final _header = TextEditingController(text: 'Authorization');
+  final _header = TextEditingController();
   bool _busy = false;
   String? _error;
   @override
@@ -59,14 +60,16 @@ class _TaskProfilesDialogState extends ConsumerState<TaskProfilesDialog> {
               : ServiceRoute.chatCompletions);
       _model.text = p?.model ?? '';
       _path.text = p?.endpointPath ?? '';
-      _header.text = p?.apiKeyHeader ?? 'Authorization';
+      _header.text = p?.apiKeyHeader ?? '';
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final providers = ref.watch(ttsProvidersStreamProvider).value ?? [];
+    final providers = (ref.watch(ttsProvidersStreamProvider).value ?? [])
+        .where((p) => _task == ModelTask.synthesis || p.supportsRoleAi)
+        .toList();
     final selected =
         providers.where((p) => p.id == _provider).firstOrNull ??
         providers.firstOrNull;
@@ -152,6 +155,8 @@ class _TaskProfilesDialogState extends ConsumerState<TaskProfilesDialog> {
                                 route: _route,
                                 feature: _task == ModelTask.synthesis
                                     ? 'speech'
+                                    : _task == ModelTask.analysis
+                                    ? roleAiToolCapability
                                     : 'text',
                               ),
                             );
@@ -172,7 +177,10 @@ class _TaskProfilesDialogState extends ConsumerState<TaskProfilesDialog> {
               TextField(
                 controller: _header,
                 enabled: !_busy && _route != ServiceRoute.native,
-                decoration: InputDecoration(labelText: l.taskKeyHeader),
+                decoration: InputDecoration(
+                  labelText: l.taskKeyHeader,
+                  hintText: selected?.roleAiKeyHeader,
+                ),
               ),
               if (_error != null)
                 Text(
@@ -224,7 +232,9 @@ class _TaskProfilesDialogState extends ConsumerState<TaskProfilesDialog> {
                                     _path.text.trim().isEmpty
                                 ? null
                                 : _path.text.trim(),
-                            apiKeyHeader: _header.text.trim(),
+                            apiKeyHeader: _header.text.trim().isEmpty
+                                ? selected.roleAiKeyHeader
+                                : _header.text.trim(),
                           ),
                         );
                   } catch (e) {

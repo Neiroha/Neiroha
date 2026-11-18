@@ -12,7 +12,7 @@ import 'analysis_controls.dart';
 import 'structure_tools.dart';
 import 'character_tools.dart';
 
-class NovelRoleReviewPanel extends ConsumerWidget {
+class NovelRoleReviewPanel extends ConsumerStatefulWidget {
   const NovelRoleReviewPanel({
     super.key,
     required this.projectId,
@@ -36,13 +36,46 @@ class NovelRoleReviewPanel extends ConsumerWidget {
   final ValueChanged<db.NovelSegment> onPreview;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NovelRoleReviewPanel> createState() =>
+      _NovelRoleReviewPanelState();
+}
+
+class _NovelRoleReviewPanelState extends ConsumerState<NovelRoleReviewPanel> {
+  bool _onlyUncertain = true;
+  int _shown = 12;
+
+  @override
+  void didUpdateWidget(covariant NovelRoleReviewPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.chapterId != widget.chapterId) _shown = 12;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final NovelRoleReviewPanel(
+      :projectId,
+      :chapterId,
+      :roles,
+      :assets,
+      :segments,
+      :beforeChange,
+      :onSelect,
+      :onPreview,
+      :selected,
+    ) = widget;
     final l = AppLocalizations.of(context);
-    final pending = segments.where((s) {
-      if (s.chapterId != chapterId) return false;
+    final chapterSegments = segments
+        .where((s) => s.chapterId == chapterId)
+        .toList();
+    final pending = chapterSegments.where((s) {
       final a = roles.annotations[s.id];
-      return a?.textRevision != novelTextRevision(s.segmentText) ||
-          (a?.reviewState != NovelReviewState.confirmed);
+      if (a?.locked == true) return false;
+      if (a == null || a.textRevision != novelTextRevision(s.segmentText)) {
+        return true;
+      }
+      return a.reviewState == NovelReviewState.pending ||
+          a.reviewState == NovelReviewState.conflict ||
+          (!_onlyUncertain && a.reviewState == NovelReviewState.inferred);
     }).toList();
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -51,7 +84,8 @@ class NovelRoleReviewPanel extends ConsumerWidget {
           NovelRoleAnalysisControls(
             key: ValueKey('$projectId:$chapterId'),
             projectId: projectId,
-            chapterId: chapterId!,
+            chapterId: chapterId,
+            segmentCount: chapterSegments.length,
             selectedSegmentId: selected?.chapterId == chapterId
                 ? selected?.id
                 : null,
@@ -67,13 +101,13 @@ class NovelRoleReviewPanel extends ConsumerWidget {
         const Divider(height: 32),
         if (selected != null) ...[
           NovelStructureTools(
-            segment: selected!,
+            segment: selected,
             segments: segments,
             beforeChange: beforeChange,
             onSelect: onSelect,
           ),
           NovelCharacterTools(
-            segment: selected!,
+            segment: selected,
             segments: segments,
             roles: roles,
             assets: assets,
@@ -85,14 +119,14 @@ class NovelRoleReviewPanel extends ConsumerWidget {
         else
           NovelAnnotationEditor(
             key: ValueKey(
-              '${selected!.id}:${roles.annotations[selected!.id]?.changeId}',
+              '${selected.id}:${roles.annotations[selected.id]?.changeId}',
             ),
-            segment: selected!,
+            segment: selected,
             roles: roles,
             segments: segments,
             assets: assets,
             beforeChange: beforeChange,
-            onPreview: () => onPreview(selected!),
+            onPreview: () => onPreview(selected),
           ),
         OutlinedButton.icon(
           icon: const Icon(Icons.undo),
@@ -115,8 +149,20 @@ class NovelRoleReviewPanel extends ConsumerWidget {
           '${l.rolePendingList} · ${pending.length}',
           style: Theme.of(context).textTheme.titleSmall,
         ),
-        if (pending.isEmpty) Text(l.roleNoPending),
-        for (final segment in pending)
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: FilterChip(
+            label: Text(l.rolePollOnlyUncertain),
+            selected: _onlyUncertain,
+            onSelected: (value) => setState(() {
+              _onlyUncertain = value;
+              _shown = 12;
+            }),
+          ),
+        ),
+        if (pending.isEmpty)
+          Text(_onlyUncertain ? l.roleNoUncertain : l.roleNoPending),
+        for (final segment in pending.take(_shown))
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
@@ -127,6 +173,11 @@ class NovelRoleReviewPanel extends ConsumerWidget {
               overflow: TextOverflow.ellipsis,
             ),
             onTap: () => onSelect(segment),
+          ),
+        if (pending.length > _shown)
+          TextButton(
+            onPressed: () => setState(() => _shown += 12),
+            child: Text(l.roleShowMorePending),
           ),
       ],
     );

@@ -2558,11 +2558,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roleAnalysisFeedback => 'Character or review feedback';
 
   @override
-  String get roleAnalysisReplan => 'Replan roster from feedback';
+  String get roleAnalysisReplan => 'Replan cast with new intent';
 
   @override
   String get roleAnalysisBudget =>
-      'Current chapter only. Up to 12 model requests per run; charges may apply. Locked and manually confirmed sentences are preserved.';
+      'Current chapter only. Up to 12 analysis requests per run, plus one tool check for an unverified model. Charges may apply. Locked and manually confirmed sentences are preserved.';
 
   @override
   String get roleAnalysisOffline =>
@@ -2585,6 +2585,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get modelUnsupported => 'Unsupported';
+
+  @override
+  String get roleToolModelHint =>
+      'Choose a text model with function calling. Unknown models get a short tool check before processing your text.';
 
   @override
   String get modelCapabilityHint =>
@@ -2876,4 +2880,172 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get phaseRoleStale =>
       'Text, segments, voice bank or role configuration changed. Analyze again.';
+
+  @override
+  String get dubbingMode => 'Dubbing mode';
+
+  @override
+  String get dubbingModeAutomatic => 'Automatic';
+
+  @override
+  String get dubbingModeStoryteller => 'Storyteller';
+
+  @override
+  String get dubbingModeDramatized => 'Dramatized';
+
+  @override
+  String get dubbingModeScript => 'Script & chat';
+
+  @override
+  String get dubbingModeAutomaticHelp =>
+      'Infer roles from viewpoint, speech cues, and context.';
+
+  @override
+  String get dubbingModeStorytellerHelp =>
+      'Keep the storyteller’s voice for quotations within their story.';
+
+  @override
+  String get dubbingModeDramatizedHelp =>
+      'Give clearly attributed quotes their own voices and return to the storyteller afterward.';
+
+  @override
+  String get dubbingModeScriptHelp =>
+      'Use speaker headers or message senders for dialogue and narration for stage directions.';
+
+  @override
+  String get phaseRoleEditSegment => 'Edit assignment';
+
+  @override
+  String get phaseRoleModelEvidence => 'Original AI reasoning';
+
+  @override
+  String get phaseRoleContext => 'Show context';
+
+  @override
+  String get phaseRolePrevious => 'Previous segment';
+
+  @override
+  String get phaseRoleFollowing => 'Next segment';
+
+  @override
+  String get phaseRoleCategory => 'Segment category';
+
+  @override
+  String get phaseRoleSpeaker => 'Character';
+
+  @override
+  String get phaseRoleNoCharacter => 'No character assigned';
+
+  @override
+  String get phaseRoleAddCharacter => 'Add character';
+
+  @override
+  String get phaseRoleCharacterName => 'Character name';
+
+  @override
+  String get phaseRoleNameRequired => 'Enter a name that is not already in use';
+
+  @override
+  String get phaseRoleSegments => 'Segments';
+
+  @override
+  String get phaseRoleVoices => 'Character voices';
+
+  @override
+  String get phaseRoleNeedsReview => 'Needs review';
+
+  @override
+  String get phaseRoleSearch => 'Search text or characters';
+
+  @override
+  String get phaseRoleVoiceHelp =>
+      'Choose a voice for all segments of a character. You can also assign voices later in the generation list.';
+
+  @override
+  String get phaseRoleNoMatches => 'No matching segments.';
+
+  @override
+  String get phaseRoleEdited => 'Edited manually';
+
+  @override
+  String get phaseRolePreviewTitle => 'Review role assignments';
+
+  @override
+  String get phaseRoleStop => 'Stop analysis';
+
+  @override
+  String get phaseRoleStopping => 'Stopping…';
+
+  @override
+  String get phaseRoleStopped =>
+      'Analysis stopped. You can adjust your settings and try again.';
+
+  @override
+  String get phaseRolePreparing => 'Preparing text…';
+
+  @override
+  String get phaseRoleAdjustIntent => 'Adjust dubbing intent';
+
+  @override
+  String get phaseRoleBackToPreview => 'Back to preview';
+
+  @override
+  String get phaseRoleLengthLimit =>
+      'This text exceeds 360 segments or 64,000 UTF-16 units. Analyze it in shorter sections.';
+
+  @override
+  String get phaseRoleConnectionSettings => 'Connection and model';
+
+  @override
+  String get phaseRoleRestoreSuggestion => 'Restore AI suggestion';
+
+  @override
+  String get roleAnalysisPanelTitle => 'AI role assignment';
+
+  @override
+  String get roleAnalysisApproveRoster => 'Confirm cast and assign lines';
+
+  @override
+  String get roleAnalysisResumeShort => 'Resume analysis';
+
+  @override
+  String get roleAnalysisRestart => 'Analyze again';
+
+  @override
+  String get roleAnalysisRosterHint =>
+      'Check the cast and scene below before assigning lines.';
+
+  @override
+  String get rolePollOnlyUncertain => 'Only uncertain segments';
+
+  @override
+  String get roleNoUncertain => 'No uncertain segments in this chapter.';
+
+  @override
+  String phaseRoleReviewSummary(int total, int uncertain, int missing) {
+    return '$total segments · $uncertain to review · $missing voice groups unassigned';
+  }
+
+  @override
+  String phaseRoleReplaceExisting(int count) {
+    return 'Applying replaces $count existing segments. The script and generated audio files are retained.';
+  }
+
+  @override
+  String phaseRoleKeepUncertain(int count) {
+    return '$count segments still need review. Go back to edit, or apply their current assignments.';
+  }
+
+  @override
+  String phaseRoleInputSummary(int count) {
+    return 'Detected $count semantic segments. Analysis uses up to 40 model calls, plus one tool check for an unverified model.';
+  }
+
+  @override
+  String phaseRoleProgress(int processed, int total, int calls) {
+    return '$processed/$total segments processed · $calls calls started';
+  }
+
+  @override
+  String get roleShowMorePending => 'Show more segments to review';
 }

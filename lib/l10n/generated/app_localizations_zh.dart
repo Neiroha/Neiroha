@@ -2489,10 +2489,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get roleAnalysisFeedback => '补充人物或校对意见';
 
   @override
-  String get roleAnalysisReplan => '按意见重新规划角色表';
+  String get roleAnalysisReplan => '按新意图重规划角色表';
 
   @override
-  String get roleAnalysisBudget => '仅分析当前章节；每次最多 12 次模型请求，可能计费。人工锁定与已确认句会保留。';
+  String get roleAnalysisBudget =>
+      '仅分析当前章节；每次最多 12 次分析请求，未验证模型另有一次工具检查，可能计费。人工锁定与已确认句会保留。';
 
   @override
   String get roleAnalysisOffline => '在服务商页配置连接后，再选择分析模型。';
@@ -2514,6 +2515,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get modelUnsupported => '不支持';
+
+  @override
+  String get roleToolModelHint => '仅使用支持文本与函数调用的模型。首次使用能力未知的模型时，会先用短示例验证工具调用。';
 
   @override
   String get modelCapabilityHint => '目录描述能力；当前账号是否可用，需要实际成功调用确认。不会自动发起付费探测。';
@@ -2791,4 +2795,165 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get phaseRoleStale => '正文、已有分段、音色库或分角配置已变化，请重新分析。';
+
+  @override
+  String get dubbingMode => '配音模式';
+
+  @override
+  String get dubbingModeAutomatic => '自动判断';
+
+  @override
+  String get dubbingModeStoryteller => '讲述者朗读';
+
+  @override
+  String get dubbingModeDramatized => '广播剧演绎';
+
+  @override
+  String get dubbingModeScript => '台本与聊天';
+
+  @override
+  String get dubbingModeAutomaticHelp => '根据叙述视角、发言提示和上下文判断归属。';
+
+  @override
+  String get dubbingModeStorytellerHelp => '故事中的引用沿用外层讲述者的声音。';
+
+  @override
+  String get dubbingModeDramatizedHelp => '为人物明确的直接引语分配角色声线，引语结束后回到讲述者。';
+
+  @override
+  String get dubbingModeScriptHelp => '按人物前缀或发送者分配对白，舞台说明归旁白。';
+
+  @override
+  String get phaseRoleEditSegment => '调整片段归属';
+
+  @override
+  String get phaseRoleModelEvidence => 'AI 原始依据';
+
+  @override
+  String get phaseRoleContext => '查看前后文';
+
+  @override
+  String get phaseRolePrevious => '前一段';
+
+  @override
+  String get phaseRoleFollowing => '后一段';
+
+  @override
+  String get phaseRoleCategory => '片段类别';
+
+  @override
+  String get phaseRoleSpeaker => '归属人物';
+
+  @override
+  String get phaseRoleNoCharacter => '暂不指定人物';
+
+  @override
+  String get phaseRoleAddCharacter => '新增人物';
+
+  @override
+  String get phaseRoleCharacterName => '人物名称';
+
+  @override
+  String get phaseRoleNameRequired => '请输入未使用的人物名称';
+
+  @override
+  String get phaseRoleSegments => '片段';
+
+  @override
+  String get phaseRoleVoices => '角色音色';
+
+  @override
+  String get phaseRoleNeedsReview => '待核对';
+
+  @override
+  String get phaseRoleSearch => '搜索正文或人物';
+
+  @override
+  String get phaseRoleVoiceHelp => '为同一角色的所有片段选择音色。也可以稍后在生成列表中分配。';
+
+  @override
+  String get phaseRoleNoMatches => '没有符合条件的片段。';
+
+  @override
+  String get phaseRoleEdited => '已手动调整';
+
+  @override
+  String get phaseRolePreviewTitle => '审阅角色归属';
+
+  @override
+  String get phaseRoleStop => '停止分析';
+
+  @override
+  String get phaseRoleStopping => '正在停止…';
+
+  @override
+  String get phaseRoleStopped => '分析已停止。可以调整后再试。';
+
+  @override
+  String get phaseRolePreparing => '正在准备文本…';
+
+  @override
+  String get phaseRoleAdjustIntent => '调整配音意图';
+
+  @override
+  String get phaseRoleBackToPreview => '返回已有预览';
+
+  @override
+  String get phaseRoleLengthLimit =>
+      '文本超出单次分析上限（360 段或 64,000 UTF-16 单位），请拆成较短的文本。';
+
+  @override
+  String get phaseRoleConnectionSettings => '连接与分析模型';
+
+  @override
+  String get phaseRoleRestoreSuggestion => '还原 AI 建议';
+
+  @override
+  String get roleAnalysisPanelTitle => 'AI 自动分角色';
+
+  @override
+  String get roleAnalysisApproveRoster => '确认人物并分配台词';
+
+  @override
+  String get roleAnalysisResumeShort => '继续分析';
+
+  @override
+  String get roleAnalysisRestart => '重新分析';
+
+  @override
+  String get roleAnalysisRosterHint => '先核对下方人物表和场景判断，再继续分配台词。';
+
+  @override
+  String get rolePollOnlyUncertain => '只看疑点';
+
+  @override
+  String get roleNoUncertain => '当前章节没有需要优先核对的疑点。';
+
+  @override
+  String phaseRoleReviewSummary(int total, int uncertain, int missing) {
+    return '$total 个片段 · $uncertain 段待核对 · $missing 类归属未分音色';
+  }
+
+  @override
+  String phaseRoleReplaceExisting(int count) {
+    return '应用后将替换现有的 $count 个片段。原始脚本和已生成音频文件会保留。';
+  }
+
+  @override
+  String phaseRoleKeepUncertain(int count) {
+    return '还有 $count 个片段待核对。可返回调整，或将当前归属带入生成列表。';
+  }
+
+  @override
+  String phaseRoleInputSummary(int count) {
+    return '已识别 $count 个语义片段。分析最多发起 40 次模型调用。未验证模型会额外发起一次工具检查。';
+  }
+
+  @override
+  String phaseRoleProgress(int processed, int total, int calls) {
+    return '已处理 $processed/$total 段 · 已发起 $calls 次调用';
+  }
+
+  @override
+  String get roleShowMorePending => '显示更多待确认片段';
 }

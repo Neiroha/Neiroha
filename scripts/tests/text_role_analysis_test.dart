@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/data/services/novel/text_role_analysis_service.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
+import 'package:neiroha/domain/novel/dubbing_intent.dart';
 import 'package:neiroha/domain/novel/role_models.dart';
 import 'support/role_review_fixture.dart';
 import 'support/role_skill_fixture.dart';
@@ -18,6 +19,7 @@ void main() {
     () async {
       const text = ' \r\n我叫林舟𠮷。\n林舟说：“先别走👋。”\n';
       const intent = '保留原文，按人物分声线；转述由讲述者朗读。';
+      final progress = <RoleAnalysisProgress>[];
       final client = ReviewLlm((input, token) async {
         expect(input['userFeedback'], intent);
         if (input.containsKey('chapterExcerpt')) {
@@ -67,6 +69,7 @@ void main() {
             model: 'fake',
             cancellation: TtsCancelToken(),
             client: client,
+            onProgress: progress.add,
           );
       expect(plan.units.map((u) => u.text).join(), text);
       expect(client.systemPrompts.first, 'CUSTOM_PLANNER_FOR_INITIAL_INTENT');
@@ -77,6 +80,9 @@ void main() {
         isTrue,
       );
       expect(plan.calls, lessThanOrEqualTo(40));
+      expect(progress.first.stage, 'planCast');
+      expect(progress.last.processed, plan.units.length);
+      expect(progress.last.calls, plan.calls);
       expect(await f.database.getAllNovelProjects(), hasLength(2));
     },
   );

@@ -379,7 +379,7 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
               width: handleWidth,
               icon: widget.compactRightIcon,
               label: label,
-              onTap: showRightPane,
+              onTap: () => showRightPane(onlyWhenCompact: true),
             ),
           ),
         ),
@@ -438,7 +438,7 @@ class ResizableSplitPaneState extends State<ResizableSplitPane> {
   }
 
   void _goBackFromRight() {
-    showLeftPane();
+    showLeftPane(onlyWhenCompact: _isCompactLayout);
   }
 
   double _compactHandleWidth(String label, double totalWidth) {

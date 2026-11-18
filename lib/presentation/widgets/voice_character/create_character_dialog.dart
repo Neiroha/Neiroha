@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:path/path.dart' as p;
@@ -19,6 +20,7 @@ import 'package:neiroha/domain/enums/task_mode.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/voice_character/components.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'editable_character_avatar.dart';
 
 class CreateCharacterDialog extends StatefulWidget {
   final List<db.TtsProvider> providers;
@@ -436,6 +438,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
   /// Build the reference audio picker with voice asset library support.
   List<Widget> _buildRefAudioPicker() {
+    if (kIsWeb) {
+      return [Text(AppLocalizations.of(context).webLocalAudioUnavailable)];
+    }
     return [
       VoiceCharacterSectionLabel(
         AppLocalizations.of(context).sectionReferenceAudio,
@@ -573,47 +578,23 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                   ),
                   SizedBox(height: 8),
                   Center(
-                    child: GestureDetector(
-                      onTap: _pickAvatarForCreate,
-                      child: Stack(
-                        children: [
-                          CircleAvatar(
-                            radius: 36,
-                            backgroundColor: AppTheme.accentColor.withValues(
-                              alpha: 0.15,
-                            ),
-                            backgroundImage: _avatarPath != null
-                                ? FileImage(File(_avatarPath!))
-                                : null,
-                            child: _avatarPath == null
-                                ? Icon(
-                                    Icons.person_rounded,
-                                    size: 36,
-                                    color: Colors.white.withValues(alpha: 0.3),
-                                  )
-                                : null,
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: AppTheme.surfaceBright,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppTheme.surfaceDim,
-                                  width: 2,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt_rounded,
-                                size: 14,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
+                    child: EditableCharacterAvatar(
+                      onEdit: kIsWeb ? null : _pickAvatarForCreate,
+                      avatar: CircleAvatar(
+                        radius: 36,
+                        backgroundColor: AppTheme.accentColor.withValues(
+                          alpha: 0.15,
+                        ),
+                        backgroundImage: _avatarPath != null
+                            ? FileImage(File(_avatarPath!))
+                            : null,
+                        child: _avatarPath == null
+                            ? Icon(
+                                Icons.person_rounded,
+                                size: 36,
+                                color: Colors.white.withValues(alpha: 0.3),
+                              )
+                            : null,
                       ),
                     ),
                   ),
@@ -1515,7 +1496,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            _isCosyVoice && _cosyVoiceMode == 'cross_lingual'
+            kIsWeb
+                ? AppLocalizations.of(context).webLocalAudioUnavailable
+                : _isCosyVoice && _cosyVoiceMode == 'cross_lingual'
                 ? 'Cross Lingual mode requires a Reference Audio or a Profile Name'
                 : _isVoxCpm2
                 ? 'VoxCPM2 ${_voxcpmMode == 'ultimate_clone' ? 'Ultra Clone' : 'Clone'} needs a Reference Audio or a Registered Voice'

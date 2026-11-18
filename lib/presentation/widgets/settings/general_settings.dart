@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -165,9 +166,12 @@ class _StartupSettingsCardState extends ConsumerState<StartupSettingsCard> {
     final stored = await ref
         .read(databaseProvider)
         .getSetting(AppNavigationSettings.startupTabKey);
+    final tab = NavTab.fromName(stored);
     final value = AppNavigationSettings.isLastStartupValue(stored)
         ? AppNavigationSettings.startupLastValue
-        : (NavTab.fromName(stored) ?? AppNavigationSettings.defaultStartupTab)
+        : (tab == null || (kIsWeb && tab.requiresDesktop)
+                  ? AppNavigationSettings.defaultStartupTab
+                  : tab)
               .name;
     if (!mounted) return;
     setState(() {
@@ -209,10 +213,11 @@ class _StartupSettingsCardState extends ConsumerState<StartupSettingsCard> {
                 child: Text(l10n.startupLastPage),
               ),
               for (final tab in NavTab.values)
-                DropdownMenuItem(
-                  value: tab.name,
-                  child: Text(tab.localizedLabel(l10n)),
-                ),
+                if (!kIsWeb || !tab.requiresDesktop)
+                  DropdownMenuItem(
+                    value: tab.name,
+                    child: Text(tab.localizedLabel(l10n)),
+                  ),
             ],
             onChanged: !_loaded
                 ? null

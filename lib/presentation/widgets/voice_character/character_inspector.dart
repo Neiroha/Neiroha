@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +13,7 @@ import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
+import 'editable_character_avatar.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/loudness_fields.dart';
 import 'package:neiroha/presentation/widgets/voice_character/components.dart';
@@ -208,34 +210,13 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
       children: [
         // ── Avatar ──────────────────────────────────────────────────────────
         Center(
-          child: GestureDetector(
-            onTap: () => _pickAvatar(a),
-            child: Stack(
-              children: [
-                VoiceCharacterAvatar(
-                  name: a.name,
-                  selected: true,
-                  radius: 36,
-                  avatarPath: a.avatarPath,
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceBright,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppTheme.surfaceDim, width: 2),
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt_rounded,
-                      size: 14,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
+          child: EditableCharacterAvatar(
+            onEdit: kIsWeb ? null : () => _pickAvatar(a),
+            avatar: VoiceCharacterAvatar(
+              name: a.name,
+              selected: true,
+              radius: 36,
+              avatarPath: a.avatarPath,
             ),
           ),
         ),
@@ -425,7 +406,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
             AppLocalizations.of(context).sectionVoiceClone,
           ),
           SizedBox(height: 8),
-          if (a.refAudioPath != null) ...[
+          if (!kIsWeb && a.refAudioPath != null) ...[
             Text(
               AppLocalizations.of(context).uiREFERENCEAUDIO,
               style: TextStyle(

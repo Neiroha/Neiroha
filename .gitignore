@@ -48,6 +48,8 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+/web/sqlite3.wasm
+/web/drift_worker.js
 /coverage/
 
 # Symbolication related

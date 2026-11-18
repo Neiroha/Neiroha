@@ -15,6 +15,11 @@ enum NavTab {
   final String label;
   const NavTab(this.icon, this.label);
 
+  bool get requiresDesktop => switch (this) {
+    novelReader || dialogTts || phaseTts || videoDub || voiceAssets => true,
+    voiceBank || providers || settings => false,
+  };
+
   static NavTab? fromName(String? name) {
     if (name == null) return null;
     for (final tab in NavTab.values) {

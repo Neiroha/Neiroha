@@ -90,6 +90,8 @@ Neiroha 也可以作为本地 OpenAI 兼容 TTS 服务运行，由当前激活�
 
 完整接口见 [assets/docs/api-zh.md](assets/docs/api-zh.md)。安装、后端默认值、API Key、模型配置和使用教程放在 [Wiki](https://github.com/Neiroha/Neiroha/wiki)。
 
+Neiroha Web 沿用原版界面。浏览器保存服务商、音色和音色库，快速试听音频使用会话内存。见 [Web 构建与使用](assets/docs/web-preview-zh.md)。
+
 ## macOS
 
 Release 中提供两个 DMG（macOS 12 及以上）：Apple Silicon（M 系列芯片）Mac 下载 `neiroha-macOS-ARM64-vX.Y.Z.dmg`，Intel Mac 下载 `neiroha-macOS-AMD64-vX.Y.Z.dmg`。不确定是哪种？打开苹果菜单 →「关于本机」，显示「芯片 Apple M…」选 ARM64，显示「处理器 Intel」选 AMD64。打开 DMG，把 **Neiroha** 拖进 **应用程序** 即可。

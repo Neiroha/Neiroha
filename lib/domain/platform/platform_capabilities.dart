@@ -2,7 +2,16 @@ import 'package:flutter/foundation.dart';
 
 import 'package:neiroha/domain/enums/adapter_type.dart';
 
-enum NeirohaPlatform { windows, linux, macos, android, ios, fuchsia, unknown }
+enum NeirohaPlatform {
+  windows,
+  linux,
+  macos,
+  android,
+  ios,
+  fuchsia,
+  web,
+  unknown,
+}
 
 /// Product-level platform capability switches.
 ///
@@ -13,10 +22,12 @@ class PlatformCapabilities {
   const PlatformCapabilities(this.platform);
 
   factory PlatformCapabilities.current() {
+    if (kIsWeb) return const PlatformCapabilities(NeirohaPlatform.web);
     return PlatformCapabilities(_platformFromFlutter(defaultTargetPlatform));
   }
 
   final NeirohaPlatform platform;
+  bool get isWeb => platform == NeirohaPlatform.web;
 
   static NeirohaPlatform _platformFromFlutter(TargetPlatform platform) {
     return switch (platform) {
@@ -36,6 +47,7 @@ class PlatformCapabilities {
     NeirohaPlatform.android => 'Android',
     NeirohaPlatform.ios => 'iOS',
     NeirohaPlatform.fuchsia => 'Fuchsia',
+    NeirohaPlatform.web => 'Web',
     NeirohaPlatform.unknown => 'this platform',
   };
 
@@ -65,6 +77,18 @@ class PlatformCapabilities {
   }
 
   bool supportsTtsAdapter(AdapterType type) {
+    if (isWeb) {
+      return switch (type) {
+        AdapterType.openaiCompatible ||
+        AdapterType.openaiTts ||
+        AdapterType.chatCompletionsTts ||
+        AdapterType.azureTts ||
+        AdapterType.geminiTts ||
+        AdapterType.elevenLabs ||
+        AdapterType.minimaxTts => true,
+        _ => false,
+      };
+    }
     return switch (type) {
       AdapterType.systemTts => supportsSystemTtsAdapter,
       _ => true,

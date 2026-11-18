@@ -10,6 +10,7 @@
 - 本轮 Windows 本地验证：`flutter analyze` 无问题；`flutter test scripts/tests` 200 通过、24 项显式运行测试跳过；Windows debug 构建通过；十二组捕获离线回放通过。Mac 后续已完成 Release 编译、启动及音频验证，详见下方 Mac 实测记录；麦克风、媒体键等硬件验收仍待完成。
 - 测试 Mac 无需安装 Flutter SDK、Xcode 或 CocoaPods。使用云端 macOS 构建的 Release 模式 DMG，安装后直接启动；后续改源码可由 CI 构建。
 - 在 [Native Debug Builds](https://github.com/Neiroha/Neiroha/actions/workflows/native-debug-builds.yml) 手动选择 `dev` 运行。该工作流不因普通分支 push 自动构建 DMG；需手动 dispatch 或 PR。Apple Silicon 下载 `neiroha-macOS-ARM64-dev` artifact，Intel 下载 `neiroha-macOS-AMD64-dev`，用包内 SHA256SUMS 核对 DMG。
+- 2026-11-18 对 `dev@8386beb` 重新编译和打包。Windows、Linux、Android、macOS ARM64 和 Intel 均通过。Linux 首次停在 Ubuntu 依赖下载，单独重试后通过。两份 DMG 均通过 CI 冒烟测试，下载后 SHA-256 与包内清单一致。[打包记录](https://github.com/Neiroha/Neiroha/actions/runs/44227968066)
 - 首次 Mac 构建重点检查 CocoaPods/plugin 解析和 `Podfile.lock`；Windows 无法确认当前 lock 对新增录音插件是否足够。构建失败时先保存 CI 错误，勿宣称包已可用。
 - Mac 手动验收按下列顺序：启动/数据目录 → 导入小说与角色校对 → 单句/连续流播与停止 → 分角暂停/恢复及人工锁定 → 麦克风权限/录音 → 媒体键/关窗/Dock/真正退出 → 中文空格路径/FFmpeg 导出 → 断网取消/蓝牙/睡眠 → 本地 API/MCP。将机型、系统版本、构建提交及实际结果补到本清单。
 - `.env` 不随 Git 同步；应用凭据在 Mac 本地配置。流式 WAV、模型原始响应和详细报告位于 Windows `.dart_tool/`，同样不随 Git 同步。公开样本、评分器和汇总基线已在仓库内；缺少原始捕获时不能假装已在 Mac 复测。
@@ -23,6 +24,12 @@
 - [x] 新增 `scripts/tools/check_code_size.dart`、遗留超长文件基线及 CI 检查；拆出小说查询、声音解析、音频工具、录音采集、Quick TTS 历史组件。
 - [x] 按当前 CI 工具链 Flutter 3.47.7 / Dart 3.13.5 进行分析、测试及 Windows 构建；最终结果见下方验收记录。
 - [x] 从 Git 恢复数据库迁移历史，将旧库升级、新库初始化、旧发布包修复和文件备份分开。当前 schema 保持 v33。使用历史结构样本验证数据保留、跨版本升级、失败回滚和拒绝降级。新增 schema 变更按目标版本单独存放，见[数据库迁移说明](../docs/database-migrations-zh.md)。
+
+### Web 体验版（2026-11-18）
+
+- [x] Web 使用原版 Flutter 界面及 Drift schema，Provider 配置、音色和音色库通过浏览器 SQLite 持久化，合成音频使用会话内存。Chrome 用本机模拟 Provider 验证了创建配置、选音色、播放、刷新恢复设置及清空音频；桌面功能显示禁用提示。见 [Web 构建与使用](../docs/web-preview-zh.md)。
+- [x] 网页快速试听支持 OpenAI Speech API 的 PCM 增量播放和在途取消。模拟端观察到客户端在 EOF 前断开，未完成片段不进历史。Chrome 用真实 `gpt-4o-mini-tts` 验证直连，首块 7493 ms、播放起点 7519 ms、生成完成 19247 ms、播放排空 23580 ms。另一条请求在首声后取消，本地任务约 1 ms 返回，无内存 WAV。播放时间以 Web Audio 进度为准。
+- [ ] 验收浏览器下载落盘、移动端播放及其他服务商的跨源兼容性。
 
 ## 0.1 资源、脚本与首版 skill（2026-11-17）
 

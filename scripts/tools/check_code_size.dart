@@ -16,7 +16,7 @@ void main() {
     for (final entry in Directory(root).listSync(recursive: true)) {
       if (entry is! File) continue;
       final path = entry.path.replaceAll('\\', '/');
-      if (!RegExp(r'\.(dart|swift|ps1|sh|py)$').hasMatch(path) ||
+      if (!RegExp(r'\.(dart|swift|ps1|sh|py|mjs)$').hasMatch(path) ||
           path.endsWith('.g.dart') ||
           path.endsWith('.freezed.dart') ||
           path.startsWith('lib/l10n/generated/')) {

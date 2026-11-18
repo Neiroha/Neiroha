@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -199,6 +200,7 @@ class SettingsSectionContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final children = switch (section) {
       SettingsSection.general => const <Widget>[
         LanguageSettingsCard(),
@@ -212,6 +214,12 @@ class SettingsSectionContent extends ConsumerWidget {
         HealthCheckTimeoutSettingsCard(),
       ],
       SettingsSection.tasks => const <Widget>[TaskMonitorSettingsCard()],
+      SettingsSection.storage when kIsWeb => <Widget>[
+        Text(l10n.webStorageDescription),
+      ],
+      SettingsSection.api || SettingsSection.media || SettingsSection.roleAi
+          when kIsWeb =>
+        <Widget>[Text(l10n.webFeatureUnavailable)],
       SettingsSection.roleAi => const <Widget>[RoleSkillSettingsCard()],
       SettingsSection.api => const <Widget>[ApiServerSettingsCard()],
       SettingsSection.storage => <Widget>[

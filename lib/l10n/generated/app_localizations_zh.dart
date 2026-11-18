@@ -9,6 +9,31 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get webFeatureUnavailable => '这个功能依赖桌面文件或媒体工具，请在 Neiroha 桌面端使用。';
+
+  @override
+  String get webStorageUnavailable => 'Neiroha 无法打开浏览器存储。请允许站点存储，或换用新版浏览器。';
+
+  @override
+  String get webStorageDescription =>
+      '服务商、音色、音色库和偏好保存在当前浏览器。生成的音频留在本页内存中，刷新或关闭标签页后清除。';
+
+  @override
+  String get webSessionAudio => '刷新后会清空试听历史。需要保留的片段可以下载。';
+
+  @override
+  String get webLocalAudioUnavailable => '参考音频和头像文件需要使用桌面端。';
+
+  @override
+  String get webVoiceModeUnavailable => '请选择浏览器可用的 HTTP 服务商、模型和无需本地参考文件的音色。';
+
+  @override
+  String get webProviderNetworkError => '浏览器无法连接服务商。请检查地址，并在服务商侧允许本站来源（CORS）。';
+
+  @override
+  String get webDownloadAudio => '下载音频';
+
+  @override
   String get appTitle => 'Neiroha';
 
   @override

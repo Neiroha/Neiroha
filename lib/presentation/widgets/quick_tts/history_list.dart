@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
@@ -6,6 +7,7 @@ import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/providers/session_audio_provider.dart';
 
 class QuickTtsHistoryList extends ConsumerWidget {
   const QuickTtsHistoryList({
@@ -94,6 +96,20 @@ class QuickTtsHistoryList extends ConsumerWidget {
                           ),
                         IconButton(
                           onPressed: () async {
+                            if (kIsWeb) {
+                              if (hasAudio &&
+                                  playback.audioPath == entry.audioPath) {
+                                await ref
+                                    .read(playbackNotifierProvider.notifier)
+                                    .stop();
+                              }
+                              if (context.mounted) {
+                                ref
+                                    .read(sessionAudioProvider.notifier)
+                                    .delete(entry.id);
+                              }
+                              return;
+                            }
                             if (entry.audioPath != null) {
                               final file = File(entry.audioPath!);
                               if (file.existsSync()) {
@@ -122,7 +138,7 @@ class QuickTtsHistoryList extends ConsumerWidget {
                       SizedBox(height: 6),
                       _buildAudioRow(context, ref, entry, isPlaying),
                     ],
-                    if (hasAudio) _buildAssetActionRow(context, entry),
+                    if (hasAudio) _buildAssetActionRow(context, ref, entry),
                   ],
                 ),
               ),
@@ -205,22 +221,36 @@ class QuickTtsHistoryList extends ConsumerWidget {
     );
   }
 
-  Widget _buildAssetActionRow(BuildContext context, db.QuickTtsHistory entry) {
+  Widget _buildAssetActionRow(
+    BuildContext context,
+    WidgetRef ref,
+    db.QuickTtsHistory entry,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           TextButton.icon(
-            onPressed: () => onSave(entry),
+            onPressed: kIsWeb
+                ? () =>
+                      ref.read(sessionAudioProvider.notifier).download(entry.id)
+                : () => onSave(entry),
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.accentColor,
               padding: const EdgeInsets.symmetric(horizontal: 8),
               minimumSize: const Size(0, 24),
               textStyle: const TextStyle(fontSize: 11),
             ),
-            icon: const Icon(Icons.library_add_rounded, size: 14),
-            label: Text(AppLocalizations.of(context).uiSaveAsVoiceAsset),
+            icon: const Icon(
+              kIsWeb ? Icons.download_rounded : Icons.library_add_rounded,
+              size: 14,
+            ),
+            label: Text(
+              kIsWeb
+                  ? AppLocalizations.of(context).webDownloadAudio
+                  : AppLocalizations.of(context).uiSaveAsVoiceAsset,
+            ),
           ),
         ],
       ),

@@ -9,6 +9,37 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get webFeatureUnavailable =>
+      'This feature uses desktop files or media tools. Open Neiroha on desktop to use it.';
+
+  @override
+  String get webStorageUnavailable =>
+      'Neiroha could not open browser storage. Allow site storage or try a current browser.';
+
+  @override
+  String get webStorageDescription =>
+      'Providers, voice settings, voice banks and preferences are stored in this browser. Generated audio is kept in memory until the page reloads or the tab closes.';
+
+  @override
+  String get webSessionAudio =>
+      'Audio history is cleared when you reload. Download clips you want to keep.';
+
+  @override
+  String get webLocalAudioUnavailable =>
+      'Reference audio and avatar files require the desktop app.';
+
+  @override
+  String get webVoiceModeUnavailable =>
+      'Choose a browser-compatible HTTP provider, model and voice without a local reference file.';
+
+  @override
+  String get webProviderNetworkError =>
+      'The browser could not reach the provider. Check the URL and allow the Neiroha site origin on the provider (CORS).';
+
+  @override
+  String get webDownloadAudio => 'Download audio';
+
+  @override
   String get appTitle => 'Neiroha';
 
   @override

@@ -2,20 +2,26 @@ import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'quick_tts/history_list.dart';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/storage/path_service.dart';
+import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/adapters/speech_http_response.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/providers/browser_quick_tts.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/providers/session_audio_provider.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Compact Quick TTS surface embedded in Voice Bank above the character
@@ -60,11 +66,22 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
   @override
   Widget build(BuildContext context) {
     final asset = widget.asset;
-    final historyAsync = ref.watch(quickTtsHistoryStreamProvider);
+    final historyAsync = kIsWeb
+        ? AsyncData(ref.watch(sessionAudioProvider))
+        : ref.watch(quickTtsHistoryStreamProvider);
 
     if (asset == null) {
       return _buildEmptyState();
     }
+    final connection = kIsWeb
+        ? (ref.watch(ttsProvidersStreamProvider).value ?? [])
+              .where((provider) => provider.id == asset.providerId)
+              .firstOrNull
+        : null;
+    final canStream =
+        !kIsWeb ||
+        (connection != null &&
+            supportsBrowserSpeechStreaming(connection, asset));
 
     // Filter history to the currently-selected character so the test surface
     // stays focused on the voice being edited.
@@ -84,14 +101,23 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
         const PersistentAudioBar(
           onlyForSourceTag: voiceBankQuickTestPlaybackSource,
         ),
-        SwitchListTile.adaptive(
-          dense: true,
-          title: Text(AppLocalizations.of(context).uiPreferStreaming),
-          value: _preferStreaming,
-          onChanged: _generating
-              ? null
-              : (value) => setState(() => _preferStreaming = value),
-        ),
+        if (kIsWeb)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              AppLocalizations.of(context).webSessionAudio,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        if (canStream)
+          SwitchListTile.adaptive(
+            dense: true,
+            title: Text(AppLocalizations.of(context).uiPreferStreaming),
+            value: _preferStreaming,
+            onChanged: _generating
+                ? null
+                : (value) => setState(() => _preferStreaming = value),
+          ),
         _buildGenerateBar(asset),
       ],
     );
@@ -156,9 +182,20 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
             _deleteAllConfirm
                 ? TextButton.icon(
                     onPressed: () async {
-                      await ref
-                          .read(databaseProvider)
-                          .clearQuickTtsHistoryForAsset(asset.id);
+                      if (kIsWeb) {
+                        final history = ref.read(sessionAudioProvider.notifier);
+                        final playback = ref.read(
+                          playbackNotifierProvider.notifier,
+                        );
+                        history.clearVoice(asset.id);
+                        await playback.stopIfSourceTag(
+                          voiceBankQuickTestPlaybackSource,
+                        );
+                      } else {
+                        await ref
+                            .read(databaseProvider)
+                            .clearQuickTtsHistoryForAsset(asset.id);
+                      }
                       if (mounted) {
                         setState(() => _deleteAllConfirm = false);
                       }
@@ -313,6 +350,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
             Padding(
               padding: const EdgeInsets.only(right: 6),
               child: IconButton.filled(
+                tooltip: AppLocalizations.of(context).uiGenerate,
                 onPressed: _textController.text.isEmpty
                     ? null
                     : () => _generate(asset),
@@ -351,6 +389,18 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
 
     final text = _textController.text.trim();
     if (text.isEmpty) return;
+    final l10n = AppLocalizations.of(context);
+    if (kIsWeb &&
+        !supportsBrowserSpeech(
+          provider: provider,
+          modelName: asset.modelName,
+          refAudioPath: asset.refAudioPath,
+        )) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.webVoiceModeUnavailable)));
+      return;
+    }
 
     warnIfVoiceHealthFailedOnce(context: context, ref: ref, asset: asset);
     setState(() => _generating = true);
@@ -359,9 +409,23 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
 
     final cancellation = TtsCancelToken();
     _cancellation = cancellation;
-    final service = ref.read(quickTtsServiceProvider);
-    final playback = ref.read(playbackNotifierProvider.notifier);
     try {
+      if (kIsWeb) {
+        await generateBrowserQuickTts(
+          ref,
+          entryId: entryId,
+          provider: provider,
+          voice: asset,
+          text: text,
+          cancellation: cancellation,
+          stream:
+              _preferStreaming &&
+              supportsBrowserSpeechStreaming(provider, asset),
+        );
+        return;
+      }
+      final service = ref.read(quickTtsServiceProvider);
+      final playback = ref.read(playbackNotifierProvider.notifier);
       final streaming =
           _preferStreaming &&
           createAdapter(provider, modelName: asset.modelName).supportsStreaming;
@@ -402,7 +466,15 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).uiError2(error))),
+          SnackBar(
+            content: Text(
+              kIsWeb &&
+                      (error is BrowserSpeechConnectionException ||
+                          (error is DioException && error.response == null))
+                  ? l10n.webProviderNetworkError
+                  : l10n.uiError2(error),
+            ),
+          ),
         );
       }
     } finally {

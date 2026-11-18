@@ -1,5 +1,13 @@
 {
   "@@locale": "en",
+  "webFeatureUnavailable": "This feature uses desktop files or media tools. Open Neiroha on desktop to use it.",
+  "webStorageUnavailable": "Neiroha could not open browser storage. Allow site storage or try a current browser.",
+  "webStorageDescription": "Providers, voice settings, voice banks and preferences are stored in this browser. Generated audio is kept in memory until the page reloads or the tab closes.",
+  "webSessionAudio": "Audio history is cleared when you reload. Download clips you want to keep.",
+  "webLocalAudioUnavailable": "Reference audio and avatar files require the desktop app.",
+  "webVoiceModeUnavailable": "Choose a browser-compatible HTTP provider, model and voice without a local reference file.",
+  "webProviderNetworkError": "The browser could not reach the provider. Check the URL and allow the Neiroha site origin on the provider (CORS).",
+  "webDownloadAudio": "Download audio",
   "appTitle": "Neiroha",
   "@appTitle": {
     "description": "Application title."

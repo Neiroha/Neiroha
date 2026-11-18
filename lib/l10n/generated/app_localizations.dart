@@ -98,6 +98,54 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @webFeatureUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This feature uses desktop files or media tools. Open Neiroha on desktop to use it.'**
+  String get webFeatureUnavailable;
+
+  /// No description provided for @webStorageUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Neiroha could not open browser storage. Allow site storage or try a current browser.'**
+  String get webStorageUnavailable;
+
+  /// No description provided for @webStorageDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Providers, voice settings, voice banks and preferences are stored in this browser. Generated audio is kept in memory until the page reloads or the tab closes.'**
+  String get webStorageDescription;
+
+  /// No description provided for @webSessionAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio history is cleared when you reload. Download clips you want to keep.'**
+  String get webSessionAudio;
+
+  /// No description provided for @webLocalAudioUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference audio and avatar files require the desktop app.'**
+  String get webLocalAudioUnavailable;
+
+  /// No description provided for @webVoiceModeUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a browser-compatible HTTP provider, model and voice without a local reference file.'**
+  String get webVoiceModeUnavailable;
+
+  /// No description provided for @webProviderNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'The browser could not reach the provider. Check the URL and allow the Neiroha site origin on the provider (CORS).'**
+  String get webProviderNetworkError;
+
+  /// No description provided for @webDownloadAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Download audio'**
+  String get webDownloadAudio;
+
   /// Application title.
   ///
   /// In en, this message translates to:

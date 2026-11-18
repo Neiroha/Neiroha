@@ -3,7 +3,8 @@ import 'package:uuid/uuid.dart';
 
 import 'tables.dart';
 import 'novel_role_tables.dart';
-import 'database_connection.dart';
+import 'database_connection.dart'
+    if (dart.library.js_interop) 'database_connection_web.dart';
 import 'migrations/database_migrations.dart';
 import 'schema_version.dart';
 

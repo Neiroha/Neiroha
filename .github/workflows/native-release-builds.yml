@@ -481,3 +481,14 @@ jobs:
           body_path: RELEASE_NOTES.md
           fail_on_unmatched_files: true
           files: dist/neiroha-*
+
+      - name: Notify the Wiki of a stable release
+        if: ${{ !contains(env.RELEASE_TAG, '-') }}
+        continue-on-error: true
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ secrets.WIKI_DISPATCH_TOKEN }}
+        run: |
+          if [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ && -n "$GH_TOKEN" ]]; then
+            gh api --method POST repos/Neiroha/Neiroha.github.io/dispatches -f event_type=neiroha-stable-release
+          fi

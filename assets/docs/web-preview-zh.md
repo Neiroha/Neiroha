@@ -30,6 +30,8 @@ node scripts/tools/serve_web_preview.mjs
 
 合成由浏览器直连配置的 Provider。跨源 Provider 需允许 Neiroha 站点的来源、请求方法和认证头（CORS）。使用 HTTPS 托管时，Provider 也应提供浏览器可访问的安全地址。浏览器合成支持可直连的 HTTP Provider 和无需本地参考文件的音色。
 
+试用公开 [Wiki Web 演示](https://neiroha.github.io/guide/web-demo) 时，可由自有后端保管 OpenAI 等云端 API Key，并按需为浏览器签发短时凭据。也可在桌面客户端中直接配置提供商。
+
 ## 桌面功能
 
 小说阅读、对话与长文本工程、视频配音、文件型素材库及本机 API/MCP 仍在桌面端使用。Web 界面保留导航入口并显示提示。参考文件、录音、FFmpeg、系统语音和 OpenAI Realtime 按平台禁用。

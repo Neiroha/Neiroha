@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 
 import 'tts_adapter.dart';
+import 'wav_utils.dart';
 
 /// Adapter for Google Gemini (AI Studio) native TTS.
 ///
@@ -274,16 +275,12 @@ class GeminiTtsAdapter extends TtsAdapter {
 
   /// Pass RIFF/WAV through unchanged; wrap raw PCM (L16) in a WAV header.
   static TtsResult _asWav(Uint8List bytes, String mime) {
-    final isRiff =
-        bytes.length > 12 &&
-        bytes[0] == 0x52 &&
-        bytes[1] == 0x49 &&
-        bytes[2] == 0x46 &&
-        bytes[3] == 0x46;
-    if (isRiff) return TtsResult(audioBytes: bytes, contentType: 'audio/wav');
+    if (isRiffWav(bytes)) {
+      return TtsResult(audioBytes: bytes, contentType: 'audio/wav');
+    }
     final sampleRate = _parseSampleRate(mime, fallback: 24000);
     return TtsResult(
-      audioBytes: _wrapPcmAsWav(bytes, sampleRate: sampleRate),
+      audioBytes: wrapPcmAsWav(bytes, sampleRate: sampleRate),
       contentType: 'audio/wav',
     );
   }
@@ -337,41 +334,6 @@ class GeminiTtsAdapter extends TtsAdapter {
     final match = RegExp(r'rate=(\d+)').firstMatch(mime);
     if (match == null) return fallback;
     return int.tryParse(match.group(1)!) ?? fallback;
-  }
-
-  /// Wrap raw signed-16-bit PCM into a minimal RIFF/WAVE container.
-  static Uint8List _wrapPcmAsWav(
-    Uint8List pcm, {
-    int sampleRate = 24000,
-    int channels = 1,
-    int bitsPerSample = 16,
-  }) {
-    final byteRate = sampleRate * channels * bitsPerSample ~/ 8;
-    final blockAlign = channels * bitsPerSample ~/ 8;
-    final dataLen = pcm.length;
-    final buf = BytesBuilder();
-    void w32(int v) => buf.add([
-      v & 0xff,
-      (v >> 8) & 0xff,
-      (v >> 16) & 0xff,
-      (v >> 24) & 0xff,
-    ]);
-    void w16(int v) => buf.add([v & 0xff, (v >> 8) & 0xff]);
-    buf.add(ascii.encode('RIFF'));
-    w32(36 + dataLen);
-    buf.add(ascii.encode('WAVE'));
-    buf.add(ascii.encode('fmt '));
-    w32(16);
-    w16(1); // PCM
-    w16(channels);
-    w32(sampleRate);
-    w32(byteRate);
-    w16(blockAlign);
-    w16(bitsPerSample);
-    buf.add(ascii.encode('data'));
-    w32(dataLen);
-    buf.add(pcm);
-    return buf.toBytes();
   }
 
   static String _truncate(String s) =>

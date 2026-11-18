@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,14 +17,11 @@ import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'dialog_tts_screen.dart';
-import 'novel_reader_screen.dart';
-import 'phase_tts_screen.dart';
-import 'video_dub_screen.dart';
-import 'voice_asset_screen.dart';
 import 'voice_bank_screen.dart';
 import 'provider_screen.dart';
 import 'settings_screen.dart';
+import 'workspaces/workspaces_native.dart'
+    if (dart.library.js_interop) 'workspaces/workspaces_web.dart';
 
 const double _compactShellBreakpoint = 840;
 
@@ -37,7 +35,7 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final Set<NavTab> _visitedTabs = {AppNavigationSettings.defaultStartupTab};
-  PhaseTtsExitGuard? _phaseTtsExitGuard;
+  Future<bool> Function()? _phaseTtsExitGuard;
   String? _lastPersistedTabName;
   DateTime? _lastAndroidBackAt;
 
@@ -104,9 +102,9 @@ class _AppShellState extends ConsumerState<AppShell> {
             playbackSourceTag == voiceBankQuickTestPlaybackSource);
 
     return PopScope(
-      canPop: !Platform.isAndroid,
+      canPop: kIsWeb || !Platform.isAndroid,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && Platform.isAndroid) {
+        if (!kIsWeb && !didPop && Platform.isAndroid) {
           unawaited(_handleAndroidBackIntent());
         }
       },
@@ -124,7 +122,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                 : null,
             body: Column(
               children: [
-                if (Platform.isWindows) const _WindowsTitleBar(),
+                if (!kIsWeb && Platform.isWindows) const _WindowsTitleBar(),
                 if (compact)
                   _MobileTopBar(
                     selectedTab: selectedTab,
@@ -149,7 +147,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                         ),
                 ),
                 if (showGlobalPlayer)
-                  Platform.isWindows
+                  !kIsWeb && Platform.isWindows
                       ? const PersistentAudioBar()
                       : const SafeArea(top: false, child: PersistentAudioBar()),
               ],
@@ -247,24 +245,15 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   Widget _buildPage(NavTab tab, {required bool active}) {
     return switch (tab) {
-      NavTab.phaseTts => PhaseTtsScreen(
-        key: const ValueKey('phaseTts'),
-        onExitGuardChanged: (guard) => _phaseTtsExitGuard = guard,
-      ),
-      NavTab.novelReader => const NovelReaderScreen(
-        key: ValueKey('novelReader'),
-      ),
-      NavTab.dialogTts => const DialogTtsScreen(key: ValueKey('dialogTts')),
-      NavTab.videoDub => VideoDubScreen(
-        key: const ValueKey('videoDub'),
-        active: active,
-      ),
-      NavTab.voiceAssets => const VoiceAssetScreen(
-        key: ValueKey('voiceAssets'),
-      ),
       NavTab.voiceBank => const VoiceBankScreen(key: ValueKey('voiceBank')),
       NavTab.providers => const ProviderScreen(key: ValueKey('providers')),
       NavTab.settings => const SettingsScreen(key: ValueKey('settings')),
+      _ => buildWorkspace(
+        context,
+        tab,
+        active: active,
+        onPhaseExitGuardChanged: (guard) => _phaseTtsExitGuard = guard,
+      ),
     };
   }
 }

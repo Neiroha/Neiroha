@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/widgets/live_sentence_preview_button.dart';
 
 /// Telegram-like chat bubble for one Dialog TTS line.
 ///
@@ -118,6 +119,15 @@ class ChatBubble extends StatelessWidget {
                   ? AppLocalizations.of(context).uiRegenerate
                   : AppLocalizations.of(context).uiGenerate,
               onPressed: onGenerate,
+            ),
+          if (!hasAudio)
+            LiveSentencePreviewButton(
+              kind: SentenceProjectKind.dialog,
+              projectId: line.projectId,
+              id: line.id,
+              text: line.lineText,
+              voiceId: line.voiceAssetId,
+              disabled: isGenerating,
             ),
           SizedBox(width: 4),
           if (onPlayFrom != null)

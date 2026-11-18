@@ -1,7 +1,19 @@
+import 'package:neiroha/presentation/actions/novel_sentence_playback.dart';
+import 'package:neiroha/data/services/novel/novel_cache_file_writer.dart';
+import 'package:neiroha/data/services/novel/novel_audio_tools.dart';
+import 'package:neiroha/presentation/widgets/novel_roles/review_reader.dart';
+import 'package:neiroha/presentation/widgets/novel_roles/review_panel.dart';
+import 'package:neiroha/domain/novel/voice_resolver.dart';
+import 'package:neiroha/providers/novel_role_providers.dart';
+import 'package:neiroha/data/services/novel/novel_voice_resolution.dart';
+import 'package:neiroha/data/services/novel/novel_audio_fingerprint.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'package:neiroha/domain/capabilities/task_profile.dart';
+import 'package:neiroha/data/services/novel/novel_synthesis_binding.dart';
+import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'dart:io';
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
@@ -13,6 +25,7 @@ import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/audio_merge_service.dart';
 import 'package:neiroha/data/services/loudness_normalizer.dart';
+import 'package:neiroha/domain/voice_capabilities.dart';
 import 'package:neiroha/data/storage/novel_dialogue_rules_service.dart';
 import 'package:neiroha/data/storage/novel_import_service.dart';
 import 'package:neiroha/data/storage/novel_text_filter_rules_service.dart';

@@ -9,6 +9,31 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get webFeatureUnavailable => '这个功能依赖桌面文件或媒体工具，请在 Neiroha 桌面端使用。';
+
+  @override
+  String get webStorageUnavailable => 'Neiroha 无法打开浏览器存储。请允许站点存储，或换用新版浏览器。';
+
+  @override
+  String get webStorageDescription =>
+      '服务商、音色、音色库和偏好保存在当前浏览器。生成的音频留在本页内存中，刷新或关闭标签页后清除。';
+
+  @override
+  String get webSessionAudio => '刷新后会清空试听历史。需要保留的片段可以下载。';
+
+  @override
+  String get webLocalAudioUnavailable => '参考音频和头像文件需要使用桌面端。';
+
+  @override
+  String get webVoiceModeUnavailable => '请选择浏览器可用的 HTTP 服务商、模型和无需本地参考文件的音色。';
+
+  @override
+  String get webProviderNetworkError => '浏览器无法连接服务商。请检查地址，并在服务商侧允许本站来源（CORS）。';
+
+  @override
+  String get webDownloadAudio => '下载音频';
+
+  @override
   String get appTitle => 'Neiroha';
 
   @override
@@ -115,7 +140,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get keepTtsRunningDisabled => '离开小说阅读器时会停止播放。';
 
   @override
-  String get aboutSubtitle => 'v0.4.1 - AI 音频中间件与配音工作站';
+  String get aboutSubtitle => 'v0.5.0 - AI 音频中间件与配音工作站';
 
   @override
   String get uiUnassigned => '-- 未分配 --';
@@ -259,6 +284,9 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get uiAppSupportFallbackInstallDirIsReadOnly =>
       '应用支持目录 fallback（安装目录只读）';
+
+  @override
+  String get uiAppSupportMacOs => '应用支持目录（macOS 标准位置）';
 
   @override
   String get uiAppend => '追加';
@@ -932,6 +960,10 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get uiLeaveBlankToAutoDetectEGCFfmpegBinFfmpegExe =>
       '留空自动检测（例如 C:\\ffmpeg\\bin\\ffmpeg.exe）';
+
+  @override
+  String get uiLeaveBlankToAutoDetectMacOsFfmpeg =>
+      '留空自动检测（例如 /opt/homebrew/bin/ffmpeg）';
 
   @override
   String get uiLine => '行距';
@@ -2333,4 +2365,620 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get novelImportFolderTitle => '导入小说文件夹';
+
+  @override
+  String get uiPreferStreaming => '自动：优先流式';
+
+  @override
+  String get uiStopSynthesis => '停止生成';
+
+  @override
+  String get uiAudioBuffering => '正在缓冲…';
+
+  @override
+  String get roleReadMode => '阅读';
+
+  @override
+  String get roleReviewMode => '角色校对';
+
+  @override
+  String get roleCharacters => '作品角色';
+
+  @override
+  String get roleAddCharacter => '添加人物';
+
+  @override
+  String get roleName => '人物名';
+
+  @override
+  String get roleAliases => '别名（用逗号分隔）';
+
+  @override
+  String get roleDescription => '人物描述';
+
+  @override
+  String get roleNoCharacter => '未确定人物';
+
+  @override
+  String get roleVoice => '音色';
+
+  @override
+  String get roleDefaultVoice => '使用项目默认音色';
+
+  @override
+  String get roleChapterOverride => '仅覆盖当前章节的音色';
+
+  @override
+  String get roleSelected => '校对所选句';
+
+  @override
+  String get rolePickSentence => '点选正文中的一句开始校对';
+
+  @override
+  String get roleCategory => '类型';
+
+  @override
+  String get roleNarrator => '旁白';
+
+  @override
+  String get roleDialogue => '对白';
+
+  @override
+  String get roleThought => '心理活动';
+
+  @override
+  String get roleSystem => '系统文本';
+
+  @override
+  String get roleScope => '修改范围';
+
+  @override
+  String get roleOnlySentence => '仅这一句';
+
+  @override
+  String get roleChapterUnlocked => '本章同人物的未锁定句';
+
+  @override
+  String get roleLock => '锁定人工结果';
+
+  @override
+  String get roleApply => '应用修改';
+
+  @override
+  String get roleUndo => '撤销上次台词修改';
+
+  @override
+  String get rolePending => '待确认';
+
+  @override
+  String get roleInferred => '根据上下文推断';
+
+  @override
+  String get roleConflict => '存在冲突';
+
+  @override
+  String get roleConfirmed => '人工已确认';
+
+  @override
+  String get roleInstruction => '本句风格覆盖（可留空）';
+
+  @override
+  String get roleSentenceVoice => '本句音色覆盖';
+
+  @override
+  String get roleMerge => '合并人物';
+
+  @override
+  String get roleMergeInto => '合并到';
+
+  @override
+  String get roleManualReason => '人工校对';
+
+  @override
+  String get roleCached => '音频缓存有效';
+
+  @override
+  String get roleStaleCache => '音频需要重新生成';
+
+  @override
+  String get roleNoCache => '尚未生成音频';
+
+  @override
+  String get roleRename => '编辑人物';
+
+  @override
+  String get rolePreview => '试听所选句';
+
+  @override
+  String get rolePendingList => '待确认台词';
+
+  @override
+  String get roleNoPending => '当前章节无待确认台词';
+
+  @override
+  String get roleAnalysisModel => '角色分析模型（文本模型 ID）';
+
+  @override
+  String get roleAnalysisProvider => '分析连接';
+
+  @override
+  String get roleAnalysisStart => '分析当前章节';
+
+  @override
+  String get roleAnalysisResume => '确认角色表并继续 / 恢复';
+
+  @override
+  String get roleAnalysisPause => '暂停分析';
+
+  @override
+  String get roleAnalysisFeedback => '补充人物或校对意见';
+
+  @override
+  String get roleAnalysisReplan => '按新意图重规划角色表';
+
+  @override
+  String get roleAnalysisBudget =>
+      '仅分析当前章节；每次最多 12 次分析请求，未验证模型另有一次工具检查，可能计费。人工锁定与已确认句会保留。';
+
+  @override
+  String get roleAnalysisOffline => '在服务商页配置连接后，再选择分析模型。';
+
+  @override
+  String get modelDiscover => '发现模型 / 能力';
+
+  @override
+  String get modelRefresh => '从当前连接刷新';
+
+  @override
+  String get modelManual => '手动使用此模型';
+
+  @override
+  String get modelUnknown => '未知';
+
+  @override
+  String get modelSupported => '支持';
+
+  @override
+  String get modelUnsupported => '不支持';
+
+  @override
+  String get roleToolModelHint => '仅使用支持文本与函数调用的模型。首次使用能力未知的模型时，会先用短示例验证工具调用。';
+
+  @override
+  String get modelCapabilityHint => '目录描述能力；当前账号是否可用，需要实际成功调用确认。不会自动发起付费探测。';
+
+  @override
+  String get modelOverride => '覆盖此路由的任务能力';
+
+  @override
+  String get modelNoModels => '暂无缓存模型，可刷新或手填模型 ID。';
+
+  @override
+  String get roleStagePlan => '规划人物';
+
+  @override
+  String get roleStageRoster => '等待角色表复核';
+
+  @override
+  String get roleStageLabel => '标注台词';
+
+  @override
+  String get roleStageValidate => '校验结果';
+
+  @override
+  String get roleStageReview => '复核疑点';
+
+  @override
+  String get roleStageReplan => '按反馈调整角色';
+
+  @override
+  String get roleStagePaused => '已暂停';
+
+  @override
+  String get roleStageCompleted => '已完成';
+
+  @override
+  String get roleStageFailed => '分析失败';
+
+  @override
+  String get roleAnalysisSentences => '句';
+
+  @override
+  String get roleAnalysisCalls => '次调用';
+
+  @override
+  String get roleSplitText => '拆分正文';
+
+  @override
+  String get roleSplitTextHelp => '选择正文范围可拆出该段，或将光标放在拆分点；保留所有原文和现有标注。';
+
+  @override
+  String get roleMergeText => '合并正文';
+
+  @override
+  String get roleMergeTextHelp =>
+      '合并从当前片段到所选末段。人物或风格不一致时清除归属并标记待确认；旧音频保留但不再使用。';
+
+  @override
+  String get roleMergeUntil => '合并至';
+
+  @override
+  String get roleMergeNewline => '片段间保留换行';
+
+  @override
+  String get roleUndoStructure => '撤销最近正文拆并';
+
+  @override
+  String get roleStyleMatrix => '人物类别风格';
+
+  @override
+  String get roleStyleHelp => '留空继承默认音色或风格；全部留空会移除此项覆盖。';
+
+  @override
+  String get roleSplitCharacter => '拆分人物';
+
+  @override
+  String get roleSplitCharacterHelp => '将本章所选台词移至新人物，复制原音色绑定；可用标注撤销恢复归属，新人物保留。';
+
+  @override
+  String get roleIdentityKind => '人物身份类型';
+
+  @override
+  String get roleIdentityNamed => '具名人物';
+
+  @override
+  String get roleIdentityAnonymous => '匿名说话人';
+
+  @override
+  String get roleIdentityGroup => '群体';
+
+  @override
+  String get roleDirectionHelp =>
+      '选角与语气每次各发起一个有界模型任务；先审阅建议再应用。选角保留已有绑定，语气仅处理最多 30 条未确认、未锁定且没有风格的片段。';
+
+  @override
+  String get roleSuggestCast => '自动音色选角';
+
+  @override
+  String get roleSuggestTone => '语气导演';
+
+  @override
+  String get roleDirectionReview => '审阅建议';
+
+  @override
+  String get roleDirectionEmpty => '模型没有提出可应用建议。';
+
+  @override
+  String get taskProfiles => '任务模型配置';
+
+  @override
+  String get taskProfilesHelp =>
+      '分别设置分角、选角、语气和朗读的连接、模型、协议。朗读配置覆盖本作品的模型/协议，人物音色和参考音频仍来自绑定音色。未配置的任务沿用现有选择。';
+
+  @override
+  String get taskSynthesis => '小说朗读';
+
+  @override
+  String get taskProtocol => '服务协议';
+
+  @override
+  String get taskEndpoint => '相对端点路径（留空使用协议默认值）';
+
+  @override
+  String get taskKeyHeader => 'API key 请求头名称';
+
+  @override
+  String get taskUseDefaults => '恢复此任务默认配置';
+
+  @override
+  String get modelReadDeclaration => '读取后端能力声明';
+
+  @override
+  String get uiLiveSentencePreview => '即时试听并保存完整音频';
+
+  @override
+  String get roleSceneTitle => '场景理解';
+
+  @override
+  String get roleSceneFirstPerson => '第一人称叙述者';
+
+  @override
+  String get roleScenePresent => '在场人物';
+
+  @override
+  String get roleSceneNested => '嵌套讲述者';
+
+  @override
+  String get roleSceneHelp => '请与角色表一并核对；如需纠正，可填写反馈并重新规划，再继续分析。';
+
+  @override
+  String get roleToolReview => '局部工具校对';
+
+  @override
+  String get roleToolBudget =>
+      '每轮最多 3 次调用、20,000 token 预算、6 次本地查询、8 条提案；输出上限 1,600 token。失败保留未知用量预留，恢复不重置预算。';
+
+  @override
+  String get roleToolCurrent => '仅当前片段';
+
+  @override
+  String get roleToolDoubts => '本章疑点（最多 8 段）';
+
+  @override
+  String get roleToolStart => '开始新一轮局部校对';
+
+  @override
+  String get roleToolReviewProposals => '审阅补人、合并与修改提案';
+
+  @override
+  String get roleToolApplyHint =>
+      '勾选后才会应用。采纳仍是 AI 推断，不等于人工确认；正文、锁定与已确认标注受保护。合并会迁移所列片段与兼容的声音绑定，并移除来源人物，请仔细核对。';
+
+  @override
+  String get roleToolDependency => '修改依赖新增人物，请同时勾选对应补人提案。';
+
+  @override
+  String get roleToolAdd => '补人';
+
+  @override
+  String get roleToolPatch => '修改标注';
+
+  @override
+  String get roleToolMerge => '合并身份';
+
+  @override
+  String get roleToolReady => '待审阅';
+
+  @override
+  String get roleToolBudgetExhausted => '预算已用尽';
+
+  @override
+  String get roleToolApplied => '已应用所选提案';
+
+  @override
+  String get roleToolEmpty => '本轮未提出修改';
+
+  @override
+  String get roleToolEvidence => '正文证据';
+
+  @override
+  String get roleToolAffected => '受影响片段';
+
+  @override
+  String get roleToolReserved => '计费预算用量（含未知预留）';
+
+  @override
+  String get settingsRoleAi => '分角色 AI';
+
+  @override
+  String get settingsRoleAiDescription => '小说与长文本共用的模型、配置和阶段提示词';
+
+  @override
+  String get roleSkillSettingsHint =>
+      '选择生效配置，编辑各阶段提示词。小说校对与长文本自动分角色共用此配置；作品的专属任务连接和手动模型优先。内置默认值随应用打包，恢复当前配置会立即保存。修改后未完成的分析需要重新开始。';
+
+  @override
+  String get roleSkillProfile => '分角色配置';
+
+  @override
+  String get roleSkillDefault => '内置默认配置';
+
+  @override
+  String get roleSkillClone => '复制为新配置';
+
+  @override
+  String get roleSkillRestoreProfile => '一键还原当前配置';
+
+  @override
+  String get roleSkillProfileName => '配置名称';
+
+  @override
+  String get roleSkillUseEntryConnection => '使用当前入口选择的连接';
+
+  @override
+  String get roleSkillNode => '分析阶段';
+
+  @override
+  String get roleSkillPrompt => '阶段提示词';
+
+  @override
+  String get roleSkillRestoreNode => '还原此阶段提示词';
+
+  @override
+  String get roleSkillSave => '保存并启用配置';
+
+  @override
+  String get phaseAutoRoles => 'AI 自动分角色';
+
+  @override
+  String get phaseRoleIntent => '配音意图（可选）';
+
+  @override
+  String get phaseRoleIntentHint => '例如：保留原文；角色分声线；引用故事由讲述者朗读。';
+
+  @override
+  String get phaseRoleReviewHint =>
+      '分析不会直接改工程。先核对人物、原文片段和音色，再应用；未分配音色的片段保留待选。应用会替换当前分段，已有音频保留在磁盘。';
+
+  @override
+  String get phaseRoleAnalyze => '分析并预览';
+
+  @override
+  String get phaseRoleApply => '应用分角与音色';
+
+  @override
+  String get phaseRoleUnknown => '待确认人物';
+
+  @override
+  String get phaseRoleNarrator => '旁白默认音色';
+
+  @override
+  String get phaseRoleNoVoice => '稍后选择音色';
+
+  @override
+  String get phaseRoleStatus => '分析调用与预算内进度见任务监视器。最多 40 次调用，分析期间可取消；不会自动合成音频。';
+
+  @override
+  String get phaseRoleStale => '正文、已有分段、音色库或分角配置已变化，请重新分析。';
+
+  @override
+  String get dubbingMode => '配音模式';
+
+  @override
+  String get dubbingModeAutomatic => '自动判断';
+
+  @override
+  String get dubbingModeStoryteller => '讲述者朗读';
+
+  @override
+  String get dubbingModeDramatized => '广播剧演绎';
+
+  @override
+  String get dubbingModeScript => '台本与聊天';
+
+  @override
+  String get dubbingModeAutomaticHelp => '根据叙述视角、发言提示和上下文判断归属。';
+
+  @override
+  String get dubbingModeStorytellerHelp => '故事中的引用沿用外层讲述者的声音。';
+
+  @override
+  String get dubbingModeDramatizedHelp => '为人物明确的直接引语分配角色声线，引语结束后回到讲述者。';
+
+  @override
+  String get dubbingModeScriptHelp => '按人物前缀或发送者分配对白，舞台说明归旁白。';
+
+  @override
+  String get phaseRoleEditSegment => '调整片段归属';
+
+  @override
+  String get phaseRoleModelEvidence => 'AI 原始依据';
+
+  @override
+  String get phaseRoleContext => '查看前后文';
+
+  @override
+  String get phaseRolePrevious => '前一段';
+
+  @override
+  String get phaseRoleFollowing => '后一段';
+
+  @override
+  String get phaseRoleCategory => '片段类别';
+
+  @override
+  String get phaseRoleSpeaker => '归属人物';
+
+  @override
+  String get phaseRoleNoCharacter => '暂不指定人物';
+
+  @override
+  String get phaseRoleAddCharacter => '新增人物';
+
+  @override
+  String get phaseRoleCharacterName => '人物名称';
+
+  @override
+  String get phaseRoleNameRequired => '请输入未使用的人物名称';
+
+  @override
+  String get phaseRoleSegments => '片段';
+
+  @override
+  String get phaseRoleVoices => '角色音色';
+
+  @override
+  String get phaseRoleNeedsReview => '待核对';
+
+  @override
+  String get phaseRoleSearch => '搜索正文或人物';
+
+  @override
+  String get phaseRoleVoiceHelp => '为同一角色的所有片段选择音色。也可以稍后在生成列表中分配。';
+
+  @override
+  String get phaseRoleNoMatches => '没有符合条件的片段。';
+
+  @override
+  String get phaseRoleEdited => '已手动调整';
+
+  @override
+  String get phaseRolePreviewTitle => '审阅角色归属';
+
+  @override
+  String get phaseRoleStop => '停止分析';
+
+  @override
+  String get phaseRoleStopping => '正在停止…';
+
+  @override
+  String get phaseRoleStopped => '分析已停止。可以调整后再试。';
+
+  @override
+  String get phaseRolePreparing => '正在准备文本…';
+
+  @override
+  String get phaseRoleAdjustIntent => '调整配音意图';
+
+  @override
+  String get phaseRoleBackToPreview => '返回已有预览';
+
+  @override
+  String get phaseRoleLengthLimit =>
+      '文本超出单次分析上限（360 段或 64,000 UTF-16 单位），请拆成较短的文本。';
+
+  @override
+  String get phaseRoleConnectionSettings => '连接与分析模型';
+
+  @override
+  String get phaseRoleRestoreSuggestion => '还原 AI 建议';
+
+  @override
+  String get roleAnalysisPanelTitle => 'AI 自动分角色';
+
+  @override
+  String get roleAnalysisApproveRoster => '确认人物并分配台词';
+
+  @override
+  String get roleAnalysisResumeShort => '继续分析';
+
+  @override
+  String get roleAnalysisRestart => '重新分析';
+
+  @override
+  String get roleAnalysisRosterHint => '先核对下方人物表和场景判断，再继续分配台词。';
+
+  @override
+  String get rolePollOnlyUncertain => '只看疑点';
+
+  @override
+  String get roleNoUncertain => '当前章节没有需要优先核对的疑点。';
+
+  @override
+  String phaseRoleReviewSummary(int total, int uncertain, int missing) {
+    return '$total 个片段 · $uncertain 段待核对 · $missing 类归属未分音色';
+  }
+
+  @override
+  String phaseRoleReplaceExisting(int count) {
+    return '应用后将替换现有的 $count 个片段。原始脚本和已生成音频文件会保留。';
+  }
+
+  @override
+  String phaseRoleKeepUncertain(int count) {
+    return '还有 $count 个片段待核对。可返回调整，或将当前归属带入生成列表。';
+  }
+
+  @override
+  String phaseRoleInputSummary(int count) {
+    return '已识别 $count 个语义片段。分析最多发起 40 次模型调用。未验证模型会额外发起一次工具检查。';
+  }
+
+  @override
+  String phaseRoleProgress(int processed, int total, int calls) {
+    return '已处理 $processed/$total 段 · 已发起 $calls 次调用';
+  }
+
+  @override
+  String get roleShowMorePending => '显示更多待确认片段';
 }

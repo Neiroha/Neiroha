@@ -1,3 +1,6 @@
+import 'package:neiroha/data/services/synthesis/synthesis_service.dart';
+import 'package:neiroha/data/services/synthesis/quick_tts_service.dart';
+import 'package:neiroha/data/services/capabilities/capability_repository.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -137,6 +140,21 @@ final phaseSegmentSettingsFileServiceProvider =
 /// provider so per-provider concurrency and rate limits are enforced globally.
 final ttsQueueServiceProvider = Provider<TtsQueueService>((ref) {
   return TtsQueueService.instance;
+});
+
+final synthesisServiceProvider = Provider<SynthesisService>((ref) {
+  return SynthesisService(
+    ref.watch(ttsQueueServiceProvider),
+    capabilities: CapabilityRepository(ref.watch(databaseProvider)),
+  );
+});
+
+final quickTtsServiceProvider = Provider<QuickTtsService>((ref) {
+  return QuickTtsService(
+    ref.watch(databaseProvider),
+    ref.watch(storageServiceProvider),
+    ref.watch(synthesisServiceProvider),
+  );
 });
 
 /// Live process-wide TTS queue snapshot for task monitoring surfaces.

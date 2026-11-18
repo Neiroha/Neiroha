@@ -1,5 +1,9 @@
+import 'dart:ui' show AppExitResponse;
+import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/providers/novel_role_providers.dart';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -18,6 +22,11 @@ import 'server/api_server.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (kIsWeb) {
+    runApp(const ProviderScope(child: NeirohaApp()));
+    return;
+  }
 
   // libmpv init for Video Dub's mp4 playback. Cheap to call up-front; no video
   // is loaded until the user enters Video Dub.
@@ -52,11 +61,33 @@ class NeirohaApp extends ConsumerStatefulWidget {
 }
 
 class _NeirohaAppState extends ConsumerState<NeirohaApp> {
+  late final AppLifecycleListener _lifecycle;
+  Future<void>? _webSettings;
   @override
   void initState() {
     super.initState();
-    Future.microtask(_loadAppSettings);
-    Future.microtask(_autoStartApiServer);
+    _lifecycle = AppLifecycleListener(
+      onExitRequested: () async {
+        if (kIsWeb) return AppExitResponse.exit;
+        ref.read(roleAnalysisServiceProvider).dispose();
+        ref.read(roleReviewServiceProvider).dispose();
+        await ref.read(playbackNotifierProvider.notifier).stop();
+        await ref.read(apiServerProvider).stop();
+        return AppExitResponse.exit;
+      },
+    );
+    if (kIsWeb) {
+      _webSettings = Future.microtask(_loadAppSettings);
+    } else {
+      Future.microtask(_loadAppSettings);
+      Future.microtask(_autoStartApiServer);
+    }
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
   }
 
   /// Honour Settings → API Server → "Start on launch" so agents can reach
@@ -105,7 +136,31 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const AppShell(),
+      home: kIsWeb
+          ? FutureBuilder<void>(
+              future: _webSettings,
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Scaffold(
+                    body: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          AppLocalizations.of(context).webStorageUnavailable,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                if (snapshot.connectionState == ConnectionState.done) {
+                  return const AppShell();
+                }
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              },
+            )
+          : const AppShell(),
     );
   }
 }

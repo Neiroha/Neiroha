@@ -1,0 +1,26 @@
+name: Refresh model capability snapshot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Normalize public catalog and report differences
+        run: dart scripts/tools/refresh_model_catalog.dart
+      - uses: actions/upload-artifact@v4
+        with:
+          name: model-capabilities-snapshot
+          path: assets/model_catalog/model_capabilities.snapshot.json
+      # The artifact is reviewed explicitly; no auto-commit or publishing.

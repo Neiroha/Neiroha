@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/widgets/live_sentence_preview_button.dart';
 
 /// One row of the subtitle panel in the Video Dub editor.
 ///
@@ -20,6 +21,7 @@ class CueCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onPreview;
+  final Future<void> Function()? beforeLivePreview;
 
   const CueCard({
     super.key,
@@ -35,6 +37,7 @@ class CueCard extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onPreview,
+    this.beforeLivePreview,
   });
 
   @override
@@ -115,10 +118,13 @@ class CueCard extends StatelessWidget {
                       onPressed: onPreview,
                     )
                   else
-                    Icon(
-                      Icons.pending_rounded,
-                      size: 14,
-                      color: Colors.white.withValues(alpha: 0.22),
+                    LiveSentencePreviewButton(
+                      kind: SentenceProjectKind.video,
+                      projectId: cue.projectId,
+                      id: cue.id,
+                      text: cue.cueText,
+                      voiceId: canGenerate ? cue.voiceAssetId : null,
+                      beforePlay: beforeLivePreview,
                     ),
                   IconButton(
                     padding: EdgeInsets.zero,

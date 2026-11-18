@@ -1,10 +1,11 @@
+import 'package:neiroha/domain/text/semantic_split.dart';
+import 'package:neiroha/presentation/widgets/live_sentence_preview_button.dart';
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'speaker_label.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
 import 'package:neiroha/domain/voice_capabilities.dart';
@@ -977,17 +978,4 @@ String _formatClock(double seconds) {
 String _formatShort(double seconds) {
   if (seconds < 60) return '${seconds.toStringAsFixed(1)}s';
   return _formatClock(seconds);
-}
-
-/// Split point near the middle of [text], preferring sentence punctuation.
-int _suggestSplitOffset(String text) {
-  final middle = text.length ~/ 2;
-  final marks = RegExp(r'[。！？!?；;，,、…]');
-  var best = -1;
-  for (final m in marks.allMatches(text)) {
-    final at = m.end;
-    if (at <= 0 || at >= text.length) continue;
-    if (best < 0 || (at - middle).abs() < (best - middle).abs()) best = at;
-  }
-  return best < 0 ? math.max(1, middle) : best;
 }

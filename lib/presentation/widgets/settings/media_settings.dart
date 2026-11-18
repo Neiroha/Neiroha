@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:neiroha/presentation/actions/file_dialogs.dart';
@@ -140,9 +142,13 @@ class _FfmpegSettingsCardState extends ConsumerState<FfmpegSettingsCard> {
                     controller: _pathCtrl,
                     decoration: InputDecoration(
                       isDense: true,
-                      hintText: AppLocalizations.of(
-                        context,
-                      ).uiLeaveBlankToAutoDetectEGCFfmpegBinFfmpegExe,
+                      hintText: Platform.isMacOS
+                          ? AppLocalizations.of(
+                              context,
+                            ).uiLeaveBlankToAutoDetectMacOsFfmpeg
+                          : AppLocalizations.of(
+                              context,
+                            ).uiLeaveBlankToAutoDetectEGCFfmpegBinFfmpegExe,
                       hintStyle: TextStyle(
                         color: Colors.white.withValues(alpha: 0.3),
                         fontSize: 12,

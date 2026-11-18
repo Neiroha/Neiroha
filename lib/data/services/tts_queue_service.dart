@@ -1,40 +1,14 @@
+import 'synthesis/synthesis_service.dart';
 import 'dart:async';
 import 'dart:collection';
 import 'dart:math' as math;
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
+export 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 
 enum TtsQueueTaskStatus { queued, running, completed, failed }
-
-/// Cancels the not-yet-started requests submitted with it. Requests already
-/// talking to the provider run to completion (their audio is already paid
-/// for), so callers should still handle a late result.
-class TtsCancelToken {
-  bool _cancelled = false;
-  final List<void Function()> _listeners = [];
-
-  bool get isCancelled => _cancelled;
-
-  void cancel() {
-    if (_cancelled) return;
-    _cancelled = true;
-    for (final listener in List.of(_listeners)) {
-      listener();
-    }
-    _listeners.clear();
-  }
-
-  void _onCancel(void Function() listener) => _listeners.add(listener);
-}
-
-/// Thrown for a queued request whose [TtsCancelToken] was cancelled.
-class TtsCancelledException implements Exception {
-  const TtsCancelledException();
-
-  @override
-  String toString() => 'Cancelled';
-}
 
 class TtsQueueTaskSnapshot {
   const TtsQueueTaskSnapshot({
@@ -139,16 +113,13 @@ class TtsQueueService {
     String? label,
     TtsCancelToken? cancelToken,
   }) {
-    return enqueue(
+    return SynthesisService(this).collect(
       provider: provider,
-      estimatedTokens: estimateTokens(request),
+      request: request,
+      modelName: modelName,
       source: source,
       label: label ?? _labelForRequest(request),
-      cancelToken: cancelToken,
-      task: () {
-        final adapter = createAdapter(provider, modelName: modelName);
-        return adapter.synthesize(request);
-      },
+      cancellation: cancelToken,
     );
   }
 
@@ -159,6 +130,7 @@ class TtsQueueService {
     String source = 'TTS',
     String label = 'TTS request',
     TtsCancelToken? cancelToken,
+    bool interactive = false,
   }) {
     if (cancelToken?.isCancelled ?? false) {
       return Future<T>.error(const TtsCancelledException());
@@ -172,8 +144,12 @@ class TtsQueueService {
       estimatedTokens: math.max(1, estimatedTokens),
       run: task,
     );
-    state.pending.add(queuedTask);
-    cancelToken?._onCancel(() {
+    if (interactive) {
+      state.pending.addFirst(queuedTask);
+    } else {
+      state.pending.add(queuedTask);
+    }
+    final removeCancelListener = cancelToken?.onCancel(() {
       if (!state.pending.remove(queuedTask)) return;
       queuedTask.completer.completeError(const TtsCancelledException());
       _emitSnapshot();
@@ -181,7 +157,44 @@ class TtsQueueService {
     });
     _emitSnapshot();
     _drain(provider.id);
-    return queuedTask.completer.future;
+    return queuedTask.completer.future.whenComplete(() {
+      removeCancelListener?.call();
+    });
+  }
+
+  /// A multi-utterance session keeps its concurrency lease, but every further
+  /// upstream request must still consume the provider's RPM/TPM/day budget.
+  Future<void> accountContinuation(
+    db.TtsProvider provider,
+    TtsRequest request,
+    TtsCancelToken cancellation,
+  ) async {
+    final state = _states[provider.id];
+    if (state == null || state.activeTasks.isEmpty) {
+      throw StateError('A continuation requires an active synthesis lease.');
+    }
+    final cancelled = Completer<void>();
+    final remove = cancellation.onCancel(() => cancelled.complete());
+    try {
+      while (true) {
+        cancellation.throwIfCancelled();
+        final tokens = estimateTokens(request);
+        final wait = state.waitBeforeStart(provider, tokens);
+        if (wait <= Duration.zero) {
+          state.recordStart(tokens);
+          return;
+        }
+        final delay = Completer<void>();
+        final timer = Timer(wait, delay.complete);
+        try {
+          await Future.any([delay.future, cancelled.future]);
+        } finally {
+          timer.cancel();
+        }
+      }
+    } finally {
+      remove();
+    }
   }
 
   int estimateTokens(TtsRequest request) {

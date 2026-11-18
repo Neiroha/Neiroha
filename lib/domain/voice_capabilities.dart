@@ -1,3 +1,4 @@
+import 'package:neiroha/data/adapters/openai_tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 
 /// Which per-call style controls a character's engine understands. Shared by
@@ -11,6 +12,9 @@ abstract final class VoiceCapabilities {
   ) {
     return switch (provider.adapterType) {
       'chatCompletionsTts' => isMimoTtsModel(asset, provider),
+      'openaiTts' => OpenAiTtsAdapter.supportsInstructions(
+        asset.modelName ?? provider.defaultModelName,
+      ),
       'cosyvoice' => true,
       'voxcpm2Native' => true,
       'geminiTts' => true,

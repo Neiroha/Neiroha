@@ -9,6 +9,37 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get webFeatureUnavailable =>
+      'This feature uses desktop files or media tools. Open Neiroha on desktop to use it.';
+
+  @override
+  String get webStorageUnavailable =>
+      'Neiroha could not open browser storage. Allow site storage or try a current browser.';
+
+  @override
+  String get webStorageDescription =>
+      'Providers, voice settings, voice banks and preferences are stored in this browser. Generated audio is kept in memory until the page reloads or the tab closes.';
+
+  @override
+  String get webSessionAudio =>
+      'Audio history is cleared when you reload. Download clips you want to keep.';
+
+  @override
+  String get webLocalAudioUnavailable =>
+      'Reference audio and avatar files require the desktop app.';
+
+  @override
+  String get webVoiceModeUnavailable =>
+      'Choose a browser-compatible HTTP provider, model and voice without a local reference file.';
+
+  @override
+  String get webProviderNetworkError =>
+      'The browser could not reach the provider. Check the URL and allow the Neiroha site origin on the provider (CORS).';
+
+  @override
+  String get webDownloadAudio => 'Download audio';
+
+  @override
   String get appTitle => 'Neiroha';
 
   @override
@@ -123,7 +154,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutSubtitle =>
-      'v0.4.1 - AI Audio Middleware & Dubbing Workstation';
+      'v0.5.0 - AI Audio Middleware & Dubbing Workstation';
 
   @override
   String get uiUnassigned => '-- Unassigned --';
@@ -270,6 +301,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get uiAppSupportFallbackInstallDirIsReadOnly =>
       'App-support fallback (install dir is read-only)';
+
+  @override
+  String get uiAppSupportMacOs =>
+      'Application Support (standard macOS location)';
 
   @override
   String get uiAppend => 'Append';
@@ -959,6 +994,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get uiLeaveBlankToAutoDetectEGCFfmpegBinFfmpegExe =>
       'Leave blank to auto-detect (e.g. C:\\ffmpeg\\bin\\ffmpeg.exe)';
+
+  @override
+  String get uiLeaveBlankToAutoDetectMacOsFfmpeg =>
+      'Leave blank to auto-detect (e.g. /opt/homebrew/bin/ffmpeg)';
 
   @override
   String get uiLine => 'Line';
@@ -2401,4 +2440,643 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get novelImportFolderTitle => 'Import novel folder';
+
+  @override
+  String get uiPreferStreaming => 'Auto: prefer streaming';
+
+  @override
+  String get uiStopSynthesis => 'Stop synthesis';
+
+  @override
+  String get uiAudioBuffering => 'Buffering…';
+
+  @override
+  String get roleReadMode => 'Read';
+
+  @override
+  String get roleReviewMode => 'Role review';
+
+  @override
+  String get roleCharacters => 'Characters';
+
+  @override
+  String get roleAddCharacter => 'Add character';
+
+  @override
+  String get roleName => 'Name';
+
+  @override
+  String get roleAliases => 'Aliases (comma separated)';
+
+  @override
+  String get roleDescription => 'Description';
+
+  @override
+  String get roleNoCharacter => 'Unassigned';
+
+  @override
+  String get roleVoice => 'Voice';
+
+  @override
+  String get roleDefaultVoice => 'Use project default';
+
+  @override
+  String get roleChapterOverride => 'Override voice in this chapter';
+
+  @override
+  String get roleSelected => 'Review selected sentence';
+
+  @override
+  String get rolePickSentence => 'Select a sentence to review';
+
+  @override
+  String get roleCategory => 'Category';
+
+  @override
+  String get roleNarrator => 'Narration';
+
+  @override
+  String get roleDialogue => 'Dialogue';
+
+  @override
+  String get roleThought => 'Thought';
+
+  @override
+  String get roleSystem => 'System';
+
+  @override
+  String get roleScope => 'Apply to';
+
+  @override
+  String get roleOnlySentence => 'This sentence';
+
+  @override
+  String get roleChapterUnlocked => 'Same character in this chapter, unlocked';
+
+  @override
+  String get roleLock => 'Lock manual result';
+
+  @override
+  String get roleApply => 'Apply changes';
+
+  @override
+  String get roleUndo => 'Undo last annotation edit';
+
+  @override
+  String get rolePending => 'Pending';
+
+  @override
+  String get roleInferred => 'Inferred from context';
+
+  @override
+  String get roleConflict => 'Conflicting evidence';
+
+  @override
+  String get roleConfirmed => 'Manually confirmed';
+
+  @override
+  String get roleInstruction => 'Sentence style override (optional)';
+
+  @override
+  String get roleSentenceVoice => 'Sentence voice override';
+
+  @override
+  String get roleMerge => 'Merge character';
+
+  @override
+  String get roleMergeInto => 'Merge into';
+
+  @override
+  String get roleManualReason => 'Manual review';
+
+  @override
+  String get roleCached => 'Audio cache ready';
+
+  @override
+  String get roleStaleCache => 'Audio needs regeneration';
+
+  @override
+  String get roleNoCache => 'Audio not generated';
+
+  @override
+  String get roleRename => 'Edit character';
+
+  @override
+  String get rolePreview => 'Preview selected sentence';
+
+  @override
+  String get rolePendingList => 'Sentences to review';
+
+  @override
+  String get roleNoPending => 'No pending sentences in this chapter';
+
+  @override
+  String get roleAnalysisModel => 'Role analysis model (text model ID)';
+
+  @override
+  String get roleAnalysisProvider => 'Analysis connection';
+
+  @override
+  String get roleAnalysisStart => 'Analyze current chapter';
+
+  @override
+  String get roleAnalysisResume => 'Confirm roster and continue / resume';
+
+  @override
+  String get roleAnalysisPause => 'Pause analysis';
+
+  @override
+  String get roleAnalysisFeedback => 'Character or review feedback';
+
+  @override
+  String get roleAnalysisReplan => 'Replan cast with new intent';
+
+  @override
+  String get roleAnalysisBudget =>
+      'Current chapter only. Up to 12 analysis requests per run, plus one tool check for an unverified model. Charges may apply. Locked and manually confirmed sentences are preserved.';
+
+  @override
+  String get roleAnalysisOffline =>
+      'Configure a connection in Providers before choosing an analysis model.';
+
+  @override
+  String get modelDiscover => 'Discover models / capabilities';
+
+  @override
+  String get modelRefresh => 'Refresh from connection';
+
+  @override
+  String get modelManual => 'Use this model manually';
+
+  @override
+  String get modelUnknown => 'Unknown';
+
+  @override
+  String get modelSupported => 'Supported';
+
+  @override
+  String get modelUnsupported => 'Unsupported';
+
+  @override
+  String get roleToolModelHint =>
+      'Choose a text model with function calling. Unknown models get a short tool check before processing your text.';
+
+  @override
+  String get modelCapabilityHint =>
+      'Catalog facts describe capability. Account availability is verified by actual successful use. No paid probes are automatic.';
+
+  @override
+  String get modelOverride => 'Override task capability for this route';
+
+  @override
+  String get modelNoModels => 'No cached models. Refresh or enter a model ID.';
+
+  @override
+  String get roleStagePlan => 'Planning characters';
+
+  @override
+  String get roleStageRoster => 'Waiting for roster review';
+
+  @override
+  String get roleStageLabel => 'Labeling sentences';
+
+  @override
+  String get roleStageValidate => 'Validating labels';
+
+  @override
+  String get roleStageReview => 'Reviewing uncertain labels';
+
+  @override
+  String get roleStageReplan => 'Replanning from feedback';
+
+  @override
+  String get roleStagePaused => 'Paused';
+
+  @override
+  String get roleStageCompleted => 'Completed';
+
+  @override
+  String get roleStageFailed => 'Analysis failed';
+
+  @override
+  String get roleAnalysisSentences => 'sentences';
+
+  @override
+  String get roleAnalysisCalls => 'calls';
+
+  @override
+  String get roleSplitText => 'Split text';
+
+  @override
+  String get roleSplitTextHelp =>
+      'Select a range to isolate it, or place the cursor at a split point. All text and labels are preserved.';
+
+  @override
+  String get roleMergeText => 'Merge text';
+
+  @override
+  String get roleMergeTextHelp =>
+      'Merge from the current segment through the chosen end. Mixed labels become unassigned and pending. Old audio is retained but no longer used.';
+
+  @override
+  String get roleMergeUntil => 'Merge through';
+
+  @override
+  String get roleMergeNewline => 'Insert newlines between segments';
+
+  @override
+  String get roleUndoStructure => 'Undo last text split/merge';
+
+  @override
+  String get roleStyleMatrix => 'Character styles by category';
+
+  @override
+  String get roleStyleHelp =>
+      'Leave fields empty to inherit defaults. Clear both fields to remove this override.';
+
+  @override
+  String get roleSplitCharacter => 'Split character';
+
+  @override
+  String get roleSplitCharacterHelp =>
+      'Move selected lines in this chapter to a new character and copy voice bindings. Annotation undo restores attribution and retains the new identity.';
+
+  @override
+  String get roleIdentityKind => 'Identity type';
+
+  @override
+  String get roleIdentityNamed => 'Named character';
+
+  @override
+  String get roleIdentityAnonymous => 'Anonymous speaker';
+
+  @override
+  String get roleIdentityGroup => 'Group';
+
+  @override
+  String get roleDirectionHelp =>
+      'Each director action runs one bounded model task. Review before applying. Casting preserves bindings; tone handles up to 30 unconfirmed, unlocked segments without delivery instructions.';
+
+  @override
+  String get roleSuggestCast => 'Suggest voice casting';
+
+  @override
+  String get roleSuggestTone => 'Suggest delivery';
+
+  @override
+  String get roleDirectionReview => 'Review suggestions';
+
+  @override
+  String get roleDirectionEmpty =>
+      'The model returned no applicable suggestions.';
+
+  @override
+  String get taskProfiles => 'Task model profiles';
+
+  @override
+  String get taskProfilesHelp =>
+      'Configure separate connections, models and protocols for analysis, casting, delivery and narration. Narration overrides the novel model/protocol while retaining character voices and references. Unconfigured tasks use existing selections.';
+
+  @override
+  String get taskSynthesis => 'Novel narration';
+
+  @override
+  String get taskProtocol => 'Service protocol';
+
+  @override
+  String get taskEndpoint =>
+      'Relative endpoint path (blank for protocol default)';
+
+  @override
+  String get taskKeyHeader => 'API key header name';
+
+  @override
+  String get taskUseDefaults => 'Restore task defaults';
+
+  @override
+  String get modelReadDeclaration => 'Read backend capability declaration';
+
+  @override
+  String get uiLiveSentencePreview => 'Live preview and save complete audio';
+
+  @override
+  String get roleSceneTitle => 'Scene understanding';
+
+  @override
+  String get roleSceneFirstPerson => 'First-person narrator';
+
+  @override
+  String get roleScenePresent => 'Characters in the scene';
+
+  @override
+  String get roleSceneNested => 'Quoted storytellers';
+
+  @override
+  String get roleSceneHelp =>
+      'Check these identities with the cast. Use feedback and re-plan to correct the scene before continuing.';
+
+  @override
+  String get roleToolReview => 'Local tool review';
+
+  @override
+  String get roleToolBudget =>
+      'Per session: up to 3 calls, 20,000 budgeted tokens, 6 local reads, 8 proposals, and 1,600 output tokens per call. Unknown usage stays reserved; resuming keeps the budget.';
+
+  @override
+  String get roleToolCurrent => 'Current segment only';
+
+  @override
+  String get roleToolDoubts => 'Chapter doubts (up to 8 segments)';
+
+  @override
+  String get roleToolStart => 'Start a new local review';
+
+  @override
+  String get roleToolReviewProposals => 'Review character and label proposals';
+
+  @override
+  String get roleToolApplyHint =>
+      'Select proposals to apply. Accepted labels remain AI inferred. Text, locked and confirmed labels are protected. Merging moves the listed labels and compatible voice bindings, then removes the source identity.';
+
+  @override
+  String get roleToolDependency =>
+      'Select the new character proposal required by the label change.';
+
+  @override
+  String get roleToolAdd => 'Add character';
+
+  @override
+  String get roleToolPatch => 'Change label';
+
+  @override
+  String get roleToolMerge => 'Merge identities';
+
+  @override
+  String get roleToolReady => 'Ready for review';
+
+  @override
+  String get roleToolBudgetExhausted => 'Budget exhausted';
+
+  @override
+  String get roleToolApplied => 'Selected proposals applied';
+
+  @override
+  String get roleToolEmpty => 'No changes proposed';
+
+  @override
+  String get roleToolEvidence => 'Text evidence';
+
+  @override
+  String get roleToolAffected => 'Affected segments';
+
+  @override
+  String get roleToolReserved =>
+      'Budget usage (including unknown reservations)';
+
+  @override
+  String get settingsRoleAi => 'Role assignment AI';
+
+  @override
+  String get settingsRoleAiDescription =>
+      'Shared models, profiles and stage prompts for novels and long text';
+
+  @override
+  String get roleSkillSettingsHint =>
+      'Choose a profile and edit each stage prompt. Novel review and long-text role assignment share it; project task settings and explicit model choices take priority. Defaults ship with the app. Restoring the current profile saves immediately. Prompt changes require unfinished analyses to restart.';
+
+  @override
+  String get roleSkillProfile => 'Role profile';
+
+  @override
+  String get roleSkillDefault => 'Built-in default profile';
+
+  @override
+  String get roleSkillClone => 'Duplicate as new profile';
+
+  @override
+  String get roleSkillRestoreProfile => 'Restore current profile';
+
+  @override
+  String get roleSkillProfileName => 'Profile name';
+
+  @override
+  String get roleSkillUseEntryConnection =>
+      'Use the connection selected in the workspace';
+
+  @override
+  String get roleSkillNode => 'Analysis stage';
+
+  @override
+  String get roleSkillPrompt => 'Stage prompt';
+
+  @override
+  String get roleSkillRestoreNode => 'Restore this stage prompt';
+
+  @override
+  String get roleSkillSave => 'Save and activate profiles';
+
+  @override
+  String get phaseAutoRoles => 'AI role assignment';
+
+  @override
+  String get phaseRoleIntent => 'Dubbing intent (optional)';
+
+  @override
+  String get phaseRoleIntentHint =>
+      'For example: keep the exact text, give characters distinct voices, and keep story quotations with the storyteller.';
+
+  @override
+  String get phaseRoleReviewHint =>
+      'Analysis leaves the project untouched. Review characters, exact text and voices before applying. Unassigned voices remain pending. Applying replaces the current segments; existing audio remains on disk.';
+
+  @override
+  String get phaseRoleAnalyze => 'Analyze and preview';
+
+  @override
+  String get phaseRoleApply => 'Apply roles and voices';
+
+  @override
+  String get phaseRoleUnknown => 'Unresolved speaker';
+
+  @override
+  String get phaseRoleNarrator => 'Default narration voice';
+
+  @override
+  String get phaseRoleNoVoice => 'Choose a voice later';
+
+  @override
+  String get phaseRoleStatus =>
+      'See the task monitor for analysis progress. Up to 40 calls, cancellable during analysis. Audio synthesis starts separately.';
+
+  @override
+  String get phaseRoleStale =>
+      'Text, segments, voice bank or role configuration changed. Analyze again.';
+
+  @override
+  String get dubbingMode => 'Dubbing mode';
+
+  @override
+  String get dubbingModeAutomatic => 'Automatic';
+
+  @override
+  String get dubbingModeStoryteller => 'Storyteller';
+
+  @override
+  String get dubbingModeDramatized => 'Dramatized';
+
+  @override
+  String get dubbingModeScript => 'Script & chat';
+
+  @override
+  String get dubbingModeAutomaticHelp =>
+      'Infer roles from viewpoint, speech cues, and context.';
+
+  @override
+  String get dubbingModeStorytellerHelp =>
+      'Keep the storyteller’s voice for quotations within their story.';
+
+  @override
+  String get dubbingModeDramatizedHelp =>
+      'Give clearly attributed quotes their own voices and return to the storyteller afterward.';
+
+  @override
+  String get dubbingModeScriptHelp =>
+      'Use speaker headers or message senders for dialogue and narration for stage directions.';
+
+  @override
+  String get phaseRoleEditSegment => 'Edit assignment';
+
+  @override
+  String get phaseRoleModelEvidence => 'Original AI reasoning';
+
+  @override
+  String get phaseRoleContext => 'Show context';
+
+  @override
+  String get phaseRolePrevious => 'Previous segment';
+
+  @override
+  String get phaseRoleFollowing => 'Next segment';
+
+  @override
+  String get phaseRoleCategory => 'Segment category';
+
+  @override
+  String get phaseRoleSpeaker => 'Character';
+
+  @override
+  String get phaseRoleNoCharacter => 'No character assigned';
+
+  @override
+  String get phaseRoleAddCharacter => 'Add character';
+
+  @override
+  String get phaseRoleCharacterName => 'Character name';
+
+  @override
+  String get phaseRoleNameRequired => 'Enter a name that is not already in use';
+
+  @override
+  String get phaseRoleSegments => 'Segments';
+
+  @override
+  String get phaseRoleVoices => 'Character voices';
+
+  @override
+  String get phaseRoleNeedsReview => 'Needs review';
+
+  @override
+  String get phaseRoleSearch => 'Search text or characters';
+
+  @override
+  String get phaseRoleVoiceHelp =>
+      'Choose a voice for all segments of a character. You can also assign voices later in the generation list.';
+
+  @override
+  String get phaseRoleNoMatches => 'No matching segments.';
+
+  @override
+  String get phaseRoleEdited => 'Edited manually';
+
+  @override
+  String get phaseRolePreviewTitle => 'Review role assignments';
+
+  @override
+  String get phaseRoleStop => 'Stop analysis';
+
+  @override
+  String get phaseRoleStopping => 'Stopping…';
+
+  @override
+  String get phaseRoleStopped =>
+      'Analysis stopped. You can adjust your settings and try again.';
+
+  @override
+  String get phaseRolePreparing => 'Preparing text…';
+
+  @override
+  String get phaseRoleAdjustIntent => 'Adjust dubbing intent';
+
+  @override
+  String get phaseRoleBackToPreview => 'Back to preview';
+
+  @override
+  String get phaseRoleLengthLimit =>
+      'This text exceeds 360 segments or 64,000 UTF-16 units. Analyze it in shorter sections.';
+
+  @override
+  String get phaseRoleConnectionSettings => 'Connection and model';
+
+  @override
+  String get phaseRoleRestoreSuggestion => 'Restore AI suggestion';
+
+  @override
+  String get roleAnalysisPanelTitle => 'AI role assignment';
+
+  @override
+  String get roleAnalysisApproveRoster => 'Confirm cast and assign lines';
+
+  @override
+  String get roleAnalysisResumeShort => 'Resume analysis';
+
+  @override
+  String get roleAnalysisRestart => 'Analyze again';
+
+  @override
+  String get roleAnalysisRosterHint =>
+      'Check the cast and scene below before assigning lines.';
+
+  @override
+  String get rolePollOnlyUncertain => 'Only uncertain segments';
+
+  @override
+  String get roleNoUncertain => 'No uncertain segments in this chapter.';
+
+  @override
+  String phaseRoleReviewSummary(int total, int uncertain, int missing) {
+    return '$total segments · $uncertain to review · $missing voice groups unassigned';
+  }
+
+  @override
+  String phaseRoleReplaceExisting(int count) {
+    return 'Applying replaces $count existing segments. The script and generated audio files are retained.';
+  }
+
+  @override
+  String phaseRoleKeepUncertain(int count) {
+    return '$count segments still need review. Go back to edit, or apply their current assignments.';
+  }
+
+  @override
+  String phaseRoleInputSummary(int count) {
+    return 'Detected $count semantic segments. Analysis uses up to 40 model calls, plus one tool check for an unverified model.';
+  }
+
+  @override
+  String phaseRoleProgress(int processed, int total, int calls) {
+    return '$processed/$total segments processed · $calls calls started';
+  }
+
+  @override
+  String get roleShowMorePending => 'Show more segments to review';
 }

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/voice_character/components.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 
@@ -160,7 +159,8 @@ class VoiceBankCharacterTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                _MiniAvatar(
+                VoiceCharacterAvatar(
+                  radius: 16,
                   name: asset.name,
                   avatarPath: asset.avatarPath,
                   selected: isSelected,
@@ -221,38 +221,6 @@ class VoiceBankCharacterTile extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _MiniAvatar extends StatelessWidget {
-  final String name;
-  final String? avatarPath;
-  final bool selected;
-
-  const _MiniAvatar({
-    required this.name,
-    required this.avatarPath,
-    required this.selected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (avatarPath != null && File(avatarPath!).existsSync()) {
-      return CircleAvatar(
-        radius: 16,
-        backgroundImage: FileImage(File(avatarPath!)),
-      );
-    }
-    return CircleAvatar(
-      radius: 16,
-      backgroundColor: selected
-          ? AppTheme.accentColor
-          : const Color(0xFF2A2A36),
-      child: Text(
-        name.isNotEmpty ? name[0].toUpperCase() : '?',
-        style: const TextStyle(fontSize: 12, color: Colors.white),
       ),
     );
   }
@@ -472,7 +440,8 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
           itemBuilder: (ctx, i) {
             final a = filtered[i];
             return ListTile(
-              leading: _MiniAvatar(
+              leading: VoiceCharacterAvatar(
+                radius: 16,
                 name: a.name,
                 avatarPath: a.avatarPath,
                 selected: false,

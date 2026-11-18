@@ -224,7 +224,7 @@ extension _SegmentDialogs on _SegmentVoicePanelState {
     final text = segment.segmentText;
     final controller = TextEditingController(text: text);
     controller.selection = TextSelection.collapsed(
-      offset: _suggestSplitOffset(text),
+      offset: SemanticSplit.suggest(text),
     );
     final at = await showDialog<int>(
       context: context,

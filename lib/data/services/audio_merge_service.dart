@@ -46,8 +46,7 @@ class AudioMergeException implements Exception {
 /// command short — a single filter graph over hundreds of inputs would
 /// overflow the Windows command-line limit.
 class AudioMergeService {
-  AudioMergeService({required Future<String> Function() resolveFfmpeg})
-    : _resolveFfmpeg = resolveFfmpeg;
+  AudioMergeService({required this._resolveFfmpeg});
 
   final Future<String> Function() _resolveFfmpeg;
 

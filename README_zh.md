@@ -7,12 +7,12 @@
 **AI 音频中间件与配音工作站**
 
 [![语言](https://img.shields.io/badge/语言-Dart%20%2F%20Flutter-0553B1?logo=flutter&logoColor=white)](https://flutter.dev)
-[![平台](https://img.shields.io/badge/平台-Windows%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
-[![版本](https://img.shields.io/badge/版本-v0.4.1-blue)](https://github.com/Neiroha/Neiroha/releases)
+[![平台](https://img.shields.io/badge/平台-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
+[![版本](https://img.shields.io/github/v/release/Neiroha/Neiroha?label=%E7%89%88%E6%9C%AC)](https://github.com/Neiroha/Neiroha/releases)
 [![许可证：MIT](https://img.shields.io/badge/许可证-MIT-green)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Neiroha/Neiroha?style=social)](https://github.com/Neiroha/Neiroha/stargazers)
 
-[English](README.md) · [中文](README_zh.md) · [Wiki](https://neiroha.github.io/) · [API](docs/api-zh.md)
+[English](README.md) · [中文](README_zh.md) · [Wiki](https://neiroha.github.io/) · [API](assets/docs/api-zh.md)
 
 </div>
 
@@ -28,7 +28,7 @@ Neiroha 是一个 Flutter 应用，面向需要大量角色音色、多种 TTS �
 
 | 强项 | 能解决什么 |
 |---|---|
-| **多引擎统一管理** | 在一个应用里使用 OpenAI 兼容 TTS、Azure Speech、Gemini TTS、GPT-SoVITS、CosyVoice、VoxCPM2、MiMo 风格 Chat TTS 和 Windows SAPI等 |
+| **多引擎统一管理** | 在一个应用里使用 OpenAI TTS（官方与兼容服务）、Azure Speech、Gemini TTS、GPT-SoVITS、CosyVoice、VoxCPM2、MiMo 风格 Chat TTS 和 Windows SAPI等 |
 | **把参数变成角色** | 把服务商、模型、音色、语速、参考音频、提示文本、风格指令保存成可复用的语音角色 |
 | **用语音库组织项目** | 一整套角色可以在脚本、小说、对话、视频配音和外部 API 调用之间复用。 |
 | **为长任务设计** | 支持生成队列、音频缓存、小说预取、失败检查、任务监控和本地 GPU 后端的限流控制。 |
@@ -36,6 +36,8 @@ Neiroha 是一个 Flutter 应用，面向需要大量角色音色、多种 TTS �
 | **也能作为中间件** | 将当前激活的语音库暴露为本地 OpenAI 兼容 TTS API，让编辑器、Agent、脚本和外部工具直接调用。 |
 
 ## 功能亮点
+
+流式 Quick TTS、小说角色校对与自动分析、动态模型目录及 macOS 支持，见[使用与开发说明](assets/docs/streaming-and-roles-zh.md)。
 
 ### 服务商中枢
 
@@ -86,20 +88,58 @@ Neiroha 是一个 Flutter 应用，面向需要大量角色音色、多种 TTS �
 
 Neiroha 也可以作为本地 OpenAI 兼容 TTS 服务运行，由当前激活的语音库提供模型和音色。这让它可以作为编辑器、Agent、脚本和其他工具的语音中间件。同一服务还提供 MCP 端点（`/mcp`），AI Agent 可借此管理服务商、角色、语音库和配音工程，包括音量统一。
 
-完整接口见 [docs/api-zh.md](docs/api-zh.md)。安装、后端默认值、API Key、模型配置和使用教程放在 [Wiki](https://github.com/Neiroha/Neiroha/wiki)。
+完整接口见 [assets/docs/api-zh.md](assets/docs/api-zh.md)。安装、后端默认值、API Key、模型配置和使用教程放在 [Wiki](https://github.com/Neiroha/Neiroha/wiki)。
+
+Neiroha Web 沿用原版界面。浏览器保存服务商、音色和音色库，快速试听音频使用会话内存。见 [Web 构建与使用](assets/docs/web-preview-zh.md)。
+
+## macOS
+
+Release 中提供两个 DMG（macOS 12 及以上）：Apple Silicon（M 系列芯片）Mac 下载 `neiroha-macOS-ARM64-vX.Y.Z.dmg`，Intel Mac 下载 `neiroha-macOS-AMD64-vX.Y.Z.dmg`。不确定是哪种？打开苹果菜单 →「关于本机」，显示「芯片 Apple M…」选 ARM64，显示「处理器 Intel」选 AMD64。打开 DMG，把 **Neiroha** 拖进 **应用程序** 即可。
+
+应用为 ad-hoc 签名、未经公证，首次启动会被 Gatekeeper 拦截。请在 **系统设置 → 隐私与安全性 → 仍要打开** 中放行一次，或执行：
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Neiroha.app
+```
+
+应用数据位于 `~/Library/Application Support/com.neiroha.neiroha/`。FFmpeg 可用 `brew install ffmpeg` 安装，会自动识别 Homebrew 在 Apple Silicon（`/opt/homebrew/bin`）与 Intel（`/usr/local/bin`）上的路径。macOS 麦克风录制已加入后端、用途说明和输入权限，实际授权及录音效果仍待 Mac 验收。
 
 ## 开发
 
 - 使用 Flutter 3.47.7 stable（与 CI 一致），然后运行 `flutter pub get`。
 - 修改 Drift 表结构（`lib/data/database/tables.dart`）或 freezed 模型后，运行 `dart run build_runner build`。
+- SQLite 结构变更按目标版本添加迁移文件，历史来源及测试方式见[数据库迁移说明](assets/docs/database-migrations-zh.md)。
 - 修改 `lib/l10n/app_en.arb` / `app_zh.arb` 后，运行 `flutter gen-l10n`。
-- 运行 `flutter analyze` 与 `flutter test`。音量统一与合并导出的测试会调用真实的 FFmpeg，`PATH` 中没有 `ffmpeg` 时自动跳过。
+- 构建 macOS 需要 Xcode 与 CocoaPods。先 `FLUTTER_XCODE_ARCHS=arm64 flutter build macos --release`（Intel 用 `x86_64`），再运行 `bash scripts/tools/package_macos_dmg.sh Release arm64 dist/Neiroha.dmg`，脚本会把包裁剪为该架构、校验签名并生成 DMG；`bash scripts/tools/smoke_test_macos_dmg.sh dist/Neiroha.dmg arm64` 可启动应用做快速检查。
+- 运行 `flutter analyze` 与 `flutter test scripts/tests`。音量统一与合并导出的测试会调用真实的 FFmpeg，`PATH` 中没有 `ffmpeg` 时自动跳过。
+- 单元与协议测试在 Windows、macOS、Linux CI 中运行，媒体通道按平台模拟。原生音频测试需显式设置 `NEIROHA_AUDIO_SMOKE=1`；PCM 不依赖 FFmpeg，MP3 编码检查缺少 FFmpeg 时单独跳过，仍需可用的音频输出设备。
+- Android 在普通 push/PR 中额外检查能力契约并编译 ARM64 APK；原有 PR/手动的通用与分架构 APK、版本发布 APK 流程继续保留。模拟器/真机验收单列，不由桌面测试代替。
+- 真实 API 测试使用跨平台入口：`dart scripts/tools/run_live_tests.dart streaming`（3 项流式播放/取消）、`dart scripts/tools/run_live_tests.dart speech`（整段合成）、`dart scripts/tools/run_live_tests.dart roles`（12 组分角，最多 72 次结构化调用）。从本地 `.env` 读取 key，输出脱敏；可用 `--output` 指定新目录，`roles --replay` 只回放已有捕获，不访问推理服务。详见[开发说明](assets/docs/streaming-and-roles-zh.md)。
 - `analysis_options.yaml` 排除了 `build/` 与各平台目录（新版 Flutter 也会自动加入这段配置），避免分析其中生成的插件源码。
 
 ## 项目入口
 
+当前进度、Mac 验收步骤和下一阶段开发顺序见 [开发清单](assets/todo/todo.md)。
+
+```text
+assets/
+  icon/             SVG 标志
+  images/           截图与图片
+  model_catalog/    模型能力快照及许可证
+  docs/             API 与开发文档
+  skills/           外部配音、内置小说 agent 的 skill 与评测标准
+  todo/             开发清单与 Mac 接续记录
+scripts/
+  tests/            单元、组件、集成测试和评测样本
+  tools/            检查、评测、目录更新与打包工具
+```
+
+首版两个 skill：[外部 agent 调用配音](assets/skills/neiroha-dubbing/SKILL.md)、[内置小说分角](assets/skills/novel-role-assign/SKILL.md)。两者各附 `EVALUATION.md`。内置分角 skill 现为七个阶段，版本与 SHA-256 写入分析检查点；规则变化后需重新开始分析。旧的未版本化捕获只用于回归参考。
+
+“设置 → 分角色 AI”支持默认 gpt-6-luna、多个配置、逐阶段提示词编辑、复制新增与一键还原。小说校对和长文本共用；长文本脚本工具栏的“AI 自动分角色”可输入配音意图，预览人物/类别后按角色选音色，应用时保留原文。21 种文本的三轮基线/候选真实测试使用共享 50 美元预算账本，详见[开发说明](assets/docs/streaming-and-roles-zh.md)。
+
 - [Wiki](https://neiroha.github.io/)：安装、后端配置和使用教程。
-- [API 文档](docs/api-zh.md)：本地 HTTP 集成说明。
+- [API 文档](assets/docs/api-zh.md)：本地 HTTP 集成说明。
 - [Releases](https://github.com/Neiroha/Neiroha/releases)：发布包下载。
 
 

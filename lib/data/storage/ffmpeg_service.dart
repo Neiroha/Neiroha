@@ -14,7 +14,8 @@ import '../database/app_database.dart';
 ///
 /// Resolution order for [resolvePath]:
 ///  1. Explicit user override stored in `AppSettings['ffmpegPath']`.
-///  2. Auto-detection via `where` (Windows) / `which` (macOS/Linux).
+///  2. Auto-detection via `where` (Windows) / `which` (macOS/Linux), then
+///     on macOS the Homebrew / MacPorts install locations.
 ///  3. The literal string `ffmpeg` — the caller's Process.run can still
 ///     find it if the current process's PATH contains it.
 class FFmpegService {
@@ -63,7 +64,7 @@ class FFmpegService {
       _cachedPath = override;
       return override;
     }
-    final autod = await _whichFfmpeg();
+    final autod = await _whichFfmpeg() ?? await _wellKnownFfmpeg();
     _cachedPath = autod ?? 'ffmpeg';
     return _cachedPath!;
   }
@@ -102,6 +103,24 @@ class FFmpegService {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Apps launched from Finder / the Dock inherit launchd's minimal PATH
+  /// (`/usr/bin:/bin:/usr/sbin:/sbin`), so `which` misses package-manager
+  /// installs. Probe the usual Homebrew (Apple Silicon, Intel) and MacPorts
+  /// locations.
+  static const macOsFfmpegCandidates = [
+    '/opt/homebrew/bin/ffmpeg',
+    '/usr/local/bin/ffmpeg',
+    '/opt/local/bin/ffmpeg',
+  ];
+
+  static Future<String?> _wellKnownFfmpeg() async {
+    if (!Platform.isMacOS) return null;
+    for (final candidate in macOsFfmpegCandidates) {
+      if (await File(candidate).exists()) return candidate;
+    }
+    return null;
   }
 
   /// List Windows DirectShow audio capture devices via ffmpeg.

@@ -10,6 +10,8 @@ import '../database/app_database.dart';
 import 'path_service.dart';
 import 'novel_dialogue_rules_service.dart';
 import 'storage_service.dart';
+import '../../domain/text/novel_semantic_segmenter.dart';
+export '../../domain/text/novel_semantic_segmenter.dart' show NovelTextSegment;
 
 class NovelImportService {
   NovelImportService(this._db, this._storage);
@@ -245,40 +247,51 @@ class NovelImportReport {
   });
 }
 
-class NovelTextSegment {
-  final String text;
-  final String type;
-
-  const NovelTextSegment({required this.text, required this.type});
-}
-
 List<NovelTextSegment> splitNovelText(
   String text, {
   List<NovelDialogueRule>? dialogueRules,
 }) {
-  final blocks = text
-      .replaceAll('\r\n', '\n')
-      .replaceAll('\r', '\n')
-      .split(RegExp(r'\n\s*\n|(?<=\n)(?=\s*第.{1,12}[章节卷回幕])'))
-      .map((block) => block.trim())
-      .where((block) => block.isNotEmpty);
-
-  final out = <NovelTextSegment>[];
-  for (final block in blocks) {
-    for (final segment in _parseByDialogueRules(block, dialogueRules)) {
-      for (final chunk in _splitToReadableChunks(segment.text)) {
-        out.add(NovelTextSegment(text: chunk, type: segment.type));
+  final rules = (dialogueRules ?? NovelDialogueRulesService.builtInRules).where(
+    (r) => r.enabled && r.pattern.trim().isNotEmpty,
+  );
+  final quotes = <String, String>{};
+  final custom = <RegExp>[];
+  for (final rule in rules) {
+    final builtIn = NovelDialogueRulesService.builtInRules
+        .where((r) => r.pattern == rule.pattern)
+        .firstOrNull;
+    final opener = switch (builtIn?.id) {
+      'builtin.cn_double_quote' => '“',
+      'builtin.en_double_quote' => '"',
+      'builtin.corner_quote' => '「',
+      'builtin.white_corner_quote' => '『',
+      _ => null,
+    };
+    if (opener != null) {
+      quotes[opener] = NovelSemanticSegmenter.defaultQuotes[opener]!;
+    } else {
+      try {
+        custom.add(RegExp(rule.pattern, multiLine: true, dotAll: true));
+      } on FormatException {
+        /* Invalid user rules do not prevent import. */
       }
     }
   }
-  return _mergeLooseQuoteFragments(out);
+  return NovelSemanticSegmenter.split(
+    text,
+    quotes: quotes,
+    extraDialogueRules: custom,
+  );
 }
 
 String resolveNovelSegmentType(
   String text, {
   List<NovelDialogueRule>? dialogueRules,
 }) {
-  return _matchesDialogueRule(text, dialogueRules) ? 'dialogue' : 'narrator';
+  final parts = splitNovelText(text, dialogueRules: dialogueRules);
+  return parts.isNotEmpty && parts.every((s) => s.type == 'dialogue')
+      ? 'dialogue'
+      : 'narrator';
 }
 
 bool isNovelPunctuationOnly(String text) {
@@ -289,192 +302,4 @@ bool isNovelPunctuationOnly(String text) {
   return !RegExp(
     r'[A-Za-z0-9\u3400-\u9FFF\uF900-\uFAFFぁ-んァ-ン가-힣]',
   ).hasMatch(compact);
-}
-
-List<NovelTextSegment> _parseByDialogueRules(
-  String text,
-  List<NovelDialogueRule>? dialogueRules,
-) {
-  final ranges = _dialogueRanges(text, dialogueRules);
-  if (ranges.isEmpty) {
-    return [NovelTextSegment(text: text.trim(), type: 'narrator')];
-  }
-
-  final out = <NovelTextSegment>[];
-  var cursor = 0;
-  for (final range in ranges) {
-    if (range.start < cursor) continue;
-    _addTextSegment(out, text.substring(cursor, range.start), 'narrator');
-    _addTextSegment(out, text.substring(range.start, range.end), 'dialogue');
-    cursor = range.end;
-  }
-  _addTextSegment(out, text.substring(cursor), 'narrator');
-  return out;
-}
-
-bool _matchesDialogueRule(String text, List<NovelDialogueRule>? dialogueRules) {
-  final clean = text.trim();
-  if (clean.isEmpty) return false;
-  for (final range in _dialogueRanges(clean, dialogueRules)) {
-    if (range.start == 0 && range.end == clean.length) return true;
-  }
-  return false;
-}
-
-List<_TextRange> _dialogueRanges(
-  String text,
-  List<NovelDialogueRule>? dialogueRules,
-) {
-  final rules = (dialogueRules ?? NovelDialogueRulesService.builtInRules).where(
-    (rule) => rule.enabled && rule.pattern.trim().isNotEmpty,
-  );
-  final ranges = <_TextRange>[];
-  for (final rule in rules) {
-    try {
-      final regex = RegExp(rule.pattern, multiLine: true, dotAll: true);
-      for (final match in regex.allMatches(text)) {
-        if (match.start < match.end) {
-          ranges.add(_TextRange(match.start, match.end));
-        }
-      }
-    } on FormatException {
-      continue;
-    }
-  }
-  ranges.sort((a, b) {
-    final byStart = a.start.compareTo(b.start);
-    return byStart == 0 ? b.end.compareTo(a.end) : byStart;
-  });
-
-  final merged = <_TextRange>[];
-  for (final range in ranges) {
-    if (merged.isEmpty || range.start >= merged.last.end) {
-      merged.add(range);
-      continue;
-    }
-    if (range.end > merged.last.end) {
-      final last = merged.removeLast();
-      merged.add(_TextRange(last.start, range.end));
-    }
-  }
-  return merged;
-}
-
-class _TextRange {
-  final int start;
-  final int end;
-
-  const _TextRange(this.start, this.end);
-}
-
-void _addTextSegment(List<NovelTextSegment> out, String text, String type) {
-  final trimmed = text.trim();
-  if (trimmed.isEmpty) return;
-  out.add(NovelTextSegment(text: trimmed, type: type));
-}
-
-List<String> _splitToReadableChunks(String text) {
-  const minLength = 20;
-  const maxLength = 160;
-  final clean = text.trim();
-  if (clean.isEmpty) return const [];
-
-  final breaks = RegExp(r'[。！？；;.!?\n]+|[,，、]+');
-  final chunks = <String>[];
-  var start = 0;
-  for (final match in breaks.allMatches(clean)) {
-    if (match.end <= start) continue;
-    final end = _includeTrailingClosingQuotes(clean, match.end);
-    final length = end - start;
-    final punctuation = match.group(0) ?? '';
-    final isStrongBreak = RegExp(r'[。！？；;.!?\n]').hasMatch(punctuation);
-    if ((length >= minLength && isStrongBreak) || length >= maxLength) {
-      _appendBoundedChunks(chunks, clean.substring(start, end));
-      start = end;
-    }
-  }
-  _appendBoundedChunks(chunks, clean.substring(start));
-  return chunks;
-}
-
-int _includeTrailingClosingQuotes(String text, int index) {
-  var cursor = index;
-  while (cursor < text.length && text[cursor].trim().isEmpty) {
-    cursor++;
-  }
-  var end = cursor;
-  while (end < text.length && _isClosingQuote(text[end])) {
-    if (text[end] == '"' && !_looksLikeClosingAsciiQuote(text, end)) break;
-    end++;
-  }
-  return end == cursor ? index : end;
-}
-
-bool _looksLikeClosingAsciiQuote(String text, int index) {
-  var next = index + 1;
-  while (next < text.length && text[next].trim().isEmpty) {
-    next++;
-  }
-  if (next >= text.length) return true;
-  return RegExp(r'[。！？；;.!?,，、)\]】》」』”]').hasMatch(text[next]);
-}
-
-bool _isClosingQuote(String value) {
-  return const {
-    '"',
-    '”',
-    '」',
-    '』',
-    '〞',
-    '＂',
-    '）',
-    ')',
-    ']',
-    '】',
-    '》',
-    '〉',
-  }.contains(value);
-}
-
-List<NovelTextSegment> _mergeLooseQuoteFragments(
-  List<NovelTextSegment> segments,
-) {
-  final out = <NovelTextSegment>[];
-  for (final segment in segments) {
-    if (_isLooseQuoteOnly(segment.text) && out.isNotEmpty) {
-      final previous = out.removeLast();
-      out.add(
-        NovelTextSegment(
-          text: '${previous.text}${segment.text}',
-          type: previous.type,
-        ),
-      );
-      continue;
-    }
-    out.add(segment);
-  }
-  return out;
-}
-
-bool _isLooseQuoteOnly(String text) {
-  final clean = text.replaceAll(RegExp(r'\s+'), '');
-  if (clean.isEmpty) return false;
-  return clean.split('').every(_isClosingQuote);
-}
-
-void _appendBoundedChunks(List<String> chunks, String text) {
-  const maxLength = 160;
-  var clean = _attachDetachedClosingQuote(text.trim());
-  while (clean.length > maxLength) {
-    chunks.add(clean.substring(0, maxLength).trim());
-    clean = _attachDetachedClosingQuote(clean.substring(maxLength).trim());
-  }
-  if (clean.isNotEmpty) chunks.add(clean);
-}
-
-String _attachDetachedClosingQuote(String text) {
-  return text.replaceFirstMapped(
-    RegExp(r'\s+([”」』〞＂"\)\]】》〉])$'),
-    (match) => match.group(1) ?? '',
-  );
 }

@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 
+String? phaseScriptPreview(String scriptText) {
+  final trimmed = scriptText.replaceAll(RegExp(r'\s+'), ' ').trim();
+  if (trimmed.isEmpty) return null;
+  return trimmed.length > 60 ? '${trimmed.substring(0, 60)}…' : trimmed;
+}
+
 /// Top strip of the Phase TTS list view: title, subtitle, and the
 /// `New Project` action.
 class ProjectListHeader extends StatelessWidget {

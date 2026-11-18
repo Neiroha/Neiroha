@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:path/path.dart' as p;
@@ -19,6 +20,7 @@ import 'package:neiroha/domain/enums/task_mode.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/voice_character/components.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'editable_character_avatar.dart';
 
 class CreateCharacterDialog extends StatefulWidget {
   final List<db.TtsProvider> providers;
@@ -136,11 +138,13 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   bool get _isPresetVoiceProvider =>
       _adapterType == 'chatCompletionsTts' ||
       _adapterType == 'openaiCompatible' ||
+      _isOpenAiTts ||
       _adapterType == 'azureTts' ||
       _adapterType == 'systemTts' ||
       _adapterType == 'geminiTts' ||
       _isCloudCloneProvider;
   bool get _isGeminiTts => _adapterType == 'geminiTts';
+  bool get _isOpenAiTts => _adapterType == 'openaiTts';
   bool get _isIndexTts => _adapterType == 'indexTts';
 
   /// ElevenLabs / MiniMax: preset voices plus optional server-side cloning
@@ -151,24 +155,10 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   /// Providers whose characters pick a model first, then a voice.
   bool get _usesModelThenVoice =>
       _adapterType == 'openaiCompatible' ||
+      _isOpenAiTts ||
       _adapterType == 'chatCompletionsTts' ||
       _isGeminiTts ||
       _isCloudCloneProvider;
-
-  /// Whether a model key is a TTS model (not LLM/multimodal).
-  /// Used to filter the model picker in the voice character dialog.
-  static bool _isTtsModel(String modelKey) {
-    final k = modelKey.toLowerCase();
-    return k.contains('tts') ||
-        k.contains('gpt-sovits') ||
-        k.contains('sovits') ||
-        k.contains('speech-synthesis') ||
-        k.contains('voiceclone') ||
-        k.contains('voicedesign') ||
-        k.startsWith('eleven_') ||
-        k.startsWith('speech-') ||
-        k.endsWith('-voice');
-  }
 
   /// Detect TTS model type from model name.
   /// Returns 'clone', 'design', or 'preset'.
@@ -272,14 +262,14 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     }
 
     if (hasSeparate) {
-      // Models from cache — filter to TTS-only models
+      // Inventory includes unknown/new models; users may enter an explicit ID.
       final cachedModels = await widget.database.getModelEntriesForProvider(
         _selectedProviderId,
       );
       final modelList =
           cachedModels
               .map((b) => b.modelKey)
-              .where((k) => _isTtsModel(k))
+              // OpenAI official caches a curated TTS list (incl. gpt-realtime-*).
               .toList()
             ..sort();
 
@@ -448,6 +438,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
   /// Build the reference audio picker with voice asset library support.
   List<Widget> _buildRefAudioPicker() {
+    if (kIsWeb) {
+      return [Text(AppLocalizations.of(context).webLocalAudioUnavailable)];
+    }
     return [
       VoiceCharacterSectionLabel(
         AppLocalizations.of(context).sectionReferenceAudio,
@@ -585,47 +578,23 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                   ),
                   SizedBox(height: 8),
                   Center(
-                    child: GestureDetector(
-                      onTap: _pickAvatarForCreate,
-                      child: Stack(
-                        children: [
-                          CircleAvatar(
-                            radius: 36,
-                            backgroundColor: AppTheme.accentColor.withValues(
-                              alpha: 0.15,
-                            ),
-                            backgroundImage: _avatarPath != null
-                                ? FileImage(File(_avatarPath!))
-                                : null,
-                            child: _avatarPath == null
-                                ? Icon(
-                                    Icons.person_rounded,
-                                    size: 36,
-                                    color: Colors.white.withValues(alpha: 0.3),
-                                  )
-                                : null,
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: AppTheme.surfaceBright,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppTheme.surfaceDim,
-                                  width: 2,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt_rounded,
-                                size: 14,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
+                    child: EditableCharacterAvatar(
+                      onEdit: kIsWeb ? null : _pickAvatarForCreate,
+                      avatar: CircleAvatar(
+                        radius: 36,
+                        backgroundColor: AppTheme.accentColor.withValues(
+                          alpha: 0.15,
+                        ),
+                        backgroundImage: _avatarPath != null
+                            ? FileImage(File(_avatarPath!))
+                            : null,
+                        child: _avatarPath == null
+                            ? Icon(
+                                Icons.person_rounded,
+                                size: 36,
+                                color: Colors.white.withValues(alpha: 0.3),
+                              )
+                            : null,
                       ),
                     ),
                   ),
@@ -841,7 +810,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                             ),
                             onChanged: (_) => _autoFillName(),
                           ),
-                          if (_isGeminiTts || _isCloudCloneProvider) ...[
+                          if (_isGeminiTts ||
+                              _isOpenAiTts ||
+                              _isCloudCloneProvider) ...[
                             SizedBox(height: 16),
                             VoiceCharacterSectionLabel(
                               'STYLE INSTRUCTION (optional)',
@@ -858,6 +829,8 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                                     ? MiniMaxTtsAdapter.kEmotions.join(' / ')
                                     : _adapterType == 'elevenLabs'
                                     ? 'e.g. whispers, excited (v3 / v4 audio tag)'
+                                    : _isOpenAiTts
+                                    ? 'e.g. calm, warm narrator; slightly slow (not for tts-1)'
                                     : AppLocalizations.of(
                                         context,
                                       ).uiEGSpeakSoftlyAndSlowlyPrependedToTheText,
@@ -1523,7 +1496,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            _isCosyVoice && _cosyVoiceMode == 'cross_lingual'
+            kIsWeb
+                ? AppLocalizations.of(context).webLocalAudioUnavailable
+                : _isCosyVoice && _cosyVoiceMode == 'cross_lingual'
                 ? 'Cross Lingual mode requires a Reference Audio or a Profile Name'
                 : _isVoxCpm2
                 ? 'VoxCPM2 ${_voxcpmMode == 'ultimate_clone' ? 'Ultra Clone' : 'Clone'} needs a Reference Audio or a Registered Voice'

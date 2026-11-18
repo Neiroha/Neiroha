@@ -1,7 +1,6 @@
 part of 'segment_voice_panel.dart';
 
-/// One sentence: status strip, index (or checkbox in multi-select), text,
-/// style summary, error, then the voice pill and the actions.
+/// A sentence's status, text, speaker, style, voice and actions.
 class _SegmentCard extends StatelessWidget {
   final db.PhaseTtsSegment segment;
   final int index;
@@ -143,6 +142,7 @@ class _SegmentCard extends StatelessWidget {
                               ),
                             ],
                           ),
+                          PhaseSpeakerLabel(label: segment.speakerLabel),
                           if (hasSettings) ...[
                             const SizedBox(height: 6),
                             _SettingsSummary(settings: settings),
@@ -205,13 +205,7 @@ class _SegmentCard extends StatelessWidget {
               ),
             ),
           ),
-        if (hasAudio)
-          _CardAction(
-            tooltip: isPlaying ? l10n.phaseStopPlayback : l10n.phasePlay,
-            icon: isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
-            color: isPlaying ? AppTheme.accentColor : null,
-            onPressed: onTogglePlay,
-          ),
+        LiveSentencePreviewButton.phase(segment, disabled: isGenerating),
         if (isGenerating)
           const SizedBox(
             width: 34,

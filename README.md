@@ -7,12 +7,12 @@
 **AI Audio Middleware & Dubbing Workstation**
 
 [![Language](https://img.shields.io/badge/language-Dart%20%2F%20Flutter-0553B1?logo=flutter&logoColor=white)](https://flutter.dev)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
-[![Version](https://img.shields.io/badge/version-v0.4.1-blue)](https://github.com/Neiroha/Neiroha/releases)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
+[![Version](https://img.shields.io/github/v/release/Neiroha/Neiroha?label=version)](https://github.com/Neiroha/Neiroha/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Neiroha/Neiroha?style=social)](https://github.com/Neiroha/Neiroha/stargazers)
 
-[English](README.md) · [中文](README_zh.md) · [Wiki](https://neiroha.github.io/) · [API](docs/api.md)
+[English](README.md) · [中文](README_zh.md) · [Wiki](https://neiroha.github.io/) · [API](assets/docs/api.md)
 
 </div>
 
@@ -28,7 +28,7 @@ It brings local inference wrappers, cloud speech APIs, voice cloning, reusable v
 
 | Strength | What it gives you |
 |---|---|
-| **Multi-engine by design** | Use OpenAI-compatible TTS, Azure Speech, Gemini TTS, GPT-SoVITS, CosyVoice, VoxCPM2, MiMo-style chat TTS, Windows SAPI, and similar backends from one app. |
+| **Multi-engine by design** | Use OpenAI TTS (official and compatible servers), Azure Speech, Gemini TTS, GPT-SoVITS, CosyVoice, VoxCPM2, MiMo-style chat TTS, Windows SAPI, and similar backends from one app. |
 | **Characters, not raw params** | Save provider, model, voice, speed, reference audio, prompt text, and style instructions as reusable voice characters. |
 | **Voice banks for projects** | Reuse a whole cast across scripts, novels, dialog sessions, video dubbing, and external API calls. |
 | **Built for long work** | Queue synthesis, cache generated audio, prefetch novel segments, inspect failures, monitor tasks, and keep local GPU backends under control. |
@@ -85,21 +85,60 @@ Lines synthesized one by one rarely come back at the same level; whispered or em
 
 Neiroha can also run as a local OpenAI-compatible TTS service backed by the active voice bank. This makes it useful as a voice middleware layer for editors, agents, scripts, and other tools. The same server exposes an MCP endpoint (`/mcp`) so AI agents can manage providers, characters, voice banks and dubbing projects, including loudness unification.
 
-The full API reference lives in [docs/api.md](docs/api.md). Installation, backend defaults, API keys, model configuration, and workflow guides live in the [Wiki](https://github.com/Neiroha/Neiroha/wiki).
+The full API reference lives in [assets/docs/api.md](assets/docs/api.md). Installation, backend defaults, API keys, model configuration, and workflow guides live in the [Wiki](https://github.com/Neiroha/Neiroha/wiki).
+
+## Web workspace
+
+The Web build includes provider and voice-bank management and Quick TTS. Browser SQLite keeps settings, and audio stays in the current tab until it closes or reloads. The OpenAI Speech adapter supports incremental playback and cancellation. See the [Web build and hosting guide](assets/docs/web-preview-zh.md).
+
+## macOS
+
+Releases include two DMGs (macOS 12 or later): `neiroha-macOS-ARM64-vX.Y.Z.dmg` for Apple Silicon (M-series) Macs and `neiroha-macOS-AMD64-vX.Y.Z.dmg` for Intel Macs. Not sure which one? Apple menu → About This Mac: "Chip: Apple M…" means ARM64, "Processor: Intel" means AMD64. Open the DMG and drag **Neiroha** into **Applications**.
+
+The app is ad-hoc signed but not notarized, so Gatekeeper blocks the first launch. Open it once from **System Settings → Privacy & Security → Open Anyway**, or run:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Neiroha.app
+```
+
+App data lives in `~/Library/Application Support/com.neiroha.neiroha/`. Install FFmpeg with `brew install ffmpeg`; Homebrew's Apple Silicon (`/opt/homebrew/bin`) and Intel (`/usr/local/bin`) locations are detected automatically. The macOS microphone backend and permissions are implemented; recording still awaits validation on a Mac.
 
 ## Development
 
 - Flutter 3.47.7 stable (the version CI uses), then `flutter pub get`.
 - After changing the Drift tables (`lib/data/database/tables.dart`) or the freezed models, run `dart run build_runner build`.
 - After changing `lib/l10n/app_en.arb` / `app_zh.arb`, run `flutter gen-l10n`.
-- `flutter analyze` and `flutter test`. The loudness and merge tests use a real FFmpeg and are skipped when `ffmpeg` is not on `PATH`.
+- macOS builds need Xcode and CocoaPods. `FLUTTER_XCODE_ARCHS=arm64 flutter build macos --release` (or `x86_64`), then `bash scripts/tools/package_macos_dmg.sh Release arm64 dist/Neiroha.dmg` thins the bundle to that architecture, checks the signature and builds the DMG; `bash scripts/tools/smoke_test_macos_dmg.sh dist/Neiroha.dmg arm64` launches it as a quick check.
+- `flutter analyze` and `flutter test scripts/tests`. The loudness and merge tests use a real FFmpeg and are skipped when `ffmpeg` is not on `PATH`.
+- Unit/protocol tests run in Windows, macOS and Linux CI with mocked media channels. Set `NEIROHA_AUDIO_SMOKE=1` to opt into native playback with an audio output device; PCM needs no FFmpeg, while the MP3 encoding check skips separately if FFmpeg is missing.
+- Android capability contracts and an ARM64 APK compile check also run on ordinary pushes/PRs, hosted on Ubuntu. Universal/split APK builds and release APK workflows remain in place; emulator/device acceptance is tracked separately.
+- Cross-platform live API launcher: `dart scripts/tools/run_live_tests.dart streaming` (3 playback/cancellation checks), `dart scripts/tools/run_live_tests.dart speech` (complete synthesis), or `dart scripts/tools/run_live_tests.dart roles` (12 role cases, at most 72 structured calls). It reads the local `.env` and redacts output. Use `--output` for a fresh capture directory; `roles --replay` replays existing captures without inference requests.
 - `analysis_options.yaml` excludes `build/` and the platform folders (recent Flutter versions add this block automatically), so the generated plugin sources there are not analyzed.
 
 ## Project Links
 
 - [Wiki](https://neiroha.github.io/) for installation, backend setup, and usage guides.
-- [API Reference](docs/api.md) for local HTTP integration.
+- [API Reference](assets/docs/api.md) for local HTTP integration.
 - [Releases](https://github.com/Neiroha/Neiroha/releases) for packaged builds.
+
+[Development progress and macOS handoff](assets/todo/todo.md) are tracked with the branch.
+
+Assets are grouped under `assets/todo`, `assets/icon`, `assets/images`, `assets/model_catalog`,
+`assets/docs` and `assets/skills`. Tests and developer tools live under
+`scripts/tests` and `scripts/tools`; run `flutter test scripts/tests` from the repository root.
+
+The first two skills are [external-agent dubbing](assets/skills/neiroha-dubbing/SKILL.md)
+and [internal novel role assignment](assets/skills/novel-role-assign/SKILL.md), each
+with an `EVALUATION.md`. The application loads the internal skill's seven stages
+and records its version and SHA-256 in checkpoints. A changed skill requires a
+new analysis; legacy captures remain explicitly unversioned regression references.
+
+**Settings → Role assignment AI** provides a `gpt-6-luna` default, multiple profiles,
+per-stage prompt editing, duplication and one-click restoration. Novel review and
+long-text TTS share these profiles. In the long-text script toolbar, **AI role
+assignment** takes dubbing intent, previews exact-text roles and lets you choose
+voices before applying. The repeated 21-text quality matrix uses a shared USD 50
+guard; see the [development notes](assets/docs/streaming-and-roles-zh.md).
 
 ## User Agreement & Disclaimer
 

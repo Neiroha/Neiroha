@@ -105,7 +105,8 @@ jobs:
 
   build-linux:
     name: Linux desktop release
-    runs-on: ubuntu-latest
+    # Keep a stable glibc baseline for the distributed binary.
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -276,6 +277,88 @@ jobs:
           path: dist/**
           if-no-files-found: error
 
+  build-macos:
+    name: macOS desktop release (${{ matrix.label }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - label: Apple Silicon
+            arch: arm64
+            asset: ARM64
+            runner: macos-15
+          - label: Intel
+            arch: x86_64
+            asset: AMD64
+            runner: macos-15-intel
+    env:
+      # Passed to xcodebuild as ARCHS, so only the target CPU is compiled.
+      FLUTTER_XCODE_ARCHS: ${{ matrix.arch }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Restore Pub cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: ${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-pub-
+
+      - name: Disable Flutter analytics
+        run: flutter config --no-analytics
+
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Resolve release version
+        shell: bash
+        run: |
+          version="${RELEASE_TAG#v}"
+          if [[ "$version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            version="${version}.0"
+          fi
+          echo "BUILD_NAME=$version" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+          echo "ASSET_VERSION=v$version" >> "$GITHUB_ENV"
+
+      # One ad-hoc signed DMG per CPU, each built on a native runner.
+      - name: Build macOS
+        run: flutter build macos --release --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER"
+
+      - name: Package DMG
+        run: bash scripts/tools/package_macos_dmg.sh Release "${{ matrix.arch }}" "dist/neiroha-macOS-${{ matrix.asset }}-${ASSET_VERSION}.dmg"
+
+      - name: Smoke test DMG
+        run: bash scripts/tools/smoke_test_macos_dmg.sh "dist/neiroha-macOS-${{ matrix.asset }}-${ASSET_VERSION}.dmg" "${{ matrix.arch }}"
+
+      - name: Attest macOS provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/neiroha-macOS-${{ matrix.asset }}-*.dmg
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: neiroha-macOS-${{ matrix.asset }}-release
+          path: dist/**
+          if-no-files-found: error
+
+  build-web:
+    name: Web release archive
+    uses: ./.github/workflows/web-builds.yml
+
   publish-release:
     name: Publish GitHub Release
     runs-on: ubuntu-latest
@@ -283,6 +366,8 @@ jobs:
       - build-android
       - build-linux
       - build-windows
+      - build-macos
+      - build-web
     steps:
       - name: Checkout release history
         uses: actions/checkout@v4
@@ -319,7 +404,11 @@ jobs:
             compare_url="${SERVER_URL}/${REPOSITORY}/commits/${RELEASE_TAG}"
           fi
 
-          if notes="$(gh api "repos/${REPOSITORY}/releases/generate-notes" \
+          notes_file="assets/docs/releases/${RELEASE_TAG}.md"
+          if [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ && -f "$notes_file" ]]; then
+            cat "$notes_file" > RELEASE_NOTES.md
+            printf "\n\n**Full Changelog**: %s\n\n" "$compare_url" >> RELEASE_NOTES.md
+          elif notes="$(gh api "repos/${REPOSITORY}/releases/generate-notes" \
             -f tag_name="${RELEASE_TAG}" \
             --jq '.body' 2>/dev/null)"; then
             printf "%s\n\n" "$notes" > RELEASE_NOTES.md
@@ -393,3 +482,14 @@ jobs:
           body_path: RELEASE_NOTES.md
           fail_on_unmatched_files: true
           files: dist/neiroha-*
+
+      - name: Notify the Wiki of a stable release
+        if: ${{ !contains(env.RELEASE_TAG, '-') }}
+        continue-on-error: true
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ secrets.WIKI_DISPATCH_TOKEN }}
+        run: |
+          if [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ && -n "$GH_TOKEN" ]]; then
+            gh api --method POST repos/Neiroha/Neiroha.github.io/dispatches -f event_type=neiroha-stable-release
+          fi

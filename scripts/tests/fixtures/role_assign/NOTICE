@@ -1,0 +1,6 @@
+Evaluation fixtures adapted from CosyVoiceDesktop, evals/role_assign/dataset.
+Source: https://github.com/Moeary/CosyVoiceDesktop
+Revision: 7efe63b33ed853c04e4732b55afd92738686b07b
+License: Apache-2.0 (see LICENSE).
+Changes: converted YAML fixtures to JSON; source text and gold labels retained.
+No live-model accuracy results are asserted by fixture validation.

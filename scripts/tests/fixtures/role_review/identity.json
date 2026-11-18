@@ -1,0 +1,13 @@
+{
+  "id": "identity",
+  "roster": [
+    {"name": "周柏", "aliases": ["老周"]},
+    {"name": "许宁", "aliases": []},
+    {"name": "林舟", "aliases": []}
+  ],
+  "gold": [
+    {"match": "我就是周柏，这不是另一个人。", "category": "dialogue", "speaker": "周柏"},
+    {"match": "我是许宁，来接你们。", "category": "dialogue", "speaker": "许宁"},
+    {"match": "先等等。", "category": "dialogue", "speaker": "林舟"}
+  ]
+}

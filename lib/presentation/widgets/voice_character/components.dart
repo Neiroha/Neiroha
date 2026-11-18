@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -394,8 +395,6 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
   }
 }
 
-// ─────────────────────────── Shared helpers ─────────────────────────────────
-
 class VoiceCharacterAvatar extends StatelessWidget {
   final String name;
   final bool selected;
@@ -411,7 +410,7 @@ class VoiceCharacterAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (avatarPath != null && File(avatarPath!).existsSync()) {
+    if (!kIsWeb && avatarPath != null && File(avatarPath!).existsSync()) {
       return CircleAvatar(
         radius: radius,
         backgroundImage: FileImage(File(avatarPath!)),

@@ -23,6 +23,7 @@ import 'package:neiroha/presentation/widgets/phase_tts/merge_settings_dialog.dar
 import 'package:neiroha/presentation/widgets/phase_tts/project_list_header.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/segment_voice_panel.dart';
 import 'package:neiroha/presentation/widgets/phase_tts/script_workspace.dart';
+import 'package:neiroha/presentation/widgets/phase_tts/role_assignment_button.dart';
 import 'package:neiroha/presentation/widgets/loudness_normalize_dialog.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
 import 'package:neiroha/presentation/widgets/project_settings_dialog.dart';
@@ -33,11 +34,7 @@ import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 typedef PhaseTtsExitGuard = Future<bool> Function();
 
-/// Phase TTS — long-form / novel TTS with project management.
-///
-/// Editor layout: left column hosts the script editor and split controls;
-/// right column hosts sentence-level voice selection and optional per-call
-/// generation overrides.
+/// Long-text editor with splitting, shared role AI and voice generation.
 class PhaseTtsScreen extends ConsumerStatefulWidget {
   final ValueChanged<PhaseTtsExitGuard?>? onExitGuardChanged;
 
@@ -87,8 +84,6 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     );
   }
 
-  // ───────────────── List mode (card grid) ─────────────────
-
   Widget _buildProjectListScreen() {
     final projectsAsync = ref.watch(phaseTtsProjectsStreamProvider);
     final banks =
@@ -110,7 +105,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
                     name: p.name,
                     updatedAt: p.updatedAt,
                     icon: Icons.auto_stories_rounded,
-                    subtitle: _scriptPreview(p.scriptText),
+                    subtitle: phaseScriptPreview(p.scriptText),
                   ),
               ],
               onOpen: (id) {
@@ -132,12 +127,6 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
         ),
       ],
     );
-  }
-
-  String? _scriptPreview(String scriptText) {
-    final trimmed = scriptText.replaceAll(RegExp(r'\s+'), ' ').trim();
-    if (trimmed.isEmpty) return null;
-    return trimmed.length > 60 ? '${trimmed.substring(0, 60)}…' : trimmed;
   }
 
   Future<void> _showProjectSettings(
@@ -249,6 +238,18 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
               compactRightIcon: Icons.tune_rounded,
               compactRightLabel: AppLocalizations.of(context).uiDetails,
               left: PhaseScriptWorkspace(
+                roleAction: PhaseRoleAssignmentButton(
+                  projectId: project.id,
+                  controller: _scriptController,
+                  enabled: !_generatingAll && _generatingSegmentIds.isEmpty,
+                  prepare: () async {
+                    await _pendingScriptWrite;
+                  },
+                  beforeApply: () async {
+                    await ref.read(playbackNotifierProvider.notifier).stop();
+                    _markDirty();
+                  },
+                ),
                 controller: _scriptController,
                 onScriptChanged: () => _saveScript(project),
                 onAutoSplit: (rule) =>
@@ -526,8 +527,6 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
     return choice == 'discard';
   }
 
-  // ───────────────── Actions ─────────────────
-
   void _playSegment(
     db.PhaseTtsSegment seg,
     int index,
@@ -623,8 +622,6 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
 
   void _saveScript(db.PhaseTtsProject project) {
     _markDirty();
-    // Autosave the text itself; the Save button confirms the edit and bumps
-    // updatedAt so the project moves in the list.
     final database = ref.read(databaseProvider);
     final nextProject = project.copyWith(scriptText: _scriptController.text);
     _pendingScriptWrite = _pendingScriptWrite.catchError((_) {}).then((_) {

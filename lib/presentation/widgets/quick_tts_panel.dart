@@ -1,19 +1,27 @@
+import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
+import 'quick_tts/history_list.dart';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/storage/path_service.dart';
+import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/adapters/speech_http_response.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/providers/browser_quick_tts.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/providers/session_audio_provider.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 /// Compact Quick TTS surface embedded in Voice Bank above the character
@@ -30,6 +38,8 @@ class QuickTtsPanel extends ConsumerStatefulWidget {
 class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
   final _textController = TextEditingController();
   bool _generating = false;
+  bool _preferStreaming = true;
+  TtsCancelToken? _cancellation;
   bool _deleteAllConfirm = false;
 
   @override
@@ -42,18 +52,36 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
 
   @override
   void dispose() {
+    _cancellation?.cancel();
     _textController.dispose();
     super.dispose();
   }
 
   @override
+  void didUpdateWidget(covariant QuickTtsPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.asset?.id != widget.asset?.id) _cancellation?.cancel();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final asset = widget.asset;
-    final historyAsync = ref.watch(quickTtsHistoryStreamProvider);
+    final historyAsync = kIsWeb
+        ? AsyncData(ref.watch(sessionAudioProvider))
+        : ref.watch(quickTtsHistoryStreamProvider);
 
     if (asset == null) {
       return _buildEmptyState();
     }
+    final connection = kIsWeb
+        ? (ref.watch(ttsProvidersStreamProvider).value ?? [])
+              .where((provider) => provider.id == asset.providerId)
+              .firstOrNull
+        : null;
+    final canStream =
+        !kIsWeb ||
+        (connection != null &&
+            supportsBrowserSpeechStreaming(connection, asset));
 
     // Filter history to the currently-selected character so the test surface
     // stays focused on the voice being edited.
@@ -64,10 +92,32 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
     return Column(
       children: [
         _buildHeader(asset, filteredHistory),
-        Expanded(child: _buildHistory(filteredHistory)),
+        Expanded(
+          child: QuickTtsHistoryList(
+            historyAsync: filteredHistory,
+            onSave: _saveEntryAsVoiceAsset,
+          ),
+        ),
         const PersistentAudioBar(
           onlyForSourceTag: voiceBankQuickTestPlaybackSource,
         ),
+        if (kIsWeb)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              AppLocalizations.of(context).webSessionAudio,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        if (canStream)
+          SwitchListTile.adaptive(
+            dense: true,
+            title: Text(AppLocalizations.of(context).uiPreferStreaming),
+            value: _preferStreaming,
+            onChanged: _generating
+                ? null
+                : (value) => setState(() => _preferStreaming = value),
+          ),
         _buildGenerateBar(asset),
       ],
     );
@@ -132,9 +182,20 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
             _deleteAllConfirm
                 ? TextButton.icon(
                     onPressed: () async {
-                      await ref
-                          .read(databaseProvider)
-                          .clearQuickTtsHistoryForAsset(asset.id);
+                      if (kIsWeb) {
+                        final history = ref.read(sessionAudioProvider.notifier);
+                        final playback = ref.read(
+                          playbackNotifierProvider.notifier,
+                        );
+                        history.clearVoice(asset.id);
+                        await playback.stopIfSourceTag(
+                          voiceBankQuickTestPlaybackSource,
+                        );
+                      } else {
+                        await ref
+                            .read(databaseProvider)
+                            .clearQuickTtsHistoryForAsset(asset.id);
+                      }
                       if (mounted) {
                         setState(() => _deleteAllConfirm = false);
                       }
@@ -166,212 +227,6 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                       color: Colors.white.withValues(alpha: 0.4),
                     ),
                   ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHistory(AsyncValue<List<db.QuickTtsHistory>> historyAsync) {
-    return historyAsync.when(
-      loading: () => Center(child: CircularProgressIndicator()),
-      error: (e, _) =>
-          Center(child: Text(AppLocalizations.of(context).uiError2(e))),
-      data: (history) {
-        if (history.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.history_rounded,
-                  size: 36,
-                  color: Colors.white.withValues(alpha: 0.1),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  AppLocalizations.of(context).uiTypeBelowToTestThisVoice,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.3),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final playback = ref.watch(
-          playbackNotifierProvider.select(
-            (state) => (audioPath: state.audioPath, isPlaying: state.isPlaying),
-          ),
-        );
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          itemCount: history.length,
-          itemBuilder: (ctx, i) {
-            final entry = history[i];
-            final isPlaying =
-                entry.audioPath != null &&
-                playback.audioPath == entry.audioPath &&
-                playback.isPlaying;
-            final hasAudio = entry.audioPath != null;
-            final hasError = entry.error != null;
-
-            return Card(
-              margin: const EdgeInsets.only(bottom: 6),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            entry.inputText,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.8),
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (hasError)
-                          Tooltip(
-                            message: entry.error!,
-                            child: const Icon(
-                              Icons.error_rounded,
-                              color: Colors.redAccent,
-                              size: 14,
-                            ),
-                          ),
-                        IconButton(
-                          onPressed: () async {
-                            if (entry.audioPath != null) {
-                              final file = File(entry.audioPath!);
-                              if (file.existsSync()) {
-                                await file.delete();
-                              }
-                            }
-                            await ref
-                                .read(databaseProvider)
-                                .deleteQuickTtsHistory(entry.id);
-                          },
-                          icon: Icon(
-                            Icons.close_rounded,
-                            size: 12,
-                            color: Colors.white.withValues(alpha: 0.3),
-                          ),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 20,
-                            minHeight: 20,
-                          ),
-                          tooltip: AppLocalizations.of(context).uiDelete,
-                        ),
-                      ],
-                    ),
-                    if (hasAudio) ...[
-                      SizedBox(height: 6),
-                      _buildAudioRow(entry, isPlaying),
-                    ],
-                    if (hasAudio) _buildAssetActionRow(entry),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildAudioRow(db.QuickTtsHistory entry, bool isPlaying) {
-    String durationText = '--:--';
-    if (entry.audioDuration != null) {
-      final totalSecs = entry.audioDuration!;
-      final mins = (totalSecs / 60).floor();
-      final secs = (totalSecs % 60).floor();
-      durationText =
-          '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
-    }
-
-    return Row(
-      children: [
-        GestureDetector(
-          onTap: () async {
-            final notifier = ref.read(playbackNotifierProvider.notifier);
-            if (isPlaying) {
-              await notifier.stop();
-            } else {
-              await notifier.load(
-                entry.audioPath!,
-                entry.inputText,
-                subtitle: entry.voiceName,
-                sourceTag: voiceBankQuickTestPlaybackSource,
-              );
-            }
-          },
-          child: Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: isPlaying
-                  ? AppTheme.accentColor
-                  : AppTheme.accentColor.withValues(alpha: 0.8),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
-              size: 12,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        SizedBox(width: 10),
-        Text(
-          isPlaying ? 'Playing…' : 'Tap to play',
-          style: TextStyle(
-            fontSize: 11,
-            color: isPlaying
-                ? AppTheme.accentColor
-                : Colors.white.withValues(alpha: 0.4),
-          ),
-        ),
-        const Spacer(),
-        Text(
-          durationText,
-          style: TextStyle(
-            fontSize: 10,
-            fontFamily: 'monospace',
-            color: isPlaying
-                ? AppTheme.accentColor
-                : Colors.white.withValues(alpha: 0.4),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAssetActionRow(db.QuickTtsHistory entry) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          TextButton.icon(
-            onPressed: () => _saveEntryAsVoiceAsset(entry),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.accentColor,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              minimumSize: const Size(0, 24),
-              textStyle: const TextStyle(fontSize: 11),
-            ),
-            icon: const Icon(Icons.library_add_rounded, size: 14),
-            label: Text(AppLocalizations.of(context).uiSaveAsVoiceAsset),
-          ),
         ],
       ),
     );
@@ -481,18 +336,21 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
             ),
           ),
           if (_generating)
-            Padding(
-              padding: EdgeInsets.only(right: 10),
-              child: SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
+            IconButton(
+              tooltip: AppLocalizations.of(context).uiStopSynthesis,
+              icon: const Icon(Icons.stop_circle_outlined),
+              onPressed: () {
+                _cancellation?.cancel();
+                ref
+                    .read(playbackNotifierProvider.notifier)
+                    .stopIfSourceTag(voiceBankQuickTestPlaybackSource);
+              },
             )
           else
             Padding(
               padding: const EdgeInsets.only(right: 6),
               child: IconButton.filled(
+                tooltip: AppLocalizations.of(context).uiGenerate,
                 onPressed: _textController.text.isEmpty
                     ? null
                     : () => _generate(asset),
@@ -531,85 +389,94 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
 
     final text = _textController.text.trim();
     if (text.isEmpty) return;
+    final l10n = AppLocalizations.of(context);
+    if (kIsWeb &&
+        !supportsBrowserSpeech(
+          provider: provider,
+          modelName: asset.modelName,
+          refAudioPath: asset.refAudioPath,
+        )) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.webVoiceModeUnavailable)));
+      return;
+    }
 
     warnIfVoiceHealthFailedOnce(context: context, ref: ref, asset: asset);
     setState(() => _generating = true);
     if (_deleteAllConfirm) setState(() => _deleteAllConfirm = false);
-    final database = ref.read(databaseProvider);
     final entryId = const Uuid().v4();
 
+    final cancellation = TtsCancelToken();
+    _cancellation = cancellation;
     try {
-      final result = await ref
-          .read(ttsQueueServiceProvider)
-          .synthesize(
+      if (kIsWeb) {
+        await generateBrowserQuickTts(
+          ref,
+          entryId: entryId,
+          provider: provider,
+          voice: asset,
+          text: text,
+          cancellation: cancellation,
+          stream:
+              _preferStreaming &&
+              supportsBrowserSpeechStreaming(provider, asset),
+        );
+        return;
+      }
+      final service = ref.read(quickTtsServiceProvider);
+      final playback = ref.read(playbackNotifierProvider.notifier);
+      final streaming =
+          _preferStreaming &&
+          createAdapter(provider, modelName: asset.modelName).supportsStreaming;
+      if (streaming) {
+        await playback.playSynthesis(
+          cancellation: cancellation,
+          title: text,
+          subtitle: asset.name,
+          sourceTag: voiceBankQuickTestPlaybackSource,
+          generate: (sink) => service.generate(
+            entryId: entryId,
+            asset: asset,
             provider: provider,
-            modelName: asset.modelName,
-            source: 'Quick TTS',
-            label: '${asset.name}: $text',
-            request: TtsRequest(
-              text: text,
-              voice: asset.presetVoiceName ?? asset.name,
-              speed: asset.speed,
-              textLang: provider.adapterType == 'gptSovits'
-                  ? asset.modelName
-                  : null,
-              presetVoiceName: asset.presetVoiceName,
-              voiceInstruction: asset.voiceInstruction,
-              refAudioPath: asset.refAudioPath,
-              promptText: asset.promptText,
-              promptLang: asset.promptLang,
+            text: text,
+            cancellation: cancellation,
+            sink: sink,
+          ),
+        );
+      } else {
+        final result = await service.generate(
+          entryId: entryId,
+          asset: asset,
+          provider: provider,
+          text: text,
+          cancellation: cancellation,
+        );
+        cancellation.throwIfCancelled();
+        if (!mounted) return;
+        await playback.load(
+          result.audioPath,
+          text,
+          subtitle: asset.name,
+          sourceTag: voiceBankQuickTestPlaybackSource,
+        );
+      }
+    } on TtsCancelledException {
+      // Stopping and switching characters are normal, not failed history rows.
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              kIsWeb &&
+                      (error is BrowserSpeechConnectionException ||
+                          (error is DioException && error.response == null))
+                  ? l10n.webProviderNetworkError
+                  : l10n.uiError2(error),
             ),
-          );
-
-      final slug = await ref
-          .read(storageServiceProvider)
-          .ensureVoiceAssetSlug(asset.id);
-      final outDir = await PathService.instance.quickTtsDir(slug);
-      final ext = result.contentType.contains('wav') ? '.wav' : '.mp3';
-      final filePath = PathService.dedupeFilename(
-        outDir,
-        PathService.formatTimestamp(),
-        ext,
-      );
-      await File(filePath).writeAsBytes(result.audioBytes);
-
-      await database.insertQuickTtsHistory(
-        db.QuickTtsHistoriesCompanion(
-          id: Value(entryId),
-          voiceAssetId: Value(asset.id),
-          voiceName: Value(asset.name),
-          inputText: Value(text),
-          audioPath: Value(filePath),
-          createdAt: Value(DateTime.now()),
-        ),
-      );
-
-      final player = ref.read(audioPlayerProvider);
-      await ref
-          .read(playbackNotifierProvider.notifier)
-          .load(
-            filePath,
-            text,
-            subtitle: asset.name,
-            sourceTag: voiceBankQuickTestPlaybackSource,
-          );
-      player.onDurationChanged.first
-          .then((d) async {
-            final secs = d.inMilliseconds / 1000.0;
-            await database.updateQuickTtsHistoryDuration(entryId, secs);
-          })
-          .catchError((_) {});
-    } catch (e) {
-      await database.insertQuickTtsHistory(
-        db.QuickTtsHistoriesCompanion(
-          id: Value(entryId),
-          voiceAssetId: Value(asset.id),
-          voiceName: Value(asset.name),
-          inputText: Value(text),
-          error: Value(e.toString()),
-          createdAt: Value(DateTime.now()),
-        ),
-      );
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _generating = false);
     }

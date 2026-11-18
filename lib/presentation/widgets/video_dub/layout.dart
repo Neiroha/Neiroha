@@ -404,6 +404,11 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                         onEdit: () => _editCueDialog(cue),
                         onDelete: () => _deleteCue(cue),
                         onPreview: () => _previewCue(cue),
+                        beforeLivePreview: () async {
+                          await _player.pause();
+                          await _cuePlayer.stop();
+                          await _previewPlayer.stop();
+                        },
                       );
                     },
                   ),

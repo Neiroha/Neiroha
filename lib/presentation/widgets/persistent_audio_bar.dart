@@ -15,7 +15,7 @@ class PersistentAudioBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(playbackNotifierProvider);
-    if (state.audioPath == null) return const SizedBox.shrink();
+    if (!state.hasMedia) return const SizedBox.shrink();
     if (onlyForSourceTag != null && state.sourceTag != onlyForSourceTag) {
       return const SizedBox.shrink();
     }
@@ -65,7 +65,9 @@ class PersistentAudioBar extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      state.title ?? '',
+                      state.isBuffering
+                          ? AppLocalizations.of(context).uiAudioBuffering
+                          : (state.title ?? ''),
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -100,7 +102,7 @@ class PersistentAudioBar extends ConsumerWidget {
                     min: 0,
                     max: durMs == 0 ? 1 : durMs.toDouble(),
                     value: posMs.toDouble(),
-                    onChanged: durMs == 0
+                    onChanged: !state.canSeek
                         ? null
                         : (v) =>
                               notifier.seek(Duration(milliseconds: v.toInt())),
@@ -121,7 +123,7 @@ class PersistentAudioBar extends ConsumerWidget {
               SizedBox(width: 8),
               IconButton(
                 icon: Icon(
-                  state.isPlaying
+                  state.isPlaying && !state.isPaused
                       ? Icons.pause_circle_filled
                       : Icons.play_circle_fill,
                 ),

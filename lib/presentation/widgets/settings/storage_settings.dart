@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -36,7 +38,11 @@ class StorageSettingsCard extends ConsumerWidget {
               title: AppLocalizations.of(context).uiDataDirectory,
               subtitle:
                   '$dataRoot\n'
-                  '${paths.isPortable ? AppLocalizations.of(context).uiPortableNextToExecutable : AppLocalizations.of(context).uiAppSupportFallbackInstallDirIsReadOnly}',
+                  '${paths.isPortable
+                      ? AppLocalizations.of(context).uiPortableNextToExecutable
+                      : Platform.isMacOS
+                      ? AppLocalizations.of(context).uiAppSupportMacOs
+                      : AppLocalizations.of(context).uiAppSupportFallbackInstallDirIsReadOnly}',
               trailing: IconButton(
                 icon: const Icon(Icons.copy_rounded, size: 18),
                 tooltip: AppLocalizations.of(context).uiCopyPath,

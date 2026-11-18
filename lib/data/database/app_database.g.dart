@@ -8197,6 +8197,1751 @@ class NovelSegmentsCompanion extends UpdateCompanion<NovelSegment> {
   }
 }
 
+class $NovelCharactersTable extends NovelCharacters
+    with TableInfo<$NovelCharactersTable, NovelCharacter> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NovelCharactersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES novel_projects (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aliasesJsonMeta = const VerificationMeta(
+    'aliasesJson',
+  );
+  @override
+  late final GeneratedColumn<String> aliasesJson = GeneratedColumn<String>(
+    'aliases_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _colorMeta = const VerificationMeta('color');
+  @override
+  late final GeneratedColumn<int> color = GeneratedColumn<int>(
+    'color',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0xFF7E9CD8),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    projectId,
+    name,
+    aliasesJson,
+    description,
+    color,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'novel_characters';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NovelCharacter> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('aliases_json')) {
+      context.handle(
+        _aliasesJsonMeta,
+        aliasesJson.isAcceptableOrUnknown(
+          data['aliases_json']!,
+          _aliasesJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('color')) {
+      context.handle(
+        _colorMeta,
+        color.isAcceptableOrUnknown(data['color']!, _colorMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NovelCharacter map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NovelCharacter(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      aliasesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aliases_json'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      )!,
+      color: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}color'],
+      )!,
+    );
+  }
+
+  @override
+  $NovelCharactersTable createAlias(String alias) {
+    return $NovelCharactersTable(attachedDatabase, alias);
+  }
+}
+
+class NovelCharacter extends DataClass implements Insertable<NovelCharacter> {
+  final String id;
+  final String projectId;
+  final String name;
+  final String aliasesJson;
+  final String description;
+  final int color;
+  const NovelCharacter({
+    required this.id,
+    required this.projectId,
+    required this.name,
+    required this.aliasesJson,
+    required this.description,
+    required this.color,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['name'] = Variable<String>(name);
+    map['aliases_json'] = Variable<String>(aliasesJson);
+    map['description'] = Variable<String>(description);
+    map['color'] = Variable<int>(color);
+    return map;
+  }
+
+  NovelCharactersCompanion toCompanion(bool nullToAbsent) {
+    return NovelCharactersCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      name: Value(name),
+      aliasesJson: Value(aliasesJson),
+      description: Value(description),
+      color: Value(color),
+    );
+  }
+
+  factory NovelCharacter.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NovelCharacter(
+      id: serializer.fromJson<String>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      name: serializer.fromJson<String>(json['name']),
+      aliasesJson: serializer.fromJson<String>(json['aliasesJson']),
+      description: serializer.fromJson<String>(json['description']),
+      color: serializer.fromJson<int>(json['color']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'name': serializer.toJson<String>(name),
+      'aliasesJson': serializer.toJson<String>(aliasesJson),
+      'description': serializer.toJson<String>(description),
+      'color': serializer.toJson<int>(color),
+    };
+  }
+
+  NovelCharacter copyWith({
+    String? id,
+    String? projectId,
+    String? name,
+    String? aliasesJson,
+    String? description,
+    int? color,
+  }) => NovelCharacter(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    name: name ?? this.name,
+    aliasesJson: aliasesJson ?? this.aliasesJson,
+    description: description ?? this.description,
+    color: color ?? this.color,
+  );
+  NovelCharacter copyWithCompanion(NovelCharactersCompanion data) {
+    return NovelCharacter(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      name: data.name.present ? data.name.value : this.name,
+      aliasesJson: data.aliasesJson.present
+          ? data.aliasesJson.value
+          : this.aliasesJson,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      color: data.color.present ? data.color.value : this.color,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NovelCharacter(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('name: $name, ')
+          ..write('aliasesJson: $aliasesJson, ')
+          ..write('description: $description, ')
+          ..write('color: $color')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, projectId, name, aliasesJson, description, color);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NovelCharacter &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.name == this.name &&
+          other.aliasesJson == this.aliasesJson &&
+          other.description == this.description &&
+          other.color == this.color);
+}
+
+class NovelCharactersCompanion extends UpdateCompanion<NovelCharacter> {
+  final Value<String> id;
+  final Value<String> projectId;
+  final Value<String> name;
+  final Value<String> aliasesJson;
+  final Value<String> description;
+  final Value<int> color;
+  final Value<int> rowid;
+  const NovelCharactersCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.aliasesJson = const Value.absent(),
+    this.description = const Value.absent(),
+    this.color = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NovelCharactersCompanion.insert({
+    required String id,
+    required String projectId,
+    required String name,
+    this.aliasesJson = const Value.absent(),
+    this.description = const Value.absent(),
+    this.color = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       projectId = Value(projectId),
+       name = Value(name);
+  static Insertable<NovelCharacter> custom({
+    Expression<String>? id,
+    Expression<String>? projectId,
+    Expression<String>? name,
+    Expression<String>? aliasesJson,
+    Expression<String>? description,
+    Expression<int>? color,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (name != null) 'name': name,
+      if (aliasesJson != null) 'aliases_json': aliasesJson,
+      if (description != null) 'description': description,
+      if (color != null) 'color': color,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NovelCharactersCompanion copyWith({
+    Value<String>? id,
+    Value<String>? projectId,
+    Value<String>? name,
+    Value<String>? aliasesJson,
+    Value<String>? description,
+    Value<int>? color,
+    Value<int>? rowid,
+  }) {
+    return NovelCharactersCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      name: name ?? this.name,
+      aliasesJson: aliasesJson ?? this.aliasesJson,
+      description: description ?? this.description,
+      color: color ?? this.color,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (aliasesJson.present) {
+      map['aliases_json'] = Variable<String>(aliasesJson.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (color.present) {
+      map['color'] = Variable<int>(color.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NovelCharactersCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('name: $name, ')
+          ..write('aliasesJson: $aliasesJson, ')
+          ..write('description: $description, ')
+          ..write('color: $color, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $NovelAnnotationsTable extends NovelAnnotations
+    with TableInfo<$NovelAnnotationsTable, NovelAnnotation> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NovelAnnotationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _segmentIdMeta = const VerificationMeta(
+    'segmentId',
+  );
+  @override
+  late final GeneratedColumn<String> segmentId = GeneratedColumn<String>(
+    'segment_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES novel_segments (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES novel_projects (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _textRevisionMeta = const VerificationMeta(
+    'textRevision',
+  );
+  @override
+  late final GeneratedColumn<String> textRevision = GeneratedColumn<String>(
+    'text_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _characterIdMeta = const VerificationMeta(
+    'characterId',
+  );
+  @override
+  late final GeneratedColumn<String> characterId = GeneratedColumn<String>(
+    'character_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES novel_characters (id) ON DELETE SET NULL',
+    ),
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('narrator'),
+  );
+  static const VerificationMeta _voiceAssetIdMeta = const VerificationMeta(
+    'voiceAssetId',
+  );
+  @override
+  late final GeneratedColumn<String> voiceAssetId = GeneratedColumn<String>(
+    'voice_asset_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _instructionMeta = const VerificationMeta(
+    'instruction',
+  );
+  @override
+  late final GeneratedColumn<String> instruction = GeneratedColumn<String>(
+    'instruction',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lockedMeta = const VerificationMeta('locked');
+  @override
+  late final GeneratedColumn<bool> locked = GeneratedColumn<bool>(
+    'locked',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("locked" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _reviewStateMeta = const VerificationMeta(
+    'reviewState',
+  );
+  @override
+  late final GeneratedColumn<String> reviewState = GeneratedColumn<String>(
+    'review_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _changeIdMeta = const VerificationMeta(
+    'changeId',
+  );
+  @override
+  late final GeneratedColumn<String> changeId = GeneratedColumn<String>(
+    'change_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    segmentId,
+    projectId,
+    textRevision,
+    characterId,
+    kind,
+    voiceAssetId,
+    instruction,
+    locked,
+    reviewState,
+    reason,
+    changeId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'novel_annotations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NovelAnnotation> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('segment_id')) {
+      context.handle(
+        _segmentIdMeta,
+        segmentId.isAcceptableOrUnknown(data['segment_id']!, _segmentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_segmentIdMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('text_revision')) {
+      context.handle(
+        _textRevisionMeta,
+        textRevision.isAcceptableOrUnknown(
+          data['text_revision']!,
+          _textRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_textRevisionMeta);
+    }
+    if (data.containsKey('character_id')) {
+      context.handle(
+        _characterIdMeta,
+        characterId.isAcceptableOrUnknown(
+          data['character_id']!,
+          _characterIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    }
+    if (data.containsKey('voice_asset_id')) {
+      context.handle(
+        _voiceAssetIdMeta,
+        voiceAssetId.isAcceptableOrUnknown(
+          data['voice_asset_id']!,
+          _voiceAssetIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('instruction')) {
+      context.handle(
+        _instructionMeta,
+        instruction.isAcceptableOrUnknown(
+          data['instruction']!,
+          _instructionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('locked')) {
+      context.handle(
+        _lockedMeta,
+        locked.isAcceptableOrUnknown(data['locked']!, _lockedMeta),
+      );
+    }
+    if (data.containsKey('review_state')) {
+      context.handle(
+        _reviewStateMeta,
+        reviewState.isAcceptableOrUnknown(
+          data['review_state']!,
+          _reviewStateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    }
+    if (data.containsKey('change_id')) {
+      context.handle(
+        _changeIdMeta,
+        changeId.isAcceptableOrUnknown(data['change_id']!, _changeIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_changeIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {segmentId};
+  @override
+  NovelAnnotation map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NovelAnnotation(
+      segmentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}segment_id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      textRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}text_revision'],
+      )!,
+      characterId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}character_id'],
+      ),
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      voiceAssetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}voice_asset_id'],
+      ),
+      instruction: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}instruction'],
+      ),
+      locked: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}locked'],
+      )!,
+      reviewState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}review_state'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      )!,
+      changeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}change_id'],
+      )!,
+    );
+  }
+
+  @override
+  $NovelAnnotationsTable createAlias(String alias) {
+    return $NovelAnnotationsTable(attachedDatabase, alias);
+  }
+}
+
+class NovelAnnotation extends DataClass implements Insertable<NovelAnnotation> {
+  final String segmentId;
+  final String projectId;
+  final String textRevision;
+  final String? characterId;
+  final String kind;
+  final String? voiceAssetId;
+  final String? instruction;
+  final bool locked;
+  final String reviewState;
+  final String reason;
+  final String changeId;
+  const NovelAnnotation({
+    required this.segmentId,
+    required this.projectId,
+    required this.textRevision,
+    this.characterId,
+    required this.kind,
+    this.voiceAssetId,
+    this.instruction,
+    required this.locked,
+    required this.reviewState,
+    required this.reason,
+    required this.changeId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['segment_id'] = Variable<String>(segmentId);
+    map['project_id'] = Variable<String>(projectId);
+    map['text_revision'] = Variable<String>(textRevision);
+    if (!nullToAbsent || characterId != null) {
+      map['character_id'] = Variable<String>(characterId);
+    }
+    map['kind'] = Variable<String>(kind);
+    if (!nullToAbsent || voiceAssetId != null) {
+      map['voice_asset_id'] = Variable<String>(voiceAssetId);
+    }
+    if (!nullToAbsent || instruction != null) {
+      map['instruction'] = Variable<String>(instruction);
+    }
+    map['locked'] = Variable<bool>(locked);
+    map['review_state'] = Variable<String>(reviewState);
+    map['reason'] = Variable<String>(reason);
+    map['change_id'] = Variable<String>(changeId);
+    return map;
+  }
+
+  NovelAnnotationsCompanion toCompanion(bool nullToAbsent) {
+    return NovelAnnotationsCompanion(
+      segmentId: Value(segmentId),
+      projectId: Value(projectId),
+      textRevision: Value(textRevision),
+      characterId: characterId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(characterId),
+      kind: Value(kind),
+      voiceAssetId: voiceAssetId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voiceAssetId),
+      instruction: instruction == null && nullToAbsent
+          ? const Value.absent()
+          : Value(instruction),
+      locked: Value(locked),
+      reviewState: Value(reviewState),
+      reason: Value(reason),
+      changeId: Value(changeId),
+    );
+  }
+
+  factory NovelAnnotation.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NovelAnnotation(
+      segmentId: serializer.fromJson<String>(json['segmentId']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      textRevision: serializer.fromJson<String>(json['textRevision']),
+      characterId: serializer.fromJson<String?>(json['characterId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      voiceAssetId: serializer.fromJson<String?>(json['voiceAssetId']),
+      instruction: serializer.fromJson<String?>(json['instruction']),
+      locked: serializer.fromJson<bool>(json['locked']),
+      reviewState: serializer.fromJson<String>(json['reviewState']),
+      reason: serializer.fromJson<String>(json['reason']),
+      changeId: serializer.fromJson<String>(json['changeId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'segmentId': serializer.toJson<String>(segmentId),
+      'projectId': serializer.toJson<String>(projectId),
+      'textRevision': serializer.toJson<String>(textRevision),
+      'characterId': serializer.toJson<String?>(characterId),
+      'kind': serializer.toJson<String>(kind),
+      'voiceAssetId': serializer.toJson<String?>(voiceAssetId),
+      'instruction': serializer.toJson<String?>(instruction),
+      'locked': serializer.toJson<bool>(locked),
+      'reviewState': serializer.toJson<String>(reviewState),
+      'reason': serializer.toJson<String>(reason),
+      'changeId': serializer.toJson<String>(changeId),
+    };
+  }
+
+  NovelAnnotation copyWith({
+    String? segmentId,
+    String? projectId,
+    String? textRevision,
+    Value<String?> characterId = const Value.absent(),
+    String? kind,
+    Value<String?> voiceAssetId = const Value.absent(),
+    Value<String?> instruction = const Value.absent(),
+    bool? locked,
+    String? reviewState,
+    String? reason,
+    String? changeId,
+  }) => NovelAnnotation(
+    segmentId: segmentId ?? this.segmentId,
+    projectId: projectId ?? this.projectId,
+    textRevision: textRevision ?? this.textRevision,
+    characterId: characterId.present ? characterId.value : this.characterId,
+    kind: kind ?? this.kind,
+    voiceAssetId: voiceAssetId.present ? voiceAssetId.value : this.voiceAssetId,
+    instruction: instruction.present ? instruction.value : this.instruction,
+    locked: locked ?? this.locked,
+    reviewState: reviewState ?? this.reviewState,
+    reason: reason ?? this.reason,
+    changeId: changeId ?? this.changeId,
+  );
+  NovelAnnotation copyWithCompanion(NovelAnnotationsCompanion data) {
+    return NovelAnnotation(
+      segmentId: data.segmentId.present ? data.segmentId.value : this.segmentId,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      textRevision: data.textRevision.present
+          ? data.textRevision.value
+          : this.textRevision,
+      characterId: data.characterId.present
+          ? data.characterId.value
+          : this.characterId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      voiceAssetId: data.voiceAssetId.present
+          ? data.voiceAssetId.value
+          : this.voiceAssetId,
+      instruction: data.instruction.present
+          ? data.instruction.value
+          : this.instruction,
+      locked: data.locked.present ? data.locked.value : this.locked,
+      reviewState: data.reviewState.present
+          ? data.reviewState.value
+          : this.reviewState,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      changeId: data.changeId.present ? data.changeId.value : this.changeId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NovelAnnotation(')
+          ..write('segmentId: $segmentId, ')
+          ..write('projectId: $projectId, ')
+          ..write('textRevision: $textRevision, ')
+          ..write('characterId: $characterId, ')
+          ..write('kind: $kind, ')
+          ..write('voiceAssetId: $voiceAssetId, ')
+          ..write('instruction: $instruction, ')
+          ..write('locked: $locked, ')
+          ..write('reviewState: $reviewState, ')
+          ..write('reason: $reason, ')
+          ..write('changeId: $changeId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    segmentId,
+    projectId,
+    textRevision,
+    characterId,
+    kind,
+    voiceAssetId,
+    instruction,
+    locked,
+    reviewState,
+    reason,
+    changeId,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NovelAnnotation &&
+          other.segmentId == this.segmentId &&
+          other.projectId == this.projectId &&
+          other.textRevision == this.textRevision &&
+          other.characterId == this.characterId &&
+          other.kind == this.kind &&
+          other.voiceAssetId == this.voiceAssetId &&
+          other.instruction == this.instruction &&
+          other.locked == this.locked &&
+          other.reviewState == this.reviewState &&
+          other.reason == this.reason &&
+          other.changeId == this.changeId);
+}
+
+class NovelAnnotationsCompanion extends UpdateCompanion<NovelAnnotation> {
+  final Value<String> segmentId;
+  final Value<String> projectId;
+  final Value<String> textRevision;
+  final Value<String?> characterId;
+  final Value<String> kind;
+  final Value<String?> voiceAssetId;
+  final Value<String?> instruction;
+  final Value<bool> locked;
+  final Value<String> reviewState;
+  final Value<String> reason;
+  final Value<String> changeId;
+  final Value<int> rowid;
+  const NovelAnnotationsCompanion({
+    this.segmentId = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.textRevision = const Value.absent(),
+    this.characterId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.voiceAssetId = const Value.absent(),
+    this.instruction = const Value.absent(),
+    this.locked = const Value.absent(),
+    this.reviewState = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.changeId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NovelAnnotationsCompanion.insert({
+    required String segmentId,
+    required String projectId,
+    required String textRevision,
+    this.characterId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.voiceAssetId = const Value.absent(),
+    this.instruction = const Value.absent(),
+    this.locked = const Value.absent(),
+    this.reviewState = const Value.absent(),
+    this.reason = const Value.absent(),
+    required String changeId,
+    this.rowid = const Value.absent(),
+  }) : segmentId = Value(segmentId),
+       projectId = Value(projectId),
+       textRevision = Value(textRevision),
+       changeId = Value(changeId);
+  static Insertable<NovelAnnotation> custom({
+    Expression<String>? segmentId,
+    Expression<String>? projectId,
+    Expression<String>? textRevision,
+    Expression<String>? characterId,
+    Expression<String>? kind,
+    Expression<String>? voiceAssetId,
+    Expression<String>? instruction,
+    Expression<bool>? locked,
+    Expression<String>? reviewState,
+    Expression<String>? reason,
+    Expression<String>? changeId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (segmentId != null) 'segment_id': segmentId,
+      if (projectId != null) 'project_id': projectId,
+      if (textRevision != null) 'text_revision': textRevision,
+      if (characterId != null) 'character_id': characterId,
+      if (kind != null) 'kind': kind,
+      if (voiceAssetId != null) 'voice_asset_id': voiceAssetId,
+      if (instruction != null) 'instruction': instruction,
+      if (locked != null) 'locked': locked,
+      if (reviewState != null) 'review_state': reviewState,
+      if (reason != null) 'reason': reason,
+      if (changeId != null) 'change_id': changeId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NovelAnnotationsCompanion copyWith({
+    Value<String>? segmentId,
+    Value<String>? projectId,
+    Value<String>? textRevision,
+    Value<String?>? characterId,
+    Value<String>? kind,
+    Value<String?>? voiceAssetId,
+    Value<String?>? instruction,
+    Value<bool>? locked,
+    Value<String>? reviewState,
+    Value<String>? reason,
+    Value<String>? changeId,
+    Value<int>? rowid,
+  }) {
+    return NovelAnnotationsCompanion(
+      segmentId: segmentId ?? this.segmentId,
+      projectId: projectId ?? this.projectId,
+      textRevision: textRevision ?? this.textRevision,
+      characterId: characterId ?? this.characterId,
+      kind: kind ?? this.kind,
+      voiceAssetId: voiceAssetId ?? this.voiceAssetId,
+      instruction: instruction ?? this.instruction,
+      locked: locked ?? this.locked,
+      reviewState: reviewState ?? this.reviewState,
+      reason: reason ?? this.reason,
+      changeId: changeId ?? this.changeId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (segmentId.present) {
+      map['segment_id'] = Variable<String>(segmentId.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (textRevision.present) {
+      map['text_revision'] = Variable<String>(textRevision.value);
+    }
+    if (characterId.present) {
+      map['character_id'] = Variable<String>(characterId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (voiceAssetId.present) {
+      map['voice_asset_id'] = Variable<String>(voiceAssetId.value);
+    }
+    if (instruction.present) {
+      map['instruction'] = Variable<String>(instruction.value);
+    }
+    if (locked.present) {
+      map['locked'] = Variable<bool>(locked.value);
+    }
+    if (reviewState.present) {
+      map['review_state'] = Variable<String>(reviewState.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (changeId.present) {
+      map['change_id'] = Variable<String>(changeId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NovelAnnotationsCompanion(')
+          ..write('segmentId: $segmentId, ')
+          ..write('projectId: $projectId, ')
+          ..write('textRevision: $textRevision, ')
+          ..write('characterId: $characterId, ')
+          ..write('kind: $kind, ')
+          ..write('voiceAssetId: $voiceAssetId, ')
+          ..write('instruction: $instruction, ')
+          ..write('locked: $locked, ')
+          ..write('reviewState: $reviewState, ')
+          ..write('reason: $reason, ')
+          ..write('changeId: $changeId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $NovelVoiceBindingsTable extends NovelVoiceBindings
+    with TableInfo<$NovelVoiceBindingsTable, NovelVoiceBinding> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NovelVoiceBindingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _characterIdMeta = const VerificationMeta(
+    'characterId',
+  );
+  @override
+  late final GeneratedColumn<String> characterId = GeneratedColumn<String>(
+    'character_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES novel_characters (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _chapterIdMeta = const VerificationMeta(
+    'chapterId',
+  );
+  @override
+  late final GeneratedColumn<String> chapterId = GeneratedColumn<String>(
+    'chapter_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _voiceAssetIdMeta = const VerificationMeta(
+    'voiceAssetId',
+  );
+  @override
+  late final GeneratedColumn<String> voiceAssetId = GeneratedColumn<String>(
+    'voice_asset_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES voice_assets (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _instructionMeta = const VerificationMeta(
+    'instruction',
+  );
+  @override
+  late final GeneratedColumn<String> instruction = GeneratedColumn<String>(
+    'instruction',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    characterId,
+    chapterId,
+    voiceAssetId,
+    instruction,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'novel_voice_bindings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NovelVoiceBinding> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('character_id')) {
+      context.handle(
+        _characterIdMeta,
+        characterId.isAcceptableOrUnknown(
+          data['character_id']!,
+          _characterIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_characterIdMeta);
+    }
+    if (data.containsKey('chapter_id')) {
+      context.handle(
+        _chapterIdMeta,
+        chapterId.isAcceptableOrUnknown(data['chapter_id']!, _chapterIdMeta),
+      );
+    }
+    if (data.containsKey('voice_asset_id')) {
+      context.handle(
+        _voiceAssetIdMeta,
+        voiceAssetId.isAcceptableOrUnknown(
+          data['voice_asset_id']!,
+          _voiceAssetIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_voiceAssetIdMeta);
+    }
+    if (data.containsKey('instruction')) {
+      context.handle(
+        _instructionMeta,
+        instruction.isAcceptableOrUnknown(
+          data['instruction']!,
+          _instructionMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {characterId, chapterId};
+  @override
+  NovelVoiceBinding map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NovelVoiceBinding(
+      characterId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}character_id'],
+      )!,
+      chapterId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chapter_id'],
+      )!,
+      voiceAssetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}voice_asset_id'],
+      )!,
+      instruction: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}instruction'],
+      ),
+    );
+  }
+
+  @override
+  $NovelVoiceBindingsTable createAlias(String alias) {
+    return $NovelVoiceBindingsTable(attachedDatabase, alias);
+  }
+}
+
+class NovelVoiceBinding extends DataClass
+    implements Insertable<NovelVoiceBinding> {
+  final String characterId;
+  final String chapterId;
+  final String voiceAssetId;
+  final String? instruction;
+  const NovelVoiceBinding({
+    required this.characterId,
+    required this.chapterId,
+    required this.voiceAssetId,
+    this.instruction,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['character_id'] = Variable<String>(characterId);
+    map['chapter_id'] = Variable<String>(chapterId);
+    map['voice_asset_id'] = Variable<String>(voiceAssetId);
+    if (!nullToAbsent || instruction != null) {
+      map['instruction'] = Variable<String>(instruction);
+    }
+    return map;
+  }
+
+  NovelVoiceBindingsCompanion toCompanion(bool nullToAbsent) {
+    return NovelVoiceBindingsCompanion(
+      characterId: Value(characterId),
+      chapterId: Value(chapterId),
+      voiceAssetId: Value(voiceAssetId),
+      instruction: instruction == null && nullToAbsent
+          ? const Value.absent()
+          : Value(instruction),
+    );
+  }
+
+  factory NovelVoiceBinding.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NovelVoiceBinding(
+      characterId: serializer.fromJson<String>(json['characterId']),
+      chapterId: serializer.fromJson<String>(json['chapterId']),
+      voiceAssetId: serializer.fromJson<String>(json['voiceAssetId']),
+      instruction: serializer.fromJson<String?>(json['instruction']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'characterId': serializer.toJson<String>(characterId),
+      'chapterId': serializer.toJson<String>(chapterId),
+      'voiceAssetId': serializer.toJson<String>(voiceAssetId),
+      'instruction': serializer.toJson<String?>(instruction),
+    };
+  }
+
+  NovelVoiceBinding copyWith({
+    String? characterId,
+    String? chapterId,
+    String? voiceAssetId,
+    Value<String?> instruction = const Value.absent(),
+  }) => NovelVoiceBinding(
+    characterId: characterId ?? this.characterId,
+    chapterId: chapterId ?? this.chapterId,
+    voiceAssetId: voiceAssetId ?? this.voiceAssetId,
+    instruction: instruction.present ? instruction.value : this.instruction,
+  );
+  NovelVoiceBinding copyWithCompanion(NovelVoiceBindingsCompanion data) {
+    return NovelVoiceBinding(
+      characterId: data.characterId.present
+          ? data.characterId.value
+          : this.characterId,
+      chapterId: data.chapterId.present ? data.chapterId.value : this.chapterId,
+      voiceAssetId: data.voiceAssetId.present
+          ? data.voiceAssetId.value
+          : this.voiceAssetId,
+      instruction: data.instruction.present
+          ? data.instruction.value
+          : this.instruction,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NovelVoiceBinding(')
+          ..write('characterId: $characterId, ')
+          ..write('chapterId: $chapterId, ')
+          ..write('voiceAssetId: $voiceAssetId, ')
+          ..write('instruction: $instruction')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(characterId, chapterId, voiceAssetId, instruction);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NovelVoiceBinding &&
+          other.characterId == this.characterId &&
+          other.chapterId == this.chapterId &&
+          other.voiceAssetId == this.voiceAssetId &&
+          other.instruction == this.instruction);
+}
+
+class NovelVoiceBindingsCompanion extends UpdateCompanion<NovelVoiceBinding> {
+  final Value<String> characterId;
+  final Value<String> chapterId;
+  final Value<String> voiceAssetId;
+  final Value<String?> instruction;
+  final Value<int> rowid;
+  const NovelVoiceBindingsCompanion({
+    this.characterId = const Value.absent(),
+    this.chapterId = const Value.absent(),
+    this.voiceAssetId = const Value.absent(),
+    this.instruction = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NovelVoiceBindingsCompanion.insert({
+    required String characterId,
+    this.chapterId = const Value.absent(),
+    required String voiceAssetId,
+    this.instruction = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : characterId = Value(characterId),
+       voiceAssetId = Value(voiceAssetId);
+  static Insertable<NovelVoiceBinding> custom({
+    Expression<String>? characterId,
+    Expression<String>? chapterId,
+    Expression<String>? voiceAssetId,
+    Expression<String>? instruction,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (characterId != null) 'character_id': characterId,
+      if (chapterId != null) 'chapter_id': chapterId,
+      if (voiceAssetId != null) 'voice_asset_id': voiceAssetId,
+      if (instruction != null) 'instruction': instruction,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NovelVoiceBindingsCompanion copyWith({
+    Value<String>? characterId,
+    Value<String>? chapterId,
+    Value<String>? voiceAssetId,
+    Value<String?>? instruction,
+    Value<int>? rowid,
+  }) {
+    return NovelVoiceBindingsCompanion(
+      characterId: characterId ?? this.characterId,
+      chapterId: chapterId ?? this.chapterId,
+      voiceAssetId: voiceAssetId ?? this.voiceAssetId,
+      instruction: instruction ?? this.instruction,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (characterId.present) {
+      map['character_id'] = Variable<String>(characterId.value);
+    }
+    if (chapterId.present) {
+      map['chapter_id'] = Variable<String>(chapterId.value);
+    }
+    if (voiceAssetId.present) {
+      map['voice_asset_id'] = Variable<String>(voiceAssetId.value);
+    }
+    if (instruction.present) {
+      map['instruction'] = Variable<String>(instruction.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NovelVoiceBindingsCompanion(')
+          ..write('characterId: $characterId, ')
+          ..write('chapterId: $chapterId, ')
+          ..write('voiceAssetId: $voiceAssetId, ')
+          ..write('instruction: $instruction, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $NovelRoleEditsTable extends NovelRoleEdits
+    with TableInfo<$NovelRoleEditsTable, NovelRoleEdit> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NovelRoleEditsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES novel_projects (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, projectId, payload, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'novel_role_edits';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NovelRoleEdit> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NovelRoleEdit map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NovelRoleEdit(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_id'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $NovelRoleEditsTable createAlias(String alias) {
+    return $NovelRoleEditsTable(attachedDatabase, alias);
+  }
+}
+
+class NovelRoleEdit extends DataClass implements Insertable<NovelRoleEdit> {
+  final int id;
+  final String projectId;
+  final String payload;
+  final DateTime createdAt;
+  const NovelRoleEdit({
+    required this.id,
+    required this.projectId,
+    required this.payload,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['project_id'] = Variable<String>(projectId);
+    map['payload'] = Variable<String>(payload);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  NovelRoleEditsCompanion toCompanion(bool nullToAbsent) {
+    return NovelRoleEditsCompanion(
+      id: Value(id),
+      projectId: Value(projectId),
+      payload: Value(payload),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory NovelRoleEdit.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NovelRoleEdit(
+      id: serializer.fromJson<int>(json['id']),
+      projectId: serializer.fromJson<String>(json['projectId']),
+      payload: serializer.fromJson<String>(json['payload']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'projectId': serializer.toJson<String>(projectId),
+      'payload': serializer.toJson<String>(payload),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  NovelRoleEdit copyWith({
+    int? id,
+    String? projectId,
+    String? payload,
+    DateTime? createdAt,
+  }) => NovelRoleEdit(
+    id: id ?? this.id,
+    projectId: projectId ?? this.projectId,
+    payload: payload ?? this.payload,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  NovelRoleEdit copyWithCompanion(NovelRoleEditsCompanion data) {
+    return NovelRoleEdit(
+      id: data.id.present ? data.id.value : this.id,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      payload: data.payload.present ? data.payload.value : this.payload,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NovelRoleEdit(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('payload: $payload, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, projectId, payload, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NovelRoleEdit &&
+          other.id == this.id &&
+          other.projectId == this.projectId &&
+          other.payload == this.payload &&
+          other.createdAt == this.createdAt);
+}
+
+class NovelRoleEditsCompanion extends UpdateCompanion<NovelRoleEdit> {
+  final Value<int> id;
+  final Value<String> projectId;
+  final Value<String> payload;
+  final Value<DateTime> createdAt;
+  const NovelRoleEditsCompanion({
+    this.id = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  NovelRoleEditsCompanion.insert({
+    this.id = const Value.absent(),
+    required String projectId,
+    required String payload,
+    required DateTime createdAt,
+  }) : projectId = Value(projectId),
+       payload = Value(payload),
+       createdAt = Value(createdAt);
+  static Insertable<NovelRoleEdit> custom({
+    Expression<int>? id,
+    Expression<String>? projectId,
+    Expression<String>? payload,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (projectId != null) 'project_id': projectId,
+      if (payload != null) 'payload': payload,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  NovelRoleEditsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? projectId,
+    Value<String>? payload,
+    Value<DateTime>? createdAt,
+  }) {
+    return NovelRoleEditsCompanion(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      payload: payload ?? this.payload,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<String>(projectId.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NovelRoleEditsCompanion(')
+          ..write('id: $id, ')
+          ..write('projectId: $projectId, ')
+          ..write('payload: $payload, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $DialogTtsProjectsTable extends DialogTtsProjects
     with TableInfo<$DialogTtsProjectsTable, DialogTtsProject> {
   @override
@@ -11936,6 +13681,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $NovelProjectsTable novelProjects = $NovelProjectsTable(this);
   late final $NovelChaptersTable novelChapters = $NovelChaptersTable(this);
   late final $NovelSegmentsTable novelSegments = $NovelSegmentsTable(this);
+  late final $NovelCharactersTable novelCharacters = $NovelCharactersTable(
+    this,
+  );
+  late final $NovelAnnotationsTable novelAnnotations = $NovelAnnotationsTable(
+    this,
+  );
+  late final $NovelVoiceBindingsTable novelVoiceBindings =
+      $NovelVoiceBindingsTable(this);
+  late final $NovelRoleEditsTable novelRoleEdits = $NovelRoleEditsTable(this);
   late final $DialogTtsProjectsTable dialogTtsProjects =
       $DialogTtsProjectsTable(this);
   late final $DialogTtsLinesTable dialogTtsLines = $DialogTtsLinesTable(this);
@@ -11963,6 +13717,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     novelProjects,
     novelChapters,
     novelSegments,
+    novelCharacters,
+    novelAnnotations,
+    novelVoiceBindings,
+    novelRoleEdits,
     dialogTtsProjects,
     dialogTtsLines,
     videoDubProjects,
@@ -11970,6 +13728,58 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     audioTracks,
     timelineClips,
   ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'novel_projects',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('novel_characters', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'novel_segments',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('novel_annotations', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'novel_projects',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('novel_annotations', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'novel_characters',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('novel_annotations', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'novel_characters',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('novel_voice_bindings', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'voice_assets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('novel_voice_bindings', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'novel_projects',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('novel_role_edits', kind: UpdateKind.delete)],
+    ),
+  ]);
 }
 
 typedef $$AppSettingsTableCreateCompanionBuilder =
@@ -13115,6 +14925,27 @@ final class $$VoiceAssetsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$NovelVoiceBindingsTable, List<NovelVoiceBinding>>
+  _novelVoiceBindingsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.novelVoiceBindings,
+        aliasName: 'voice_assets__id__novel_voice_bindings__voice_asset_id',
+      );
+
+  $$NovelVoiceBindingsTableProcessedTableManager get novelVoiceBindingsRefs {
+    final manager = $$NovelVoiceBindingsTableTableManager(
+      $_db,
+      $_db.novelVoiceBindings,
+    ).filter((f) => f.voiceAssetId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _novelVoiceBindingsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$VoiceAssetsTableFilterComposer
@@ -13305,6 +15136,31 @@ class $$VoiceAssetsTableFilterComposer
           }) => $$QuickTtsHistoriesTableFilterComposer(
             $db: $db,
             $table: $db.quickTtsHistories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> novelVoiceBindingsRefs(
+    Expression<bool> Function($$NovelVoiceBindingsTableFilterComposer f) f,
+  ) {
+    final $$NovelVoiceBindingsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelVoiceBindings,
+      getReferencedColumn: (t) => t.voiceAssetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelVoiceBindingsTableFilterComposer(
+            $db: $db,
+            $table: $db.novelVoiceBindings,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -13623,6 +15479,32 @@ class $$VoiceAssetsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> novelVoiceBindingsRefs<T extends Object>(
+    Expression<T> Function($$NovelVoiceBindingsTableAnnotationComposer a) f,
+  ) {
+    final $$NovelVoiceBindingsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.novelVoiceBindings,
+          getReferencedColumn: (t) => t.voiceAssetId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$NovelVoiceBindingsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.novelVoiceBindings,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$VoiceAssetsTableTableManager
@@ -13643,6 +15525,7 @@ class $$VoiceAssetsTableTableManager
             bool voiceBankMembersRefs,
             bool ttsJobsRefs,
             bool quickTtsHistoriesRefs,
+            bool novelVoiceBindingsRefs,
           })
         > {
   $$VoiceAssetsTableTableManager(_$AppDatabase db, $VoiceAssetsTable table)
@@ -13758,6 +15641,7 @@ class $$VoiceAssetsTableTableManager
                 voiceBankMembersRefs = false,
                 ttsJobsRefs = false,
                 quickTtsHistoriesRefs = false,
+                novelVoiceBindingsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -13765,6 +15649,7 @@ class $$VoiceAssetsTableTableManager
                     if (voiceBankMembersRefs) db.voiceBankMembers,
                     if (ttsJobsRefs) db.ttsJobs,
                     if (quickTtsHistoriesRefs) db.quickTtsHistories,
+                    if (novelVoiceBindingsRefs) db.novelVoiceBindings,
                   ],
                   addJoins:
                       <
@@ -13865,6 +15750,27 @@ class $$VoiceAssetsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (novelVoiceBindingsRefs)
+                        await $_getPrefetchedData<
+                          VoiceAsset,
+                          $VoiceAssetsTable,
+                          NovelVoiceBinding
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VoiceAssetsTableReferences
+                              ._novelVoiceBindingsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VoiceAssetsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).novelVoiceBindingsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.voiceAssetId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -13890,6 +15796,7 @@ typedef $$VoiceAssetsTableProcessedTableManager =
         bool voiceBankMembersRefs,
         bool ttsJobsRefs,
         bool quickTtsHistoriesRefs,
+        bool novelVoiceBindingsRefs,
       })
     >;
 typedef $$VoiceBanksTableCreateCompanionBuilder =
@@ -16876,6 +18783,64 @@ final class $$NovelProjectsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$NovelCharactersTable, List<NovelCharacter>>
+  _novelCharactersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.novelCharacters,
+    aliasName: 'novel_projects__id__novel_characters__project_id',
+  );
+
+  $$NovelCharactersTableProcessedTableManager get novelCharactersRefs {
+    final manager = $$NovelCharactersTableTableManager(
+      $_db,
+      $_db.novelCharacters,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _novelCharactersRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$NovelAnnotationsTable, List<NovelAnnotation>>
+  _novelAnnotationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.novelAnnotations,
+    aliasName: 'novel_projects__id__novel_annotations__project_id',
+  );
+
+  $$NovelAnnotationsTableProcessedTableManager get novelAnnotationsRefs {
+    final manager = $$NovelAnnotationsTableTableManager(
+      $_db,
+      $_db.novelAnnotations,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _novelAnnotationsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$NovelRoleEditsTable, List<NovelRoleEdit>>
+  _novelRoleEditsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.novelRoleEdits,
+    aliasName: 'novel_projects__id__novel_role_edits__project_id',
+  );
+
+  $$NovelRoleEditsTableProcessedTableManager get novelRoleEditsRefs {
+    final manager = $$NovelRoleEditsTableTableManager(
+      $_db,
+      $_db.novelRoleEdits,
+    ).filter((f) => f.projectId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_novelRoleEditsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$NovelProjectsTableFilterComposer
@@ -17071,6 +19036,81 @@ class $$NovelProjectsTableFilterComposer
           }) => $$NovelSegmentsTableFilterComposer(
             $db: $db,
             $table: $db.novelSegments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> novelCharactersRefs(
+    Expression<bool> Function($$NovelCharactersTableFilterComposer f) f,
+  ) {
+    final $$NovelCharactersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelCharacters,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelCharactersTableFilterComposer(
+            $db: $db,
+            $table: $db.novelCharacters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> novelAnnotationsRefs(
+    Expression<bool> Function($$NovelAnnotationsTableFilterComposer f) f,
+  ) {
+    final $$NovelAnnotationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelAnnotations,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelAnnotationsTableFilterComposer(
+            $db: $db,
+            $table: $db.novelAnnotations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> novelRoleEditsRefs(
+    Expression<bool> Function($$NovelRoleEditsTableFilterComposer f) f,
+  ) {
+    final $$NovelRoleEditsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelRoleEdits,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelRoleEditsTableFilterComposer(
+            $db: $db,
+            $table: $db.novelRoleEdits,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -17425,6 +19465,81 @@ class $$NovelProjectsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> novelCharactersRefs<T extends Object>(
+    Expression<T> Function($$NovelCharactersTableAnnotationComposer a) f,
+  ) {
+    final $$NovelCharactersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelCharacters,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelCharactersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelCharacters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> novelAnnotationsRefs<T extends Object>(
+    Expression<T> Function($$NovelAnnotationsTableAnnotationComposer a) f,
+  ) {
+    final $$NovelAnnotationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelAnnotations,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelAnnotationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelAnnotations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> novelRoleEditsRefs<T extends Object>(
+    Expression<T> Function($$NovelRoleEditsTableAnnotationComposer a) f,
+  ) {
+    final $$NovelRoleEditsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelRoleEdits,
+      getReferencedColumn: (t) => t.projectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelRoleEditsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelRoleEdits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$NovelProjectsTableTableManager
@@ -17444,6 +19559,9 @@ class $$NovelProjectsTableTableManager
             bool bankId,
             bool novelChaptersRefs,
             bool novelSegmentsRefs,
+            bool novelCharactersRefs,
+            bool novelAnnotationsRefs,
+            bool novelRoleEditsRefs,
           })
         > {
   $$NovelProjectsTableTableManager(_$AppDatabase db, $NovelProjectsTable table)
@@ -17582,12 +19700,18 @@ class $$NovelProjectsTableTableManager
                 bankId = false,
                 novelChaptersRefs = false,
                 novelSegmentsRefs = false,
+                novelCharactersRefs = false,
+                novelAnnotationsRefs = false,
+                novelRoleEditsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (novelChaptersRefs) db.novelChapters,
                     if (novelSegmentsRefs) db.novelSegments,
+                    if (novelCharactersRefs) db.novelCharacters,
+                    if (novelAnnotationsRefs) db.novelAnnotations,
+                    if (novelRoleEditsRefs) db.novelRoleEdits,
                   ],
                   addJoins:
                       <
@@ -17667,6 +19791,69 @@ class $$NovelProjectsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (novelCharactersRefs)
+                        await $_getPrefetchedData<
+                          NovelProject,
+                          $NovelProjectsTable,
+                          NovelCharacter
+                        >(
+                          currentTable: table,
+                          referencedTable: $$NovelProjectsTableReferences
+                              ._novelCharactersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$NovelProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).novelCharactersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (novelAnnotationsRefs)
+                        await $_getPrefetchedData<
+                          NovelProject,
+                          $NovelProjectsTable,
+                          NovelAnnotation
+                        >(
+                          currentTable: table,
+                          referencedTable: $$NovelProjectsTableReferences
+                              ._novelAnnotationsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$NovelProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).novelAnnotationsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (novelRoleEditsRefs)
+                        await $_getPrefetchedData<
+                          NovelProject,
+                          $NovelProjectsTable,
+                          NovelRoleEdit
+                        >(
+                          currentTable: table,
+                          referencedTable: $$NovelProjectsTableReferences
+                              ._novelRoleEditsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$NovelProjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).novelRoleEditsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.projectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -17691,6 +19878,9 @@ typedef $$NovelProjectsTableProcessedTableManager =
         bool bankId,
         bool novelChaptersRefs,
         bool novelSegmentsRefs,
+        bool novelCharactersRefs,
+        bool novelAnnotationsRefs,
+        bool novelRoleEditsRefs,
       })
     >;
 typedef $$NovelChaptersTableCreateCompanionBuilder =
@@ -18209,6 +20399,26 @@ final class $$NovelSegmentsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<$NovelAnnotationsTable, List<NovelAnnotation>>
+  _novelAnnotationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.novelAnnotations,
+    aliasName: 'novel_segments__id__novel_annotations__segment_id',
+  );
+
+  $$NovelAnnotationsTableProcessedTableManager get novelAnnotationsRefs {
+    final manager = $$NovelAnnotationsTableTableManager(
+      $_db,
+      $_db.novelAnnotations,
+    ).filter((f) => f.segmentId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _novelAnnotationsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$NovelSegmentsTableFilterComposer
@@ -18314,6 +20524,31 @@ class $$NovelSegmentsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> novelAnnotationsRefs(
+    Expression<bool> Function($$NovelAnnotationsTableFilterComposer f) f,
+  ) {
+    final $$NovelAnnotationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelAnnotations,
+      getReferencedColumn: (t) => t.segmentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelAnnotationsTableFilterComposer(
+            $db: $db,
+            $table: $db.novelAnnotations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -18519,6 +20754,31 @@ class $$NovelSegmentsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> novelAnnotationsRefs<T extends Object>(
+    Expression<T> Function($$NovelAnnotationsTableAnnotationComposer a) f,
+  ) {
+    final $$NovelAnnotationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelAnnotations,
+      getReferencedColumn: (t) => t.segmentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelAnnotationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelAnnotations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$NovelSegmentsTableTableManager
@@ -18534,7 +20794,11 @@ class $$NovelSegmentsTableTableManager
           $$NovelSegmentsTableUpdateCompanionBuilder,
           (NovelSegment, $$NovelSegmentsTableReferences),
           NovelSegment,
-          PrefetchHooks Function({bool projectId, bool chapterId})
+          PrefetchHooks Function({
+            bool projectId,
+            bool chapterId,
+            bool novelAnnotationsRefs,
+          })
         > {
   $$NovelSegmentsTableTableManager(_$AppDatabase db, $NovelSegmentsTable table)
     : super(
@@ -18615,7 +20879,1947 @@ class $$NovelSegmentsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({projectId = false, chapterId = false}) {
+          prefetchHooksCallback:
+              ({
+                projectId = false,
+                chapterId = false,
+                novelAnnotationsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (novelAnnotationsRefs) db.novelAnnotations,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (projectId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.projectId,
+                                    referencedTable:
+                                        $$NovelSegmentsTableReferences
+                                            ._projectIdTable(db),
+                                    referencedColumn:
+                                        $$NovelSegmentsTableReferences
+                                            ._projectIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (chapterId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.chapterId,
+                                    referencedTable:
+                                        $$NovelSegmentsTableReferences
+                                            ._chapterIdTable(db),
+                                    referencedColumn:
+                                        $$NovelSegmentsTableReferences
+                                            ._chapterIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (novelAnnotationsRefs)
+                        await $_getPrefetchedData<
+                          NovelSegment,
+                          $NovelSegmentsTable,
+                          NovelAnnotation
+                        >(
+                          currentTable: table,
+                          referencedTable: $$NovelSegmentsTableReferences
+                              ._novelAnnotationsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$NovelSegmentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).novelAnnotationsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.segmentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$NovelSegmentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NovelSegmentsTable,
+      NovelSegment,
+      $$NovelSegmentsTableFilterComposer,
+      $$NovelSegmentsTableOrderingComposer,
+      $$NovelSegmentsTableAnnotationComposer,
+      $$NovelSegmentsTableCreateCompanionBuilder,
+      $$NovelSegmentsTableUpdateCompanionBuilder,
+      (NovelSegment, $$NovelSegmentsTableReferences),
+      NovelSegment,
+      PrefetchHooks Function({
+        bool projectId,
+        bool chapterId,
+        bool novelAnnotationsRefs,
+      })
+    >;
+typedef $$NovelCharactersTableCreateCompanionBuilder =
+    NovelCharactersCompanion Function({
+      required String id,
+      required String projectId,
+      required String name,
+      Value<String> aliasesJson,
+      Value<String> description,
+      Value<int> color,
+      Value<int> rowid,
+    });
+typedef $$NovelCharactersTableUpdateCompanionBuilder =
+    NovelCharactersCompanion Function({
+      Value<String> id,
+      Value<String> projectId,
+      Value<String> name,
+      Value<String> aliasesJson,
+      Value<String> description,
+      Value<int> color,
+      Value<int> rowid,
+    });
+
+final class $$NovelCharactersTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $NovelCharactersTable, NovelCharacter> {
+  $$NovelCharactersTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $NovelProjectsTable _projectIdTable(_$AppDatabase db) => db
+      .novelProjects
+      .createAlias('novel_characters__project_id__novel_projects__id');
+
+  $$NovelProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$NovelProjectsTableTableManager(
+      $_db,
+      $_db.novelProjects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$NovelAnnotationsTable, List<NovelAnnotation>>
+  _novelAnnotationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.novelAnnotations,
+    aliasName: 'novel_characters__id__novel_annotations__character_id',
+  );
+
+  $$NovelAnnotationsTableProcessedTableManager get novelAnnotationsRefs {
+    final manager = $$NovelAnnotationsTableTableManager(
+      $_db,
+      $_db.novelAnnotations,
+    ).filter((f) => f.characterId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _novelAnnotationsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$NovelVoiceBindingsTable, List<NovelVoiceBinding>>
+  _novelVoiceBindingsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.novelVoiceBindings,
+        aliasName: 'novel_characters__id__novel_voice_bindings__character_id',
+      );
+
+  $$NovelVoiceBindingsTableProcessedTableManager get novelVoiceBindingsRefs {
+    final manager = $$NovelVoiceBindingsTableTableManager(
+      $_db,
+      $_db.novelVoiceBindings,
+    ).filter((f) => f.characterId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _novelVoiceBindingsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$NovelCharactersTableFilterComposer
+    extends Composer<_$AppDatabase, $NovelCharactersTable> {
+  $$NovelCharactersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aliasesJson => $composableBuilder(
+    column: $table.aliasesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$NovelProjectsTableFilterComposer get projectId {
+    final $$NovelProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> novelAnnotationsRefs(
+    Expression<bool> Function($$NovelAnnotationsTableFilterComposer f) f,
+  ) {
+    final $$NovelAnnotationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelAnnotations,
+      getReferencedColumn: (t) => t.characterId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelAnnotationsTableFilterComposer(
+            $db: $db,
+            $table: $db.novelAnnotations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> novelVoiceBindingsRefs(
+    Expression<bool> Function($$NovelVoiceBindingsTableFilterComposer f) f,
+  ) {
+    final $$NovelVoiceBindingsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelVoiceBindings,
+      getReferencedColumn: (t) => t.characterId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelVoiceBindingsTableFilterComposer(
+            $db: $db,
+            $table: $db.novelVoiceBindings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$NovelCharactersTableOrderingComposer
+    extends Composer<_$AppDatabase, $NovelCharactersTable> {
+  $$NovelCharactersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aliasesJson => $composableBuilder(
+    column: $table.aliasesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$NovelProjectsTableOrderingComposer get projectId {
+    final $$NovelProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NovelCharactersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NovelCharactersTable> {
+  $$NovelCharactersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get aliasesJson => $composableBuilder(
+    column: $table.aliasesJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get color =>
+      $composableBuilder(column: $table.color, builder: (column) => column);
+
+  $$NovelProjectsTableAnnotationComposer get projectId {
+    final $$NovelProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> novelAnnotationsRefs<T extends Object>(
+    Expression<T> Function($$NovelAnnotationsTableAnnotationComposer a) f,
+  ) {
+    final $$NovelAnnotationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.novelAnnotations,
+      getReferencedColumn: (t) => t.characterId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelAnnotationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelAnnotations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> novelVoiceBindingsRefs<T extends Object>(
+    Expression<T> Function($$NovelVoiceBindingsTableAnnotationComposer a) f,
+  ) {
+    final $$NovelVoiceBindingsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.novelVoiceBindings,
+          getReferencedColumn: (t) => t.characterId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$NovelVoiceBindingsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.novelVoiceBindings,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$NovelCharactersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NovelCharactersTable,
+          NovelCharacter,
+          $$NovelCharactersTableFilterComposer,
+          $$NovelCharactersTableOrderingComposer,
+          $$NovelCharactersTableAnnotationComposer,
+          $$NovelCharactersTableCreateCompanionBuilder,
+          $$NovelCharactersTableUpdateCompanionBuilder,
+          (NovelCharacter, $$NovelCharactersTableReferences),
+          NovelCharacter,
+          PrefetchHooks Function({
+            bool projectId,
+            bool novelAnnotationsRefs,
+            bool novelVoiceBindingsRefs,
+          })
+        > {
+  $$NovelCharactersTableTableManager(
+    _$AppDatabase db,
+    $NovelCharactersTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NovelCharactersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NovelCharactersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NovelCharactersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> aliasesJson = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<int> color = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NovelCharactersCompanion(
+                id: id,
+                projectId: projectId,
+                name: name,
+                aliasesJson: aliasesJson,
+                description: description,
+                color: color,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String projectId,
+                required String name,
+                Value<String> aliasesJson = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<int> color = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NovelCharactersCompanion.insert(
+                id: id,
+                projectId: projectId,
+                name: name,
+                aliasesJson: aliasesJson,
+                description: description,
+                color: color,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$NovelCharactersTable, NovelCharacter>(table),
+                  $$NovelCharactersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                projectId = false,
+                novelAnnotationsRefs = false,
+                novelVoiceBindingsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (novelAnnotationsRefs) db.novelAnnotations,
+                    if (novelVoiceBindingsRefs) db.novelVoiceBindings,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (projectId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.projectId,
+                                    referencedTable:
+                                        $$NovelCharactersTableReferences
+                                            ._projectIdTable(db),
+                                    referencedColumn:
+                                        $$NovelCharactersTableReferences
+                                            ._projectIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (novelAnnotationsRefs)
+                        await $_getPrefetchedData<
+                          NovelCharacter,
+                          $NovelCharactersTable,
+                          NovelAnnotation
+                        >(
+                          currentTable: table,
+                          referencedTable: $$NovelCharactersTableReferences
+                              ._novelAnnotationsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$NovelCharactersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).novelAnnotationsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.characterId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (novelVoiceBindingsRefs)
+                        await $_getPrefetchedData<
+                          NovelCharacter,
+                          $NovelCharactersTable,
+                          NovelVoiceBinding
+                        >(
+                          currentTable: table,
+                          referencedTable: $$NovelCharactersTableReferences
+                              ._novelVoiceBindingsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$NovelCharactersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).novelVoiceBindingsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.characterId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$NovelCharactersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NovelCharactersTable,
+      NovelCharacter,
+      $$NovelCharactersTableFilterComposer,
+      $$NovelCharactersTableOrderingComposer,
+      $$NovelCharactersTableAnnotationComposer,
+      $$NovelCharactersTableCreateCompanionBuilder,
+      $$NovelCharactersTableUpdateCompanionBuilder,
+      (NovelCharacter, $$NovelCharactersTableReferences),
+      NovelCharacter,
+      PrefetchHooks Function({
+        bool projectId,
+        bool novelAnnotationsRefs,
+        bool novelVoiceBindingsRefs,
+      })
+    >;
+typedef $$NovelAnnotationsTableCreateCompanionBuilder =
+    NovelAnnotationsCompanion Function({
+      required String segmentId,
+      required String projectId,
+      required String textRevision,
+      Value<String?> characterId,
+      Value<String> kind,
+      Value<String?> voiceAssetId,
+      Value<String?> instruction,
+      Value<bool> locked,
+      Value<String> reviewState,
+      Value<String> reason,
+      required String changeId,
+      Value<int> rowid,
+    });
+typedef $$NovelAnnotationsTableUpdateCompanionBuilder =
+    NovelAnnotationsCompanion Function({
+      Value<String> segmentId,
+      Value<String> projectId,
+      Value<String> textRevision,
+      Value<String?> characterId,
+      Value<String> kind,
+      Value<String?> voiceAssetId,
+      Value<String?> instruction,
+      Value<bool> locked,
+      Value<String> reviewState,
+      Value<String> reason,
+      Value<String> changeId,
+      Value<int> rowid,
+    });
+
+final class $$NovelAnnotationsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $NovelAnnotationsTable, NovelAnnotation> {
+  $$NovelAnnotationsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $NovelSegmentsTable _segmentIdTable(_$AppDatabase db) => db
+      .novelSegments
+      .createAlias('novel_annotations__segment_id__novel_segments__id');
+
+  $$NovelSegmentsTableProcessedTableManager get segmentId {
+    final $_column = $_itemColumn<String>('segment_id')!;
+
+    final manager = $$NovelSegmentsTableTableManager(
+      $_db,
+      $_db.novelSegments,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_segmentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $NovelProjectsTable _projectIdTable(_$AppDatabase db) => db
+      .novelProjects
+      .createAlias('novel_annotations__project_id__novel_projects__id');
+
+  $$NovelProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$NovelProjectsTableTableManager(
+      $_db,
+      $_db.novelProjects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $NovelCharactersTable _characterIdTable(_$AppDatabase db) => db
+      .novelCharacters
+      .createAlias('novel_annotations__character_id__novel_characters__id');
+
+  $$NovelCharactersTableProcessedTableManager? get characterId {
+    final $_column = $_itemColumn<String>('character_id');
+    if ($_column == null) return null;
+    final manager = $$NovelCharactersTableTableManager(
+      $_db,
+      $_db.novelCharacters,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_characterIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$NovelAnnotationsTableFilterComposer
+    extends Composer<_$AppDatabase, $NovelAnnotationsTable> {
+  $$NovelAnnotationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get textRevision => $composableBuilder(
+    column: $table.textRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get voiceAssetId => $composableBuilder(
+    column: $table.voiceAssetId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get instruction => $composableBuilder(
+    column: $table.instruction,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get locked => $composableBuilder(
+    column: $table.locked,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reviewState => $composableBuilder(
+    column: $table.reviewState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get changeId => $composableBuilder(
+    column: $table.changeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$NovelSegmentsTableFilterComposer get segmentId {
+    final $$NovelSegmentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.segmentId,
+      referencedTable: $db.novelSegments,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelSegmentsTableFilterComposer(
+            $db: $db,
+            $table: $db.novelSegments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$NovelProjectsTableFilterComposer get projectId {
+    final $$NovelProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$NovelCharactersTableFilterComposer get characterId {
+    final $$NovelCharactersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.characterId,
+      referencedTable: $db.novelCharacters,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelCharactersTableFilterComposer(
+            $db: $db,
+            $table: $db.novelCharacters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NovelAnnotationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $NovelAnnotationsTable> {
+  $$NovelAnnotationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get textRevision => $composableBuilder(
+    column: $table.textRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get voiceAssetId => $composableBuilder(
+    column: $table.voiceAssetId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get instruction => $composableBuilder(
+    column: $table.instruction,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get locked => $composableBuilder(
+    column: $table.locked,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reviewState => $composableBuilder(
+    column: $table.reviewState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get changeId => $composableBuilder(
+    column: $table.changeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$NovelSegmentsTableOrderingComposer get segmentId {
+    final $$NovelSegmentsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.segmentId,
+      referencedTable: $db.novelSegments,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelSegmentsTableOrderingComposer(
+            $db: $db,
+            $table: $db.novelSegments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$NovelProjectsTableOrderingComposer get projectId {
+    final $$NovelProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$NovelCharactersTableOrderingComposer get characterId {
+    final $$NovelCharactersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.characterId,
+      referencedTable: $db.novelCharacters,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelCharactersTableOrderingComposer(
+            $db: $db,
+            $table: $db.novelCharacters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NovelAnnotationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NovelAnnotationsTable> {
+  $$NovelAnnotationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get textRevision => $composableBuilder(
+    column: $table.textRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get voiceAssetId => $composableBuilder(
+    column: $table.voiceAssetId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get instruction => $composableBuilder(
+    column: $table.instruction,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get locked =>
+      $composableBuilder(column: $table.locked, builder: (column) => column);
+
+  GeneratedColumn<String> get reviewState => $composableBuilder(
+    column: $table.reviewState,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<String> get changeId =>
+      $composableBuilder(column: $table.changeId, builder: (column) => column);
+
+  $$NovelSegmentsTableAnnotationComposer get segmentId {
+    final $$NovelSegmentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.segmentId,
+      referencedTable: $db.novelSegments,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelSegmentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelSegments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$NovelProjectsTableAnnotationComposer get projectId {
+    final $$NovelProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$NovelCharactersTableAnnotationComposer get characterId {
+    final $$NovelCharactersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.characterId,
+      referencedTable: $db.novelCharacters,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelCharactersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelCharacters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NovelAnnotationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NovelAnnotationsTable,
+          NovelAnnotation,
+          $$NovelAnnotationsTableFilterComposer,
+          $$NovelAnnotationsTableOrderingComposer,
+          $$NovelAnnotationsTableAnnotationComposer,
+          $$NovelAnnotationsTableCreateCompanionBuilder,
+          $$NovelAnnotationsTableUpdateCompanionBuilder,
+          (NovelAnnotation, $$NovelAnnotationsTableReferences),
+          NovelAnnotation,
+          PrefetchHooks Function({
+            bool segmentId,
+            bool projectId,
+            bool characterId,
+          })
+        > {
+  $$NovelAnnotationsTableTableManager(
+    _$AppDatabase db,
+    $NovelAnnotationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NovelAnnotationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NovelAnnotationsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NovelAnnotationsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> segmentId = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> textRevision = const Value.absent(),
+                Value<String?> characterId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String?> voiceAssetId = const Value.absent(),
+                Value<String?> instruction = const Value.absent(),
+                Value<bool> locked = const Value.absent(),
+                Value<String> reviewState = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<String> changeId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NovelAnnotationsCompanion(
+                segmentId: segmentId,
+                projectId: projectId,
+                textRevision: textRevision,
+                characterId: characterId,
+                kind: kind,
+                voiceAssetId: voiceAssetId,
+                instruction: instruction,
+                locked: locked,
+                reviewState: reviewState,
+                reason: reason,
+                changeId: changeId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String segmentId,
+                required String projectId,
+                required String textRevision,
+                Value<String?> characterId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String?> voiceAssetId = const Value.absent(),
+                Value<String?> instruction = const Value.absent(),
+                Value<bool> locked = const Value.absent(),
+                Value<String> reviewState = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                required String changeId,
+                Value<int> rowid = const Value.absent(),
+              }) => NovelAnnotationsCompanion.insert(
+                segmentId: segmentId,
+                projectId: projectId,
+                textRevision: textRevision,
+                characterId: characterId,
+                kind: kind,
+                voiceAssetId: voiceAssetId,
+                instruction: instruction,
+                locked: locked,
+                reviewState: reviewState,
+                reason: reason,
+                changeId: changeId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$NovelAnnotationsTable, NovelAnnotation>(table),
+                  $$NovelAnnotationsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({segmentId = false, projectId = false, characterId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (segmentId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.segmentId,
+                                    referencedTable:
+                                        $$NovelAnnotationsTableReferences
+                                            ._segmentIdTable(db),
+                                    referencedColumn:
+                                        $$NovelAnnotationsTableReferences
+                                            ._segmentIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (projectId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.projectId,
+                                    referencedTable:
+                                        $$NovelAnnotationsTableReferences
+                                            ._projectIdTable(db),
+                                    referencedColumn:
+                                        $$NovelAnnotationsTableReferences
+                                            ._projectIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (characterId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.characterId,
+                                    referencedTable:
+                                        $$NovelAnnotationsTableReferences
+                                            ._characterIdTable(db),
+                                    referencedColumn:
+                                        $$NovelAnnotationsTableReferences
+                                            ._characterIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$NovelAnnotationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NovelAnnotationsTable,
+      NovelAnnotation,
+      $$NovelAnnotationsTableFilterComposer,
+      $$NovelAnnotationsTableOrderingComposer,
+      $$NovelAnnotationsTableAnnotationComposer,
+      $$NovelAnnotationsTableCreateCompanionBuilder,
+      $$NovelAnnotationsTableUpdateCompanionBuilder,
+      (NovelAnnotation, $$NovelAnnotationsTableReferences),
+      NovelAnnotation,
+      PrefetchHooks Function({bool segmentId, bool projectId, bool characterId})
+    >;
+typedef $$NovelVoiceBindingsTableCreateCompanionBuilder =
+    NovelVoiceBindingsCompanion Function({
+      required String characterId,
+      Value<String> chapterId,
+      required String voiceAssetId,
+      Value<String?> instruction,
+      Value<int> rowid,
+    });
+typedef $$NovelVoiceBindingsTableUpdateCompanionBuilder =
+    NovelVoiceBindingsCompanion Function({
+      Value<String> characterId,
+      Value<String> chapterId,
+      Value<String> voiceAssetId,
+      Value<String?> instruction,
+      Value<int> rowid,
+    });
+
+final class $$NovelVoiceBindingsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $NovelVoiceBindingsTable,
+          NovelVoiceBinding
+        > {
+  $$NovelVoiceBindingsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $NovelCharactersTable _characterIdTable(_$AppDatabase db) => db
+      .novelCharacters
+      .createAlias('novel_voice_bindings__character_id__novel_characters__id');
+
+  $$NovelCharactersTableProcessedTableManager get characterId {
+    final $_column = $_itemColumn<String>('character_id')!;
+
+    final manager = $$NovelCharactersTableTableManager(
+      $_db,
+      $_db.novelCharacters,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_characterIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $VoiceAssetsTable _voiceAssetIdTable(_$AppDatabase db) => db
+      .voiceAssets
+      .createAlias('novel_voice_bindings__voice_asset_id__voice_assets__id');
+
+  $$VoiceAssetsTableProcessedTableManager get voiceAssetId {
+    final $_column = $_itemColumn<String>('voice_asset_id')!;
+
+    final manager = $$VoiceAssetsTableTableManager(
+      $_db,
+      $_db.voiceAssets,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_voiceAssetIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$NovelVoiceBindingsTableFilterComposer
+    extends Composer<_$AppDatabase, $NovelVoiceBindingsTable> {
+  $$NovelVoiceBindingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get chapterId => $composableBuilder(
+    column: $table.chapterId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get instruction => $composableBuilder(
+    column: $table.instruction,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$NovelCharactersTableFilterComposer get characterId {
+    final $$NovelCharactersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.characterId,
+      referencedTable: $db.novelCharacters,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelCharactersTableFilterComposer(
+            $db: $db,
+            $table: $db.novelCharacters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VoiceAssetsTableFilterComposer get voiceAssetId {
+    final $$VoiceAssetsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voiceAssetId,
+      referencedTable: $db.voiceAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceAssetsTableFilterComposer(
+            $db: $db,
+            $table: $db.voiceAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NovelVoiceBindingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $NovelVoiceBindingsTable> {
+  $$NovelVoiceBindingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get chapterId => $composableBuilder(
+    column: $table.chapterId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get instruction => $composableBuilder(
+    column: $table.instruction,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$NovelCharactersTableOrderingComposer get characterId {
+    final $$NovelCharactersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.characterId,
+      referencedTable: $db.novelCharacters,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelCharactersTableOrderingComposer(
+            $db: $db,
+            $table: $db.novelCharacters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VoiceAssetsTableOrderingComposer get voiceAssetId {
+    final $$VoiceAssetsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voiceAssetId,
+      referencedTable: $db.voiceAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceAssetsTableOrderingComposer(
+            $db: $db,
+            $table: $db.voiceAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NovelVoiceBindingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NovelVoiceBindingsTable> {
+  $$NovelVoiceBindingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get chapterId =>
+      $composableBuilder(column: $table.chapterId, builder: (column) => column);
+
+  GeneratedColumn<String> get instruction => $composableBuilder(
+    column: $table.instruction,
+    builder: (column) => column,
+  );
+
+  $$NovelCharactersTableAnnotationComposer get characterId {
+    final $$NovelCharactersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.characterId,
+      referencedTable: $db.novelCharacters,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelCharactersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelCharacters,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VoiceAssetsTableAnnotationComposer get voiceAssetId {
+    final $$VoiceAssetsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voiceAssetId,
+      referencedTable: $db.voiceAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceAssetsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.voiceAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NovelVoiceBindingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NovelVoiceBindingsTable,
+          NovelVoiceBinding,
+          $$NovelVoiceBindingsTableFilterComposer,
+          $$NovelVoiceBindingsTableOrderingComposer,
+          $$NovelVoiceBindingsTableAnnotationComposer,
+          $$NovelVoiceBindingsTableCreateCompanionBuilder,
+          $$NovelVoiceBindingsTableUpdateCompanionBuilder,
+          (NovelVoiceBinding, $$NovelVoiceBindingsTableReferences),
+          NovelVoiceBinding,
+          PrefetchHooks Function({bool characterId, bool voiceAssetId})
+        > {
+  $$NovelVoiceBindingsTableTableManager(
+    _$AppDatabase db,
+    $NovelVoiceBindingsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NovelVoiceBindingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NovelVoiceBindingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NovelVoiceBindingsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> characterId = const Value.absent(),
+                Value<String> chapterId = const Value.absent(),
+                Value<String> voiceAssetId = const Value.absent(),
+                Value<String?> instruction = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NovelVoiceBindingsCompanion(
+                characterId: characterId,
+                chapterId: chapterId,
+                voiceAssetId: voiceAssetId,
+                instruction: instruction,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String characterId,
+                Value<String> chapterId = const Value.absent(),
+                required String voiceAssetId,
+                Value<String?> instruction = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NovelVoiceBindingsCompanion.insert(
+                characterId: characterId,
+                chapterId: chapterId,
+                voiceAssetId: voiceAssetId,
+                instruction: instruction,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$NovelVoiceBindingsTable, NovelVoiceBinding>(
+                    table,
+                  ),
+                  $$NovelVoiceBindingsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({characterId = false, voiceAssetId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (characterId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.characterId,
+                                referencedTable:
+                                    $$NovelVoiceBindingsTableReferences
+                                        ._characterIdTable(db),
+                                referencedColumn:
+                                    $$NovelVoiceBindingsTableReferences
+                                        ._characterIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (voiceAssetId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.voiceAssetId,
+                                referencedTable:
+                                    $$NovelVoiceBindingsTableReferences
+                                        ._voiceAssetIdTable(db),
+                                referencedColumn:
+                                    $$NovelVoiceBindingsTableReferences
+                                        ._voiceAssetIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$NovelVoiceBindingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NovelVoiceBindingsTable,
+      NovelVoiceBinding,
+      $$NovelVoiceBindingsTableFilterComposer,
+      $$NovelVoiceBindingsTableOrderingComposer,
+      $$NovelVoiceBindingsTableAnnotationComposer,
+      $$NovelVoiceBindingsTableCreateCompanionBuilder,
+      $$NovelVoiceBindingsTableUpdateCompanionBuilder,
+      (NovelVoiceBinding, $$NovelVoiceBindingsTableReferences),
+      NovelVoiceBinding,
+      PrefetchHooks Function({bool characterId, bool voiceAssetId})
+    >;
+typedef $$NovelRoleEditsTableCreateCompanionBuilder =
+    NovelRoleEditsCompanion Function({
+      Value<int> id,
+      required String projectId,
+      required String payload,
+      required DateTime createdAt,
+    });
+typedef $$NovelRoleEditsTableUpdateCompanionBuilder =
+    NovelRoleEditsCompanion Function({
+      Value<int> id,
+      Value<String> projectId,
+      Value<String> payload,
+      Value<DateTime> createdAt,
+    });
+
+final class $$NovelRoleEditsTableReferences
+    extends BaseReferences<_$AppDatabase, $NovelRoleEditsTable, NovelRoleEdit> {
+  $$NovelRoleEditsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $NovelProjectsTable _projectIdTable(_$AppDatabase db) => db
+      .novelProjects
+      .createAlias('novel_role_edits__project_id__novel_projects__id');
+
+  $$NovelProjectsTableProcessedTableManager get projectId {
+    final $_column = $_itemColumn<String>('project_id')!;
+
+    final manager = $$NovelProjectsTableTableManager(
+      $_db,
+      $_db.novelProjects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_projectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$NovelRoleEditsTableFilterComposer
+    extends Composer<_$AppDatabase, $NovelRoleEditsTable> {
+  $$NovelRoleEditsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$NovelProjectsTableFilterComposer get projectId {
+    final $$NovelProjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NovelRoleEditsTableOrderingComposer
+    extends Composer<_$AppDatabase, $NovelRoleEditsTable> {
+  $$NovelRoleEditsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$NovelProjectsTableOrderingComposer get projectId {
+    final $$NovelProjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NovelRoleEditsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NovelRoleEditsTable> {
+  $$NovelRoleEditsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$NovelProjectsTableAnnotationComposer get projectId {
+    final $$NovelProjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.projectId,
+      referencedTable: $db.novelProjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NovelProjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.novelProjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NovelRoleEditsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NovelRoleEditsTable,
+          NovelRoleEdit,
+          $$NovelRoleEditsTableFilterComposer,
+          $$NovelRoleEditsTableOrderingComposer,
+          $$NovelRoleEditsTableAnnotationComposer,
+          $$NovelRoleEditsTableCreateCompanionBuilder,
+          $$NovelRoleEditsTableUpdateCompanionBuilder,
+          (NovelRoleEdit, $$NovelRoleEditsTableReferences),
+          NovelRoleEdit,
+          PrefetchHooks Function({bool projectId})
+        > {
+  $$NovelRoleEditsTableTableManager(
+    _$AppDatabase db,
+    $NovelRoleEditsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NovelRoleEditsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NovelRoleEditsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NovelRoleEditsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> projectId = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => NovelRoleEditsCompanion(
+                id: id,
+                projectId: projectId,
+                payload: payload,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String projectId,
+                required String payload,
+                required DateTime createdAt,
+              }) => NovelRoleEditsCompanion.insert(
+                id: id,
+                projectId: projectId,
+                payload: payload,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$NovelRoleEditsTable, NovelRoleEdit>(table),
+                  $$NovelRoleEditsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({projectId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -18640,24 +22844,12 @@ class $$NovelSegmentsTableTableManager
                           state.withJoin(
                                 currentTable: table,
                                 currentColumn: table.projectId,
-                                referencedTable: $$NovelSegmentsTableReferences
+                                referencedTable: $$NovelRoleEditsTableReferences
                                     ._projectIdTable(db),
-                                referencedColumn: $$NovelSegmentsTableReferences
-                                    ._projectIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
-                    if (chapterId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.chapterId,
-                                referencedTable: $$NovelSegmentsTableReferences
-                                    ._chapterIdTable(db),
-                                referencedColumn: $$NovelSegmentsTableReferences
-                                    ._chapterIdTable(db)
-                                    .id,
+                                referencedColumn:
+                                    $$NovelRoleEditsTableReferences
+                                        ._projectIdTable(db)
+                                        .id,
                               )
                               as T;
                     }
@@ -18673,19 +22865,19 @@ class $$NovelSegmentsTableTableManager
       );
 }
 
-typedef $$NovelSegmentsTableProcessedTableManager =
+typedef $$NovelRoleEditsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $NovelSegmentsTable,
-      NovelSegment,
-      $$NovelSegmentsTableFilterComposer,
-      $$NovelSegmentsTableOrderingComposer,
-      $$NovelSegmentsTableAnnotationComposer,
-      $$NovelSegmentsTableCreateCompanionBuilder,
-      $$NovelSegmentsTableUpdateCompanionBuilder,
-      (NovelSegment, $$NovelSegmentsTableReferences),
-      NovelSegment,
-      PrefetchHooks Function({bool projectId, bool chapterId})
+      $NovelRoleEditsTable,
+      NovelRoleEdit,
+      $$NovelRoleEditsTableFilterComposer,
+      $$NovelRoleEditsTableOrderingComposer,
+      $$NovelRoleEditsTableAnnotationComposer,
+      $$NovelRoleEditsTableCreateCompanionBuilder,
+      $$NovelRoleEditsTableUpdateCompanionBuilder,
+      (NovelRoleEdit, $$NovelRoleEditsTableReferences),
+      NovelRoleEdit,
+      PrefetchHooks Function({bool projectId})
     >;
 typedef $$DialogTtsProjectsTableCreateCompanionBuilder =
     DialogTtsProjectsCompanion Function({
@@ -21212,6 +25404,14 @@ class $AppDatabaseManager {
       $$NovelChaptersTableTableManager(_db, _db.novelChapters);
   $$NovelSegmentsTableTableManager get novelSegments =>
       $$NovelSegmentsTableTableManager(_db, _db.novelSegments);
+  $$NovelCharactersTableTableManager get novelCharacters =>
+      $$NovelCharactersTableTableManager(_db, _db.novelCharacters);
+  $$NovelAnnotationsTableTableManager get novelAnnotations =>
+      $$NovelAnnotationsTableTableManager(_db, _db.novelAnnotations);
+  $$NovelVoiceBindingsTableTableManager get novelVoiceBindings =>
+      $$NovelVoiceBindingsTableTableManager(_db, _db.novelVoiceBindings);
+  $$NovelRoleEditsTableTableManager get novelRoleEdits =>
+      $$NovelRoleEditsTableTableManager(_db, _db.novelRoleEdits);
   $$DialogTtsProjectsTableTableManager get dialogTtsProjects =>
       $$DialogTtsProjectsTableTableManager(_db, _db.dialogTtsProjects);
   $$DialogTtsLinesTableTableManager get dialogTtsLines =>

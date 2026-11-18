@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:neiroha/data/services/capabilities/role_ai_connection.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 
@@ -68,16 +69,12 @@ class LlmChatAdapter {
     String? apiKeyHeader,
   }) {
     return LlmChatAdapter(
-      baseUrl: provider.baseUrl,
+      baseUrl: provider.roleAiBaseUrl,
       apiKey: provider.apiKey,
       modelName: modelName,
       route: route,
       endpointPath: endpointPath,
-      apiKeyHeader:
-          apiKeyHeader ??
-          (provider.adapterType == 'chatCompletionsTts'
-              ? 'api-key'
-              : 'Authorization'),
+      apiKeyHeader: apiKeyHeader ?? provider.roleAiKeyHeader,
     );
   }
 

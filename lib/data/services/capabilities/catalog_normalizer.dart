@@ -20,6 +20,7 @@ Map<String, Object?> normalizeLiteLlmCatalog(
     if (raw['mode'] == 'audio_speech') facts['speech'] = 'supported';
     for (final (key, target) in [
       ('supports_response_schema', 'structuredOutput'),
+      ('supports_function_calling', 'functionCalling'),
       ('supports_audio_output', 'audioOutput'),
     ]) {
       if (raw[key] is bool) {

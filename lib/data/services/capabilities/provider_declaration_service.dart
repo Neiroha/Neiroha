@@ -70,6 +70,7 @@ class ProviderDeclarationService {
             'speech',
             'streaming',
             'structuredOutput',
+            'functionCalling',
             'audioInput',
             'audioOutput',
             'instructions',

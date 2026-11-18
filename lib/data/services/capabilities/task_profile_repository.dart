@@ -5,6 +5,7 @@ import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/capabilities/task_profile.dart';
 import 'package:neiroha/domain/capabilities/model_capability.dart';
+import 'role_ai_connection.dart';
 
 class TaskProfileRepository {
   const TaskProfileRepository(this.database);
@@ -33,7 +34,9 @@ class TaskProfileRepository {
         profile.validate();
         if (await database.getNovelProjectById(projectId) == null ||
             !(await database.getAllProviders()).any(
-              (p) => p.id == profile.providerId,
+              (p) =>
+                  p.id == profile.providerId &&
+                  (profile.task == ModelTask.synthesis || p.supportsRoleAi),
             )) {
           throw StateError('Project or connection was deleted.');
         }
@@ -61,6 +64,9 @@ class TaskProfileRepository {
         .firstOrNull;
     if (provider == null) {
       throw StateError('Task connection was deleted. Choose a new connection.');
+    }
+    if (task != ModelTask.synthesis && !provider.supportsRoleAi) {
+      throw StateError('This task needs a text analysis connection.');
     }
     return (provider: provider, profile: profile);
   }

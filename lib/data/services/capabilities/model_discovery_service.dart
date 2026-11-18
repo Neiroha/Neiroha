@@ -6,6 +6,8 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/capabilities/model_capability.dart';
 
 import 'capability_repository.dart';
+import 'role_ai_connection.dart';
+import 'role_ai_model.dart';
 
 class DiscoveredModel {
   const DiscoveredModel({
@@ -37,23 +39,22 @@ class ModelDiscoveryService {
     db.TtsProvider provider,
     ServiceRoute route,
   ) async {
-    final uri = Uri.parse(
-      provider.baseUrl.endsWith('/')
-          ? provider.baseUrl
-          : '${provider.baseUrl}/',
-    );
+    final base = isRoleAiRoute(route)
+        ? provider.roleAiBaseUrl
+        : provider.baseUrl;
+    final uri = Uri.parse(base.endsWith('/') ? base : '$base/');
+    final keyHeader = provider.roleAiKeyHeader;
     final dio = Dio(
       BaseOptions(
         baseUrl: uri.toString(),
+        followRedirects: false,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 30),
         headers: {
           if (provider.apiKey.isNotEmpty)
-            (provider.adapterType == 'chatCompletionsTts'
-                ? 'api-key'
-                : 'Authorization'): provider.adapterType == 'chatCompletionsTts'
-                ? provider.apiKey
-                : 'Bearer ${provider.apiKey}',
+            keyHeader: keyHeader == 'Authorization'
+                ? 'Bearer ${provider.apiKey}'
+                : provider.apiKey,
         },
       ),
     );
@@ -67,7 +68,10 @@ class ModelDiscoveryService {
               : null,
         );
       } on DioException catch (error) {
-        if (error.response?.statusCode != 404) rethrow;
+        if (error.response?.statusCode != 404 ||
+            uri.pathSegments.any((s) => s.startsWith('v1'))) {
+          rethrow;
+        }
         response = await dio.get('v1/models');
       }
       final data = response.data;
@@ -82,7 +86,7 @@ class ModelDiscoveryService {
         if (raw is! Map) continue;
         final id = raw['id'];
         if (id is! String || id.isEmpty || !seen.add(id)) continue;
-        final facts = <String, CapabilityEvidence>{};
+        final facts = _roleDefaults(provider, id, route);
         final publicProvider = switch (uri.host) {
           'api.openai.com' => 'openai',
           'openrouter.ai' => 'openrouter',
@@ -101,6 +105,11 @@ class ModelDiscoveryService {
                 CapabilitySource.catalog,
               );
             }
+          } else if (isRoleAiRoute(route)) {
+            facts['text'] = const CapabilityEvidence(
+              CapabilitySupport.unsupported,
+              CapabilitySource.catalog,
+            );
           }
         }
         final architecture = raw['architecture'];
@@ -133,6 +142,19 @@ class ModelDiscoveryService {
           );
         }
         final parameters = raw['supported_parameters'];
+        if (raw['supports_function_calling'] case final bool supported) {
+          facts[roleAiToolCapability] = CapabilityEvidence(
+            supported
+                ? CapabilitySupport.supported
+                : CapabilitySupport.unsupported,
+            CapabilitySource.provider,
+          );
+        } else if (parameters is List && parameters.contains('tools')) {
+          facts[roleAiToolCapability] = const CapabilityEvidence(
+            CapabilitySupport.supported,
+            CapabilitySource.provider,
+          );
+        }
         if (parameters is List &&
             (parameters.contains('response_format') ||
                 parameters.contains('structured_outputs'))) {
@@ -191,7 +213,7 @@ class ModelDiscoveryService {
         DiscoveredModel(
           id: row['id'] as String,
           name: row['name'] as String,
-          capability: await capabilities.load(
+          capability: await _withRoleDefaults(
             provider,
             row['id'] as String,
             route,
@@ -201,6 +223,10 @@ class ModelDiscoveryService {
   }
 
   Future<List<ModelInfo>> modelsForProvider(db.TtsProvider provider) async {
+    if (provider.adapterType == 'openaiTts' && provider.isOfficialOpenAi) {
+      // /models includes text and other modalities, independent of synthesis.
+      return createAdapter(provider).getModels();
+    }
     if (![
       'openaiTts',
       'openaiCompatible',
@@ -212,6 +238,45 @@ class ModelDiscoveryService {
       provider,
       ServiceRoute.speech,
     )).map((m) => ModelInfo(id: m.id, name: m.name)).toList();
+  }
+
+  Future<DiscoveredModel?> suggestedRoleModel(
+    db.TtsProvider provider,
+    ServiceRoute route,
+  ) async {
+    if (!provider.isOfficialOpenAi || !isRoleAiRoute(route)) return null;
+    return DiscoveredModel(
+      id: defaultRoleAiModel,
+      name: 'GPT-6 Luna',
+      capability: await _withRoleDefaults(provider, defaultRoleAiModel, route),
+    );
+  }
+
+  Future<ModelCapability> _withRoleDefaults(
+    db.TtsProvider provider,
+    String model,
+    ServiceRoute route,
+  ) async => ModelCapability(
+    connectionId: capabilities.scope(provider),
+    modelId: model,
+    route: route,
+    facts: _roleDefaults(provider, model, route),
+  ).merge(await capabilities.load(provider, model, route));
+
+  Map<String, CapabilityEvidence> _roleDefaults(
+    db.TtsProvider provider,
+    String model,
+    ServiceRoute route,
+  ) {
+    if (!isRoleAiRoute(route)) return {};
+    final support = RoleAiModel.documented(provider, model, route);
+    return {
+      if (support != CapabilitySupport.unknown)
+        roleAiToolCapability: CapabilityEvidence(
+          support,
+          CapabilitySource.catalog,
+        ),
+    };
   }
 
   Future<Map<String, dynamic>> _readCatalog() async {

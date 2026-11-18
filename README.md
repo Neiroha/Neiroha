@@ -8,7 +8,7 @@
 
 [![Language](https://img.shields.io/badge/language-Dart%20%2F%20Flutter-0553B1?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
-[![Version](https://img.shields.io/badge/version-v0.4.1-blue)](https://github.com/Neiroha/Neiroha/releases)
+[![Version](https://img.shields.io/github/v/release/Neiroha/Neiroha?label=version)](https://github.com/Neiroha/Neiroha/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Neiroha/Neiroha?style=social)](https://github.com/Neiroha/Neiroha/stargazers)
 
@@ -86,6 +86,10 @@ Lines synthesized one by one rarely come back at the same level; whispered or em
 Neiroha can also run as a local OpenAI-compatible TTS service backed by the active voice bank. This makes it useful as a voice middleware layer for editors, agents, scripts, and other tools. The same server exposes an MCP endpoint (`/mcp`) so AI agents can manage providers, characters, voice banks and dubbing projects, including loudness unification.
 
 The full API reference lives in [assets/docs/api.md](assets/docs/api.md). Installation, backend defaults, API keys, model configuration, and workflow guides live in the [Wiki](https://github.com/Neiroha/Neiroha/wiki).
+
+## Web workspace
+
+The Web build includes provider and voice-bank management and Quick TTS. Browser SQLite keeps settings, and audio stays in the current tab until it closes or reloads. The OpenAI Speech adapter supports incremental playback and cancellation. See the [Web build and hosting guide](assets/docs/web-preview-zh.md).
 
 ## macOS
 

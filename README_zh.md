@@ -8,7 +8,7 @@
 
 [![语言](https://img.shields.io/badge/语言-Dart%20%2F%20Flutter-0553B1?logo=flutter&logoColor=white)](https://flutter.dev)
 [![平台](https://img.shields.io/badge/平台-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android-0078D4)](https://flutter.dev)
-[![版本](https://img.shields.io/badge/版本-v0.4.1-blue)](https://github.com/Neiroha/Neiroha/releases)
+[![版本](https://img.shields.io/github/v/release/Neiroha/Neiroha?label=%E7%89%88%E6%9C%AC)](https://github.com/Neiroha/Neiroha/releases)
 [![许可证：MIT](https://img.shields.io/badge/许可证-MIT-green)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Neiroha/Neiroha?style=social)](https://github.com/Neiroha/Neiroha/stargazers)
 
@@ -37,7 +37,7 @@ Neiroha 是一个 Flutter 应用，面向需要大量角色音色、多种 TTS �
 
 ## 功能亮点
 
-未发布的流式 Quick TTS、小说角色校对与自动分析、动态模型目录及 macOS 改动，见[使用与开发说明](assets/docs/streaming-and-roles-zh.md)。
+流式 Quick TTS、小说角色校对与自动分析、动态模型目录及 macOS 支持，见[使用与开发说明](assets/docs/streaming-and-roles-zh.md)。
 
 ### 服务商中枢
 

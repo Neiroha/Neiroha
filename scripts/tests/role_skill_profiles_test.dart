@@ -105,15 +105,21 @@ void main() {
     },
   );
   test(
-    'legacy bundled skills fall back to planner for the new replanning node',
+    'legacy skills fall back to planner with LF and CRLF line endings',
     () async {
       final source = File(
         'assets/skills/novel-role-assign/SKILL.md',
-      ).readAsStringSync();
-      final legacy = NovelRoleSkill.parse(
-        source.replaceFirst(RegExp(r'\n## replanner\n[\s\S]*?(?=\n## )'), '\n'),
-      );
-      expect(legacy.prompt('replanner'), legacy.prompt('planner'));
+      ).readAsStringSync().replaceAll('\r\n', '\n');
+      final section = RegExp(r'\n## replanner\n[\s\S]*?(?=\n## |$)');
+      expect(section.hasMatch(source), isTrue);
+      final legacySource = source.replaceFirst(section, '\n');
+      for (final document in [
+        legacySource,
+        legacySource.replaceAll('\n', '\r\n'),
+      ]) {
+        final legacy = NovelRoleSkill.parse(document);
+        expect(legacy.prompt('replanner'), legacy.prompt('planner'));
+      }
     },
   );
 }

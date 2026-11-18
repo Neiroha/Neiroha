@@ -1,0 +1,151 @@
+{
+  "id": "external_alice",
+  "title": "Alice across two consecutive chapter excerpts",
+  "text": "There was a table set out under a tree in front of the house, and the March Hare and the Hatter were having tea at it: a Dormouse was sitting between them, fast asleep, and the other two were using it as a cushion, resting their elbows on it, and talking over its head. “Very uncomfortable for the Dormouse,” thought Alice; “only, as it’s asleep, I suppose it doesn’t mind.”\n\nThe table was a large one, but the three were all crowded together at one corner of it: “No room! No room!” they cried out when they saw Alice coming. “There’s plenty of room!” said Alice indignantly, and she sat down in a large armchair at one end of the table.\n\n“Have some wine,” the March Hare said in an encouraging tone.\n\nAlice looked all round the table, but there was nothing on it but tea. “I don’t see any wine,” she remarked.\n\n“There isn’t any,” said the March Hare.\n\n“Then it wasn’t very civil of you to offer it,” said Alice angrily.\n\n“It wasn’t very civil of you to sit down without being invited,” said the March Hare.\n\n“I didn’t know it was your table,” said Alice; “it’s laid for a great many more than three.”\n\n“Your hair wants cutting,” said the Hatter. He had been looking at Alice for some time with great curiosity, and this was his first speech.\n\n“You should learn not to make personal remarks,” Alice said with some severity; “it’s very rude.”\n\nThe Hatter opened his eyes very wide on hearing this; but all he said was, “Why is a raven like a writing-desk?”\n\n“Come, we shall have some fun now!” thought Alice. “I’m glad they’ve begun asking riddles⁠—I believe I can guess that,” she added aloud.\n\n“Do you mean that you think you can find out the answer to it?” said the March Hare.\n\nA large rose-tree stood near the entrance of the garden: the roses growing on it were white, but there were three gardeners at it, busily painting them red. Alice thought this a very curious thing, and she went nearer to watch them, and just as she came up to them she heard one of them say, “Look out now, Five! Don’t go splashing paint over me like that!”\n\n“I couldn’t help it,” said Five, in a sulky tone; “Seven jogged my elbow.”\n\nOn which Seven looked up and said, “That’s right, Five! Always lay the blame on others!”\n\n“You’d better not talk!” said Five. “I heard the Queen say only yesterday you deserved to be beheaded!”\n\n“What for?” said the one who had spoken first.\n\n“That’s none of your business, Two!” said Seven.\n\n“Yes, it is his business!” said Five, “and I’ll tell him⁠—it was for bringing the cook tulip-roots instead of onions.”\n\nSeven flung down his brush, and had just begun “Well, of all the unjust things⁠—” when his eye chanced to fall upon Alice, as she stood watching them, and he checked himself suddenly: the others looked round also, and all of them bowed low.\n\n“Would you tell me,” said Alice, a little timidly, “why you are painting those roses?”",
+  "roster": [
+    {
+      "name": "Alice",
+      "aliases": []
+    },
+    {
+      "name": "March Hare",
+      "aliases": [
+        "the March Hare"
+      ]
+    },
+    {
+      "name": "Hatter",
+      "aliases": [
+        "the Hatter"
+      ]
+    },
+    {
+      "name": "Two",
+      "aliases": [
+        "Gardener Two"
+      ]
+    },
+    {
+      "name": "Five",
+      "aliases": [
+        "Gardener Five"
+      ]
+    },
+    {
+      "name": "Seven",
+      "aliases": [
+        "Gardener Seven"
+      ]
+    },
+    {
+      "name": "Tea party",
+      "aliases": [
+        "the three",
+        "tea party",
+        "tea party guests",
+        "Tea Party Guests",
+        "Tea party guests"
+      ]
+    }
+  ],
+  "gold": [
+    {
+      "match": "Very uncomfortable for the Dormouse",
+      "category": "thought",
+      "speaker": "Alice"
+    },
+    {
+      "match": "No room! No room!",
+      "category": "dialogue",
+      "speaker": "Tea party"
+    },
+    {
+      "match": "Have some wine",
+      "category": "dialogue",
+      "speaker": "March Hare"
+    },
+    {
+      "match": "I don’t see any wine",
+      "category": "dialogue",
+      "speaker": "Alice"
+    },
+    {
+      "match": "There isn’t any",
+      "category": "dialogue",
+      "speaker": "March Hare"
+    },
+    {
+      "match": "Your hair wants cutting",
+      "category": "dialogue",
+      "speaker": "Hatter"
+    },
+    {
+      "match": "Why is a raven like a writing-desk?",
+      "category": "dialogue",
+      "speaker": "Hatter"
+    },
+    {
+      "match": "Come, we shall have some fun now!",
+      "category": "thought",
+      "speaker": "Alice"
+    },
+    {
+      "match": "Look out now, Five!",
+      "category": "dialogue",
+      "speaker": "Two"
+    },
+    {
+      "match": "I couldn’t help it",
+      "category": "dialogue",
+      "speaker": "Five"
+    },
+    {
+      "match": "Always lay the blame on others!",
+      "category": "dialogue",
+      "speaker": "Seven"
+    },
+    {
+      "match": "What for?",
+      "category": "dialogue",
+      "speaker": "Two"
+    },
+    {
+      "match": "why you are painting those roses?",
+      "category": "dialogue",
+      "speaker": "Alice"
+    }
+  ],
+  "chapters": [
+    "There was a table set out under a tree in front of the house, and the March Hare and the Hatter were having tea at it: a Dormouse was sitting between them, fast asleep, and the other two were using it as a cushion, resting their elbows on it, and talking over its head. “Very uncomfortable for the Dormouse,” thought Alice; “only, as it’s asleep, I suppose it doesn’t mind.”\n\nThe table was a large one, but the three were all crowded together at one corner of it: “No room! No room!” they cried out when they saw Alice coming. “There’s plenty of room!” said Alice indignantly, and she sat down in a large armchair at one end of the table.\n\n“Have some wine,” the March Hare said in an encouraging tone.\n\nAlice looked all round the table, but there was nothing on it but tea. “I don’t see any wine,” she remarked.\n\n“There isn’t any,” said the March Hare.\n\n“Then it wasn’t very civil of you to offer it,” said Alice angrily.\n\n“It wasn’t very civil of you to sit down without being invited,” said the March Hare.\n\n“I didn’t know it was your table,” said Alice; “it’s laid for a great many more than three.”\n\n“Your hair wants cutting,” said the Hatter. He had been looking at Alice for some time with great curiosity, and this was his first speech.\n\n“You should learn not to make personal remarks,” Alice said with some severity; “it’s very rude.”\n\nThe Hatter opened his eyes very wide on hearing this; but all he said was, “Why is a raven like a writing-desk?”\n\n“Come, we shall have some fun now!” thought Alice. “I’m glad they’ve begun asking riddles⁠—I believe I can guess that,” she added aloud.\n\n“Do you mean that you think you can find out the answer to it?” said the March Hare.\n\n",
+    "A large rose-tree stood near the entrance of the garden: the roses growing on it were white, but there were three gardeners at it, busily painting them red. Alice thought this a very curious thing, and she went nearer to watch them, and just as she came up to them she heard one of them say, “Look out now, Five! Don’t go splashing paint over me like that!”\n\n“I couldn’t help it,” said Five, in a sulky tone; “Seven jogged my elbow.”\n\nOn which Seven looked up and said, “That’s right, Five! Always lay the blame on others!”\n\n“You’d better not talk!” said Five. “I heard the Queen say only yesterday you deserved to be beheaded!”\n\n“What for?” said the one who had spoken first.\n\n“That’s none of your business, Two!” said Seven.\n\n“Yes, it is his business!” said Five, “and I’ll tell him⁠—it was for bringing the cook tulip-roots instead of onions.”\n\nSeven flung down his brush, and had just begun “Well, of all the unjust things⁠—” when his eye chanced to fall upon Alice, as she stood watching them, and he checked himself suddenly: the others looked round also, and all of them bowed low.\n\n“Would you tell me,” said Alice, a little timidly, “why you are painting those roses?”"
+  ],
+  "identityChecks": [
+    {
+      "kind": "same",
+      "matches": [
+        "I don’t see any wine",
+        "why you are painting those roses?"
+      ]
+    },
+    {
+      "kind": "distinct",
+      "matches": [
+        "I couldn’t help it",
+        "Always lay the blame on others!",
+        "What for?"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://github.com/standardebooks/lewis-carroll_alices-adventures-in-wonderland/blob/master/src/epub/text/chapter-7.xhtml",
+      "sha256": "0c88a01606bb2fa8447e7f01c3f311aea91853339ae14b9c5aa2b8c2b50ce1a7",
+      "note": "Public-domain original, paragraph text extracted from XHTML; chapter cuts and paragraph separators added by eval."
+    },
+    {
+      "url": "https://github.com/standardebooks/lewis-carroll_alices-adventures-in-wonderland/blob/master/src/epub/text/chapter-8.xhtml",
+      "sha256": "6bd55fbfb1c392427d63693a0b2f9121a8edccd1cc1dbecc61843182e2919379",
+      "note": "Public-domain original, paragraph text extracted from XHTML; chapter cuts and paragraph separators added by eval."
+    }
+  ]
+}

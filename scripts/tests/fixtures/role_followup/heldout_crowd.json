@@ -1,0 +1,99 @@
+{
+  "id": "heldout_crowd",
+  "title": "合唱、无署名插话与空间证据",
+  "text": "灯会散场前，巡灯人杜衡站在石阶上敲了两下铜锣。台下的学徒们齐声答道：“灯已全数查过！”\n偏门口忽然传来两句话，隔着雨帘，谁也看不清说话的人，也听不出是不是同一个声音。\n“旧箱还在门边吗？”\n“先别碰红封条。”\n杜衡回身问：“顾岚，船来了吗？”顾岚点了点头，没有开口。\n石桥上，一名抬灯的工人喊道：“给我留条道！”与他隔着整条水巷的收伞女在屋里答：“我只管收伞，别把灯塞进来。”\n抬灯工人又喊：“那我从西边绕。”学徒们重新齐声唱起：“送灯归库——”",
+  "roster": [
+    {
+      "name": "杜衡",
+      "aliases": []
+    },
+    {
+      "name": "顾岚",
+      "aliases": []
+    },
+    {
+      "name": "学徒们",
+      "aliases": [
+        "学徒",
+        "众学徒"
+      ]
+    },
+    {
+      "name": "抬灯工人",
+      "aliases": [
+        "抬灯的工人",
+        "抬灯人"
+      ]
+    },
+    {
+      "name": "收伞女",
+      "aliases": [
+        "收伞女子"
+      ]
+    }
+  ],
+  "gold": [
+    {
+      "match": "灯已全数查过！",
+      "category": "dialogue",
+      "speaker": "学徒们"
+    },
+    {
+      "match": "旧箱还在门边吗？",
+      "category": "dialogue"
+    },
+    {
+      "match": "先别碰红封条。",
+      "category": "dialogue"
+    },
+    {
+      "match": "顾岚，船来了吗？",
+      "category": "dialogue",
+      "speaker": "杜衡"
+    },
+    {
+      "match": "给我留条道！",
+      "category": "dialogue",
+      "speaker": "抬灯工人"
+    },
+    {
+      "match": "我只管收伞，别把灯塞进来。",
+      "category": "dialogue",
+      "speaker": "收伞女"
+    },
+    {
+      "match": "那我从西边绕。",
+      "category": "dialogue",
+      "speaker": "抬灯工人"
+    },
+    {
+      "match": "送灯归库——",
+      "category": "dialogue",
+      "speaker": "学徒们"
+    }
+  ],
+  "identityChecks": [
+    {
+      "kind": "unassigned",
+      "matches": [
+        "旧箱还在门边吗？",
+        "先别碰红封条。"
+      ]
+    },
+    {
+      "kind": "same",
+      "matches": [
+        "给我留条道！",
+        "那我从西边绕。"
+      ]
+    },
+    {
+      "kind": "distinct",
+      "matches": [
+        "给我留条道！",
+        "我只管收伞，别把灯塞进来。",
+        "送灯归库——"
+      ]
+    }
+  ]
+}

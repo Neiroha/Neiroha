@@ -49,6 +49,20 @@ void main() {
     },
   );
   test(
+    'the shared ledger can continue past 1200 attempts within its dollar limit',
+    () {
+      begin();
+      final data = read();
+      data['requests'] = List.generate(
+        1200,
+        (id) => {'id': id, 'chargedMicroUsd': 2000},
+      );
+      File(ledger.path).writeAsStringSync(jsonEncode(data));
+      expect(begin(), 1200);
+      expect(read()['requests'], hasLength(1201));
+    },
+  );
+  test(
     'limit and authorization failures refuse subsequent calls before send',
     () {
       final id = begin();

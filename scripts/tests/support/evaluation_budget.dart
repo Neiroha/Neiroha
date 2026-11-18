@@ -68,7 +68,7 @@ class EvaluationBudget {
       0,
       (n, e) => n + (e['chargedMicroUsd'] as int),
     );
-    if (entries.length >= 1200 || spent + reserve * 2 > limit) {
+    if (spent + reserve * 2 > limit) {
       throw StateError(
         'Shared USD 50 evaluation budget exhausted; no request sent.',
       );

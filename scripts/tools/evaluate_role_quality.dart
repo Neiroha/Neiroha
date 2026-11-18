@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:neiroha/domain/novel/role_evaluation.dart';
 import 'package:neiroha/domain/novel/role_review_evaluation.dart';
 import 'package:neiroha/domain/novel/role_models.dart';
+import 'package:neiroha/domain/novel/novel_role_skill.dart';
 import 'package:neiroha/domain/text/novel_semantic_segmenter.dart';
+import '../tests/support/role_eval_fixture.dart';
 
 Map<String, dynamic> read(File f) =>
     jsonDecode(f.readAsStringSync()) as Map<String, dynamic>;
@@ -37,7 +39,7 @@ void main(List<String> args) {
         final id = entry.key, fixture = entry.value;
         final artifact = File('${folder.path}/$id.json'),
             metricsFile = File('${folder.path}/$id.metrics.json');
-        if (!artifact.existsSync() || !metricsFile.existsSync()) {
+        if (!metricsFile.existsSync()) {
           failures.add({
             'variant': variant,
             'run': run,
@@ -46,17 +48,18 @@ void main(List<String> args) {
           });
           continue;
         }
-        final capture = read(artifact), metrics = read(metricsFile);
-        if (metrics['status'] != 'completed') {
+        final metrics = read(metricsFile);
+        if (metrics['status'] != 'completed' || !artifact.existsSync()) {
           failures.add({
             'variant': variant,
             'run': run,
             'id': id,
-            'status': metrics['status'],
+            'status': metrics['status'] ?? 'incomplete',
             'error': metrics['error'],
           });
           continue;
         }
+        final capture = read(artifact);
         final text = fixture['text'] as String;
         final gold = (fixture['gold'] as List).cast<Map<String, dynamic>>();
         final roster = (fixture['roster'] as List).cast<Map<String, dynamic>>();
@@ -66,7 +69,14 @@ void main(List<String> args) {
                   RolePrediction.fromJson(Map<String, dynamic>.from(p as Map)),
             )
             .toList();
-        final pieces = NovelSemanticSegmenter.split(text);
+        var offset = 0;
+        final pieces = <({int start, int end})>[];
+        for (final chapter in evaluationChapters(fixture)) {
+          for (final part in NovelSemanticSegmenter.split(chapter)) {
+            pieces.add((start: part.start + offset, end: part.end + offset));
+          }
+          offset += chapter.length;
+        }
         final beforeLabels = <String, Map>{}, reviewed = <String>{};
         final requests = (metrics['requests'] as List)
             .cast<Map<String, dynamic>>();
@@ -124,6 +134,12 @@ void main(List<String> args) {
           roster: roster,
           predictions: after,
         );
+        final annotations = {
+          for (final a in (capture['annotations'] as List? ?? [])) a['id']: a,
+        };
+        final identity = fixture['identityChecks'] == null
+            ? <Map<String, Object?>>[]
+            : scoreCapturedIdentity(fixture, after, annotations);
         final review = RoleReviewEvaluation.compare(
           text: text,
           gold: gold,
@@ -149,6 +165,7 @@ void main(List<String> args) {
           'model': capture['model'],
           'score': evaluation.toJson(),
           'review': review,
+          'identityChecks': identity,
           'calls': requests.where((r) => r['output'] != null).length,
           'reportedTokens': tokens,
           'requestElapsedMs': elapsed,
@@ -270,8 +287,23 @@ void main(List<String> args) {
       });
     }
   }
-  final ledger = read(File('${root.path}/budget.json'));
-  final budgetRows = ledger['requests'] as List;
+  final ledger = read(
+    File(
+      Platform.environment['NEIROHA_EVAL_BUDGET_FILE'] ??
+          '${root.path}/budget.json',
+    ),
+  );
+  final allBudgetRows = ledger['requests'] as List;
+  final firstReceipt = int.parse(
+    Platform.environment['NEIROHA_EVAL_START_RECEIPT'] ?? '0',
+  );
+  RangeError.checkValueInInterval(
+    firstReceipt,
+    0,
+    allBudgetRows.length,
+    'first receipt',
+  );
+  final budgetRows = allBudgetRows.skip(firstReceipt).toList();
   final charged = budgetRows.fold<int>(
     0,
     (n, r) => n + (r['chargedMicroUsd'] as int),
@@ -280,6 +312,13 @@ void main(List<String> args) {
     0,
     (n, r) => n + (r['standardPriceUpperMicroUsd'] as int? ?? 0),
   );
+  final cumulativeCharge = allBudgetRows.fold<int>(
+    0,
+    (n, r) => n + (r['chargedMicroUsd'] as int),
+  );
+  String version(String variant) => NovelRoleSkill.parse(
+    File('${root.path}/$variant-SKILL.md').readAsStringSync(),
+  ).version;
   final oldFailures = Directory('${root.path}/failed-attempts');
   final report = <String, Object?>{
     'model': 'gpt-6-luna',
@@ -292,6 +331,8 @@ void main(List<String> args) {
       'limitUsd': 50,
       'attemptedCalls': budgetRows.length,
       'conservativeChargeUsd': charged / 1e6,
+      'cumulativeConservativeChargeUsd': cumulativeCharge / 1e6,
+      'firstReceipt': firstReceipt,
       'knownStandardUpperEstimateUsd': knownEstimate / 1e6,
       'unknownUsageCalls': budgetRows.where((r) => r['usage'] == null).length,
       'archivedCaptureFiles': oldFailures.existsSync()
@@ -309,7 +350,9 @@ void main(List<String> args) {
     ..writeln(
       'gpt-6-luna；${fixtures.length} 种文本 × 3 次 × 两个候选，共 ${fixtures.length * 6} 个计划运行；完整配对 ${paired.length}/${fixtures.length * 3}。金标未进入模型输入，未人工改名对齐。',
     )
-    ..writeln('\n| 指标 | 基线 1.2.0 | 候选 1.3.0 |\n|---|---:|---:|');
+    ..writeln(
+      '\n| 指标 | 基线 ${version('baseline')} | 候选 ${version('candidate')} |\n|---|---:|---:|',
+    );
   void line(
     String label,
     Object? Function(Map<String, dynamic>) value,
@@ -375,15 +418,14 @@ void main(List<String> args) {
       '| $id (${group.length}/3) | ${sum('speakerDelta')} | ${sum('categoryDelta')} | ${sum('tokenDelta')} |',
     );
   }
+  writeIdentityComparison(md, rows);
   md.writeln(
-    '\n费用包含所有预跑、失败和重试尝试：${budgetRows.length} 次已预留请求；保守账本占用 \$${(charged / 1e6).toStringAsFixed(4)} / \$50，已知 usage 按标准价格的上界估算 \$${(knownEstimate / 1e6).toStringAsFixed(4)}，另有 ${budgetRows.where((r) => r['usage'] == null).length} 次未知 usage 保留预留。该数不是服务商账单；缓存输入按更高的 cache-write 价格计算，不假设折扣。定价依据：[官方 Luna 页面](https://developers.openai.com/api/docs/models/gpt-6-luna)。',
+    '\n本轮账本从第 $firstReceipt 条收据起统计，包含 ${budgetRows.length} 次请求尝试。保守预算占用 \$${(charged / 1e6).toStringAsFixed(4)}，累计 \$${(cumulativeCharge / 1e6).toStringAsFixed(4)} / \$50。已知 usage 的标准价格上界估算为 \$${(knownEstimate / 1e6).toStringAsFixed(4)}，${budgetRows.where((r) => r['usage'] == null).length} 次未知用量保留预留。定价依据见[官方 Luna 页面](https://developers.openai.com/api/docs/models/gpt-6-luna)。',
   );
   md.writeln(
     '\n完成率、准确率分母与配对数分别展示。失败不算通过；未完成范围没有准确率。送审指标包含 inferred 抽查，只在有金标范围计分，不等于纯规则检测器精度。跨轮一致率按金标范围内的边界、类别和人物标签比较，名称没有人工对齐。正文完整 UTF-16 分区是硬约束。',
   );
-  md.writeln(
-    '\n实验过程中修复了账本阻塞锁与匿名第一人称身份过滤；预跑在 pilot-* 和 failed-attempts 中保留，不混入候选成绩。对比矩阵共用修复后的运行时。直连 DNS/超时不稳定，后续仅测试进程走现有本地 Clash 代理；耗时受传输路径与并发影响，不能据此宣称候选更快。',
-  );
+  md.writeln('\n预跑与失败捕获在相应目录中保留。对比矩阵共用同一运行时。耗时受传输路径与并发影响。');
   md.writeln(
     '\n嵌套引语存在表演策略差异：部分金标采用故事人物，部分采用实际讲述者；严格分数保留这些差异，应用可通过用户配音意图明确选择。多轮结果反映本集，不保证所有题材。原文、金标、技能快照、原始输出、usage 与逐项错误见相邻 JSON 和各 run 目录。',
   );

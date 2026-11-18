@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
@@ -11,12 +10,12 @@ import 'package:neiroha/data/services/novel/character_repository.dart';
 import 'package:neiroha/data/services/novel/novel_text_revision.dart';
 import 'package:neiroha/data/services/novel/role_analysis_service.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
-import 'package:neiroha/data/storage/novel_import_service.dart';
 import 'package:neiroha/domain/novel/role_evaluation.dart';
 import 'package:neiroha/domain/novel/role_models.dart';
 import 'package:neiroha/domain/text/novel_semantic_segmenter.dart';
 
-import 'support/novel_fixture.dart';
+import 'support/role_eval_chapters.dart';
+import 'support/role_eval_fixture.dart';
 import 'support/role_skill_fixture.dart';
 import 'support/measured_role_llm.dart';
 
@@ -66,11 +65,16 @@ void main() {
         output.createSync(recursive: true);
         final artifact = File('${output.path}/$id.json');
         final text = fixture['text'] as String;
+        final chapters = evaluationChapters(fixture);
+        final chapterRevisions = chapters.map(novelTextRevision).toList();
         if (artifact.existsSync()) {
           final cached =
               jsonDecode(artifact.readAsStringSync()) as Map<String, dynamic>;
           expect(cached['model'], model);
           expect(cached['sourceRevision'], novelTextRevision(text));
+          if (chapters.length > 1) {
+            expect(cached['chapterRevisions'], chapterRevisions);
+          }
           if (!replayOnly &&
               cached['skill'] is Map &&
               cached['skill']['sha256'] != null) {
@@ -99,7 +103,7 @@ void main() {
         final database = db.AppDatabase.forTesting(NativeDatabase.memory());
         final characters = CharacterRepository(database);
         final annotations = AnnotationRepository(database);
-        var service = RoleAnalysisService(
+        RoleAnalysisService createService() => RoleAnalysisService(
           database,
           characters,
           annotations,
@@ -120,6 +124,9 @@ void main() {
           expect(saved['fixture'], id);
           expect(saved['sourceRevision'], novelTextRevision(text));
           expect(saved['skill'], skill.identity);
+          if (chapters.length > 1) {
+            expect(saved['chapterRevisions'], chapterRevisions);
+          }
           paidPrefix = (saved['requests'] as List)
               .takeWhile((r) => r['output'] is Map)
               .toList();
@@ -137,6 +144,9 @@ void main() {
           expect(capture['fixture'], id);
           if (capture['sourceRevision'] != null) {
             expect(capture['sourceRevision'], novelTextRevision(text));
+            if (chapters.length > 1) {
+              expect(capture['chapterRevisions'], chapterRevisions);
+            }
           }
           replay = capture['requests'] as List;
           inferenceSkill =
@@ -152,6 +162,7 @@ void main() {
           'skill': inferenceSkill,
           'processingSkill': skill.identity,
           'sourceRevision': novelTextRevision(text),
+          'chapterRevisions': chapterRevisions,
           'startedAt': DateTime.now().toUtc().toIso8601String(),
           'requests': <Map<String, Object?>>[],
           'resumedPrefixCalls': paidPrefix.length,
@@ -182,87 +193,31 @@ void main() {
           paidPrefix: paidPrefix,
         );
         try {
-          await seedNovelFixture(database);
-          await database.delete(database.novelSegments).go();
-          await (database.update(database.novelChapters)
-                ..where((t) => t.id.equals('book-chapter')))
-              .write(db.NovelChaptersCompanion(rawText: Value(text)));
-          final imported = splitNovelText(text);
-          for (var i = 0; i < imported.length; i++) {
-            await database.insertNovelSegment(
-              db.NovelSegmentsCompanion(
-                id: Value('$id-$i'),
-                projectId: const Value('book'),
-                chapterId: const Value('book-chapter'),
-                globalIndex: Value(i),
-                orderIndex: Value(i),
-                segmentText: Value(imported[i].text),
-                segmentType: Value(imported[i].type),
-              ),
-            );
-          }
-          final source = await database.getNovelSegmentsForChapter(
-            'book-chapter',
-          );
-          final provider = (await database.getAllProviders())
-              .firstWhere((p) => p.id == 'test-provider')
-              .copyWith(baseUrl: 'https://api.openai.com/v1', apiKey: key);
-          await service.run(
-            projectId: 'book',
-            chapterId: 'book-chapter',
-            provider: provider,
-            model: model,
+          final checkpoints = await runEvaluationChapters(
+            database: database,
+            characters: characters,
+            createService: createService,
             client: client,
-            maxCalls: 1,
-          );
-          final planned = await service.checkpoints.load(
-            'book',
-            'book-chapter',
-          );
-          expect(planned!.stage, 'rosterReview');
-          expect((await characters.load('book')).annotations, isEmpty);
-          // Recreate the service to exercise persisted roster/checkpoint recovery.
-          service.dispose();
-          service = RoleAnalysisService(
-            database,
-            characters,
-            annotations,
-            TtsQueueService.instance,
-            loadSkill: loadTestRoleSkill,
-          );
-          await service.run(
-            projectId: 'book',
-            chapterId: 'book-chapter',
-            provider: provider,
+            chapters: chapters,
+            fixtureId: id,
+            key: key,
             model: model,
-            client: client,
-            confirmRoster: true,
-            maxCalls:
-                (int.tryParse(
-                      Platform.environment['NEIROHA_EVAL_CASE_CALLS'] ?? '',
-                    ) ??
-                    12) -
-                1,
+            maxCallsPerChapter:
+                int.tryParse(
+                  Platform.environment['NEIROHA_EVAL_CASE_CALLS'] ?? '',
+                ) ??
+                12,
           );
-          final checkpoint = await service.checkpoints.load(
-            'book',
-            'book-chapter',
-          );
-          expect(checkpoint!.stage, 'completed');
           client.verifyReplayComplete();
+          final source = await database.getNovelSegments('book');
           final roles = await characters.load('book');
-          expect(roles.annotations.length, source.length);
-          expect(
-            (await database.getNovelSegmentsForChapter(
-              'book-chapter',
-            )).map((s) => [s.id, s.segmentText]).toList(),
-            source.map((s) => [s.id, s.segmentText]).toList(),
-          );
-          expect(
-            (await database.getNovelChapters('book')).single.rawText,
-            text,
+          expect(roles.annotations, hasLength(source.length));
+          final totalCalls = checkpoints.fold<int>(
+            0,
+            (sum, c) => sum + c.calls,
           );
           final labels = _partition(text, source, roles);
+          final evaluation = _evaluate(fixture, labels);
           artifact.writeAsStringSync(
             const JsonEncoder.withIndent('  ').convert({
               'model': model,
@@ -270,10 +225,12 @@ void main() {
               'skill': inferenceSkill,
               'processingSkill': skill.identity,
               'sourceRevision': novelTextRevision(text),
+              'chapterRevisions': chapterRevisions,
               'labels': labels,
               'characters': [
                 for (final c in roles.characters)
                   {
+                    'id': c.id,
                     'name': c.name,
                     'aliases': c.aliases,
                     'identityKind': c.identityKind.name,
@@ -283,19 +240,26 @@ void main() {
                 for (final a in roles.annotations.values)
                   {
                     'id': a.segmentId,
+                    'characterId': a.characterId,
                     'review': a.reviewState.name,
                     'reason': a.reason,
                   },
               ],
             }),
           );
-          final evaluation = _evaluate(fixture, labels);
           metrics.addAll({
             'status': 'completed',
-            'calls': checkpoint.calls,
-            'reviewedSegments': checkpoint.reviewedSegments,
-            'reviewChanges': checkpoint.reviewChanges,
-            'sceneState': checkpoint.scene.toJson(),
+            'calls': totalCalls,
+            'reviewedSegments': checkpoints.fold<int>(
+              0,
+              (sum, c) => sum + c.reviewedSegments,
+            ),
+            'reviewChanges': checkpoints.fold<int>(
+              0,
+              (sum, c) => sum + c.reviewChanges,
+            ),
+            'sceneState': checkpoints.last.scene.toJson(),
+            'chapters': chapters.length,
             'segments': source.length,
             'rosterResume': true,
             'sourceUnchanged': true,
@@ -304,7 +268,7 @@ void main() {
           stdout.writeln(
             '$id: category ${evaluation.categoryCorrect}/${evaluation.evaluated}, '
             'speaker ${evaluation.speakerCorrect}/${evaluation.speakerTotal}, '
-            '${checkpoint.calls} calls, ${source.length} segments.',
+            '$totalCalls calls, ${source.length} segments.',
           );
         } catch (error) {
           final message = key.isEmpty
@@ -319,7 +283,6 @@ void main() {
         } finally {
           metrics['finishedAt'] = DateTime.now().toUtc().toIso8601String();
           saveMetrics();
-          service.dispose();
           await database.close();
         }
       },

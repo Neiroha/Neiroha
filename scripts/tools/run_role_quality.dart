@@ -11,11 +11,12 @@ Future<void> main(List<String> args) async {
     '--runs',
     '--output',
     '--env-file',
+    '--fixtures',
   ];
   for (var i = 0; i < args.length; i++) {
     if (!allowed.contains(args[i]) || i + 1 >= args.length) {
       stderr.writeln(
-        'Usage: dart scripts/tools/run_role_quality.dart --variant baseline|candidate --skill-file path [--runs 3] [--output directory]',
+        'Usage: dart scripts/tools/run_role_quality.dart --variant baseline|candidate --skill-file path [--runs 3] [--output directory] [--fixtures directory]',
       );
       exitCode = 64;
       return;
@@ -47,11 +48,19 @@ Future<void> main(List<String> args) async {
   if (!frozen.existsSync()) source.copySync(frozen.path);
   final fixtures = Directory('${root.path}/fixtures')
     ..createSync(recursive: true);
-  for (final dir in ['role_assign', 'role_holdout', 'role_quality']) {
+  final sourceDirs = options['--fixtures'] == null
+      ? [
+          for (final name in ['role_assign', 'role_holdout', 'role_quality'])
+            'scripts/tests/fixtures/$name',
+        ]
+      : [options['--fixtures']!];
+  final fixtureNames = <String>{};
+  for (final dir in sourceDirs) {
     for (final file in Directory(
-      'scripts/tests/fixtures/$dir',
+      dir,
     ).listSync().whereType<File>().where((f) => f.path.endsWith('.json'))) {
       final target = File('${fixtures.path}/${file.uri.pathSegments.last}');
+      fixtureNames.add(file.uri.pathSegments.last);
       if (target.existsSync() &&
           target.readAsStringSync() != file.readAsStringSync()) {
         throw StateError('Frozen fixture changed: ${file.path}');
@@ -59,6 +68,19 @@ Future<void> main(List<String> args) async {
       if (!target.existsSync()) file.copySync(target.path);
     }
   }
+  if (fixtureNames.isEmpty ||
+      fixtures.listSync().any(
+        (f) =>
+            f.path.endsWith('.json') &&
+            !fixtureNames.contains(f.uri.pathSegments.last),
+      )) {
+    throw StateError(
+      'Fixture set differs from the frozen matrix. Use a new output directory.',
+    );
+  }
+  final ledgerPath =
+      Platform.environment['NEIROHA_EVAL_BUDGET_FILE'] ??
+      '${root.path}/budget.json';
   final env = parseEnvFile(
     File(options['--env-file'] ?? '.env').readAsStringSync(),
   );
@@ -70,10 +92,14 @@ Future<void> main(List<String> args) async {
   if (key == null) throw StateError('No supported key in local .env.');
   var failed = false;
   Future<void> runOne(int run) async {
-    final ledger = File('${root.path}/budget.json');
+    final ledger = File(ledgerPath);
     if (ledger.existsSync() &&
         (jsonDecode(ledger.readAsStringSync()) as Map)['blockedReason'] !=
             null) {
+      stderr.writeln(
+        'Shared ledger blocked after an authorization or rate failure.',
+      );
+      failed = true;
       return;
     }
     final out = Directory('${root.path}/$variant/run-$run')
@@ -92,7 +118,7 @@ Future<void> main(List<String> args) async {
     }
     final log = File('${out.path}/run.log').openWrite(mode: FileMode.append);
     stdout.writeln(
-      '$variant run $run/$runs: gpt-6-luna, ${fixtures.listSync().length} texts; shared USD 50 guard.',
+      '$variant run $run/$runs: gpt-6-luna, ${fixtureNames.length} texts; shared USD 50 guard.',
     );
     final process = await Process.start(
       Platform.isWindows ? 'flutter.bat' : 'flutter',
@@ -116,7 +142,7 @@ Future<void> main(List<String> args) async {
         'OPENAI_ROLE_CASES': '',
         'NEIROHA_ROLE_FIXTURES': fixtures.path,
         'NEIROHA_ROLE_SKILL_FILE': frozen.path,
-        'NEIROHA_EVAL_BUDGET_FILE': '${root.path}/budget.json',
+        'NEIROHA_EVAL_BUDGET_FILE': ledgerPath,
         'NEIROHA_EVAL_MAX_CALLS': '250',
         'NEIROHA_EVAL_CASE_CALLS': '48',
         'NEIROHA_EVAL_RESUME': '1',

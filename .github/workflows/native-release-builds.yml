@@ -354,6 +354,10 @@ jobs:
           path: dist/**
           if-no-files-found: error
 
+  build-web:
+    name: Web release archive
+    uses: ./.github/workflows/web-builds.yml
+
   publish-release:
     name: Publish GitHub Release
     runs-on: ubuntu-latest
@@ -362,6 +366,7 @@ jobs:
       - build-linux
       - build-windows
       - build-macos
+      - build-web
     steps:
       - name: Checkout release history
         uses: actions/checkout@v4
@@ -398,7 +403,11 @@ jobs:
             compare_url="${SERVER_URL}/${REPOSITORY}/commits/${RELEASE_TAG}"
           fi
 
-          if notes="$(gh api "repos/${REPOSITORY}/releases/generate-notes" \
+          notes_file="assets/docs/releases/${RELEASE_TAG}.md"
+          if [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ && -f "$notes_file" ]]; then
+            cat "$notes_file" > RELEASE_NOTES.md
+            printf "\n\n**Full Changelog**: %s\n\n" "$compare_url" >> RELEASE_NOTES.md
+          elif notes="$(gh api "repos/${REPOSITORY}/releases/generate-notes" \
             -f tag_name="${RELEASE_TAG}" \
             --jq '.body' 2>/dev/null)"; then
             printf "%s\n\n" "$notes" > RELEASE_NOTES.md

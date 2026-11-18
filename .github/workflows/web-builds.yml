@@ -1,0 +1,67 @@
+name: Web Builds
+
+on:
+  pull_request:
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "web/**"
+      - "pubspec.*"
+      - "l10n.yaml"
+      - "scripts/tools/prepare_web_sqlite.mjs"
+      - ".github/workflows/web-builds.yml"
+      - ".github/workflows/native-release-builds.yml"
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build WebAssembly workspace
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.7"
+          channel: stable
+          cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Prepare pinned SQLite Wasm and worker
+        run: node scripts/tools/prepare_web_sqlite.mjs
+
+      - name: Build Web workspace
+        run: flutter build web --wasm --release --no-web-resources-cdn --no-pub
+
+      - name: Package static assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(awk '$1 == "version:" { split($2, v, "+"); print v[1]; exit }' pubspec.yaml)"
+          test -n "$version"
+          for file in index.html flutter_bootstrap.js main.dart.wasm main.dart.js sqlite3.wasm drift_worker.js; do
+            test -s "build/web/$file"
+          done
+          mkdir -p dist
+          cd build/web
+          python3 -m zipfile -c "$GITHUB_WORKSPACE/dist/neiroha-Web-v${version}.zip" ./*
+
+      - name: Upload Web archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: neiroha-Web-release
+          path: dist/neiroha-Web-*.zip
+          if-no-files-found: error

@@ -4,9 +4,8 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/storage/storage_service.dart';
 
 void main() {
-  test(
-    'repairs current-version databases that are missing late columns',
-    () async {
+  for (final version in [27, 33]) {
+    test('repairs v$version databases that are missing late columns', () async {
       final database = db.AppDatabase.forTesting(
         NativeDatabase.memory(
           setup: (sqlite) {
@@ -157,7 +156,7 @@ void main() {
                   1
                 );
             ''');
-            sqlite.userVersion = 27;
+            sqlite.userVersion = version;
           },
         ),
       );
@@ -193,6 +192,6 @@ void main() {
 
       expect(slug, isNotEmpty);
       expect(asset?.folderSlug, slug);
-    },
-  );
+    });
+  }
 }

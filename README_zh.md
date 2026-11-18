@@ -106,6 +106,7 @@ xattr -dr com.apple.quarantine /Applications/Neiroha.app
 
 - 使用 Flutter 3.47.7 stable（与 CI 一致），然后运行 `flutter pub get`。
 - 修改 Drift 表结构（`lib/data/database/tables.dart`）或 freezed 模型后，运行 `dart run build_runner build`。
+- SQLite 结构变更按目标版本添加迁移文件，历史来源及测试方式见[数据库迁移说明](assets/docs/database-migrations-zh.md)。
 - 修改 `lib/l10n/app_en.arb` / `app_zh.arb` 后，运行 `flutter gen-l10n`。
 - 构建 macOS 需要 Xcode 与 CocoaPods。先 `FLUTTER_XCODE_ARCHS=arm64 flutter build macos --release`（Intel 用 `x86_64`），再运行 `bash scripts/tools/package_macos_dmg.sh Release arm64 dist/Neiroha.dmg`，脚本会把包裁剪为该架构、校验签名并生成 DMG；`bash scripts/tools/smoke_test_macos_dmg.sh dist/Neiroha.dmg arm64` 可启动应用做快速检查。
 - 运行 `flutter analyze` 与 `flutter test scripts/tests`。音量统一与合并导出的测试会调用真实的 FFmpeg，`PATH` 中没有 `ffmpeg` 时自动跳过。

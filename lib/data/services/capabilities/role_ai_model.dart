@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:neiroha/data/adapters/openai_tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
@@ -180,25 +182,29 @@ class RoleAiModel {
           : message is Map
           ? message['tool_calls']
           : null;
-      final valid =
-          calls is List &&
-          calls.whereType<Map>().any((call) {
+      final complete = responses
+          ? data is Map && data['status'] == 'completed'
+          : first is Map &&
+                const [
+                  null,
+                  'stop',
+                  'tool_calls',
+                ].contains(first['finish_reason']);
+      if (!complete ||
+          calls is! List ||
+          !calls.whereType<Map>().any((call) {
             final target = responses ? call : call['function'];
             return target is Map &&
                 call['type'] == (responses ? 'function_call' : 'function') &&
                 target['name'] == name &&
-                target['arguments'] is String;
-          });
-      if (!valid &&
-          (responses
-              ? data is! Map || data['status'] != 'completed'
-              : first is! Map || first['finish_reason'] == 'length')) {
+                _emptyArguments(target['arguments']);
+          })) {
         throw StateError(
-          'Function calling check returned an incomplete result.',
+          'Function calling check did not return a complete probe call. Retry or choose another model.',
         );
       }
-      await _record(provider, model, route, valid);
-      return valid;
+      await _record(provider, model, route, true);
+      return true;
     } on DioException catch (error) {
       cancellation?.throwIfCancelled();
       final status = error.response?.statusCode;
@@ -215,6 +221,16 @@ class RoleAiModel {
     } finally {
       remove?.call();
       dio.close(force: true);
+    }
+  }
+
+  static bool _emptyArguments(Object? arguments) {
+    if (arguments is! String) return false;
+    try {
+      final args = jsonDecode(arguments);
+      return args is Map && args.isEmpty;
+    } on FormatException {
+      return false;
     }
   }
 

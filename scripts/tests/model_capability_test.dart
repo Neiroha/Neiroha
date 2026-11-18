@@ -156,6 +156,64 @@ void main() {
   );
 
   test(
+    'inconclusive tool probes do not cache support or deny a retry',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      var attempt = 0;
+      server.listen((request) async {
+        await request.drain<void>();
+        final current = attempt++;
+        request.response
+          ..headers.contentType = ContentType.json
+          ..write(
+            jsonEncode({
+              'choices': [
+                {
+                  'finish_reason': current == 1 ? 'length' : 'stop',
+                  'message': {
+                    if (current == 0)
+                      'content': 'I could not call the function.',
+                    if (current > 0)
+                      'tool_calls': [
+                        {
+                          'type': 'function',
+                          'function': {
+                            'name': 'neiroha_check',
+                            'arguments': current == 2 ? '{' : '{}',
+                          },
+                        },
+                      ],
+                  },
+                },
+              ],
+            }),
+          );
+        await request.response.close();
+      });
+      final p = provider('http://127.0.0.1:${server.port}/v1');
+      final roles = RoleAiModel(repository);
+      const route = ServiceRoute.chatCompletions;
+      for (var i = 0; i < 3; i++) {
+        await expectLater(
+          roles.requireTools(p, 'custom', route),
+          throwsStateError,
+        );
+        expect(
+          await roles.support(p, 'custom', route),
+          CapabilitySupport.unknown,
+        );
+      }
+      await roles.requireTools(p, 'custom', route);
+      expect(attempt, 4);
+      expect(
+        await roles.support(p, 'custom', route),
+        CapabilitySupport.supported,
+      );
+    },
+  );
+
+  test(
     'unknown is distinct from unsupported; user overrides survive discovery and successful calls',
     () async {
       final p = provider('https://custom.example/v1');

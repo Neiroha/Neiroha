@@ -1,5 +1,8 @@
 import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/adapters/wav_utils.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/domain/synthesis/streaming_audio_sink.dart';
@@ -31,6 +34,60 @@ class SynthesisService {
   SynthesisService(this.queue, {this.capabilities});
   final TtsQueueService queue;
   final CapabilityRepository? capabilities;
+
+  static const sessionAudioLimit = 32 * 1024 * 1024;
+
+  Future<TtsResult> collectInMemory({
+    required db.TtsProvider provider,
+    required TtsRequest request,
+    required TtsCancelToken cancellation,
+    String? modelName,
+    TtsAdapter? adapter,
+    StreamingAudioSink? sink,
+  }) => queue.enqueue(
+    provider: provider,
+    source: 'Quick TTS',
+    label: request.text,
+    estimatedTokens: queue.estimateTokens(request),
+    cancelToken: cancellation,
+    interactive: true,
+    task: () async {
+      final transport = adapter ?? synthesisAdapter(provider, modelName, null);
+      final buffer = BytesBuilder(copy: false);
+      try {
+        final audio = await _readAudio(
+          transport,
+          request,
+          cancellation,
+          onStarted: (format) async => await sink?.open(format),
+          onChunk: (bytes) async {
+            if (buffer.length + bytes.length > sessionAudioLimit - 44) {
+              throw const FormatException('Audio exceeded the 32 MiB limit.');
+            }
+            buffer.add(bytes);
+            await sink?.add(bytes);
+          },
+        );
+        await sink?.finish();
+        cancellation.throwIfCancelled();
+        final bytes = buffer.takeBytes();
+        final format = audio.format;
+        return TtsResult(
+          audioBytes: format.encoding == AudioEncoding.pcmS16le
+              ? wrapPcmAsWav(
+                  bytes,
+                  sampleRate: format.sampleRate!,
+                  channels: format.channels!,
+                )
+              : bytes,
+          contentType: format.contentType,
+        );
+      } catch (_) {
+        await sink?.stop();
+        rethrow;
+      }
+    },
+  );
 
   /// File-oriented callers share event validation, cancellation and the cache
   /// writer. The temporary completed file is owned and removed by this call.
@@ -117,63 +174,36 @@ class SynthesisService {
     StreamingAudioSink? sink,
     void Function()? onFirstAudio,
   ) async {
-    final clock = Stopwatch()..start();
-    Duration? firstAudio;
     AudioCacheWriter? writer;
-    TtsAudioFormat? format;
-    TtsSynthesisCompleted? completed;
     try {
-      await for (final event in adapter.synthesizeStream(
+      final audio = await _readAudio(
+        adapter,
         request,
-        cancellation: cancellation,
-      )) {
-        cancellation.throwIfCancelled();
-        if (completed != null) {
-          throw const FormatException('Audio after completion.');
-        }
-        switch (event) {
-          case TtsAudioStarted(:final format):
-            if (writer != null) {
-              throw const FormatException('Duplicate audio start.');
-            }
-            format.validate();
-            writer = AudioCacheWriter('$outputBase${format.extension}', format);
-            await writer.open();
-            await sink?.open(format);
-          case TtsAudioChunk(:final bytes):
-            if (writer == null) {
-              throw const FormatException('Audio before format.');
-            }
-            if (bytes.isEmpty) continue;
-            if (firstAudio == null) {
-              firstAudio = clock.elapsed;
-              onFirstAudio?.call();
-            }
-            await writer.add(bytes);
-            await sink?.add(bytes);
-          case TtsSynthesisCompleted():
-            if (writer == null) {
-              throw const FormatException('Completion before format.');
-            }
-            completed = event;
-        }
-        if (event is TtsAudioStarted) format = event.format;
-      }
-      cancellation.throwIfCancelled();
-      if (writer == null || format == null || completed == null) {
-        throw const FormatException(
-          'Synthesis ended without a complete result.',
-        );
-      }
+        cancellation,
+        onStarted: (format) async {
+          final output = AudioCacheWriter(
+            '$outputBase${format.extension}',
+            format,
+          );
+          writer = output;
+          await output.open();
+          await sink?.open(format);
+        },
+        onChunk: (bytes) async {
+          await writer!.add(bytes);
+          await sink?.add(bytes);
+        },
+        onFirstAudio: onFirstAudio,
+      );
       await sink?.finish();
       cancellation.throwIfCancelled();
-      final path = await writer.commit();
+      final path = await writer!.commit();
       return SynthesisReceipt(
         audioPath: path,
-        format: format,
-        elapsed: clock.elapsed,
-        firstAudio: firstAudio,
-        completion: completed,
+        format: audio.format,
+        elapsed: audio.clock.elapsed,
+        firstAudio: audio.firstAudio,
+        completion: audio.completion,
       );
     } catch (_) {
       await sink?.stop();
@@ -181,5 +211,77 @@ class SynthesisService {
     } finally {
       await writer?.abort();
     }
+  }
+
+  Future<
+    ({
+      TtsAudioFormat format,
+      Stopwatch clock,
+      Duration? firstAudio,
+      TtsSynthesisCompleted completion,
+    })
+  >
+  _readAudio(
+    TtsAdapter adapter,
+    TtsRequest request,
+    TtsCancelToken cancellation, {
+    required Future<void> Function(TtsAudioFormat) onStarted,
+    required Future<void> Function(Uint8List) onChunk,
+    void Function()? onFirstAudio,
+  }) async {
+    final clock = Stopwatch()..start();
+    Duration? firstAudio;
+    TtsAudioFormat? format;
+    TtsSynthesisCompleted? completed;
+    var length = 0;
+    await for (final event in adapter.synthesizeStream(
+      request,
+      cancellation: cancellation,
+    )) {
+      cancellation.throwIfCancelled();
+      if (completed != null) {
+        throw const FormatException('Audio after completion.');
+      }
+      switch (event) {
+        case TtsAudioStarted(format: final next):
+          if (format != null) {
+            throw const FormatException('Duplicate audio start.');
+          }
+          next.validate();
+          format = next;
+          await onStarted(next);
+        case TtsAudioChunk(:final bytes):
+          if (format == null) {
+            throw const FormatException('Audio before format.');
+          }
+          if (bytes.isEmpty) continue;
+          if (firstAudio == null) {
+            firstAudio = clock.elapsed;
+            onFirstAudio?.call();
+          }
+          length += bytes.length;
+          await onChunk(bytes);
+        case TtsSynthesisCompleted():
+          if (format == null) {
+            throw const FormatException('Completion before format.');
+          }
+          completed = event;
+      }
+    }
+    cancellation.throwIfCancelled();
+    if (format == null || completed == null) {
+      throw const FormatException('Synthesis ended without a complete result.');
+    }
+    if (length == 0) throw const FormatException('Empty synthesis audio.');
+    if (format.encoding == AudioEncoding.pcmS16le &&
+        length % (2 * format.channels!) != 0) {
+      throw const FormatException('Incomplete PCM sample frame.');
+    }
+    return (
+      format: format,
+      clock: clock,
+      firstAudio: firstAudio,
+      completion: completed,
+    );
   }
 }

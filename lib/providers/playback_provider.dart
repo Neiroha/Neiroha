@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_providers.dart';
@@ -183,14 +184,16 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
       duration: Duration.zero,
       isPlaying: true,
     );
-    await _player.play(DeviceFileSource(audioPath));
+    await _player.play(_sourceFor(audioPath));
     if (operation == _operationId) await _syncNovelMediaSession(force: true);
   }
 
   Future<void> togglePlay() async {
-    if (_streamSink != null) {
+    final sink = _streamSink;
+    if (sink != null) {
       final paused = !state.isPaused;
-      await _streamSink!.pause(paused);
+      await sink.pause(paused);
+      if (_streamSink != sink) return;
       state = state.copyWith(isPaused: paused, isPlaying: !paused);
       await _syncNovelMediaSession(force: true);
       return;
@@ -201,7 +204,7 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
       state = state.copyWith(isPlaying: false);
     } else {
       if (state.generationComplete && state.position == Duration.zero) {
-        await _player.play(DeviceFileSource(state.audioPath!));
+        await _player.play(_sourceFor(state.audioPath!));
       } else {
         await _player.resume();
       }
@@ -209,6 +212,9 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
     }
     await _syncNovelMediaSession(force: true);
   }
+
+  Source _sourceFor(String path) =>
+      kIsWeb ? UrlSource(path) : DeviceFileSource(path);
 
   Future<void> stop() async {
     final operation = ++_operationId;
@@ -228,6 +234,41 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
   /// have buffered audio; state switches to the saved file only after drain.
   Future<SynthesisReceipt> playSynthesis({
     required Future<SynthesisReceipt> Function(StreamingAudioSink) generate,
+    required TtsCancelToken cancellation,
+    required String title,
+    required String sourceTag,
+    String? subtitle,
+    StreamingAudioSink? sink,
+  }) => _playStream<SynthesisReceipt>(
+    generate: generate,
+    audioUrl: (receipt) => receipt.audioPath,
+    cancellation: cancellation,
+    title: title,
+    sourceTag: sourceTag,
+    subtitle: subtitle,
+    sink: sink,
+  );
+
+  Future<void> playSessionSynthesis({
+    required Future<String> Function(StreamingAudioSink) generate,
+    required TtsCancelToken cancellation,
+    required String title,
+    required String subtitle,
+    required String sourceTag,
+    required StreamingAudioSink sink,
+  }) => _playStream<String>(
+    generate: generate,
+    audioUrl: (url) => url,
+    cancellation: cancellation,
+    title: title,
+    sourceTag: sourceTag,
+    subtitle: subtitle,
+    sink: sink,
+  );
+
+  Future<T> _playStream<T>({
+    required Future<T> Function(StreamingAudioSink) generate,
+    required String Function(T) audioUrl,
     required TtsCancelToken cancellation,
     required String title,
     required String sourceTag,
@@ -270,17 +311,15 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
     try {
       final receipt = await generate(output);
       if (run != _streamRunId) return receipt;
-      state = state.copyWith(
-        audioPath: receipt.audioPath,
-        generationComplete: true,
-      );
+      final path = audioUrl(receipt);
+      state = state.copyWith(audioPath: path, generationComplete: true);
       unawaited(
         output.drained.then((_) async {
           if (run != _streamRunId) return;
           _streamPoll?.cancel();
           final duration = output.bufferedUntil;
           state = PlaybackState(
-            audioPath: receipt.audioPath,
+            audioPath: path,
             title: title,
             subtitle: subtitle,
             sourceTag: sourceTag,

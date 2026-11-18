@@ -10,6 +10,24 @@ import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 
 import 'synthesis_service.dart';
 
+TtsRequest quickTtsRequest(
+  db.VoiceAsset asset,
+  db.TtsProvider provider,
+  String text, {
+  String? responseFormat,
+}) => TtsRequest(
+  text: text,
+  voice: asset.presetVoiceName ?? asset.name,
+  speed: asset.speed,
+  responseFormat: responseFormat,
+  presetVoiceName: asset.presetVoiceName,
+  textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
+  voiceInstruction: asset.voiceInstruction,
+  refAudioPath: asset.refAudioPath,
+  promptText: asset.promptText,
+  promptLang: asset.promptLang,
+);
+
 class QuickTtsService {
   const QuickTtsService(this.database, this.storage, this.synthesis);
   final db.AppDatabase database;
@@ -38,19 +56,7 @@ class QuickTtsService {
         cancellation: cancellation,
         interactive: true,
         sink: sink,
-        request: TtsRequest(
-          text: text,
-          voice: asset.presetVoiceName ?? asset.name,
-          speed: asset.speed,
-          presetVoiceName: asset.presetVoiceName,
-          textLang: provider.adapterType == 'gptSovits'
-              ? asset.modelName
-              : null,
-          voiceInstruction: asset.voiceInstruction,
-          refAudioPath: asset.refAudioPath,
-          promptText: asset.promptText,
-          promptLang: asset.promptLang,
-        ),
+        request: quickTtsRequest(asset, provider, text),
       );
       final duration = result.format.encoding == AudioEncoding.pcmS16le
           ? ((await File(result.audioPath).length()) - 44) /

@@ -5,6 +5,10 @@ import 'package:neiroha/domain/capabilities/service_endpoint.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
 
+import 'speech_http_io.dart'
+    if (dart.library.js_interop) 'speech_http_web.dart';
+import 'speech_http_response.dart';
+
 Stream<TtsEvent> openAiSpeechStream({
   required String baseUrl,
   required String apiKey,
@@ -15,38 +19,29 @@ Stream<TtsEvent> openAiSpeechStream({
   String apiKeyHeader = 'Authorization',
   Duration timeout = const Duration(minutes: 3),
 }) async* {
-  ServiceEndpoint.validatePath(path);
+  final relativePath = ServiceEndpoint.validatePath(path);
   ServiceEndpoint.validateHeader(apiKeyHeader);
-  final dio = Dio(
-    BaseOptions(
-      baseUrl: baseUrl.endsWith('/') ? baseUrl : '$baseUrl/',
-      followRedirects: false,
-      connectTimeout: const Duration(seconds: 30),
-      sendTimeout: timeout,
-      receiveTimeout: timeout,
-      headers: {
+  final base = Uri.parse(baseUrl.endsWith('/') ? baseUrl : '$baseUrl/');
+  SpeechHttpResponse? response;
+  var length = 0;
+  try {
+    cancellation.throwIfCancelled();
+    response = await postSpeech(
+      base.resolve(relativePath),
+      {
         if (apiKey.isNotEmpty)
           apiKeyHeader: apiKeyHeader.toLowerCase() == 'authorization'
               ? 'Bearer $apiKey'
               : apiKey,
       },
-    ),
-  );
-  final cancel = CancelToken();
-  final remove = cancellation.onCancel(() => cancel.cancel());
-  var length = 0;
-  try {
-    cancellation.throwIfCancelled();
-    final response = await dio.post<ResponseBody>(
-      path,
-      data: body,
-      cancelToken: cancel,
-      options: Options(responseType: ResponseType.stream),
+      body,
+      cancellation,
+      timeout,
     );
     cancellation.throwIfCancelled();
     var actual = format;
-    final mime = response.headers
-        .value(Headers.contentTypeHeader)
+    final mime = response
+        .header(Headers.contentTypeHeader)
         ?.split(';')
         .first
         .trim();
@@ -66,11 +61,10 @@ Stream<TtsEvent> openAiSpeechStream({
         );
       }
       final rate =
-          response.headers.value('x-audio-sample-rate') ??
-          response.headers.value('x-sample-rate');
+          response.header('x-audio-sample-rate') ??
+          response.header('x-sample-rate');
       final channels =
-          response.headers.value('x-audio-channels') ??
-          response.headers.value('x-channels');
+          response.header('x-audio-channels') ?? response.header('x-channels');
       actual = TtsAudioFormat(
         AudioEncoding.pcmS16le,
         sampleRate: rate == null ? format.sampleRate : int.tryParse(rate),
@@ -81,7 +75,7 @@ Stream<TtsEvent> openAiSpeechStream({
       actual = TtsAudioFormat.fromContentType(mime!);
     }
     yield TtsAudioStarted(actual);
-    await for (final chunk in response.data!.stream) {
+    await for (final chunk in response.chunks) {
       cancellation.throwIfCancelled();
       length += chunk.length;
       yield TtsAudioChunk(Uint8List.fromList(chunk));
@@ -96,8 +90,10 @@ Stream<TtsEvent> openAiSpeechStream({
     throw StateError(
       'Speech request failed (${error.response?.statusCode ?? error.type.name})',
     );
+  } catch (_) {
+    cancellation.throwIfCancelled();
+    rethrow;
   } finally {
-    remove();
-    dio.close(force: true);
+    response?.close();
   }
 }

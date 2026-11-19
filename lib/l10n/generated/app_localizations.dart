@@ -128,11 +128,83 @@ abstract class AppLocalizations {
   /// **'Reference audio and avatar files require the desktop app.'**
   String get webLocalAudioUnavailable;
 
-  /// No description provided for @webVoiceModeUnavailable.
+  /// No description provided for @webSpeechAdapterUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'Choose a browser-compatible HTTP provider, model and voice without a local reference file.'**
-  String get webVoiceModeUnavailable;
+  /// **'This provider adapter is unavailable for web previews. Choose a browser-compatible provider in the character settings.'**
+  String get webSpeechAdapterUnavailable;
+
+  /// No description provided for @webSpeechProviderDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'The provider for this character is disabled. Enable it or choose another provider in the character settings.'**
+  String get webSpeechProviderDisabled;
+
+  /// No description provided for @webSpeechEndpointInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The provider URL is invalid. Enter a full HTTP(S) address in the provider settings.'**
+  String get webSpeechEndpointInvalid;
+
+  /// No description provided for @webRealtimeUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI Realtime is unavailable on the web. Choose a Speech model in the character settings or use the desktop app.'**
+  String get webRealtimeUnavailable;
+
+  /// No description provided for @webGeminiLiveUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This model requires Gemini Live. Choose a Gemini TTS model such as gemini-3.8-flash-tts.'**
+  String get webGeminiLiveUnavailable;
+
+  /// No description provided for @webOpenAiRealtimeWrongAdapter.
+  ///
+  /// In en, this message translates to:
+  /// **'For Web playback with the official OpenAI endpoint, choose a Speech model. On desktop, choose the official OpenAI adapter for Realtime.'**
+  String get webOpenAiRealtimeWrongAdapter;
+
+  /// No description provided for @webMiMoModelRetired.
+  ///
+  /// In en, this message translates to:
+  /// **'MiMo V2 TTS has retired. Choose mimo-v2.5-tts.'**
+  String get webMiMoModelRetired;
+
+  /// No description provided for @webSpeechLocalReference.
+  ///
+  /// In en, this message translates to:
+  /// **'This character requires local reference audio. Use the desktop app or choose a character with a preset voice.'**
+  String get webSpeechLocalReference;
+
+  /// No description provided for @webSpeechPresetRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an OpenAI preset voice in the character settings.'**
+  String get webSpeechPresetRequired;
+
+  /// No description provided for @webSpeechIncompatibleVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'This voice is incompatible with the selected model. Choose another voice in the character settings.'**
+  String get webSpeechIncompatibleVoice;
+
+  /// No description provided for @quickTtsPlaybackMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview playback'**
+  String get quickTtsPlaybackMode;
+
+  /// No description provided for @quickTtsStreamPlayback.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefer streaming'**
+  String get quickTtsStreamPlayback;
+
+  /// No description provided for @quickTtsFullPlayback.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate full clip'**
+  String get quickTtsFullPlayback;
 
   /// No description provided for @webProviderNetworkError.
   ///
@@ -4375,12 +4447,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Import novel folder'**
   String get novelImportFolderTitle;
-
-  /// No description provided for @uiPreferStreaming.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto: prefer streaming'**
-  String get uiPreferStreaming;
 
   /// No description provided for @uiStopSynthesis.
   ///

@@ -25,7 +25,47 @@ class AppLocalizationsZh extends AppLocalizations {
   String get webLocalAudioUnavailable => '参考音频和头像文件需要使用桌面端。';
 
   @override
-  String get webVoiceModeUnavailable => '请选择浏览器可用的 HTTP 服务商、模型和无需本地参考文件的音色。';
+  String get webSpeechAdapterUnavailable =>
+      '此服务商适配器不支持 Web 试听。请在角色设置中选择可在浏览器使用的服务商。';
+
+  @override
+  String get webSpeechProviderDisabled => '此角色的服务商已禁用。请启用服务商，或在角色设置中更换。';
+
+  @override
+  String get webSpeechEndpointInvalid => '服务商地址无效。请在服务商设置中填写完整的 HTTP(S) 地址。';
+
+  @override
+  String get webRealtimeUnavailable =>
+      'Web 暂不支持 OpenAI Realtime。请在角色设置中选择 Speech 模型，或使用桌面端。';
+
+  @override
+  String get webGeminiLiveUnavailable =>
+      '此模型需要 Gemini Live。请选择 gemini-3.8-flash-tts 等 Gemini TTS 模型。';
+
+  @override
+  String get webOpenAiRealtimeWrongAdapter =>
+      '在 Web 使用 OpenAI 官方地址时请选择 Speech 模型。桌面端使用 Realtime 时请选择 OpenAI 官方适配器。';
+
+  @override
+  String get webMiMoModelRetired => 'MiMo V2 TTS 已停用。请选择 mimo-v2.5-tts。';
+
+  @override
+  String get webSpeechLocalReference => '此角色的合成需要本地参考音频，请使用桌面端或选择预设音色角色。';
+
+  @override
+  String get webSpeechPresetRequired => '请在角色设置中选择 OpenAI 预设音色。';
+
+  @override
+  String get webSpeechIncompatibleVoice => '此音色与所选模型不兼容。请在角色设置中重新选择音色。';
+
+  @override
+  String get quickTtsPlaybackMode => '试听播放方式';
+
+  @override
+  String get quickTtsStreamPlayback => '优先流式';
+
+  @override
+  String get quickTtsFullPlayback => '整段生成';
 
   @override
   String get webProviderNetworkError => '浏览器无法连接服务商。请检查地址，并在服务商侧允许本站来源（CORS）。';
@@ -2365,9 +2405,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get novelImportFolderTitle => '导入小说文件夹';
-
-  @override
-  String get uiPreferStreaming => '自动：优先流式';
 
   @override
   String get uiStopSynthesis => '停止生成';

@@ -12,15 +12,17 @@ import 'package:neiroha/data/adapters/cosyvoice_adapter.dart';
 import 'package:neiroha/data/adapters/chat_completions_tts_adapter.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/adapters/voxcpm2_native_adapter.dart';
-import 'package:neiroha/data/adapters/minimax_tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/domain/enums/task_mode.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/voice_character/components.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/actions/browser_speech_message.dart';
 import 'editable_character_avatar.dart';
+import 'preset_voice_style_fields.dart';
 
 class CreateCharacterDialog extends StatefulWidget {
   final List<db.TtsProvider> providers;
@@ -173,6 +175,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   /// For MiMo preset models: returns built-in voice list.
   /// For other providers: loads from cached voice entries.
   Future<void> _loadVoicesForModel(String modelKey) async {
+    final provider = _selectedProvider;
     setState(() {
       _loadingSpeakers = true;
       _speakers = [];
@@ -191,12 +194,16 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     } else {
       // For other providers, load from cached voice entries
       final cachedVoices = await widget.database.getVoiceEntriesForProvider(
-        _selectedProviderId,
+        provider.id,
       );
       voiceList = cachedVoices.map((b) => b.modelKey).toList()..sort();
     }
-
-    if (mounted) {
+    if (kIsWeb && provider.adapterType == 'openaiTts') {
+      voiceList = browserOpenAiVoiceOptions(modelKey, voiceList);
+    }
+    if (mounted &&
+        _selectedProviderId == provider.id &&
+        _selectedModel == modelKey) {
       setState(() {
         _speakers = voiceList;
         _loadingSpeakers = false;
@@ -216,7 +223,8 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       _voiceNameCtrl.clear();
     });
 
-    final adapterType = _selectedProvider.adapterType;
+    final provider = _selectedProvider;
+    final adapterType = provider.adapterType;
     final hasSeparate = AdapterType.values
         .firstWhere(
           (t) => t.name == adapterType,
@@ -262,31 +270,28 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     }
 
     if (hasSeparate) {
-      // Inventory includes unknown/new models; users may enter an explicit ID.
       final cachedModels = await widget.database.getModelEntriesForProvider(
-        _selectedProviderId,
+        provider.id,
       );
-      final modelList =
-          cachedModels
-              .map((b) => b.modelKey)
-              // OpenAI official caches a curated TTS list (incl. gpt-realtime-*).
-              .toList()
-            ..sort();
-
-      if (mounted) {
-        setState(() {
-          _models = modelList;
-          _loadingModels = false;
-          _loadingSpeakers = false;
-          // Auto-select model if only one
-          if (modelList.length == 1) {
-            _selectedModel = modelList.first;
-            _modelNameCtrl.text = modelList.first;
-            _ttsModelType = _detectTtsModelType(modelList.first);
-            _loadVoicesForModel(modelList.first);
-          }
-        });
-      }
+      if (!mounted || _selectedProviderId != provider.id) return;
+      final ids = cachedModels.map((b) => b.modelKey);
+      final modelList = kIsWeb
+          ? browserSpeechModels(provider, ids)
+          : (ids.toList()..sort());
+      final initial = kIsWeb && adapterType == 'openaiTts'
+          ? browserSpeechModel(provider, null)
+          : modelList.length == 1
+          ? modelList.single
+          : null;
+      setState(() {
+        _models = modelList;
+        _loadingModels = false;
+        _loadingSpeakers = initial != null;
+        _selectedModel = initial;
+        _modelNameCtrl.text = initial ?? '';
+        _ttsModelType = initial == null ? null : _detectTtsModelType(initial);
+      });
+      if (initial != null) await _loadVoicesForModel(initial);
     } else {
       // CosyVoice native exposes profiles via /cosyvoice/profiles — fetch them
       // so the user can pick a registered one instead of typing a name that
@@ -813,28 +818,9 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                           if (_isGeminiTts ||
                               _isOpenAiTts ||
                               _isCloudCloneProvider) ...[
-                            SizedBox(height: 16),
-                            VoiceCharacterSectionLabel(
-                              'STYLE INSTRUCTION (optional)',
-                            ),
-                            SizedBox(height: 8),
-                            TextField(
+                            PresetVoiceStyleFields(
                               controller: _instructionCtrl,
-                              maxLines: _adapterType == 'minimaxTts' ? 1 : 3,
-                              decoration: InputDecoration(
-                                labelText: AppLocalizations.of(
-                                  context,
-                                ).uiStyleInstruction,
-                                hintText: _adapterType == 'minimaxTts'
-                                    ? MiniMaxTtsAdapter.kEmotions.join(' / ')
-                                    : _adapterType == 'elevenLabs'
-                                    ? 'e.g. whispers, excited (v3 / v4 audio tag)'
-                                    : _isOpenAiTts
-                                    ? 'e.g. calm, warm narrator; slightly slow (not for tts-1)'
-                                    : AppLocalizations.of(
-                                        context,
-                                      ).uiEGSpeakSoftlyAndSlowlyPrependedToTheText,
-                              ),
+                              adapterType: _adapterType,
                             ),
                           ],
                           if (_isCloudCloneProvider) ...[
@@ -1472,6 +1458,21 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     }
 
     final refAudio = _effectiveRefAudioPath;
+    final block = kIsWeb
+        ? browserSpeechBlock(
+            provider: _selectedProvider,
+            modelName: _modelNameCtrl.text,
+            refAudioPath: refAudio,
+            presetVoice: _voiceNameCtrl.text,
+          )
+        : null;
+    if (block != null) {
+      final message = browserSpeechMessage(AppLocalizations.of(context), block);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+      return;
+    }
     // GPT-SoVITS and CosyVoice zero_shot / cross_lingual require ref audio.
     // cross_lingual can skip it only if a profile name is given instead.
     // VoxCPM2 clone / ultimate_clone need ref audio unless a registered

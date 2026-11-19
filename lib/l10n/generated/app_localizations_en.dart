@@ -29,8 +29,53 @@ class AppLocalizationsEn extends AppLocalizations {
       'Reference audio and avatar files require the desktop app.';
 
   @override
-  String get webVoiceModeUnavailable =>
-      'Choose a browser-compatible HTTP provider, model and voice without a local reference file.';
+  String get webSpeechAdapterUnavailable =>
+      'This provider adapter is unavailable for web previews. Choose a browser-compatible provider in the character settings.';
+
+  @override
+  String get webSpeechProviderDisabled =>
+      'The provider for this character is disabled. Enable it or choose another provider in the character settings.';
+
+  @override
+  String get webSpeechEndpointInvalid =>
+      'The provider URL is invalid. Enter a full HTTP(S) address in the provider settings.';
+
+  @override
+  String get webRealtimeUnavailable =>
+      'OpenAI Realtime is unavailable on the web. Choose a Speech model in the character settings or use the desktop app.';
+
+  @override
+  String get webGeminiLiveUnavailable =>
+      'This model requires Gemini Live. Choose a Gemini TTS model such as gemini-3.8-flash-tts.';
+
+  @override
+  String get webOpenAiRealtimeWrongAdapter =>
+      'For Web playback with the official OpenAI endpoint, choose a Speech model. On desktop, choose the official OpenAI adapter for Realtime.';
+
+  @override
+  String get webMiMoModelRetired =>
+      'MiMo V2 TTS has retired. Choose mimo-v2.5-tts.';
+
+  @override
+  String get webSpeechLocalReference =>
+      'This character requires local reference audio. Use the desktop app or choose a character with a preset voice.';
+
+  @override
+  String get webSpeechPresetRequired =>
+      'Select an OpenAI preset voice in the character settings.';
+
+  @override
+  String get webSpeechIncompatibleVoice =>
+      'This voice is incompatible with the selected model. Choose another voice in the character settings.';
+
+  @override
+  String get quickTtsPlaybackMode => 'Preview playback';
+
+  @override
+  String get quickTtsStreamPlayback => 'Prefer streaming';
+
+  @override
+  String get quickTtsFullPlayback => 'Generate full clip';
 
   @override
   String get webProviderNetworkError =>
@@ -2440,9 +2485,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get novelImportFolderTitle => 'Import novel folder';
-
-  @override
-  String get uiPreferStreaming => 'Auto: prefer streaming';
 
   @override
   String get uiStopSynthesis => 'Stop synthesis';

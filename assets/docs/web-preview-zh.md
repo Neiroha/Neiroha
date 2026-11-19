@@ -2,7 +2,19 @@
 
 Web 版由主 Flutter 工程构建，沿用原版侧栏、Provider、音色库、角色编辑和快速试听。打开网页后，在「服务商」配置并启用 HTTP 服务，在「音色库」选择角色，输入文本后生成。试听卡片支持播放、下载和删除。
 
-OpenAI 官方适配器的 Speech API 模型支持「自动：优先流式」。网页通过 Fetch 逐块读取 PCM，由 Web Audio 边收边播。点击停止会终止上游请求和当前播放，未完成的音频不会出现在历史里。完整生成后可从内存历史中重播或下载 WAV。其他网页适配器继续使用整段合成。
+在语音角色详情的设置里，可以选择「优先流式」或「整段生成」。快速试听标题会显示当前方式。支持增量音频的角色默认优先流式，设置按角色保存在浏览器里。
+
+| 服务商 | 快速试听的 HTTP 流式输出 |
+| --- | --- |
+| OpenAI 官方适配器 | Speech API 模型 |
+| Gemini | `gemini-3.8-flash-tts` 和 `gemini-3.8-flash-lite-tts`。旧 TTS 使用整段生成。Gemini Live 使用独立协议。 |
+| ElevenLabs | Text to Speech 的 HTTP `/stream`，包含 `eleven_v4` |
+| MiniMax | Speech T2A 的 PCM 流 |
+| 小米 MiMo | `mimo-v2.5-tts` 预设音色。VoiceDesign 使用整段生成，VoiceClone 需要在桌面端提供参考音频。 |
+| Azure Speech | REST PCM 流。地址可以填区域简写（如 `eastus`）或完整 HTTPS 地址。 |
+| OpenAI 通用兼容适配器 | 整段生成 |
+
+流式试听通过 Fetch 逐块读取音频或解析 SSE 中的 PCM，由 Web Audio 边收边播。点击停止会终止浏览器的上游请求和当前播放，未完成的音频不会出现在历史里。完整生成后可从内存历史中重播或下载 WAV。
 
 ## 浏览器存储
 
@@ -30,7 +42,11 @@ node scripts/tools/serve_web_preview.mjs
 
 合成由浏览器直连配置的 Provider。跨源 Provider 需允许 Neiroha 站点的来源、请求方法和认证头（CORS）。使用 HTTPS 托管时，Provider 也应提供浏览器可访问的安全地址。浏览器合成支持可直连的 HTTP Provider 和无需本地参考文件的音色。
 
-试用公开 [Wiki Web 演示](https://neiroha.github.io/guide/web-demo) 时，可由自有后端保管 OpenAI 等云端 API Key，并按需为浏览器签发短时凭据。也可在桌面客户端中直接配置提供商。
+## OpenAI 模型选择
+
+选用 OpenAI 官方适配器时，Web 的角色模型列表提供 Speech 模型，例如 `gpt-4o-mini-tts`。旧角色若继承了 Realtime 默认值，Web 使用 Speech 默认值；显式选了 `gpt-realtime-2.1` 或 `gpt-realtime-2.1-mini` 的角色会显示兼容性提示。可在角色设置中改选 Speech 模型及预设音色，或用桌面客户端继续使用 Realtime。
+
+当前 [Wiki Web 演示](https://neiroha.github.io/guide/web-demo) 由静态文件提供。浏览器接入 OpenAI Realtime 需要受控后端代理握手或签发短时凭据。OpenAI 计划于 2027 年 1 月 6 日停用现有 Speech 模型，Web 在该日期前需要接入替代线路。 [Realtime WebRTC 指南](https://developers.openai.com/api/docs/guides/realtime-webrtc) · [OpenAI 停用时间表](https://developers.openai.com/api/docs/deprecations)
 
 ## 桌面功能
 

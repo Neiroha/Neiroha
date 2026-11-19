@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/domain/platform/platform_capabilities.dart';
 
 import 'app_database.dart';
@@ -34,7 +35,7 @@ extension DatabaseDefaults on AppDatabase {
         name: const Value('Xiaomi MiMo'),
         adapterType: const Value('chatCompletionsTts'),
         baseUrl: const Value('https://api.xiaomimimo.com/v1'),
-        defaultModelName: const Value('mimo-v2-tts'),
+        defaultModelName: Value(AdapterType.chatCompletionsTts.defaultModel),
         enabled: const Value(false),
         position: const Value(1),
       ),

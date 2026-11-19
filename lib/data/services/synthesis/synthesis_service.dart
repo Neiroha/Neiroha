@@ -155,9 +155,9 @@ class SynthesisService {
       try {
         await capabilities?.markSuccess(
           provider,
-          profile?.model ?? modelName ?? provider.defaultModelName,
+          profile?.model ?? ttsAdapterModel(provider, modelName),
           transport.serviceRoute,
-          ['speech', if (transport.supportsStreaming) 'streaming'],
+          ['speech', if (transport.streamsAudioFor(request)) 'streaming'],
         );
       } catch (_) {
         /* Optional capability metadata cannot invalidate audio. */

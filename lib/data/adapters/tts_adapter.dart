@@ -37,6 +37,9 @@ abstract class TtsAdapter {
   /// True only when audio is delivered before the upstream result completes.
   bool get supportsStreaming => false;
 
+  bool streamsAudioFor(TtsRequest request) =>
+      supportsStreaming && request.responseFormat == 'pcm';
+
   /// Compatibility path for file-only adapters. It deliberately retains the
   /// queue slot until the non-cancellable legacy request actually completes.
   Stream<TtsEvent> synthesizeStream(
@@ -94,9 +97,30 @@ String voiceLabel(String name, String id) {
 }
 
 /// Factory to create the correct adapter for a provider.
+String ttsAdapterModel(db.TtsProvider provider, String? modelName) =>
+    provider.adapterType == 'chatCompletionsTts'
+    ? ChatCompletionsTtsAdapter.resolveModel(
+        provider.baseUrl,
+        provider.defaultModelName,
+        modelName,
+      )
+    : modelName ?? provider.defaultModelName;
+
+bool ttsAdapterSupportsStreaming(db.TtsProvider provider, String? modelName) =>
+    switch (provider.adapterType) {
+      'openaiTts' || 'azureTts' || 'elevenLabs' || 'minimaxTts' => true,
+      'geminiTts' => GeminiTtsAdapter.supportsStreamingModel(
+        ttsAdapterModel(provider, modelName),
+      ),
+      'chatCompletionsTts' => ChatCompletionsTtsAdapter.supportsStreamingModel(
+        ttsAdapterModel(provider, modelName),
+      ),
+      _ => false,
+    };
+
 /// [modelName] overrides the provider's default model when provided.
 TtsAdapter createAdapter(db.TtsProvider provider, {String? modelName}) {
-  final model = modelName ?? provider.defaultModelName;
+  final model = ttsAdapterModel(provider, modelName);
   switch (provider.adapterType) {
     case 'openaiCompatible':
       return OpenAiCompatibleAdapter(

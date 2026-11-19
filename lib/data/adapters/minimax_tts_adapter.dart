@@ -3,8 +3,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
+import 'package:neiroha/domain/synthesis/tts_event.dart';
 import 'package:path/path.dart' as p;
 
+import 'http_speech_stream.dart';
 import 'tts_adapter.dart';
 
 /// Adapter for the MiniMax speech (T2A v2) API.
@@ -76,8 +79,7 @@ class MiniMaxTtsAdapter extends TtsAdapter implements VoiceCloneCapable {
       ? defaultModel
       : modelName.trim();
 
-  @override
-  Future<TtsResult> synthesize(TtsRequest request) async {
+  Map<String, dynamic> _speechBody(TtsRequest request, {required bool stream}) {
     final rawVoice = (request.presetVoiceName?.trim().isNotEmpty ?? false)
         ? request.presetVoiceName!
         : request.voice;
@@ -87,10 +89,11 @@ class MiniMaxTtsAdapter extends TtsAdapter implements VoiceCloneCapable {
     }
     final emotion = request.voiceInstruction?.trim().toLowerCase() ?? '';
 
-    final body = {
+    return {
       'model': _model,
       'text': request.text,
-      'stream': false,
+      'stream': stream,
+      if (stream) 'stream_options': {'exclude_aggregated_audio': true},
       'output_format': 'hex',
       'language_boost': 'auto',
       'voice_setting': {
@@ -102,14 +105,54 @@ class MiniMaxTtsAdapter extends TtsAdapter implements VoiceCloneCapable {
       },
       'audio_setting': {
         'sample_rate': 32000,
-        'bitrate': 128000,
-        'format': 'mp3',
+        if (!stream) 'bitrate': 128000,
+        'format': stream ? 'pcm' : 'mp3',
         'channel': 1,
       },
     };
+  }
 
+  @override
+  bool get supportsStreaming => true;
+
+  @override
+  Stream<TtsEvent> synthesizeStream(
+    TtsRequest request, {
+    required TtsCancelToken cancellation,
+  }) {
+    if (!streamsAudioFor(request)) {
+      return super.synthesizeStream(request, cancellation: cancellation);
+    }
+    return httpSpeechStream(
+      uri: Uri.parse(_dio.options.baseUrl).resolve('v1/t2a_v2'),
+      headers: {if (apiKey.isNotEmpty) 'Authorization': 'Bearer $apiKey'},
+      body: _speechBody(request, stream: true),
+      format: const TtsAudioFormat(
+        AudioEncoding.pcmS16le,
+        sampleRate: 32000,
+        channels: 1,
+      ),
+      decodeEvent: _decodeSpeechEvent,
+      cancellation: cancellation,
+    );
+  }
+
+  SpeechEventFrame _decodeSpeechEvent(String event) {
+    final json = _checked(event);
+    final data = json['data'] as Map?;
+    // This terminal frame may carry a duplicate of the entire clip.
+    if (data?['status'] == 2) return (audio: null, done: true);
+    final hex = data?['audio'] as String?;
+    return (audio: hex == null ? null : _hexDecode(hex), done: false);
+  }
+
+  @override
+  Future<TtsResult> synthesize(TtsRequest request) async {
     try {
-      final resp = await _dio.post('v1/t2a_v2', data: body);
+      final resp = await _dio.post(
+        'v1/t2a_v2',
+        data: _speechBody(request, stream: false),
+      );
       final data = _checked(resp.data);
       final hexAudio = (data['data'] as Map?)?['audio'] as String?;
       if (hexAudio == null || hexAudio.isEmpty) {
@@ -234,6 +277,9 @@ class MiniMaxTtsAdapter extends TtsAdapter implements VoiceCloneCapable {
 
   static Uint8List _hexDecode(String hex) {
     final clean = hex.trim();
+    if (clean.length.isOdd) {
+      throw const FormatException('Incomplete hexadecimal audio byte.');
+    }
     final out = Uint8List(clean.length ~/ 2);
     for (var i = 0; i < out.length; i++) {
       out[i] = int.parse(clean.substring(i * 2, i * 2 + 2), radix: 16);

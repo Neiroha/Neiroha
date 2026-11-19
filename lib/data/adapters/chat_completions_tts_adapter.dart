@@ -3,6 +3,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:neiroha/domain/enums/adapter_type.dart';
+import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
+import 'package:neiroha/domain/synthesis/tts_event.dart';
+
+import 'http_speech_stream.dart';
 import 'tts_adapter.dart';
 
 /// Adapter for TTS providers that use the Chat Completions API format.
@@ -36,8 +41,39 @@ class ChatCompletionsTtsAdapter extends TtsAdapter {
     );
   }
 
+  static bool isOfficialMiMo(String baseUrl) =>
+      Uri.tryParse(baseUrl.trim())?.host.toLowerCase() == 'api.xiaomimimo.com';
+
+  static String resolveModel(
+    String baseUrl,
+    String configured,
+    String? roleModel,
+  ) {
+    final explicit = roleModel?.trim() ?? '';
+    if (!isOfficialMiMo(baseUrl)) {
+      return explicit.isEmpty ? configured : explicit;
+    }
+    if (explicit.isNotEmpty && explicit != 'default') return explicit;
+    final saved = configured.trim();
+    if (saved.isEmpty || saved == 'default' || saved == 'mimo-v2-tts') {
+      return AdapterType.chatCompletionsTts.defaultModel;
+    }
+    return configured;
+  }
+
+  static bool supportsStreamingModel(String model) =>
+      model.trim() == 'mimo-v2.5-tts';
+
   @override
-  Future<TtsResult> synthesize(TtsRequest request) async {
+  bool get supportsStreaming => supportsStreamingModel(modelName);
+
+  Future<Map<String, dynamic>> _speechBody(
+    TtsRequest request, {
+    required bool stream,
+  }) async {
+    if (modelName.trim() == 'mimo-v2-tts' && isOfficialMiMo(baseUrl)) {
+      throw UnsupportedError('MiMo V2 TTS has retired. Choose mimo-v2.5-tts.');
+    }
     final modelKey = modelName.toLowerCase();
     final isVoiceDesign = modelKey.contains('voicedesign');
     final isVoiceClone = modelKey.contains('voiceclone');
@@ -54,7 +90,7 @@ class ChatCompletionsTtsAdapter extends TtsAdapter {
     ];
 
     final audioField = <String, dynamic>{
-      'format': request.responseFormat ?? 'wav',
+      'format': stream ? 'pcm16' : request.responseFormat ?? 'wav',
     };
     if (isVoiceClone) {
       audioField['voice'] = await _resolveVoiceCloneDataUrl(request);
@@ -62,11 +98,65 @@ class ChatCompletionsTtsAdapter extends TtsAdapter {
       audioField['voice'] = request.presetVoiceName ?? 'mimo_default';
     }
 
-    final audioData = await _requestAudioData({
+    return {
       'model': modelName,
       'messages': messages,
       'audio': audioField,
-    });
+      if (stream) 'stream': true,
+    };
+  }
+
+  @override
+  Stream<TtsEvent> synthesizeStream(
+    TtsRequest request, {
+    required TtsCancelToken cancellation,
+  }) async* {
+    if (!streamsAudioFor(request)) {
+      yield* super.synthesizeStream(request, cancellation: cancellation);
+      return;
+    }
+    cancellation.throwIfCancelled();
+    yield* httpSpeechStream(
+      uri: Uri.parse(_dio.options.baseUrl).resolve('chat/completions'),
+      headers: {
+        apiKeyHeader: apiKeyHeader == 'Authorization'
+            ? 'Bearer $apiKey'
+            : apiKey,
+      },
+      body: await _speechBody(request, stream: true),
+      format: const TtsAudioFormat(
+        AudioEncoding.pcmS16le,
+        sampleRate: 24000,
+        channels: 1,
+      ),
+      decodeEvent: _decodeSpeechEvent,
+      cancellation: cancellation,
+    );
+  }
+
+  static SpeechEventFrame _decodeSpeechEvent(String event) {
+    if (event.trim() == '[DONE]') return (audio: null, done: true);
+    final json = jsonDecode(event) as Map;
+    if (json['error'] != null) throw StateError('MiMo TTS stream failed.');
+    final choices = json['choices'] as List?;
+    final choice = choices?.firstOrNull as Map?;
+    final reason = choice?['finish_reason'];
+    if (reason != null && reason != 'stop') {
+      throw StateError('MiMo TTS ended with finish reason $reason.');
+    }
+    final delta = choice?['delta'] as Map?;
+    final audio = (delta?['audio'] as Map?)?['data'];
+    return (
+      audio: audio is String && audio.isNotEmpty ? base64Decode(audio) : null,
+      done: reason == 'stop',
+    );
+  }
+
+  @override
+  Future<TtsResult> synthesize(TtsRequest request) async {
+    final audioData = await _requestAudioData(
+      await _speechBody(request, stream: false),
+    );
     late final List<int> audioBytes;
     try {
       audioBytes = base64Decode(audioData);

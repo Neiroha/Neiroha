@@ -3,8 +3,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
+import 'package:neiroha/domain/synthesis/tts_event.dart';
 import 'package:path/path.dart' as p;
 
+import 'http_speech_stream.dart';
 import 'tts_adapter.dart';
 
 /// Adapter for the ElevenLabs Text-to-Speech REST API.
@@ -62,8 +65,7 @@ class ElevenLabsAdapter extends TtsAdapter implements VoiceCloneCapable {
   bool get _supportsAudioTags =>
       _model.startsWith('eleven_v3') || _model.startsWith('eleven_v4');
 
-  @override
-  Future<TtsResult> synthesize(TtsRequest request) async {
+  (String, Map<String, dynamic>) _speechInput(TtsRequest request) {
     final rawVoice = (request.presetVoiceName?.trim().isNotEmpty ?? false)
         ? request.presetVoiceName!
         : request.voice;
@@ -84,16 +86,51 @@ class ElevenLabsAdapter extends TtsAdapter implements VoiceCloneCapable {
       if (request.speed != 1.0) 'speed': request.speed.clamp(0.7, 1.2),
     };
     final lang = request.textLang?.trim() ?? '';
-    final body = <String, dynamic>{
-      'text': text,
-      'model_id': _model,
-      if (settings.isNotEmpty) 'voice_settings': settings,
-      if (lang.isNotEmpty) 'language_code': lang,
-    };
+    return (
+      Uri.encodeComponent(voiceId),
+      <String, dynamic>{
+        'text': text,
+        'model_id': _model,
+        if (settings.isNotEmpty) 'voice_settings': settings,
+        if (lang.isNotEmpty) 'language_code': lang,
+      },
+    );
+  }
+
+  @override
+  bool get supportsStreaming => true;
+
+  @override
+  Stream<TtsEvent> synthesizeStream(
+    TtsRequest request, {
+    required TtsCancelToken cancellation,
+  }) {
+    if (!streamsAudioFor(request)) {
+      return super.synthesizeStream(request, cancellation: cancellation);
+    }
+    final (voiceId, body) = _speechInput(request);
+    return httpSpeechStream(
+      uri: Uri.parse(
+        _dio.options.baseUrl,
+      ).resolve('v1/text-to-speech/$voiceId/stream?output_format=pcm_24000'),
+      headers: {if (apiKey.isNotEmpty) 'xi-api-key': apiKey},
+      body: body,
+      format: const TtsAudioFormat(
+        AudioEncoding.pcmS16le,
+        sampleRate: 24000,
+        channels: 1,
+      ),
+      cancellation: cancellation,
+    );
+  }
+
+  @override
+  Future<TtsResult> synthesize(TtsRequest request) async {
+    final (voiceId, body) = _speechInput(request);
 
     try {
       final resp = await _dio.post<List<int>>(
-        'v1/text-to-speech/${Uri.encodeComponent(voiceId)}',
+        'v1/text-to-speech/$voiceId',
         queryParameters: {'output_format': 'mp3_44100_128'},
         data: body,
         options: Options(

@@ -1,6 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
+import 'package:neiroha/domain/synthesis/tts_event.dart';
+
+import 'http_speech_stream.dart';
 import 'tts_adapter.dart';
 
 /// Adapter for Microsoft Azure Cognitive Services Speech (Text-to-Speech).
@@ -23,7 +27,7 @@ class AzureTtsAdapter extends TtsAdapter {
     required this.apiKey,
     this.modelName = '',
   }) {
-    final normalized = _normalizeTtsUrl(baseUrl);
+    final normalized = normalizeTtsUrl(baseUrl);
     final base = normalized.endsWith('/') ? normalized : '$normalized/';
     _dio = Dio(
       BaseOptions(
@@ -40,25 +44,29 @@ class AzureTtsAdapter extends TtsAdapter {
   ///   - `https://eastasia.tts.speech.microsoft.com`  (already correct)
   ///   - `https://eastasia.api.cognitive.microsoft.com` (management endpoint)
   ///   - `eastasia`  (bare region name)
-  static String _normalizeTtsUrl(String rawUrl) {
+  static String normalizeTtsUrl(String rawUrl) {
     final url = rawUrl.trim().replaceAll(RegExp(r'/+$'), '');
     if (url.isEmpty) return url;
 
     // Already the correct TTS speech endpoint — use as-is.
-    if (url.contains('tts.speech.microsoft.com')) return url;
+    final uri = Uri.tryParse(url);
+    if (uri?.host.toLowerCase().endsWith('.tts.speech.microsoft.com') ??
+        false) {
+      return url.replaceFirst(RegExp(r'/cognitiveservices/v1$'), '');
+    }
 
     // https://{region}.api.cognitive.microsoft.com → extract region.
     final cognitiveMatch = RegExp(
-      r'https?://([a-z0-9-]+)\.api\.cognitive\.microsoft\.com',
+      r'^([a-z0-9-]+)\.api\.cognitive\.microsoft\.com$',
       caseSensitive: false,
-    ).firstMatch(url);
-    if (cognitiveMatch != null) {
+    ).firstMatch(uri?.host ?? '');
+    if (cognitiveMatch != null && uri!.userInfo.isEmpty) {
       final region = cognitiveMatch.group(1)!.toLowerCase();
       return 'https://$region.tts.speech.microsoft.com';
     }
 
     // Bare region name (no dots, no slashes, no colons).
-    if (!url.contains('.') && !url.contains('/') && !url.contains(':')) {
+    if (RegExp(r'^[a-z][a-z0-9-]*$', caseSensitive: false).hasMatch(url)) {
       return 'https://$url.tts.speech.microsoft.com';
     }
 
@@ -68,16 +76,14 @@ class AzureTtsAdapter extends TtsAdapter {
   /// Default voice when none specified.
   static const _defaultVoice = 'en-US-AriaNeural';
 
-  @override
-  Future<TtsResult> synthesize(TtsRequest request) async {
+  String _speechSsml(TtsRequest request) {
     final voice = request.presetVoiceName ?? _defaultVoice;
 
     // Build SSML
     final rate = request.speed != 1.0
         ? '${((request.speed - 1.0) * 100).round()}%'
         : '0%';
-    final ssml =
-        '''
+    return '''
 <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"
        xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="en-US">
   <voice name="$voice">
@@ -86,13 +92,42 @@ class AzureTtsAdapter extends TtsAdapter {
     </prosody>
   </voice>
 </speak>''';
+  }
 
-    // Determine output format
+  @override
+  bool get supportsStreaming => true;
+
+  @override
+  Stream<TtsEvent> synthesizeStream(
+    TtsRequest request, {
+    required TtsCancelToken cancellation,
+  }) {
+    if (!streamsAudioFor(request)) {
+      return super.synthesizeStream(request, cancellation: cancellation);
+    }
+    return httpSpeechStream(
+      uri: Uri.parse(_dio.options.baseUrl).resolve('cognitiveservices/v1'),
+      headers: {
+        'Ocp-Apim-Subscription-Key': apiKey,
+        'Content-Type': 'application/ssml+xml',
+        'X-Microsoft-OutputFormat': 'raw-24khz-16bit-mono-pcm',
+      },
+      body: _speechSsml(request),
+      format: const TtsAudioFormat(
+        AudioEncoding.pcmS16le,
+        sampleRate: 24000,
+        channels: 1,
+      ),
+      cancellation: cancellation,
+    );
+  }
+
+  @override
+  Future<TtsResult> synthesize(TtsRequest request) async {
     final format = _mapFormat(request.responseFormat);
-
     final response = await _dio.post(
       'cognitiveservices/v1',
-      data: ssml,
+      data: _speechSsml(request),
       options: Options(
         headers: {
           'Content-Type': 'application/ssml+xml',

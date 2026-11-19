@@ -33,7 +33,7 @@ enum AdapterType {
     gptSovits => 'default',
     cosyvoice => 'default',
     voxcpm2Native => 'default',
-    chatCompletionsTts => 'mimo-v2-tts',
+    chatCompletionsTts => 'mimo-v2.5-tts',
     azureTts => '',
     systemTts => '',
     geminiTts => 'gemini-3.8-flash-tts',

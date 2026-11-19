@@ -6,7 +6,7 @@ import 'speech_http_response.dart';
 Future<SpeechHttpResponse> postSpeech(
   Uri uri,
   Map<String, String> headers,
-  Map<String, dynamic> body,
+  Object body,
   TtsCancelToken cancellation,
   Duration timeout,
 ) async {

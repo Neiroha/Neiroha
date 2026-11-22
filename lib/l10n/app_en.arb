@@ -1600,5 +1600,38 @@
       }
     }
   },
-  "liveRealtimeModel": "Realtime model"
+  "liveRealtimeModel": "Realtime model",
+  "chainTitle": "Processing chain",
+  "chainHint": "Steps wrap the TTS of this character like chained functions: text steps rewrite the line first, voice conversion re-voices the audio after. Applies wherever the character speaks.",
+  "chainInput": "Line",
+  "chainOutput": "Audio",
+  "chainAdd": "Add step",
+  "chainTranslate": "Translate (LLM)",
+  "chainRewrite": "Rewrite (LLM)",
+  "chainConvert": "Voice conversion",
+  "chainTranslateTo": "Translate → {language}",
+  "@chainTranslateTo": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "chainConvertTo": "Re-voice → {voice}",
+  "@chainConvertTo": {
+    "placeholders": {
+      "voice": {
+        "type": "String"
+      }
+    }
+  },
+  "chainTargetLanguage": "Target language",
+  "chainTargetLanguageHint": "e.g. Japanese, English, Cantonese",
+  "chainInstruction": "Instruction",
+  "chainInstructionHint": "e.g. Say it in a calm, old-fashioned tone and keep it short.",
+  "chainTargetVoice": "Target voice",
+  "chainModel": "Model",
+  "chainNoModels": "No enabled provider offers this capability yet.",
+  "chainNeedsSetup": "Needs setup",
+  "chainNoStreaming": "Voice conversion needs the whole line, so this character no longer streams."
 }

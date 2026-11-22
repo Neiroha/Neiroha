@@ -3552,4 +3552,68 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get liveRealtimeModel => 'Realtime model';
+
+  @override
+  String get chainTitle => 'Processing chain';
+
+  @override
+  String get chainHint =>
+      'Steps wrap the TTS of this character like chained functions: text steps rewrite the line first, voice conversion re-voices the audio after. Applies wherever the character speaks.';
+
+  @override
+  String get chainInput => 'Line';
+
+  @override
+  String get chainOutput => 'Audio';
+
+  @override
+  String get chainAdd => 'Add step';
+
+  @override
+  String get chainTranslate => 'Translate (LLM)';
+
+  @override
+  String get chainRewrite => 'Rewrite (LLM)';
+
+  @override
+  String get chainConvert => 'Voice conversion';
+
+  @override
+  String chainTranslateTo(String language) {
+    return 'Translate → $language';
+  }
+
+  @override
+  String chainConvertTo(String voice) {
+    return 'Re-voice → $voice';
+  }
+
+  @override
+  String get chainTargetLanguage => 'Target language';
+
+  @override
+  String get chainTargetLanguageHint => 'e.g. Japanese, English, Cantonese';
+
+  @override
+  String get chainInstruction => 'Instruction';
+
+  @override
+  String get chainInstructionHint =>
+      'e.g. Say it in a calm, old-fashioned tone and keep it short.';
+
+  @override
+  String get chainTargetVoice => 'Target voice';
+
+  @override
+  String get chainModel => 'Model';
+
+  @override
+  String get chainNoModels => 'No enabled provider offers this capability yet.';
+
+  @override
+  String get chainNeedsSetup => 'Needs setup';
+
+  @override
+  String get chainNoStreaming =>
+      'Voice conversion needs the whole line, so this character no longer streams.';
 }

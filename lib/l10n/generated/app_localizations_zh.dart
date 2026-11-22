@@ -3426,4 +3426,66 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get liveRealtimeModel => '实时模型';
+
+  @override
+  String get chainTitle => '处理链';
+
+  @override
+  String get chainHint =>
+      '像函数一样串在角色 TTS 前后：文本步骤先改写台词，变声步骤再把音频换成目标音色。角色在任何地方发声都会生效。';
+
+  @override
+  String get chainInput => '台词';
+
+  @override
+  String get chainOutput => '音频';
+
+  @override
+  String get chainAdd => '添加步骤';
+
+  @override
+  String get chainTranslate => '翻译（LLM）';
+
+  @override
+  String get chainRewrite => '改写（LLM）';
+
+  @override
+  String get chainConvert => '变声（VC）';
+
+  @override
+  String chainTranslateTo(String language) {
+    return '翻译 → $language';
+  }
+
+  @override
+  String chainConvertTo(String voice) {
+    return '变声 → $voice';
+  }
+
+  @override
+  String get chainTargetLanguage => '目标语言';
+
+  @override
+  String get chainTargetLanguageHint => '如：日语、英语、粤语';
+
+  @override
+  String get chainInstruction => '改写要求';
+
+  @override
+  String get chainInstructionHint => '如：用沉稳、略带古风的口吻说，保持简短。';
+
+  @override
+  String get chainTargetVoice => '目标音色';
+
+  @override
+  String get chainModel => '模型';
+
+  @override
+  String get chainNoModels => '还没有启用的服务商提供这项能力。';
+
+  @override
+  String get chainNeedsSetup => '待配置';
+
+  @override
+  String get chainNoStreaming => '变声需要整句音频，此角色将不再流式播放。';
 }

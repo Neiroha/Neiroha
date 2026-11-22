@@ -6391,6 +6391,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Realtime model'**
   String get liveRealtimeModel;
+
+  /// No description provided for @chainTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing chain'**
+  String get chainTitle;
+
+  /// No description provided for @chainHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps wrap the TTS of this character like chained functions: text steps rewrite the line first, voice conversion re-voices the audio after. Applies wherever the character speaks.'**
+  String get chainHint;
+
+  /// No description provided for @chainInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Line'**
+  String get chainInput;
+
+  /// No description provided for @chainOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get chainOutput;
+
+  /// No description provided for @chainAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add step'**
+  String get chainAdd;
+
+  /// No description provided for @chainTranslate.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate (LLM)'**
+  String get chainTranslate;
+
+  /// No description provided for @chainRewrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewrite (LLM)'**
+  String get chainRewrite;
+
+  /// No description provided for @chainConvert.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice conversion'**
+  String get chainConvert;
+
+  /// No description provided for @chainTranslateTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate → {language}'**
+  String chainTranslateTo(String language);
+
+  /// No description provided for @chainConvertTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-voice → {voice}'**
+  String chainConvertTo(String voice);
+
+  /// No description provided for @chainTargetLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Target language'**
+  String get chainTargetLanguage;
+
+  /// No description provided for @chainTargetLanguageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Japanese, English, Cantonese'**
+  String get chainTargetLanguageHint;
+
+  /// No description provided for @chainInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Instruction'**
+  String get chainInstruction;
+
+  /// No description provided for @chainInstructionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Say it in a calm, old-fashioned tone and keep it short.'**
+  String get chainInstructionHint;
+
+  /// No description provided for @chainTargetVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Target voice'**
+  String get chainTargetVoice;
+
+  /// No description provided for @chainModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get chainModel;
+
+  /// No description provided for @chainNoModels.
+  ///
+  /// In en, this message translates to:
+  /// **'No enabled provider offers this capability yet.'**
+  String get chainNoModels;
+
+  /// No description provided for @chainNeedsSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs setup'**
+  String get chainNeedsSetup;
+
+  /// No description provided for @chainNoStreaming.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice conversion needs the whole line, so this character no longer streams.'**
+  String get chainNoStreaming;
 }
 
 class _AppLocalizationsDelegate

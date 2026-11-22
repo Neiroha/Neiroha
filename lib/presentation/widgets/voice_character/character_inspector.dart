@@ -19,6 +19,7 @@ import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'editable_character_avatar.dart';
 import 'character_model_field.dart';
 import 'quick_tts_playback_setting.dart';
+import 'voice_chain_editor.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/loudness_fields.dart';
 import 'package:neiroha/presentation/widgets/voice_character/components.dart';
@@ -563,6 +564,8 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
           const SizedBox(height: 8),
           QuickTtsPlaybackSetting(voiceId: a.id),
         ],
+        SizedBox(height: 16),
+        VoiceChainEditor(asset: a),
         SizedBox(height: 16),
         const Divider(),
         SizedBox(height: 12),

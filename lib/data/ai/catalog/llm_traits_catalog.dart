@@ -70,8 +70,12 @@ class LlmTraitsCatalog {
   }
 
   /// Whether the snapshot knows [modelId] as a chat model at [vendor].
-  bool isChatModel(String? vendor, String modelId) =>
-      lookup(vendor, modelId) != null;
+  /// Models that only produce audio (TTS, music) are not.
+  bool isChatModel(String? vendor, String modelId) {
+    final traits = lookup(vendor, modelId);
+    if (traits == null) return false;
+    return traits.outputs?.contains(Modality.text) ?? true;
+  }
 }
 
 /// Snapshot vendor key for a connection, or null for custom gateways whose

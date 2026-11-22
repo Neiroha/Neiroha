@@ -43,8 +43,8 @@ class LlmInventory {
 /// Finds a connection's language models and what each can do.
 ///
 /// Traits come, in priority: the vendor's own listing (OpenRouter-style
-/// gateways), then the bundled public snapshot for the official vendor,
-/// then whatever the plugin catalog declares.
+/// gateways), traits the plugin catalog declares from vendor docs, the
+/// bundled public snapshot, then feature badges.
 class LlmDiscovery {
   LlmDiscovery(this.catalog, {ModelLister? lister})
     : _lister = lister ?? listOpenAiModels;
@@ -148,10 +148,14 @@ class LlmDiscovery {
     ModelDescriptor model,
     Map<String, dynamic>? listing,
   ) {
+    // Listing > plugin catalog (hand-checked vendor docs) > public snapshot
+    // > feature badges.
     final stated = listing == null ? null : llmTraitsFromListing(listing);
     final known = catalog.lookup(catalogVendor(connection), model.id);
-    final declared = model.llm ?? _fromFeatures(model);
-    final traits = (stated ?? LlmTraits.unknown).orElse(known).orElse(declared);
+    final traits = (stated ?? LlmTraits.unknown)
+        .orElse(model.llm)
+        .orElse(known)
+        .orElse(_fromFeatures(model));
     return model.copyWith(llm: traits);
   }
 

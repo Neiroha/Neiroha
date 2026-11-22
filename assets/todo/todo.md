@@ -4,6 +4,13 @@
 
 基线：`dev@2d514adb`（最后一次上游提交为 2026-11-09 09:23，UTC+8）。本清单随 `dev` 分支版本管理；当前实现与验收结果见下文，提交状态以 Git 为准。本轮按核心功能、macOS、脚本/CI、文档交接四批提交。`[x]` 表示代码已实现且有本地检查；云端效果和 Mac 实机验收单列，不能由假服务测试替代。使用方法及兼容性见 [开发说明](../docs/streaming-and-roles-zh.md)。
 
+## v0.5.1（2026-11-22）
+
+- [x] [Issue #10](https://github.com/Neiroha/Neiroha/issues/10)：GPT-SoVITS 合成失败时读取 JSON 中的 `error.message`（兼容 `message`、`detail`），与状态码一起显示；空响应、非 JSON 与连接异常保留通用提示。假服务回归覆盖四种响应。
+- [x] [Issue #5](https://github.com/Neiroha/Neiroha/issues/5)：播放条新增循环与下载，窄面板收入同一菜单；循环设置写入 AppSettings。循环只作用于单条音频，Dialog 顺序播放与小说阅读器照常推进。桌面快速试听历史可直接下载。
+- [x] macOS 全量测试 364 项通过、30 项跳过；`flutter analyze` 与代码行数检查通过。
+- [ ] 在桌面与 Web 实机确认循环、下载对话框及窄窗口播放条布局。
+
 ## Web 快速试听（2026-11-19）
 
 - [x] 统一 [Issue #9](https://github.com/Neiroha/Neiroha/issues/9) 的 Web 模型选择和生成检查。OpenAI 默认使用 Speech，显式选择的 Realtime 角色提示更换模型或使用桌面端。分别提示音色、参考音频及服务商配置问题。

@@ -147,14 +147,10 @@ class _AppShellState extends ConsumerState<AppShell> {
                                     unawaited(_switchTab(tab)),
                               ),
                               const VerticalDivider(width: 1, thickness: 1),
-                              Expanded(
-                                child: Padding(
-                                  padding: EdgeInsets.only(
-                                    top: _macTitleBarInset,
-                                  ),
-                                  child: _buildPageStack(selectedTab),
-                                ),
-                              ),
+                              // Pages run to the top edge: the traffic
+                              // lights sit over the sidebar, and page
+                              // headers double as the window's drag area.
+                              Expanded(child: _buildPageStack(selectedTab)),
                             ],
                           ),
                         ),
@@ -311,7 +307,7 @@ class _MobileTopBar extends StatelessWidget {
 }
 
 /// macOS draws its traffic lights over the content (transparent title bar,
-/// see MainFlutterWindow.swift); keep that strip free of controls.
+/// see MainFlutterWindow.swift); the sidebar keeps that strip free.
 final double _macTitleBarInset = !kIsWeb && Platform.isMacOS ? 28 : 0;
 
 class _WindowsTitleBar extends StatelessWidget {

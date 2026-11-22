@@ -4,37 +4,23 @@ class _NovelEditorBar extends StatelessWidget {
   final db.NovelProject project;
   final VoidCallback onBack;
 
-  const _NovelEditorBar({required this.project, required this.onBack});
+  /// Read / role-review switch, shown in the bar instead of its own row.
+  final Widget? modeSwitch;
+
+  const _NovelEditorBar({
+    required this.project,
+    required this.onBack,
+    this.modeSwitch,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 18, 10),
-      child: Row(
-        children: [
-          IconButton(
-            tooltip: AppLocalizations.of(context).uiBackToNovels,
-            onPressed: onBack,
-            icon: const Icon(Icons.arrow_back_rounded, size: 20),
-          ),
-          SizedBox(width: 4),
-          const Icon(
-            Icons.menu_book_rounded,
-            color: AppTheme.accentColor,
-            size: 18,
-          ),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              project.name,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => PageHeader(
+    onBack: onBack,
+    backTooltip: AppLocalizations.of(context).uiBackToNovels,
+    icon: Icons.menu_book_rounded,
+    title: project.name,
+    center: modeSwitch,
+  );
 }
 
 class _NovelProjectHeader extends StatelessWidget {
@@ -44,24 +30,17 @@ class _NovelProjectHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 18, 24, 14),
-      child: Row(
-        children: [
-          const Icon(Icons.menu_book_rounded, color: AppTheme.accentColor),
-          SizedBox(width: 12),
-          Text(
-            AppLocalizations.of(context).navNovelReader,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-          ),
-          const Spacer(),
-          FilledButton.icon(
-            onPressed: onCreate,
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: Text(AppLocalizations.of(context).uiNewNovel),
-          ),
-        ],
-      ),
+    final l10n = AppLocalizations.of(context);
+    return PageHeader(
+      icon: Icons.menu_book_rounded,
+      title: l10n.navNovelReader,
+      actions: [
+        FilledButton.icon(
+          onPressed: onCreate,
+          icon: const Icon(Icons.add_rounded, size: 18),
+          label: Text(l10n.uiNewNovel),
+        ),
+      ],
     );
   }
 }

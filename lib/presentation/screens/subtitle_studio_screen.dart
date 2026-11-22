@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart' show FileType;
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/widgets/layout/page_header.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/ai/registry/capability_router.dart';
 import 'package:neiroha/data/services/subtitles/subtitle_cue.dart';
@@ -164,13 +165,7 @@ class _SubtitleStudioScreenState extends ConsumerState<SubtitleStudioScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-          child: Text(
-            l.navSubtitles,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-        ),
+        PageHeader(icon: Icons.subtitles_rounded, title: l.navSubtitles),
         const Divider(height: 1),
         Expanded(
           child: ResizableSplitPane(

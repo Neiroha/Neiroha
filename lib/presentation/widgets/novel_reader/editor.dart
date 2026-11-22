@@ -144,28 +144,32 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
 
     return Column(
       children: [
-        _NovelEditorBar(project: project, onBack: widget.onClose),
-        SegmentedButton<bool>(
-          segments: [
-            ButtonSegment(
-              value: false,
-              label: Text(AppLocalizations.of(context).roleReadMode),
-              icon: const Icon(Icons.menu_book),
-            ),
-            ButtonSegment(
-              value: true,
-              label: Text(AppLocalizations.of(context).roleReviewMode),
-              icon: const Icon(Icons.people_outline),
-            ),
-          ],
-          selected: {_reviewingRoles},
-          onSelectionChanged: (selection) {
-            _stopNovel();
-            setState(() {
-              _reviewingRoles = selection.single;
-              _editing = false;
-            });
-          },
+        _NovelEditorBar(
+          project: project,
+          onBack: widget.onClose,
+          modeSwitch: SegmentedButton<bool>(
+            showSelectedIcon: false,
+            segments: [
+              ButtonSegment(
+                value: false,
+                label: Text(AppLocalizations.of(context).roleReadMode),
+                icon: const Icon(Icons.menu_book),
+              ),
+              ButtonSegment(
+                value: true,
+                label: Text(AppLocalizations.of(context).roleReviewMode),
+                icon: const Icon(Icons.people_outline),
+              ),
+            ],
+            selected: {_reviewingRoles},
+            onSelectionChanged: (selection) {
+              _stopNovel();
+              setState(() {
+                _reviewingRoles = selection.single;
+                _editing = false;
+              });
+            },
+          ),
         ),
         const Divider(height: 1),
         Expanded(

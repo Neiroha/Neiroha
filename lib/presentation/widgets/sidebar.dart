@@ -4,6 +4,7 @@ import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/l10n/localized_labels.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/layout/window_drag_area.dart';
 
 const _mainTabs = [
   NavTab.novelReader,
@@ -39,29 +40,40 @@ class Sidebar extends StatelessWidget {
       color: AppTheme.sidebarBg,
       child: Column(
         children: [
-          SizedBox(height: 12 + topInset),
-          // Logo
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: SvgPicture.asset(
-              'assets/icon/neiroha_logo.svg',
-              width: 42,
-              height: 42,
+          // Traffic-light strip and logo move the window on macOS.
+          WindowDragArea(
+            child: Padding(
+              padding: EdgeInsets.only(top: 8 + topInset, bottom: 10),
+              child: Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: SvgPicture.asset(
+                    'assets/icon/neiroha_logo.svg',
+                    width: 38,
+                    height: 38,
+                  ),
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 12),
           const Divider(indent: 12, endIndent: 12),
           const SizedBox(height: 4),
 
-          // Main nav tabs
-          for (final tab in _mainTabs)
-            _SidebarButton(
-              tab: tab,
-              isSelected: selected == tab,
-              onTap: () => onTabChanged(tab),
+          // Main nav tabs scroll when the window is too short for all of them.
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  for (final tab in _mainTabs)
+                    _SidebarButton(
+                      tab: tab,
+                      isSelected: selected == tab,
+                      onTap: () => onTabChanged(tab),
+                    ),
+                ],
+              ),
             ),
-
-          const Spacer(),
+          ),
 
           // Providers + Settings pinned at bottom
           const Divider(indent: 12, endIndent: 12),
@@ -209,7 +221,7 @@ class _SidebarButton extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             width: 48,
-            height: 44,
+            height: 40,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: isSelected

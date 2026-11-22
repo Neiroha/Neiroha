@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/widgets/layout/page_header.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
@@ -71,29 +72,7 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
     final l10n = AppLocalizations.of(context);
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-          child: Row(
-            children: [
-              Icon(
-                Icons.movie_filter_rounded,
-                color: Colors.white.withValues(alpha: 0.42),
-                size: 22,
-              ),
-              SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  l10n.navVideoDub,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        PageHeader(icon: Icons.movie_filter_rounded, title: l10n.navVideoDub),
         const Divider(height: 1),
         Expanded(
           child: Center(
@@ -180,35 +159,18 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
   }
 
   Widget _buildListHeader() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-      child: Row(
-        children: [
-          Text(
-            AppLocalizations.of(context).navVideoDub,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              AppLocalizations.of(context).uiDubVideoWithTTSFromSubtitleCues,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 14,
-              ),
-            ),
-          ),
-          SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: _createProject,
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: Text(AppLocalizations.of(context).uiNewProject),
-          ),
-        ],
-      ),
+    final l10n = AppLocalizations.of(context);
+    return PageHeader(
+      icon: Icons.movie_filter_rounded,
+      title: l10n.navVideoDub,
+      subtitle: l10n.uiDubVideoWithTTSFromSubtitleCues,
+      actions: [
+        FilledButton.icon(
+          onPressed: _createProject,
+          icon: const Icon(Icons.add_rounded, size: 18),
+          label: Text(l10n.uiNewProject),
+        ),
+      ],
     );
   }
 

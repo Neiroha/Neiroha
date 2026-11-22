@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/widgets/layout/window_drag_area.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
@@ -39,10 +40,12 @@ class EditorProjectBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) => constraints.maxWidth < _compactWidth
-          ? _buildCompact(context)
-          : _buildWide(context),
+    return WindowDragArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) => constraints.maxWidth < _compactWidth
+            ? _buildCompact(context)
+            : _buildWide(context),
+      ),
     );
   }
 
@@ -94,7 +97,8 @@ class EditorProjectBar extends StatelessWidget {
 
   Widget _buildWide(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 20, 10),
+      constraints: const BoxConstraints(minHeight: 52),
+      padding: const EdgeInsets.fromLTRB(6, 6, 16, 6),
       child: Row(
         children: [
           IconButton(

@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/widgets/layout/page_header.dart';
 import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -77,41 +78,23 @@ class VoiceAssetScreen extends ConsumerWidget {
   }
 
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-      child: Row(
-        children: [
-          Text(
-            AppLocalizations.of(context).navVoiceAssets,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              AppLocalizations.of(context).uiSingleAudioTracksForVoiceCloning,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 14,
-              ),
-            ),
-          ),
-          SizedBox(width: 8),
-          OutlinedButton.icon(
-            onPressed: () => _recordTrack(context, ref),
-            icon: const Icon(Icons.mic_rounded, size: 18),
-            label: Text(AppLocalizations.of(context).uiRecord),
-          ),
-          SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: () => _uploadTrack(context, ref),
-            icon: const Icon(Icons.upload_file_rounded, size: 18),
-            label: Text(AppLocalizations.of(context).uiUploadAudio),
-          ),
-        ],
-      ),
+    final l10n = AppLocalizations.of(context);
+    return PageHeader(
+      icon: Icons.library_music_rounded,
+      title: l10n.navVoiceAssets,
+      subtitle: l10n.uiSingleAudioTracksForVoiceCloning,
+      actions: [
+        OutlinedButton.icon(
+          onPressed: () => _recordTrack(context, ref),
+          icon: const Icon(Icons.mic_rounded, size: 18),
+          label: Text(l10n.uiRecord),
+        ),
+        FilledButton.icon(
+          onPressed: () => _uploadTrack(context, ref),
+          icon: const Icon(Icons.upload_file_rounded, size: 18),
+          label: Text(l10n.uiUploadAudio),
+        ),
+      ],
     );
   }
 

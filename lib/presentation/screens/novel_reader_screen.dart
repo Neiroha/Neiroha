@@ -34,6 +34,7 @@ import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/layout/page_header.dart';
 import 'package:neiroha/presentation/widgets/export_progress.dart';
 import 'package:neiroha/presentation/widgets/loudness_normalize_dialog.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';

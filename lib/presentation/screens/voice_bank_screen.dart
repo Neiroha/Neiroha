@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/widgets/layout/page_header.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:uuid/uuid.dart';
@@ -116,56 +117,29 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
   // ───────────────── Header ─────────────────
 
   Widget _buildHeader(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 600;
-        final iconOnlyCreate = constraints.maxWidth < 1100;
-        return Container(
-          padding: EdgeInsets.fromLTRB(
-            compact ? 16 : 24,
-            compact ? 12 : 20,
-            compact ? 16 : 24,
-            compact ? 12 : 16,
-          ),
-          child: Row(
-            children: [
-              if (!compact) ...[
-                Text(
-                  AppLocalizations.of(context).navVoiceBank,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(width: 8),
-              ],
-              Expanded(
-                child: Text(
-                  AppLocalizations.of(context).uiBanksCharactersAndInspector,
-                  maxLines: compact ? 2 : 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontSize: compact ? 13 : 14,
-                  ),
-                ),
-              ),
-              SizedBox(width: 8),
-              if (iconOnlyCreate)
-                IconButton.filledTonal(
-                  tooltip: AppLocalizations.of(context).uiNewBank,
-                  onPressed: _createBank,
-                  icon: const Icon(Icons.add_rounded),
-                )
-              else
-                FilledButton.icon(
-                  onPressed: _createBank,
-                  icon: const Icon(Icons.add_rounded, size: 18),
-                  label: Text(AppLocalizations.of(context).uiNewBank),
-                ),
-            ],
-          ),
-        );
-      },
+      builder: (context, constraints) => PageHeader(
+        icon: Icons.record_voice_over_rounded,
+        title: l10n.navVoiceBank,
+        subtitle: constraints.maxWidth < 600
+            ? null
+            : l10n.uiBanksCharactersAndInspector,
+        actions: [
+          if (constraints.maxWidth < 1100)
+            IconButton.filledTonal(
+              tooltip: l10n.uiNewBank,
+              onPressed: _createBank,
+              icon: const Icon(Icons.add_rounded),
+            )
+          else
+            FilledButton.icon(
+              onPressed: _createBank,
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: Text(l10n.uiNewBank),
+            ),
+        ],
+      ),
     );
   }
 

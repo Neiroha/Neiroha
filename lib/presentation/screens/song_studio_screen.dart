@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart' show FileType;
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/widgets/layout/page_header.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/ai/core/provider_connection.dart';
 import 'package:neiroha/data/ai/registry/capability_router.dart';
@@ -192,13 +193,7 @@ class _SongStudioScreenState extends ConsumerState<SongStudioScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-          child: Text(
-            l.navMusic,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-        ),
+        PageHeader(icon: Icons.queue_music_rounded, title: l.navMusic),
         const Divider(height: 1),
         Expanded(
           child: ResizableSplitPane(

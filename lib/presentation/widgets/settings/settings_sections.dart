@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/widgets/layout/window_drag_area.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:neiroha/l10n/generated/app_localizations.dart';
@@ -35,17 +36,20 @@ class SettingsSectionRail extends StatelessWidget {
       color: const Color(0xFF12121A),
       child: Column(
         children: [
-          const SizedBox(height: 28),
-          Center(
-            child: Text(
-              l10n.settingsTitle,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.2,
+          WindowDragArea(
+            child: Container(
+              height: 52,
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                l10n.settingsTitle,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 8),
           Expanded(
             child: ListView.builder(
               padding: EdgeInsets.zero,
@@ -104,7 +108,7 @@ class _SettingsSectionTileState extends State<_SettingsSectionTile> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 130),
-          height: 58,
+          height: 46,
           color: _hovering
               ? Colors.white.withValues(alpha: 0.025)
               : Colors.transparent,
@@ -204,13 +208,13 @@ class SettingsSectionContent extends ConsumerWidget {
     final children = switch (section) {
       SettingsSection.general => const <Widget>[
         LanguageSettingsCard(),
-        SizedBox(height: 12),
+        SizedBox(height: 8),
         FontSettingsCard(),
-        SizedBox(height: 12),
+        SizedBox(height: 8),
         StartupSettingsCard(),
-        SizedBox(height: 12),
+        SizedBox(height: 8),
         TaskBehaviorSettingsCard(),
-        SizedBox(height: 12),
+        SizedBox(height: 8),
         HealthCheckTimeoutSettingsCard(),
       ],
       SettingsSection.tasks => const <Widget>[TaskMonitorSettingsCard()],
@@ -227,7 +231,7 @@ class SettingsSectionContent extends ConsumerWidget {
       ],
       SettingsSection.media => const <Widget>[
         FfmpegSettingsCard(),
-        SizedBox(height: 12),
+        SizedBox(height: 8),
         ExportPrefsSettingsCard(),
       ],
       SettingsSection.about => const <Widget>[AboutSettingsCard()],
@@ -238,10 +242,10 @@ class SettingsSectionContent extends ConsumerWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: _settingsContentMaxWidth),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 22, 24, 32),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
           children: [
             _SettingsPageHeader(section: section),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             ...children,
           ],
         ),
@@ -258,27 +262,30 @@ class _SettingsPageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          section.localizedLabel(l10n),
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.2,
+    return WindowDragArea(
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 52),
+        alignment: Alignment.centerLeft,
+        child: Text.rich(
+          TextSpan(
+            text: section.localizedLabel(l10n),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            children: [
+              const TextSpan(text: '   '),
+              TextSpan(
+                text: section.localizedDescription(l10n),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.45),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          section.localizedDescription(l10n),
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.48),
-            fontSize: 13,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

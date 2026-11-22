@@ -127,7 +127,7 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

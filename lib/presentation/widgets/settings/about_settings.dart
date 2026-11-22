@@ -11,7 +11,7 @@ class AboutSettingsCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: SettingsRow(
           icon: Icons.info_outline_rounded,
           title: 'Neiroha',

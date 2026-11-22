@@ -51,7 +51,7 @@ class _FfmpegSettingsCardState extends ConsumerState<FfmpegSettingsCard> {
     if (!capabilities.supportsFfmpegCli) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SettingsRow(
             icon: Icons.block_rounded,
             title: 'FFmpeg',
@@ -77,7 +77,7 @@ class _FfmpegSettingsCardState extends ConsumerState<FfmpegSettingsCard> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
           children: [
             SettingsRow(
@@ -266,7 +266,7 @@ class _ExportPrefsSettingsCardState
     final prefs = _prefs;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: prefs == null
             ? SizedBox(
                 height: 40,

@@ -20,7 +20,7 @@ class SettingsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final trailing = this.trailing;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final compact = constraints.maxWidth < 520;

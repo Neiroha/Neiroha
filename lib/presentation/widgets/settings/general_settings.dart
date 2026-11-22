@@ -24,7 +24,7 @@ class LanguageSettingsCard extends ConsumerWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: SettingsRow(
           icon: Icons.translate_rounded,
           title: l10n.languageTitle,
@@ -115,7 +115,7 @@ class _FontSettingsCardState extends ConsumerState<FontSettingsCard> {
     final l10n = AppLocalizations.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: SettingsRow(
           icon: Icons.font_download_rounded,
           title: l10n.fontSettingsTitle,
@@ -199,7 +199,7 @@ class _StartupSettingsCardState extends ConsumerState<StartupSettingsCard> {
     final l10n = AppLocalizations.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: SettingsRow(
           icon: Icons.home_work_rounded,
           title: l10n.startupScreenTitle,
@@ -309,7 +309,7 @@ class _TaskBehaviorSettingsCardState
     final l10n = AppLocalizations.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: SettingsRow(
           icon: Icons.swap_horiz_rounded,
           title: l10n.keepTtsRunningTitle,
@@ -373,7 +373,7 @@ class _HealthCheckTimeoutSettingsCardState
     final l10n = AppLocalizations.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: SettingsRow(
           icon: Icons.health_and_safety_rounded,
           title: l10n.healthCheckTimeoutTitle,

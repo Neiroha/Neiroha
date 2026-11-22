@@ -16,6 +16,8 @@ import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/domain/platform/platform_capabilities.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/layout/form_pair.dart';
+import 'package:neiroha/presentation/widgets/layout/window_drag_area.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/presentation/widgets/tts_provider_model_row.dart';
 import 'package:neiroha/providers/app_providers.dart';
@@ -110,23 +112,26 @@ class _ProviderListPane extends ConsumerWidget {
       color: AppTheme.surfaceDim,
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 18, 12, 12),
-            child: Row(
-              children: [
-                Text(
-                  AppLocalizations.of(context).navProviders,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+          WindowDragArea(
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 52),
+              padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
+              child: Row(
+                children: [
+                  Text(
+                    AppLocalizations.of(context).navProviders,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => _showAddDialog(context, ref),
-                  icon: const Icon(Icons.add_rounded),
-                  tooltip: AppLocalizations.of(context).uiAddProvider,
-                ),
-              ],
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => _showAddDialog(context, ref),
+                    icon: const Icon(Icons.add_rounded),
+                    tooltip: AppLocalizations.of(context).uiAddProvider,
+                  ),
+                ],
+              ),
             ),
           ),
           const Divider(height: 1),
@@ -698,52 +703,55 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(28, 22, 24, 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.provider.name,
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      adapterSupported
-                          ? adapterLabel
-                          : '$adapterLabel · ${l10n.uiUnavailableOnThisPlatform}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: adapterSupported
-                            ? Colors.white.withValues(alpha: 0.5)
-                            : Colors.redAccent,
+        WindowDragArea(
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 52),
+            padding: const EdgeInsets.fromLTRB(24, 6, 12, 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.provider.name,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
-                    ),
-                  ],
+                      Text(
+                        adapterSupported
+                            ? adapterLabel
+                            : '$adapterLabel · ${l10n.uiUnavailableOnThisPlatform}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: adapterSupported
+                              ? Colors.white.withValues(alpha: 0.5)
+                              : Colors.redAccent,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              IconButton(
-                onPressed: _duplicate,
-                icon: const Icon(Icons.copy_rounded),
-                tooltip: AppLocalizations.of(context).uiDuplicateAsTemplate,
-              ),
-              SizedBox(width: 4),
-              IconButton(
-                onPressed: _delete,
-                icon: const Icon(Icons.delete_outline_rounded),
-                tooltip: AppLocalizations.of(context).uiDelete,
-                color: Colors.redAccent,
-              ),
-            ],
+                IconButton(
+                  onPressed: _duplicate,
+                  icon: const Icon(Icons.copy_rounded),
+                  tooltip: AppLocalizations.of(context).uiDuplicateAsTemplate,
+                ),
+                SizedBox(width: 4),
+                IconButton(
+                  onPressed: _delete,
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  tooltip: AppLocalizations.of(context).uiDelete,
+                  color: Colors.redAccent,
+                ),
+              ],
+            ),
           ),
         ),
         const Divider(height: 1),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(28, 20, 28, 24),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
             children: [
               if (!adapterSupported) ...[
                 Container(
@@ -777,69 +785,73 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                 ),
                 SizedBox(height: 14),
               ],
-              TextField(
-                controller: _nameCtrl,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context).uiName,
+              FormPair(
+                first: TextField(
+                  controller: _nameCtrl,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).uiName,
+                  ),
+                ),
+                second: DropdownButtonFormField<AdapterType>(
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).uiAdapterType,
+                  ),
+                  initialValue: _adapterType,
+                  items: capabilities.editableAdapterTypes(_adapterType).map((
+                    t,
+                  ) {
+                    final supported = capabilities.supportsTtsAdapter(t);
+                    final label = capabilities.displayNameForAdapter(t);
+                    return DropdownMenuItem(
+                      value: t,
+                      enabled: supported,
+                      child: Text(
+                        supported
+                            ? label
+                            : '$label (${l10n.uiUnavailableOnThisPlatform})',
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setState(() {
+                      _adapterType = v;
+                      if (_modelCtrl.text.isEmpty) {
+                        _modelCtrl.text = defaultSpeechModelForPlatform(
+                          v,
+                          capabilities,
+                        );
+                      }
+                    });
+                  },
                 ),
               ),
-              SizedBox(height: 14),
-              DropdownButtonFormField<AdapterType>(
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context).uiAdapterType,
+              SizedBox(height: 12),
+              FormPair(
+                first: TextField(
+                  controller: _urlCtrl,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).uiBaseURL,
+                    hintText: _baseUrlHint(_adapterType),
+                    helperText: _adapterType == AdapterType.azureTts
+                        ? 'Accepts region name, tts.speech.microsoft.com, or api.cognitive.microsoft.com URL'
+                        : null,
+                  ),
                 ),
-                initialValue: _adapterType,
-                items: capabilities.editableAdapterTypes(_adapterType).map((t) {
-                  final supported = capabilities.supportsTtsAdapter(t);
-                  final label = capabilities.displayNameForAdapter(t);
-                  return DropdownMenuItem(
-                    value: t,
-                    enabled: supported,
-                    child: Text(
-                      supported
-                          ? label
-                          : '$label (${l10n.uiUnavailableOnThisPlatform})',
+                second: TextField(
+                  controller: _keyCtrl,
+                  obscureText: !_showKey,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).uiAPIKey,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _showKey
+                            ? Icons.visibility_off_rounded
+                            : Icons.visibility_rounded,
+                        size: 18,
+                      ),
+                      onPressed: () => setState(() => _showKey = !_showKey),
                     ),
-                  );
-                }).toList(),
-                onChanged: (v) {
-                  if (v == null) return;
-                  setState(() {
-                    _adapterType = v;
-                    if (_modelCtrl.text.isEmpty) {
-                      _modelCtrl.text = defaultSpeechModelForPlatform(
-                        v,
-                        capabilities,
-                      );
-                    }
-                  });
-                },
-              ),
-              SizedBox(height: 14),
-              TextField(
-                controller: _urlCtrl,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context).uiBaseURL,
-                  hintText: _baseUrlHint(_adapterType),
-                  helperText: _adapterType == AdapterType.azureTts
-                      ? 'Accepts region name, tts.speech.microsoft.com, or api.cognitive.microsoft.com URL'
-                      : null,
-                ),
-              ),
-              SizedBox(height: 14),
-              TextField(
-                controller: _keyCtrl,
-                obscureText: !_showKey,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context).uiAPIKey,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _showKey
-                          ? Icons.visibility_off_rounded
-                          : Icons.visibility_rounded,
-                      size: 18,
-                    ),
-                    onPressed: () => setState(() => _showKey = !_showKey),
                   ),
                 ),
               ),
@@ -880,7 +892,7 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                     controller: _concurrencyCtrl,
                     label: AppLocalizations.of(context).uiConcurrency,
                     helperText: '1-64',
-                    width: 150,
+                    width: 110,
                   ),
                   _LimitField(
                     controller: _rpmCtrl,
@@ -1100,7 +1112,7 @@ class _LimitField extends StatelessWidget {
     required this.controller,
     required this.label,
     required this.helperText,
-    this.width = 170,
+    this.width = 140,
   });
 
   @override

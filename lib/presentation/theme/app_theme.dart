@@ -16,6 +16,10 @@ class AppTheme {
       fontFamily: systemFont ? _systemFontFamily : null,
       fontFamilyFallback: systemFont ? _systemFontFallback : null,
       scaffoldBackgroundColor: const Color(0xFF0F0F14),
+      // Pointer-driven desktops do not need 48 px touch targets.
+      materialTapTargetSize: _desktop
+          ? MaterialTapTargetSize.shrinkWrap
+          : MaterialTapTargetSize.padded,
       cardTheme: const CardThemeData(
         color: Color(0xFF1A1A24),
         elevation: 0,
@@ -30,9 +34,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
+        isDense: _desktop,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: _desktop ? 12 : 14,
+          vertical: _desktop ? 10 : 12,
         ),
       ),
       dividerTheme: const DividerThemeData(
@@ -41,6 +46,13 @@ class AppTheme {
       ),
     );
   }
+
+  static bool get _desktop => switch (defaultTargetPlatform) {
+    TargetPlatform.macOS ||
+    TargetPlatform.windows ||
+    TargetPlatform.linux => true,
+    _ => false,
+  };
 
   static const sidebarBg = Color(0xFF12121A);
   static const surfaceDim = Color(0xFF16161E);

@@ -22,10 +22,14 @@ class Sidebar extends StatelessWidget {
   final NavTab selected;
   final ValueChanged<NavTab> onTabChanged;
 
+  /// Space kept free at the top for the macOS traffic lights.
+  final double topInset;
+
   const Sidebar({
     super.key,
     required this.selected,
     required this.onTabChanged,
+    this.topInset = 0,
   });
 
   @override
@@ -35,7 +39,7 @@ class Sidebar extends StatelessWidget {
       color: AppTheme.sidebarBg,
       child: Column(
         children: [
-          const SizedBox(height: 12),
+          SizedBox(height: 12 + topInset),
           // Logo
           ClipRRect(
             borderRadius: BorderRadius.circular(10),

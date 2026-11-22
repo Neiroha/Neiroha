@@ -123,6 +123,11 @@ class _AppShellState extends ConsumerState<AppShell> {
             body: Column(
               children: [
                 if (!kIsWeb && Platform.isWindows) const _WindowsTitleBar(),
+                if (compact && _macTitleBarInset > 0)
+                  Container(
+                    height: _macTitleBarInset,
+                    color: AppTheme.sidebarBg,
+                  ),
                 if (compact)
                   _MobileTopBar(
                     selectedTab: selectedTab,
@@ -137,11 +142,19 @@ class _AppShellState extends ConsumerState<AppShell> {
                             children: [
                               Sidebar(
                                 selected: selectedTab,
+                                topInset: _macTitleBarInset,
                                 onTabChanged: (tab) =>
                                     unawaited(_switchTab(tab)),
                               ),
                               const VerticalDivider(width: 1, thickness: 1),
-                              Expanded(child: _buildPageStack(selectedTab)),
+                              Expanded(
+                                child: Padding(
+                                  padding: EdgeInsets.only(
+                                    top: _macTitleBarInset,
+                                  ),
+                                  child: _buildPageStack(selectedTab),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -296,6 +309,10 @@ class _MobileTopBar extends StatelessWidget {
     );
   }
 }
+
+/// macOS draws its traffic lights over the content (transparent title bar,
+/// see MainFlutterWindow.swift); keep that strip free of controls.
+final double _macTitleBarInset = !kIsWeb && Platform.isMacOS ? 28 : 0;
 
 class _WindowsTitleBar extends StatelessWidget {
   const _WindowsTitleBar();

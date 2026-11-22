@@ -18,6 +18,8 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/domain/llm/llm_contract.dart';
+import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
+import 'package:neiroha/domain/synthesis/tts_event.dart';
 import 'package:path/path.dart' as p;
 
 const _timeout = Timeout(Duration(minutes: 5));
@@ -74,6 +76,21 @@ void main() {
           'azure.${r.contentType.contains('wav') ? 'wav' : 'mp3'}',
           r.audioBytes,
         );
+        // Streaming (the app's default) gets PCM labelled audio/basic.
+        final pcm = await adapter
+            .synthesizeStream(
+              const TtsRequest(
+                text: '流式试听。',
+                voice: 'zh-CN-XiaoxiaoNeural',
+                responseFormat: 'pcm',
+              ),
+              cancellation: TtsCancelToken(),
+            )
+            .fold<int>(
+              0,
+              (n, e) => e is TtsAudioChunk ? n + e.bytes.length : n,
+            );
+        expect(pcm, greaterThan(4800));
         final health = await connectionForProvider(row).check();
         expect(health[AiCapability.tts]!.state, HealthState.ok);
       },
@@ -142,6 +159,41 @@ void main() {
           inventory.models.map((m) => '${m.id} ${m.source.name}').join('\n'),
         );
         expect(inventory.state, HealthState.ok, reason: inventory.message);
+      },
+      skip: skip,
+      timeout: _timeout,
+    );
+  });
+
+  group('Xiaomi MiMo ASR', () {
+    final key = env['MIMO_KEY'] ?? '';
+    final url = env['MIMO_URL'] ?? '';
+    final skip = key.isEmpty || url.isEmpty
+        ? 'MIMO_URL / MIMO_KEY not set'
+        : null;
+
+    test(
+      'TTS → mimo-v2.5-asr round trip',
+      () async {
+        final row = _row(AdapterType.chatCompletionsTts, url, key);
+        final c = connectionForProvider(row);
+        final health = await c.check();
+        expect(health[AiCapability.stt]!.models, ['mimo-v2.5-asr']);
+        final speech = await createAdapter(
+          row,
+        ).synthesize(const TtsRequest(text: '早上好，会议九点开始。', voice: '冰糖'));
+        try {
+          final t = await c.transcriber()!.transcribe(
+            AudioInput(speech.audioBytes),
+            options: const TranscribeOptions(languages: ['zh']),
+          );
+          // ignore: avoid_print
+          print('MiMo ASR: ${t.text}');
+          expect(t.text, contains('会议'));
+        } on AiProviderException catch (error) {
+          if (error.statusCode != 402) rethrow;
+          markTestSkipped('MiMo account balance is empty');
+        }
       },
       skip: skip,
       timeout: _timeout,

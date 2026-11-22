@@ -18,6 +18,9 @@ Stream<TtsEvent> httpSpeechStream({
   required TtsCancelToken cancellation,
   SpeechEventFrame Function(String data)? decodeEvent,
   Duration timeout = const Duration(minutes: 3),
+
+  /// Vendor labels that still mean raw PCM (Azure sends `audio/basic`).
+  Set<String> pcmMimeAliases = const {},
 }) async* {
   cancellation.throwIfCancelled();
   try {
@@ -46,6 +49,7 @@ Stream<TtsEvent> httpSpeechStream({
         chunks = _eventAudio(response.chunks, decodeEvent);
       } else {
         if (mime != null &&
+            !pcmMimeAliases.contains(mime) &&
             !const {
               'application/octet-stream',
               'binary/octet-stream',

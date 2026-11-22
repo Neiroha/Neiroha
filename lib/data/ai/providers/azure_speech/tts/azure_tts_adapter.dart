@@ -130,6 +130,9 @@ class AzureTtsAdapter extends TtsAdapter {
         channels: 1,
       ),
       cancellation: cancellation,
+      // Azure labels raw-24khz-16bit-mono-pcm as `audio/basic` (checked
+      // 2026-11-22); the body is little-endian PCM16 all the same.
+      pcmMimeAliases: const {'audio/basic'},
     );
   }
 

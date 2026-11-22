@@ -31,4 +31,7 @@ abstract interface class RealtimeSession implements AudioStreamSession {
 
 abstract interface class RealtimeModel implements CapabilityModel {
   Future<RealtimeSession> connect(RealtimeConfig config);
+
+  /// Voice names [RealtimeConfig.voice] accepts; the first is the default.
+  List<String> get voices;
 }

@@ -28,7 +28,14 @@ abstract class JsonSocketSession implements AudioStreamSession {
       onError: (Object error, StackTrace stack) => fail(error, stack),
       onDone: () {
         if (!_closed) {
-          fail(const AiProviderException('Connection closed by the server.'));
+          final reason = socket.closeReason;
+          fail(
+            AiProviderException(
+              'Connection closed by the server'
+              '${socket.closeCode == null ? '' : ' (${socket.closeCode})'}'
+              '${reason == null || reason.isEmpty ? '.' : ': $reason'}',
+            ),
+          );
         }
       },
     );
@@ -80,9 +87,16 @@ abstract class JsonSocketSession implements AudioStreamSession {
   }
 
   void _onMessage(dynamic message) {
-    if (_closed || message is! String) return;
+    if (_closed) return;
+    // Some services (Gemini Live) send JSON in binary frames.
+    final text = switch (message) {
+      String() => message,
+      List<int>() => utf8.decode(message, allowMalformed: true),
+      _ => null,
+    };
+    if (text == null) return;
     try {
-      final decoded = jsonDecode(message);
+      final decoded = jsonDecode(text);
       if (decoded is! Map) return;
       final event = Map<String, dynamic>.from(decoded);
       if (event['type'] == 'error') {

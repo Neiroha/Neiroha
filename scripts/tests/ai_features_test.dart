@@ -352,6 +352,8 @@ class _Realtime implements RealtimeModel {
   @override
   ModelDescriptor get descriptor => _d;
   @override
+  List<String> get voices => const ['marin'];
+  @override
   Future<RealtimeSession> connect(RealtimeConfig config) async {
     session.config = config;
     return session;

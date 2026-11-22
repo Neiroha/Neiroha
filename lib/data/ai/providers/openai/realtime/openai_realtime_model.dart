@@ -11,6 +11,21 @@ class OpenAiRealtimeModel implements RealtimeModel {
   final ModelDescriptor descriptor;
   final OpenAiEndpoint endpoint;
 
+  /// Realtime voices; `marin` and `cedar` are the recommended ones.
+  @override
+  List<String> get voices => const [
+    'marin',
+    'cedar',
+    'alloy',
+    'ash',
+    'ballad',
+    'coral',
+    'echo',
+    'sage',
+    'shimmer',
+    'verse',
+  ];
+
   @override
   Future<RealtimeSession> connect(RealtimeConfig config) =>
       OpenAiConversationSession.connect(

@@ -5659,6 +5659,372 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'More playback actions'**
   String get playbackMoreActions;
+
+  /// No description provided for @navSubtitles.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribe & Translate'**
+  String get navSubtitles;
+
+  /// No description provided for @transcribeFromAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribe the audio into the reference text'**
+  String get transcribeFromAudio;
+
+  /// No description provided for @transcribeNeedsStt.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable a provider with speech-to-text (e.g. OpenAI, ElevenLabs) to transcribe'**
+  String get transcribeNeedsStt;
+
+  /// No description provided for @transcribeFilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference text filled from the audio. Review it, then save.'**
+  String get transcribeFilled;
+
+  /// No description provided for @transcribeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcription failed: {error}'**
+  String transcribeFailed(String error);
+
+  /// No description provided for @liveModeScript.
+  ///
+  /// In en, this message translates to:
+  /// **'Script'**
+  String get liveModeScript;
+
+  /// No description provided for @liveModeRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime'**
+  String get liveModeRealtime;
+
+  /// No description provided for @liveModeCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'Companion'**
+  String get liveModeCompanion;
+
+  /// No description provided for @liveModeScriptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write lines and generate each character voice'**
+  String get liveModeScriptHint;
+
+  /// No description provided for @liveModeRealtimeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Full-duplex voice chat with a Realtime model'**
+  String get liveModeRealtimeHint;
+
+  /// No description provided for @liveModeCompanionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech recognition → LLM → the character own TTS voice'**
+  String get liveModeCompanionHint;
+
+  /// No description provided for @liveNeedsRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a provider with a Realtime model (e.g. OpenAI)'**
+  String get liveNeedsRealtime;
+
+  /// No description provided for @liveNeedsCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs providers with speech-to-text and an LLM'**
+  String get liveNeedsCompanion;
+
+  /// No description provided for @liveStateIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get liveStateIdle;
+
+  /// No description provided for @liveStateConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting'**
+  String get liveStateConnecting;
+
+  /// No description provided for @liveStateListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening'**
+  String get liveStateListening;
+
+  /// No description provided for @liveStateThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking'**
+  String get liveStateThinking;
+
+  /// No description provided for @liveStateSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking'**
+  String get liveStateSpeaking;
+
+  /// No description provided for @liveNoCharacter.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a character'**
+  String get liveNoCharacter;
+
+  /// No description provided for @liveVcActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Replies are converted to the character timbre'**
+  String get liveVcActive;
+
+  /// No description provided for @liveSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Character live settings'**
+  String get liveSettings;
+
+  /// No description provided for @liveStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get liveStart;
+
+  /// No description provided for @liveStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get liveStop;
+
+  /// No description provided for @liveEmptyRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Press Start and talk. The character answers in real time; use headphones if you want to interrupt it.'**
+  String get liveEmptyRealtime;
+
+  /// No description provided for @liveEmptyCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'Press Start and talk. When you pause, the character replies with its own voice.'**
+  String get liveEmptyCompanion;
+
+  /// No description provided for @liveTypeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Or type a message'**
+  String get liveTypeHint;
+
+  /// No description provided for @liveSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live dialog · {name}'**
+  String liveSettingsTitle(String name);
+
+  /// No description provided for @livePersona.
+  ///
+  /// In en, this message translates to:
+  /// **'Persona'**
+  String get livePersona;
+
+  /// No description provided for @livePersonaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How the character thinks and talks. Empty uses the voice name, description and instruction.'**
+  String get livePersonaHint;
+
+  /// No description provided for @liveRealtimeVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime voice'**
+  String get liveRealtimeVoice;
+
+  /// No description provided for @liveDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get liveDefault;
+
+  /// No description provided for @liveAllowInterrupt.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow interrupting (headphones)'**
+  String get liveAllowInterrupt;
+
+  /// No description provided for @liveAllowInterruptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps the microphone open while the character speaks. Without headphones it would hear itself.'**
+  String get liveAllowInterruptHint;
+
+  /// No description provided for @liveVcTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice conversion'**
+  String get liveVcTitle;
+
+  /// No description provided for @liveVcHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert each reply to the character timbre with a voice-conversion model: emotion from the dialog model, timbre from the character, no training. Adds latency.'**
+  String get liveVcHint;
+
+  /// No description provided for @liveVcProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversion provider'**
+  String get liveVcProvider;
+
+  /// No description provided for @liveVcOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get liveVcOff;
+
+  /// No description provided for @liveVcVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Target voice ID'**
+  String get liveVcVoice;
+
+  /// No description provided for @liveVcVoiceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The provider voice to convert into, e.g. an ElevenLabs voice ID'**
+  String get liveVcVoiceHint;
+
+  /// No description provided for @subtitlePickMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a video or audio file'**
+  String get subtitlePickMedia;
+
+  /// No description provided for @subtitleSourceLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Spoken language'**
+  String get subtitleSourceLanguage;
+
+  /// No description provided for @subtitleSourceLanguageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional, e.g. ja. Empty = detect'**
+  String get subtitleSourceLanguageHint;
+
+  /// No description provided for @subtitleTargetLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate to'**
+  String get subtitleTargetLanguage;
+
+  /// No description provided for @subtitleNoTranslation.
+  ///
+  /// In en, this message translates to:
+  /// **'No translation (transcript only)'**
+  String get subtitleNoTranslation;
+
+  /// No description provided for @subtitleContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Context for the translator'**
+  String get subtitleContext;
+
+  /// No description provided for @subtitleContextHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Title, names, genre or glossary'**
+  String get subtitleContextHint;
+
+  /// No description provided for @subtitleFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Output format'**
+  String get subtitleFormat;
+
+  /// No description provided for @subtitleModeOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get subtitleModeOriginal;
+
+  /// No description provided for @subtitleModeTranslation.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation'**
+  String get subtitleModeTranslation;
+
+  /// No description provided for @subtitleModeBilingual.
+  ///
+  /// In en, this message translates to:
+  /// **'Bilingual'**
+  String get subtitleModeBilingual;
+
+  /// No description provided for @subtitleRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribe'**
+  String get subtitleRun;
+
+  /// No description provided for @subtitleExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export subtitles'**
+  String get subtitleExport;
+
+  /// No description provided for @subtitleSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved {path}'**
+  String subtitleSaved(String path);
+
+  /// No description provided for @subtitlePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get subtitlePreview;
+
+  /// No description provided for @subtitleEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a file and run to see the subtitles here.'**
+  String get subtitleEmpty;
+
+  /// No description provided for @subtitleMissingCapability.
+  ///
+  /// In en, this message translates to:
+  /// **'not available'**
+  String get subtitleMissingCapability;
+
+  /// No description provided for @subtitleStageDecoding.
+  ///
+  /// In en, this message translates to:
+  /// **'Decoding'**
+  String get subtitleStageDecoding;
+
+  /// No description provided for @subtitleStageDetecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Detecting speech'**
+  String get subtitleStageDetecting;
+
+  /// No description provided for @subtitleStageTranscribing.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribing'**
+  String get subtitleStageTranscribing;
+
+  /// No description provided for @subtitleStageTranslating.
+  ///
+  /// In en, this message translates to:
+  /// **'Translating'**
+  String get subtitleStageTranslating;
+
+  /// No description provided for @subtitleStageDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get subtitleStageDone;
 }
 
 class _AppLocalizationsDelegate

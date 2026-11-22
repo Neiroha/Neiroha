@@ -6,6 +6,7 @@ enum NavTab {
   dialogTts(Icons.forum_rounded, 'Dialog TTS'),
   phaseTts(Icons.auto_stories_rounded, 'Phase TTS'),
   videoDub(Icons.movie_filter_rounded, 'Video Dub'),
+  subtitles(Icons.subtitles_rounded, 'Transcribe & Translate'),
   voiceAssets(Icons.library_music_rounded, 'Voice Assets'),
   voiceBank(Icons.people_alt_rounded, 'Voice Bank'),
   providers(Icons.dns_rounded, 'Providers'),
@@ -16,7 +17,12 @@ enum NavTab {
   const NavTab(this.icon, this.label);
 
   bool get requiresDesktop => switch (this) {
-    novelReader || dialogTts || phaseTts || videoDub || voiceAssets => true,
+    novelReader ||
+    dialogTts ||
+    phaseTts ||
+    videoDub ||
+    subtitles ||
+    voiceAssets => true,
     voiceBank || providers || settings => false,
   };
 

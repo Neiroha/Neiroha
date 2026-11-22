@@ -1367,5 +1367,87 @@
   "playbackLoop": "Loop playback",
   "playbackLoopOn": "Loop on",
   "playbackDownload": "Download audio",
-  "playbackMoreActions": "More playback actions"
+  "playbackMoreActions": "More playback actions",
+  "navSubtitles": "Transcribe & Translate",
+  "transcribeFromAudio": "Transcribe the audio into the reference text",
+  "transcribeNeedsStt": "Enable a provider with speech-to-text (e.g. OpenAI, ElevenLabs) to transcribe",
+  "transcribeFilled": "Reference text filled from the audio. Review it, then save.",
+  "transcribeFailed": "Transcription failed: {error}",
+  "@transcribeFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "liveModeScript": "Script",
+  "liveModeRealtime": "Realtime",
+  "liveModeCompanion": "Companion",
+  "liveModeScriptHint": "Write lines and generate each character voice",
+  "liveModeRealtimeHint": "Full-duplex voice chat with a Realtime model",
+  "liveModeCompanionHint": "Speech recognition → LLM → the character own TTS voice",
+  "liveNeedsRealtime": "Needs a provider with a Realtime model (e.g. OpenAI)",
+  "liveNeedsCompanion": "Needs providers with speech-to-text and an LLM",
+  "liveStateIdle": "Idle",
+  "liveStateConnecting": "Connecting",
+  "liveStateListening": "Listening",
+  "liveStateThinking": "Thinking",
+  "liveStateSpeaking": "Speaking",
+  "liveNoCharacter": "Pick a character",
+  "liveVcActive": "Replies are converted to the character timbre",
+  "liveSettings": "Character live settings",
+  "liveStart": "Start",
+  "liveStop": "Stop",
+  "liveEmptyRealtime": "Press Start and talk. The character answers in real time; use headphones if you want to interrupt it.",
+  "liveEmptyCompanion": "Press Start and talk. When you pause, the character replies with its own voice.",
+  "liveTypeHint": "Or type a message",
+  "liveSettingsTitle": "Live dialog · {name}",
+  "@liveSettingsTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "livePersona": "Persona",
+  "livePersonaHint": "How the character thinks and talks. Empty uses the voice name, description and instruction.",
+  "liveRealtimeVoice": "Realtime voice",
+  "liveDefault": "Default",
+  "liveAllowInterrupt": "Allow interrupting (headphones)",
+  "liveAllowInterruptHint": "Keeps the microphone open while the character speaks. Without headphones it would hear itself.",
+  "liveVcTitle": "Voice conversion",
+  "liveVcHint": "Convert each reply to the character timbre with a voice-conversion model: emotion from the dialog model, timbre from the character, no training. Adds latency.",
+  "liveVcProvider": "Conversion provider",
+  "liveVcOff": "Off",
+  "liveVcVoice": "Target voice ID",
+  "liveVcVoiceHint": "The provider voice to convert into, e.g. an ElevenLabs voice ID",
+  "subtitlePickMedia": "Choose a video or audio file",
+  "subtitleSourceLanguage": "Spoken language",
+  "subtitleSourceLanguageHint": "Optional, e.g. ja. Empty = detect",
+  "subtitleTargetLanguage": "Translate to",
+  "subtitleNoTranslation": "No translation (transcript only)",
+  "subtitleContext": "Context for the translator",
+  "subtitleContextHint": "Title, names, genre or glossary",
+  "subtitleFormat": "Output format",
+  "subtitleModeOriginal": "Original",
+  "subtitleModeTranslation": "Translation",
+  "subtitleModeBilingual": "Bilingual",
+  "subtitleRun": "Transcribe",
+  "subtitleExport": "Export subtitles",
+  "subtitleSaved": "Saved {path}",
+  "@subtitleSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "subtitlePreview": "Preview",
+  "subtitleEmpty": "Pick a file and run to see the subtitles here.",
+  "subtitleMissingCapability": "not available",
+  "subtitleStageDecoding": "Decoding",
+  "subtitleStageDetecting": "Detecting speech",
+  "subtitleStageTranscribing": "Transcribing",
+  "subtitleStageTranslating": "Translating",
+  "subtitleStageDone": "Done"
 }

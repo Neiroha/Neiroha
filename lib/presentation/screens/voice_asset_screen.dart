@@ -15,6 +15,7 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/presentation/widgets/voice_asset/record_dialog.dart';
+import 'package:neiroha/presentation/widgets/voice_asset/reference_text_field.dart';
 import 'package:neiroha/presentation/widgets/voice_asset/trim_dialog.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
@@ -695,15 +696,10 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
             maxLines: 2,
           ),
           SizedBox(height: 12),
-          TextField(
+          ReferenceTextField(
             controller: _refTextCtrl,
-            decoration: InputDecoration(
-              labelText: AppLocalizations.of(context).uiReferenceText,
-              helperText: AppLocalizations.of(
-                context,
-              ).uiTranscriptOfTheAudioUsedByVoiceCloningModelsThatNeedIt,
-            ),
-            maxLines: 3,
+            languageController: _refLangCtrl,
+            audioPath: widget.track.audioPath,
           ),
           SizedBox(height: 12),
           TextField(

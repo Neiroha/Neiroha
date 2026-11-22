@@ -7,12 +7,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:neiroha/data/ai/core/tts_adapter.dart';
+import 'package:neiroha/data/services/synthesis/quick_tts_service.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/chat_list_view.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/create_project_dialog.dart';
+import 'package:neiroha/presentation/widgets/dialog_tts/dialog_mode_view.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/editor_project_bar.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/input_bar.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/project_list_header.dart';
@@ -248,47 +249,54 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
             initialLeftFraction: 0.68,
             compactRightIcon: Icons.tune_rounded,
             compactRightLabel: AppLocalizations.of(context).navSettings,
-            left: LayoutBuilder(
-              builder: (ctx, leftConstraints) {
-                final inputMaxHeight = leftConstraints.maxHeight * 0.3;
-                return Column(
-                  children: [
-                    Expanded(
-                      child: ChatListView(
-                        linesAsync: linesAsync,
-                        assetMap: assetMap,
-                        generatingLineIds: _generatingLineIds,
-                        onPlay: _playLine,
-                        onPlayFrom: (startIndex) => _playFrom(
-                          linesAsync.value ?? const [],
-                          startIndex,
-                          assetMap,
+            left: DialogModeView(
+              bankAssets: bankAssets,
+              voiceId: _inputVoiceId,
+              script: LayoutBuilder(
+                builder: (ctx, leftConstraints) {
+                  final inputMaxHeight = leftConstraints.maxHeight * 0.3;
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: ChatListView(
+                          linesAsync: linesAsync,
+                          assetMap: assetMap,
+                          generatingLineIds: _generatingLineIds,
+                          onPlay: _playLine,
+                          onPlayFrom: (startIndex) => _playFrom(
+                            linesAsync.value ?? const [],
+                            startIndex,
+                            assetMap,
+                          ),
+                          onGenerate: bankAssets.isEmpty
+                              ? null
+                              : (line) =>
+                                    _generateOne(project, line, bankAssets),
+                          onDelete: (id) => ref
+                              .read(databaseProvider)
+                              .deleteDialogTtsLine(id),
+                          onReorder: (oldIndex, newIndex) => ref
+                              .read(databaseProvider)
+                              .reorderDialogLine(
+                                widget.projectId,
+                                oldIndex,
+                                newIndex,
+                              ),
                         ),
-                        onGenerate: bankAssets.isEmpty
-                            ? null
-                            : (line) => _generateOne(project, line, bankAssets),
-                        onDelete: (id) =>
-                            ref.read(databaseProvider).deleteDialogTtsLine(id),
-                        onReorder: (oldIndex, newIndex) => ref
-                            .read(databaseProvider)
-                            .reorderDialogLine(
-                              widget.projectId,
-                              oldIndex,
-                              newIndex,
-                            ),
                       ),
-                    ),
-                    const PersistentAudioBar(),
-                    InputBar(
-                      bankAssets: bankAssets,
-                      voiceId: _inputVoiceId,
-                      onVoiceChanged: (v) => setState(() => _inputVoiceId = v),
-                      onSend: (text) => _addLine(project, bankAssets, text),
-                      maxHeight: inputMaxHeight,
-                    ),
-                  ],
-                );
-              },
+                      const PersistentAudioBar(),
+                      InputBar(
+                        bankAssets: bankAssets,
+                        voiceId: _inputVoiceId,
+                        onVoiceChanged: (v) =>
+                            setState(() => _inputVoiceId = v),
+                        onSend: (text) => _addLine(project, bankAssets, text),
+                        maxHeight: inputMaxHeight,
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
             rightBuilder: (_) => SettingsPanel(
               linesAsync: linesAsync,
@@ -499,19 +507,7 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
             modelName: asset.modelName,
             source: 'Dialog TTS',
             label: 'Line ${line.orderIndex + 1}: ${line.lineText}',
-            request: TtsRequest(
-              text: line.lineText,
-              voice: asset.presetVoiceName ?? asset.name,
-              speed: asset.speed,
-              textLang: provider.adapterType == 'gptSovits'
-                  ? asset.modelName
-                  : null,
-              presetVoiceName: asset.presetVoiceName,
-              voiceInstruction: asset.voiceInstruction,
-              refAudioPath: asset.refAudioPath,
-              promptText: asset.promptText,
-              promptLang: asset.promptLang,
-            ),
+            request: quickTtsRequest(asset, provider, line.lineText),
           );
       final ext = result.contentType.contains('wav') ? '.wav' : '.mp3';
       final filePath = PathService.dedupeFilename(

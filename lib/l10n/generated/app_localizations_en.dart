@@ -3133,4 +3133,207 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get playbackMoreActions => 'More playback actions';
+
+  @override
+  String get navSubtitles => 'Transcribe & Translate';
+
+  @override
+  String get transcribeFromAudio =>
+      'Transcribe the audio into the reference text';
+
+  @override
+  String get transcribeNeedsStt =>
+      'Enable a provider with speech-to-text (e.g. OpenAI, ElevenLabs) to transcribe';
+
+  @override
+  String get transcribeFilled =>
+      'Reference text filled from the audio. Review it, then save.';
+
+  @override
+  String transcribeFailed(String error) {
+    return 'Transcription failed: $error';
+  }
+
+  @override
+  String get liveModeScript => 'Script';
+
+  @override
+  String get liveModeRealtime => 'Realtime';
+
+  @override
+  String get liveModeCompanion => 'Companion';
+
+  @override
+  String get liveModeScriptHint =>
+      'Write lines and generate each character voice';
+
+  @override
+  String get liveModeRealtimeHint =>
+      'Full-duplex voice chat with a Realtime model';
+
+  @override
+  String get liveModeCompanionHint =>
+      'Speech recognition → LLM → the character own TTS voice';
+
+  @override
+  String get liveNeedsRealtime =>
+      'Needs a provider with a Realtime model (e.g. OpenAI)';
+
+  @override
+  String get liveNeedsCompanion =>
+      'Needs providers with speech-to-text and an LLM';
+
+  @override
+  String get liveStateIdle => 'Idle';
+
+  @override
+  String get liveStateConnecting => 'Connecting';
+
+  @override
+  String get liveStateListening => 'Listening';
+
+  @override
+  String get liveStateThinking => 'Thinking';
+
+  @override
+  String get liveStateSpeaking => 'Speaking';
+
+  @override
+  String get liveNoCharacter => 'Pick a character';
+
+  @override
+  String get liveVcActive => 'Replies are converted to the character timbre';
+
+  @override
+  String get liveSettings => 'Character live settings';
+
+  @override
+  String get liveStart => 'Start';
+
+  @override
+  String get liveStop => 'Stop';
+
+  @override
+  String get liveEmptyRealtime =>
+      'Press Start and talk. The character answers in real time; use headphones if you want to interrupt it.';
+
+  @override
+  String get liveEmptyCompanion =>
+      'Press Start and talk. When you pause, the character replies with its own voice.';
+
+  @override
+  String get liveTypeHint => 'Or type a message';
+
+  @override
+  String liveSettingsTitle(String name) {
+    return 'Live dialog · $name';
+  }
+
+  @override
+  String get livePersona => 'Persona';
+
+  @override
+  String get livePersonaHint =>
+      'How the character thinks and talks. Empty uses the voice name, description and instruction.';
+
+  @override
+  String get liveRealtimeVoice => 'Realtime voice';
+
+  @override
+  String get liveDefault => 'Default';
+
+  @override
+  String get liveAllowInterrupt => 'Allow interrupting (headphones)';
+
+  @override
+  String get liveAllowInterruptHint =>
+      'Keeps the microphone open while the character speaks. Without headphones it would hear itself.';
+
+  @override
+  String get liveVcTitle => 'Voice conversion';
+
+  @override
+  String get liveVcHint =>
+      'Convert each reply to the character timbre with a voice-conversion model: emotion from the dialog model, timbre from the character, no training. Adds latency.';
+
+  @override
+  String get liveVcProvider => 'Conversion provider';
+
+  @override
+  String get liveVcOff => 'Off';
+
+  @override
+  String get liveVcVoice => 'Target voice ID';
+
+  @override
+  String get liveVcVoiceHint =>
+      'The provider voice to convert into, e.g. an ElevenLabs voice ID';
+
+  @override
+  String get subtitlePickMedia => 'Choose a video or audio file';
+
+  @override
+  String get subtitleSourceLanguage => 'Spoken language';
+
+  @override
+  String get subtitleSourceLanguageHint => 'Optional, e.g. ja. Empty = detect';
+
+  @override
+  String get subtitleTargetLanguage => 'Translate to';
+
+  @override
+  String get subtitleNoTranslation => 'No translation (transcript only)';
+
+  @override
+  String get subtitleContext => 'Context for the translator';
+
+  @override
+  String get subtitleContextHint => 'Title, names, genre or glossary';
+
+  @override
+  String get subtitleFormat => 'Output format';
+
+  @override
+  String get subtitleModeOriginal => 'Original';
+
+  @override
+  String get subtitleModeTranslation => 'Translation';
+
+  @override
+  String get subtitleModeBilingual => 'Bilingual';
+
+  @override
+  String get subtitleRun => 'Transcribe';
+
+  @override
+  String get subtitleExport => 'Export subtitles';
+
+  @override
+  String subtitleSaved(String path) {
+    return 'Saved $path';
+  }
+
+  @override
+  String get subtitlePreview => 'Preview';
+
+  @override
+  String get subtitleEmpty => 'Pick a file and run to see the subtitles here.';
+
+  @override
+  String get subtitleMissingCapability => 'not available';
+
+  @override
+  String get subtitleStageDecoding => 'Decoding';
+
+  @override
+  String get subtitleStageDetecting => 'Detecting speech';
+
+  @override
+  String get subtitleStageTranscribing => 'Transcribing';
+
+  @override
+  String get subtitleStageTranslating => 'Translating';
+
+  @override
+  String get subtitleStageDone => 'Done';
 }

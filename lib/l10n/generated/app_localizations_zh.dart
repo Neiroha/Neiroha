@@ -3030,4 +3030,193 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get playbackMoreActions => '更多播放操作';
+
+  @override
+  String get navSubtitles => '转写翻译';
+
+  @override
+  String get transcribeFromAudio => '用语音识别填写参考文本';
+
+  @override
+  String get transcribeNeedsStt => '启用带语音识别的服务商（如 OpenAI、ElevenLabs）后即可识别';
+
+  @override
+  String get transcribeFilled => '已根据音频填写参考文本，请核对后保存。';
+
+  @override
+  String transcribeFailed(String error) {
+    return '识别失败：$error';
+  }
+
+  @override
+  String get liveModeScript => '剧本';
+
+  @override
+  String get liveModeRealtime => '实时对话';
+
+  @override
+  String get liveModeCompanion => '陪聊';
+
+  @override
+  String get liveModeScriptHint => '编写台词，为每句生成角色语音';
+
+  @override
+  String get liveModeRealtimeHint => '接入 Realtime 模型的全双工语音对话';
+
+  @override
+  String get liveModeCompanionHint => '语音识别 → 大模型 → 角色自己的 TTS 音色';
+
+  @override
+  String get liveNeedsRealtime => '需要带 Realtime 模型的服务商（如 OpenAI）';
+
+  @override
+  String get liveNeedsCompanion => '需要启用语音识别和大模型能力';
+
+  @override
+  String get liveStateIdle => '未开始';
+
+  @override
+  String get liveStateConnecting => '连接中';
+
+  @override
+  String get liveStateListening => '聆听中';
+
+  @override
+  String get liveStateThinking => '思考中';
+
+  @override
+  String get liveStateSpeaking => '说话中';
+
+  @override
+  String get liveNoCharacter => '选择角色';
+
+  @override
+  String get liveVcActive => '回复会转换为角色音色';
+
+  @override
+  String get liveSettings => '角色对话设置';
+
+  @override
+  String get liveStart => '开始';
+
+  @override
+  String get liveStop => '结束';
+
+  @override
+  String get liveEmptyRealtime => '点击开始后直接说话，角色会实时回应；想随时打断请戴耳机并在设置中开启。';
+
+  @override
+  String get liveEmptyCompanion => '点击开始后直接说话，停顿后角色会用自己的声音回答。';
+
+  @override
+  String get liveTypeHint => '也可以输入文字';
+
+  @override
+  String liveSettingsTitle(String name) {
+    return '实时对话 · $name';
+  }
+
+  @override
+  String get livePersona => '人设';
+
+  @override
+  String get livePersonaHint => '角色的性格与说话方式。留空则使用音色名称、描述和语气指令。';
+
+  @override
+  String get liveRealtimeVoice => 'Realtime 音色';
+
+  @override
+  String get liveDefault => '默认';
+
+  @override
+  String get liveAllowInterrupt => '允许打断（需戴耳机）';
+
+  @override
+  String get liveAllowInterruptHint => '角色说话时也保持麦克风开启；不戴耳机会把自己的声音录进去。';
+
+  @override
+  String get liveVcTitle => '音色转换';
+
+  @override
+  String get liveVcHint => '用音色转换模型把每句回复换成角色音色：情感来自对话模型，音色来自角色，无需训练。会增加延迟。';
+
+  @override
+  String get liveVcProvider => '转换服务商';
+
+  @override
+  String get liveVcOff => '关闭';
+
+  @override
+  String get liveVcVoice => '目标音色 ID';
+
+  @override
+  String get liveVcVoiceHint => '要转换成的服务商音色，例如 ElevenLabs 的 voice ID';
+
+  @override
+  String get subtitlePickMedia => '选择视频或音频文件';
+
+  @override
+  String get subtitleSourceLanguage => '原始语言';
+
+  @override
+  String get subtitleSourceLanguageHint => '可选，如 ja；留空自动识别';
+
+  @override
+  String get subtitleTargetLanguage => '翻译为';
+
+  @override
+  String get subtitleNoTranslation => '不翻译（仅转写）';
+
+  @override
+  String get subtitleContext => '翻译背景';
+
+  @override
+  String get subtitleContextHint => '标题、人名、类型或术语表';
+
+  @override
+  String get subtitleFormat => '输出格式';
+
+  @override
+  String get subtitleModeOriginal => '原文';
+
+  @override
+  String get subtitleModeTranslation => '译文';
+
+  @override
+  String get subtitleModeBilingual => '双语';
+
+  @override
+  String get subtitleRun => '开始转写';
+
+  @override
+  String get subtitleExport => '导出字幕';
+
+  @override
+  String subtitleSaved(String path) {
+    return '已保存 $path';
+  }
+
+  @override
+  String get subtitlePreview => '预览';
+
+  @override
+  String get subtitleEmpty => '选择文件并开始转写后，字幕会显示在这里。';
+
+  @override
+  String get subtitleMissingCapability => '未启用';
+
+  @override
+  String get subtitleStageDecoding => '解码中';
+
+  @override
+  String get subtitleStageDetecting => '检测人声';
+
+  @override
+  String get subtitleStageTranscribing => '转写中';
+
+  @override
+  String get subtitleStageTranslating => '翻译中';
+
+  @override
+  String get subtitleStageDone => '完成';
 }

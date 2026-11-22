@@ -1,14 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:neiroha/data/ai/providers/elevenlabs/stt/elevenlabs_scribe.dart';
 import 'package:neiroha/data/ai/providers/elevenlabs/vc/elevenlabs_speech_to_speech.dart';
-import 'package:neiroha/data/ai/providers/legacy/legacy_connection.dart';
+import 'package:neiroha/data/ai/providers/common/adapter_backed_connection.dart';
 import 'package:neiroha/domain/ai/capability.dart';
 import 'package:neiroha/domain/ai/media/audio_input.dart';
 import 'package:neiroha/domain/ai/models/capability_model.dart';
 
 const elevenLabsBaseUrl = 'https://api.elevenlabs.io';
 
-class ElevenLabsConnection extends LegacyConnection {
+class ElevenLabsConnection extends AdapterBackedConnection {
   ElevenLabsConnection(super.plugin, super.config);
 
   Dio get dio {

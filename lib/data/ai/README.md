@@ -6,9 +6,9 @@ models hang off capabilities. Domain types live in `lib/domain/ai/`
 
 ```
 core/        ProviderPlugin, ProviderConnection, ConnectionConfig, health,
-             legacy TtsAdapter contract
+             TtsAdapter contract for vendor-native speech
 registry/    plugin_registry (adapter type → plugin), capability_router,
-             tts_adapter_factory (legacy createAdapter)
+             tts_adapter_factory (createAdapter)
 protocols/   transports shared by several vendors
   http/      speech HTTP streaming (io / web), error reasons
   audio/     WAV / PCM helpers
@@ -20,10 +20,15 @@ providers/<vendor>/
   <vendor>_connection.dart   opens models, health check
   <capability>/              llm/ tts/ stt/ realtime/ translate/ vc/ vad/
 providers/local/<engine>/    self-hosted engines (GPT-SoVITS, CosyVoice…)
-providers/legacy/            bridge for adapter types without a full plugin
+providers/common/            AdapterTtsPlugin + AdapterBackedConnection: native
+                             TTS adapter + OpenAI-protocol LLM; used as-is for
+                             TTS-only engines (Azure, system TTS, local servers)
 providers/on_device/         built-in engines, no account (VAD)
 ```
 
-Rules: one model class per file; a vendor folder only imports `core/`,
-`protocols/` and its own files; new vendors add a plugin and register it in
+Rules: one model class per file. "OpenAI-compatible" is a protocol, not a
+vendor: any vendor whose text, speech or transcription API speaks it reuses
+the models in `providers/openai/` (`openOpenAiModel`, `OpenAiLanguageModel`)
+with its own `OpenAiEndpoint`. Only vendor-native wire formats get their own
+model classes. New vendors add a plugin and register it in
 `registry/plugin_registry.dart`.

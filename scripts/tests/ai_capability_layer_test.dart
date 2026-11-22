@@ -56,7 +56,7 @@ String _url(HttpServer s, [String path = '/v1']) =>
 
 void main() {
   group('registry', () {
-    test('every legacy adapter type maps to one plugin with TTS', () {
+    test('every adapter type maps to one plugin with TTS', () {
       for (final type in AdapterType.values) {
         final connection = connectionForProvider(_row(type));
         expect(connection.capabilities, contains(AiCapability.tts));

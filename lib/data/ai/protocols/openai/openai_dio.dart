@@ -9,6 +9,7 @@ import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 Dio openAiDio(
   String baseUrl,
   String apiKey, {
+  String apiKeyHeader = 'Authorization',
   Duration timeout = const Duration(minutes: 3),
 }) {
   final base = baseUrl.trim().endsWith('/') ? baseUrl.trim() : '$baseUrl/';
@@ -19,7 +20,12 @@ Dio openAiDio(
       connectTimeout: const Duration(seconds: 30),
       sendTimeout: timeout,
       receiveTimeout: timeout,
-      headers: {if (apiKey.isNotEmpty) 'Authorization': 'Bearer $apiKey'},
+      headers: {
+        if (apiKey.isNotEmpty)
+          apiKeyHeader: apiKeyHeader.toLowerCase() == 'authorization'
+              ? 'Bearer $apiKey'
+              : apiKey,
+      },
     ),
   );
 }

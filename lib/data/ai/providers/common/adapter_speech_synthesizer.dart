@@ -1,15 +1,13 @@
-import 'dart:async';
-
 import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/domain/ai/model_descriptor.dart';
 import 'package:neiroha/domain/ai/models/speech_synthesizer.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
 
-/// Bridges an existing [TtsAdapter] into [SpeechSynthesizer] without
-/// changing its behaviour. M1 keeps `createAdapter` as the source of truth.
-class LegacySpeechSynthesizer implements SpeechSynthesizer {
-  LegacySpeechSynthesizer(this.descriptor, this.adapter);
+/// Exposes a vendor-native [TtsAdapter] as a [SpeechSynthesizer] without
+/// changing its behaviour.
+class AdapterSpeechSynthesizer implements SpeechSynthesizer {
+  AdapterSpeechSynthesizer(this.descriptor, this.adapter);
   @override
   final ModelDescriptor descriptor;
   final TtsAdapter adapter;

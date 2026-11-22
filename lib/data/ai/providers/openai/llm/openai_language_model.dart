@@ -21,6 +21,7 @@ class OpenAiLanguageModel implements LanguageModel {
     baseUrl: endpoint.baseUrl,
     apiKey: endpoint.apiKey,
     modelName: descriptor.id,
+    apiKeyHeader: endpoint.apiKeyHeader,
     route: _responses ? ServiceRoute.responses : ServiceRoute.chatCompletions,
   );
 
@@ -36,6 +37,7 @@ class OpenAiLanguageModel implements LanguageModel {
           baseUrl: endpoint.baseUrl,
           apiKey: endpoint.apiKey,
           model: descriptor.id,
+          apiKeyHeader: endpoint.apiKeyHeader,
         ).complete(
           messages: messages,
           cancellation: cancellation ?? TtsCancelToken(),

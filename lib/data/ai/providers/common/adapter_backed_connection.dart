@@ -70,9 +70,15 @@ class AdapterBackedConnection extends ProviderConnection {
     }
   }
 
-  /// `GET models` on the text endpoint. Rejected credentials fail; a vendor
-  /// without a model list stays unknown rather than failed.
-  Future<CapabilityHealth> checkLlm() async {
+  Future<CapabilityHealth> checkLlm() async =>
+      (await checkListed({AiCapability.llm}))[AiCapability.llm]!;
+
+  /// One `GET models` on the text endpoint, read for every capability in
+  /// [caps]. Rejected credentials fail; a vendor without a model list stays
+  /// unknown rather than failed.
+  Future<Map<AiCapability, CapabilityHealth>> checkListed(
+    Set<AiCapability> caps,
+  ) async {
     final endpoint = llmEndpoint;
     final dio = openAiDio(
       endpoint.baseUrl,
@@ -90,21 +96,30 @@ class AdapterBackedConnection extends ProviderConnection {
               '${item['id']}'.replaceFirst('models/', ''),
         };
       });
-      return CapabilityHealth(
-        HealthState.ok,
-        models: [
-          for (final m in models(AiCapability.llm))
-            if (ids.contains(m.id)) m.id,
-        ],
-      );
+      return {
+        for (final cap in caps)
+          cap: CapabilityHealth(
+            HealthState.ok,
+            models: [
+              for (final m in models(cap))
+                if (ids.contains(m.id)) m.id,
+            ],
+          ),
+      };
     } on AiProviderException catch (error) {
       final denied = error.statusCode == 401 || error.statusCode == 403;
-      return CapabilityHealth(
-        denied ? HealthState.failed : HealthState.unknown,
-        message: '$error',
-      );
+      return {
+        for (final cap in caps)
+          cap: CapabilityHealth(
+            denied ? HealthState.failed : HealthState.unknown,
+            message: '$error',
+          ),
+      };
     } catch (error) {
-      return CapabilityHealth(HealthState.unknown, message: '$error');
+      return {
+        for (final cap in caps)
+          cap: CapabilityHealth(HealthState.unknown, message: '$error'),
+      };
     }
   }
 }

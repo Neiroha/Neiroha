@@ -9,6 +9,7 @@ extension NavTabLocalization on NavTab {
       NavTab.phaseTts => l10n.navPhaseTts,
       NavTab.videoDub => l10n.navVideoDub,
       NavTab.subtitles => l10n.navSubtitles,
+      NavTab.music => l10n.navMusic,
       NavTab.voiceAssets => l10n.navVoiceAssets,
       NavTab.voiceBank => l10n.navVoiceBank,
       NavTab.providers => l10n.navProviders,

@@ -11,6 +11,7 @@ const _mainTabs = [
   NavTab.phaseTts,
   NavTab.videoDub,
   NavTab.subtitles,
+  NavTab.music,
   NavTab.voiceAssets,
   NavTab.voiceBank,
 ];

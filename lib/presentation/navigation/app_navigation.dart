@@ -7,6 +7,7 @@ enum NavTab {
   phaseTts(Icons.auto_stories_rounded, 'Phase TTS'),
   videoDub(Icons.movie_filter_rounded, 'Video Dub'),
   subtitles(Icons.subtitles_rounded, 'Transcribe & Translate'),
+  music(Icons.queue_music_rounded, 'Song Studio'),
   voiceAssets(Icons.library_music_rounded, 'Voice Assets'),
   voiceBank(Icons.people_alt_rounded, 'Voice Bank'),
   providers(Icons.dns_rounded, 'Providers'),
@@ -22,6 +23,7 @@ enum NavTab {
     phaseTts ||
     videoDub ||
     subtitles ||
+    music ||
     voiceAssets => true,
     voiceBank || providers || settings => false,
   };

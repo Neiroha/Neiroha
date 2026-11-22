@@ -4,6 +4,7 @@ import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import '../dialog_tts_screen.dart';
 import '../novel_reader_screen.dart';
 import '../phase_tts_screen.dart';
+import '../song_studio_screen.dart';
 import '../subtitle_studio_screen.dart';
 import '../video_dub_screen.dart';
 import '../voice_asset_screen.dart';
@@ -25,6 +26,7 @@ Widget buildWorkspace(
     active: active,
   ),
   NavTab.subtitles => const SubtitleStudioScreen(key: ValueKey('subtitles')),
+  NavTab.music => const SongStudioScreen(key: ValueKey('music')),
   NavTab.voiceAssets => const VoiceAssetScreen(key: ValueKey('voiceAssets')),
   _ => throw ArgumentError.value(tab, 'tab'),
 };

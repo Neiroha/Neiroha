@@ -13,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 /// - `{voiceAssetRoot}/dialog_tts/{project}/`
 /// - `{voiceAssetRoot}/novel_reader/{project}/`
 /// - `{voiceAssetRoot}/voice_character_ref/`
+/// - `{voiceAssetRoot}/songs/`
 ///
 /// `{root}` is the executable directory when writable (portable mode),
 /// otherwise falls back to the OS app-support dir. macOS always uses the
@@ -151,6 +152,10 @@ class PathService {
     if (!await dir.exists()) await dir.create(recursive: true);
     return dir;
   }
+
+  /// Generated songs (music capability): audio + `.lrc` + `.json` sidecar.
+  Future<Directory> songsDir() =>
+      _ensure(Directory(p.join(voiceAssetRoot.path, 'songs')));
 
   Future<Directory> avatarsDir() =>
       _ensure(Directory(p.join(_dataRoot.path, 'avatars')));

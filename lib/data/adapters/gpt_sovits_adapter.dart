@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import 'http_error_message.dart';
 import 'tts_adapter.dart';
 
 /// Adapter for the Neiroha GPT-SoVITS launcher.
@@ -38,9 +39,13 @@ class GptSovitsAdapter extends TtsAdapter {
   Future<TtsResult> synthesize(TtsRequest request) async {
     final hasRefAudio =
         request.refAudioPath != null && request.refAudioPath!.trim().isNotEmpty;
-    return hasRefAudio
-        ? _synthesizeClone(request)
-        : _synthesizeTrainedVoice(request);
+    try {
+      return hasRefAudio
+          ? await _synthesizeClone(request)
+          : await _synthesizeTrainedVoice(request);
+    } on DioException catch (error, stackTrace) {
+      throwWithHttpErrorReason(error, stackTrace);
+    }
   }
 
   Future<TtsResult> _synthesizeTrainedVoice(TtsRequest request) async {

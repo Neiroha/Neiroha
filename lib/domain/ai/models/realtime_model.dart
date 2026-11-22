@@ -9,11 +9,16 @@ class RealtimeConfig {
     this.voice,
     this.audioOutput = true,
     this.transcribeInput = false,
+    this.serverVad = false,
   });
   final String instructions;
   final String? voice;
   final bool audioOutput;
   final bool transcribeInput;
+
+  /// Full duplex: the server detects turns, replies on its own and cuts its
+  /// reply short when the user starts talking. Off = manual commits.
+  final bool serverVad;
 }
 
 /// Full-duplex conversation. [finish] commits buffered audio and waits for the

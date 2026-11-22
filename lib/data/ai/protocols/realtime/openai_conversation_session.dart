@@ -33,7 +33,13 @@ class OpenAiConversationSession extends JsonSocketSession
         'audio': {
           'input': {
             'format': openAiRealtimePcmFormat,
-            'turn_detection': null,
+            'turn_detection': config.serverVad
+                ? {
+                    'type': 'server_vad',
+                    'create_response': true,
+                    'interrupt_response': true,
+                  }
+                : null,
             if (config.transcribeInput)
               'transcription': {'model': inputTranscriptionModel},
           },
@@ -89,6 +95,8 @@ class OpenAiConversationSession extends JsonSocketSession
         );
       case 'input_audio_buffer.speech_started':
         yield const SpeechStarted();
+      case 'input_audio_buffer.speech_stopped':
+        yield const SpeechStopped();
       case 'response.done':
         final response = event['response'];
         final status = response is Map ? response['status'] : null;

@@ -18,10 +18,25 @@ class VadConfig {
   final Duration padding;
 }
 
+/// Incremental detection for live microphone audio. Times are measured from
+/// the first fed sample.
+abstract interface class VadStream {
+  /// Feeds PCM16 mono and returns the utterances that ended in this chunk.
+  List<SpeechSegment> feed(Uint8List pcm16);
+
+  /// True while an utterance is in progress (speech started, not yet ended).
+  bool get inSpeech;
+
+  /// Ends input and returns the utterance still in progress, if any.
+  List<SpeechSegment> flush();
+}
+
 abstract interface class VoiceActivityDetector implements CapabilityModel {
   List<SpeechSegment> segments(
     Uint8List pcm16, {
     required int sampleRate,
     VadConfig config,
   });
+
+  VadStream open({required int sampleRate, VadConfig config});
 }

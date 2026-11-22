@@ -23,16 +23,23 @@ class CapabilityRouter {
   /// capability → (connection id, model id).
   final Map<AiCapability, (String, String)> defaults;
 
+  /// Enabled rows plus the on-device connection (added once, unless a
+  /// system-TTS row already provides it).
   factory CapabilityRouter.fromProviders(
     Iterable<db.TtsProvider> rows, {
     Map<AiCapability, (String, String)> defaults = const {},
-  }) => CapabilityRouter([
-    for (final row in rows)
-      if (row.enabled &&
-          AdapterType.values.asNameMap()[row.adapterType] != null)
-        connectionForProvider(row),
-    OnDevicePlugin.builtIn(),
-  ], defaults: defaults);
+  }) {
+    final connections = [
+      for (final row in rows)
+        if (row.enabled &&
+            AdapterType.values.asNameMap()[row.adapterType] != null)
+          connectionForProvider(row),
+    ];
+    if (!connections.any((c) => c.plugin is OnDevicePlugin)) {
+      connections.add(OnDevicePlugin.builtIn());
+    }
+    return CapabilityRouter(connections, defaults: defaults);
+  }
 
   /// Connections that can serve [cap], in list order.
   List<ProviderConnection> serving(AiCapability cap) => [

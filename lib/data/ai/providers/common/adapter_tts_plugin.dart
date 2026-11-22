@@ -16,9 +16,9 @@ abstract final class AdapterOptions {
 }
 
 /// A vendor whose TTS speaks its own wire protocol through an existing
-/// `TtsAdapter`. Used as-is for TTS-only engines (Azure, system TTS, local
-/// GPT-SoVITS / CosyVoice / IndexTTS / VoxCPM2); vendor plugins extend it to
-/// add LLM, STT or VC.
+/// `TtsAdapter`. Used as-is for TTS-only engines (Azure, local GPT-SoVITS /
+/// CosyVoice / IndexTTS / VoxCPM2); vendor plugins extend it to add LLM, STT
+/// or VC.
 class AdapterTtsPlugin extends ProviderPlugin {
   const AdapterTtsPlugin(this.type);
   final AdapterType type;
@@ -40,9 +40,6 @@ class AdapterTtsPlugin extends ProviderPlugin {
       if (type.supportsCloudVoiceClone) AiFeature.cloudClone,
       if (type.requiresReferenceAudio) AiFeature.zeroShotClone,
     },
-    platforms: type == AdapterType.systemTts
-        ? const {AiPlatform.desktop}
-        : allPlatforms,
     isDefault: true,
   );
 

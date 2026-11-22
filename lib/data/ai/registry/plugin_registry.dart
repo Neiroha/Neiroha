@@ -5,6 +5,7 @@ import 'package:neiroha/data/ai/providers/elevenlabs/elevenlabs_plugin.dart';
 import 'package:neiroha/data/ai/providers/gemini/gemini_plugin.dart';
 import 'package:neiroha/data/ai/providers/mimo/mimo_plugin.dart';
 import 'package:neiroha/data/ai/providers/minimax/minimax_plugin.dart';
+import 'package:neiroha/data/ai/providers/on_device/on_device_plugin.dart';
 import 'package:neiroha/data/ai/providers/common/adapter_tts_plugin.dart';
 import 'package:neiroha/data/ai/providers/openai/openai_plugin.dart';
 import 'package:neiroha/data/ai/providers/openai_compatible/openai_compatible_plugin.dart';
@@ -13,7 +14,8 @@ import 'package:neiroha/domain/enums/adapter_type.dart';
 
 /// Plugin serving a `TtsProviders.adapterType`, so v34 can migrate rows
 /// one-to-one. Vendors with more than TTS get their own plugin; TTS-only
-/// engines (Azure, system TTS, local servers) share [AdapterTtsPlugin].
+/// engines (Azure, local servers) share [AdapterTtsPlugin]; the OS voice is
+/// part of [OnDevicePlugin].
 ProviderPlugin pluginForAdapterType(String adapterType, {String baseUrl = ''}) {
   final type = AdapterType.values.asNameMap()[adapterType];
   if (type == null) throw ArgumentError('Unknown adapter type: $adapterType');
@@ -28,6 +30,7 @@ ProviderPlugin pluginForAdapterType(String adapterType, {String baseUrl = ''}) {
               Uri.tryParse(baseUrl.trim())?.host == MiMoPlugin.officialHost
           ? const MiMoPlugin()
           : const ChatCompletionsTtsPlugin(),
+    AdapterType.systemTts => OnDevicePlugin(),
     _ => AdapterTtsPlugin(type),
   };
 }

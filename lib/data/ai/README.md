@@ -22,7 +22,7 @@ providers/<vendor>/
 providers/local/<engine>/    self-hosted engines (GPT-SoVITS, CosyVoice…)
 providers/common/            AdapterTtsPlugin + AdapterBackedConnection: native
                              TTS adapter + OpenAI-protocol LLM; used as-is for
-                             TTS-only engines (Azure, system TTS, local servers)
+                             TTS-only engines (Azure, local servers)
 providers/on_device/         built-in engines, no account (VAD)
 ```
 

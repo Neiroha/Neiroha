@@ -5,7 +5,7 @@ import 'package:neiroha/data/ai/providers/gemini/tts/gemini_tts_adapter.dart';
 import 'package:neiroha/data/ai/providers/local/cosyvoice/tts/cosyvoice_adapter.dart';
 import 'package:neiroha/data/ai/providers/local/gpt_sovits/tts/gpt_sovits_adapter.dart';
 import 'package:neiroha/data/ai/providers/local/index_tts/tts/index_tts_adapter.dart';
-import 'package:neiroha/data/ai/providers/local/system_tts/tts/system_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/on_device/tts/system_tts_adapter.dart';
 import 'package:neiroha/data/ai/providers/local/voxcpm2/tts/voxcpm2_native_adapter.dart';
 import 'package:neiroha/data/ai/providers/mimo/tts/chat_completions_tts_adapter.dart';
 import 'package:neiroha/data/ai/providers/minimax/tts/minimax_tts_adapter.dart';

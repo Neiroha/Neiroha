@@ -17,6 +17,7 @@ import 'package:neiroha/data/ai/registry/plugin_registry.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
+import 'package:neiroha/domain/platform/platform_capabilities.dart';
 
 db.TtsProvider _row(AdapterType type, {bool enabled = true}) => db.TtsProvider(
   id: 'p-${type.name}',
@@ -58,12 +59,35 @@ void main() {
   group('registry', () {
     test('every adapter type maps to one plugin with TTS', () {
       for (final type in AdapterType.values) {
+        if (type == AdapterType.systemTts) continue; // on-device, see below
         final connection = connectionForProvider(_row(type));
         expect(connection.capabilities, contains(AiCapability.tts));
         expect(connection.defaultModel(AiCapability.tts), isNotNull);
-        if (type == AdapterType.systemTts) continue;
         expect(connection.speechModel(), isNotNull, reason: type.name);
       }
+    });
+
+    test('on-device capabilities follow the platform', () {
+      final windows = OnDevicePlugin(
+        platform: const PlatformCapabilities(NeirohaPlatform.windows),
+      );
+      final web = OnDevicePlugin(
+        platform: const PlatformCapabilities(NeirohaPlatform.web),
+      );
+      expect(windows.capabilities, {AiCapability.vad, AiCapability.tts});
+      expect(web.capabilities, {AiCapability.vad});
+      expect(
+        connectionForProvider(_row(AdapterType.systemTts)).plugin,
+        isA<OnDevicePlugin>(),
+      );
+      final router = CapabilityRouter.fromProviders([
+        _row(AdapterType.systemTts),
+      ]);
+      expect(router.connections.whereType<ProviderConnection>(), hasLength(1));
+      expect(
+        router.resolve<VoiceActivityDetector>(AiCapability.vad),
+        isNotNull,
+      );
     });
 
     test('one OpenAI connection exposes every OpenAI capability', () {

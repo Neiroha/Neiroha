@@ -1,4 +1,4 @@
-import 'package:neiroha/data/adapters/openai_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/openai/tts/openai_tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 
 /// Which per-call style controls a character's engine understands. Shared by

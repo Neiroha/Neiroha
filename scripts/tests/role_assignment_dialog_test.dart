@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
+import 'package:neiroha/data/ai/protocols/openai/llm_chat_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/novel/text_role_analysis_service.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';

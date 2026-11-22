@@ -5,7 +5,7 @@
 Neiroha 在两个层面上暴露音频 API：
 
 1. **本地 API 服务器** (`lib/server/api_server.dart`) — 一个与 OpenAI 兼容的 HTTP 服务器，通过配置的声音角色代理 TTS 请求，并以活跃音色库（Voice Bank）为作用域
-2. **上游适配器层** (`lib/data/adapters/`) — 与外部 TTS 后端通信的客户端适配器
+2. **上游适配器层** (`lib/data/ai/`) — 服务商插件与外部 TTS 后端通信的客户端适配器
 
 ---
 

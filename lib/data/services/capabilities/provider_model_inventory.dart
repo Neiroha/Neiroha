@@ -1,5 +1,5 @@
+import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'package:drift/drift.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:uuid/uuid.dart';
 

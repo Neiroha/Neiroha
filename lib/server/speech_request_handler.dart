@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
 import 'package:neiroha/data/database/app_database.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'speech_stream_response.dart';
 import 'tracked_http_server.dart';

@@ -21,7 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/audio_merge_service.dart';
 import 'package:neiroha/data/services/loudness_normalizer.dart';

@@ -8,7 +8,7 @@ import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/data/storage/subtitle_parser.dart';

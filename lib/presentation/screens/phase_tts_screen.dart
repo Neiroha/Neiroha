@@ -9,7 +9,7 @@ import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/data/storage/split_rules_service.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';

@@ -1,3 +1,4 @@
+import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -8,7 +9,6 @@ import 'package:drift/drift.dart' show Value;
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
-import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/data/services/auto_loudness_service.dart';
 import 'package:neiroha/data/services/loudness_normalizer.dart';

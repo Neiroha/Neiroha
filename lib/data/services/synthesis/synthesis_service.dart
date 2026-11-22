@@ -1,8 +1,8 @@
+import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:neiroha/data/adapters/tts_adapter.dart';
-import 'package:neiroha/data/adapters/wav_utils.dart';
+import 'package:neiroha/data/ai/protocols/audio/wav_utils.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/domain/synthesis/streaming_audio_sink.dart';

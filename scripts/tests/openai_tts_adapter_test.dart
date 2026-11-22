@@ -3,8 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neiroha/data/adapters/openai_tts_adapter.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/openai/tts/openai_tts_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 
 class _Http {
   final Uri uri;

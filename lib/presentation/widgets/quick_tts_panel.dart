@@ -13,7 +13,7 @@ import 'package:neiroha/data/services/synthesis/quick_tts_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
-import 'package:neiroha/data/adapters/speech_http_response.dart';
+import 'package:neiroha/data/ai/protocols/http/speech_http_response.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/actions/browser_speech_message.dart';
 import 'package:neiroha/presentation/actions/voice_health_warning.dart';

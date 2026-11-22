@@ -1,3 +1,4 @@
+import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
@@ -8,10 +9,9 @@ import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
-import 'package:neiroha/data/adapters/cosyvoice_adapter.dart';
-import 'package:neiroha/data/adapters/chat_completions_tts_adapter.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
-import 'package:neiroha/data/adapters/voxcpm2_native_adapter.dart';
+import 'package:neiroha/data/ai/providers/local/cosyvoice/tts/cosyvoice_adapter.dart';
+import 'package:neiroha/data/ai/providers/mimo/tts/chat_completions_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/local/voxcpm2/tts/voxcpm2_native_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
 import 'package:neiroha/data/storage/path_service.dart';

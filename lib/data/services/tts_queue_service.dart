@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:math' as math;
 
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 export 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;

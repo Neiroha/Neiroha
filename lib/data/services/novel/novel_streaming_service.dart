@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
-import 'package:neiroha/data/adapters/pcm_sequence_adapter.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/protocols/audio/pcm_sequence_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/auto_loudness_service.dart';
 import 'package:neiroha/data/services/capabilities/task_profile_repository.dart';

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
+import 'package:neiroha/data/ai/protocols/openai/llm_chat_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/capabilities/capability_repository.dart';
 import 'package:neiroha/data/services/capabilities/role_ai_model.dart';

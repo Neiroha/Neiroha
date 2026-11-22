@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:neiroha/data/adapters/chat_completions_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/mimo/tts/chat_completions_tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';

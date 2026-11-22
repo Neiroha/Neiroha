@@ -1,7 +1,7 @@
+import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/capabilities/model_capability.dart';
 

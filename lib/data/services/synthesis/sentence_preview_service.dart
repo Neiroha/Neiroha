@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:drift/drift.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/auto_loudness_service.dart';
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';

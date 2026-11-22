@@ -1,9 +1,9 @@
+import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neiroha/data/adapters/openai_tts_adapter.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/openai/tts/openai_tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:path/path.dart' as p;
 

@@ -5,7 +5,7 @@
 Neiroha exposes audio APIs at two levels:
 
 1. **Local API Server** (`lib/server/api_server.dart`) — an OpenAI-compatible HTTP server that proxies TTS requests through configured voice characters, scoped by active voice banks, plus an MCP endpoint for AI agents (`lib/server/mcp/`)
-2. **Upstream Adapter Layer** (`lib/data/adapters/`) — client-side adapters that talk to external TTS backends
+2. **Upstream Adapter Layer** (`lib/data/ai/`) — provider plugins and client-side adapters that talk to external TTS backends
 
 ---
 

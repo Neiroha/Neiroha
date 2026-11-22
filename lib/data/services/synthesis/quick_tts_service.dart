@@ -1,7 +1,7 @@
+import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'dart:io';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
 import 'package:drift/drift.dart' show Value;
-import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';

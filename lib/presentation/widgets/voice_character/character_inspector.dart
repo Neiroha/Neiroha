@@ -1,3 +1,4 @@
+import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
@@ -9,7 +10,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
-import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
 import 'package:neiroha/data/services/synthesis/quick_tts_service.dart';

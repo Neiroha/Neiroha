@@ -1,3 +1,4 @@
+import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'dart:async';
 
 import 'package:drift/drift.dart' show Value;
@@ -6,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/screens/voice_character_screen.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';

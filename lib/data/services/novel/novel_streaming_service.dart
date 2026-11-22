@@ -187,6 +187,7 @@ class NovelStreamingService {
         TtsRequest(
           text: text,
           voice: asset.presetVoiceName ?? asset.name,
+          voiceAssetId: asset.id,
           presetVoiceName: asset.presetVoiceName,
           speed: asset.speed,
           voiceInstruction: asset.voiceInstruction,

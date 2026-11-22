@@ -70,6 +70,11 @@ class TtsQueueService {
 
   static final TtsQueueService instance = TtsQueueService._();
 
+  /// Wraps a character's adapter in its processing chain; installed by the
+  /// app at startup. Requests without a voice asset id pass through.
+  Future<TtsAdapter> Function(TtsAdapter adapter, TtsRequest request)?
+  voiceChains;
+
   static const Duration _minuteWindow = Duration(minutes: 1);
 
   final Map<String, _ProviderQueueState> _states = {};

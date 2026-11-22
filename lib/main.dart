@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/data/services/synthesis/voice_chain_runner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:media_kit/media_kit.dart';
@@ -66,6 +67,10 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
   @override
   void initState() {
     super.initState();
+    // Every app synthesis path runs the character's processing chain.
+    ref.read(ttsQueueServiceProvider).voiceChains = VoiceChainHook(
+      ref.read(databaseProvider),
+    ).wrap;
     _lifecycle = AppLifecycleListener(
       onExitRequested: () async {
         if (kIsWeb) return AppExitResponse.exit;

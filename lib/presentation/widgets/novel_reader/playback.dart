@@ -152,7 +152,6 @@ extension _NovelReaderEditorCache on _NovelReaderEditorState {
 
   String? _voiceForSegment(db.NovelProject project, db.NovelSegment segment) =>
       _resolvedVoice(project, segment).voiceAssetId;
-
   TaskProfile? _synthesisProfile(String id) => ref
       .read(novelTaskProfilesProvider(id))
       .value
@@ -780,6 +779,7 @@ extension _NovelReaderEditorSynthesis on _NovelReaderEditorState {
           request: TtsRequest(
             text: text,
             voice: asset.presetVoiceName ?? asset.name,
+            voiceAssetId: asset.id,
             speed: asset.speed,
             responseFormat: preferWav ? 'wav' : 'mp3',
             textLang: provider.adapterType == 'gptSovits'

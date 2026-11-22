@@ -806,6 +806,7 @@ class _PhaseTtsScreenState extends ConsumerState<PhaseTtsScreen> {
             request: TtsRequest(
               text: seg.segmentText,
               voice: asset.presetVoiceName ?? asset.name,
+              voiceAssetId: asset.id,
               speed: asset.speed,
               textLang: provider.adapterType == 'gptSovits'
                   ? asset.modelName

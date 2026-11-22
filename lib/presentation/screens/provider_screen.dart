@@ -2,7 +2,10 @@ import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'package:neiroha/providers/model_capability_providers.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:neiroha/data/ai/core/provider_connection.dart';
 import 'package:neiroha/data/ai/registry/built_in_voices.dart';
+import 'package:neiroha/data/ai/registry/model_badges.dart';
+import 'package:neiroha/data/ai/registry/plugin_registry.dart';
 import 'package:neiroha/presentation/widgets/voice_chip_list.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -353,6 +356,15 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     _adapterType,
     ref.read(platformCapabilitiesProvider),
   );
+
+  /// The saved provider, for catalog-mounted capability badges.
+  ProviderConnection? get _connection {
+    try {
+      return connectionForProvider(widget.provider);
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Fetched or hand-added voices not built into a listed TTS model.
   List<VoiceChipEntry> get _customVoices {
@@ -997,6 +1009,7 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                           .map(
                             (m) => _NonTtsModelRow(
                               model: m,
+                              badges: modelBadges(m.modelKey, _connection),
                               onDelete: () => _removeEntry(m.id),
                             ),
                           ),
@@ -1109,26 +1122,19 @@ class _NonTtsModelRow extends StatelessWidget {
   final db.ModelBinding model;
   final VoidCallback onDelete;
 
-  const _NonTtsModelRow({required this.model, required this.onDelete});
+  final List<String> badges;
 
-  /// Infer capability badges from model name.
-  List<String> get _capabilities {
-    final k = model.modelKey.toLowerCase();
-    final caps = <String>[];
-    if (k.contains('omni') ||
-        RegExp(r'mimo-v2(\.5)?$').hasMatch(k) ||
-        k.contains('-vision') ||
-        (k.contains('gpt-4o') && !k.contains('transcribe'))) {
-      caps.addAll(['LLM', 'ASR']);
-    } else {
-      caps.add('LLM');
-    }
-    return caps;
-  }
+  const _NonTtsModelRow({
+    required this.model,
+    required this.onDelete,
+    required this.badges,
+  });
 
   Color _badgeColor(String cap) => switch (cap) {
     'LLM' => Colors.blueAccent,
     'ASR' => Colors.greenAccent,
+    'Realtime' || 'Translate' => Colors.orangeAccent,
+    'Music' => Colors.pinkAccent,
     _ => Colors.grey,
   };
 
@@ -1153,7 +1159,7 @@ class _NonTtsModelRow extends StatelessWidget {
             Expanded(
               child: Text(model.modelKey, style: const TextStyle(fontSize: 13)),
             ),
-            ..._capabilities.map(
+            ...badges.map(
               (cap) => Padding(
                 padding: const EdgeInsets.only(left: 4),
                 child: Container(

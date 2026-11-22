@@ -1096,5 +1096,6 @@
   "musicReuse": "沿用此设定",
   "musicNoLyrics": "纯音乐，无歌词。",
   "musicWatermark": "Lyria 生成的音频带有不可听的 SynthID 水印。",
-  "musicSaved": "已保存到 {path}"
+  "musicSaved": "已保存到 {path}",
+  "liveRealtimeModel": "实时模型"
 }

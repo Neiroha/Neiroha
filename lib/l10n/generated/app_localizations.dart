@@ -6385,6 +6385,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Saved to {path}'**
   String musicSaved(String path);
+
+  /// No description provided for @liveRealtimeModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime model'**
+  String get liveRealtimeModel;
 }
 
 class _AppLocalizationsDelegate

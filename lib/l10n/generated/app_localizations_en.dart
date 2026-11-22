@@ -3549,4 +3549,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String musicSaved(String path) {
     return 'Saved to $path';
   }
+
+  @override
+  String get liveRealtimeModel => 'Realtime model';
 }

@@ -31,6 +31,18 @@ class ConversationFactory {
       DialogMode.companion,
   };
 
+  /// The character's chosen Realtime model, or the default when that
+  /// provider is gone or disabled.
+  RoutedModel<RealtimeModel>? realtimeFor(CharacterLiveSettings settings) =>
+      (settings.realtimeConnectionId == null
+          ? null
+          : router.resolve<RealtimeModel>(
+              AiCapability.realtime,
+              connectionId: settings.realtimeConnectionId,
+              modelId: settings.realtimeModelId,
+            )) ??
+      router.resolve<RealtimeModel>(AiCapability.realtime);
+
   VoiceConversionStage? conversionFor(CharacterLiveSettings settings) {
     if (!settings.usesVoiceConversion) return null;
     final routed = router.resolve<VoiceConverter>(
@@ -59,14 +71,22 @@ class ConversationFactory {
     required CharacterLiveSettings settings,
     required ConversationAudioIo io,
   }) => switch (mode) {
-    DialogMode.realtime => RealtimeConversation(
-      model: _need<RealtimeModel>(AiCapability.realtime),
-      io: io,
-      instructions: personaFor(character, settings),
-      voice: settings.realtimeVoice,
-      conversion: conversionFor(settings),
-      allowInterruptions: settings.allowInterruptions,
-    ),
+    DialogMode.realtime => () {
+      final model =
+          realtimeFor(settings)?.model ??
+          (throw CapabilityUnavailableException(AiCapability.realtime.name));
+      return RealtimeConversation(
+        model: model,
+        io: io,
+        instructions: personaFor(character, settings),
+        // A voice saved for another vendor's model would be rejected.
+        voice: model.voices.contains(settings.realtimeVoice)
+            ? settings.realtimeVoice
+            : null,
+        conversion: conversionFor(settings),
+        allowInterruptions: settings.allowInterruptions,
+      );
+    }(),
     DialogMode.companion => CompanionConversation(
       vad: _need<VoiceActivityDetector>(AiCapability.vad),
       transcriber: _need<Transcriber>(AiCapability.stt),

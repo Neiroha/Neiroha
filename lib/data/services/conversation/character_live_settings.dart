@@ -2,13 +2,15 @@ import 'dart:convert';
 
 import 'package:neiroha/data/database/app_database.dart';
 
-/// Per-character settings for live dialog: persona prompt, Realtime voice and
-/// an optional VC target that restores the character's timbre. Stored in
-/// app settings until the v34 provider tables land.
+/// Per-character settings for live dialog: persona prompt, Realtime model and
+/// voice, and an optional VC target that restores the character's timbre.
+/// Stored in app settings until the v34 provider tables land.
 class CharacterLiveSettings {
   const CharacterLiveSettings({
     this.persona = '',
     this.realtimeVoice,
+    this.realtimeConnectionId,
+    this.realtimeModelId,
     this.vcConnectionId,
     this.vcModelId,
     this.vcVoice,
@@ -17,6 +19,10 @@ class CharacterLiveSettings {
 
   final String persona;
   final String? realtimeVoice;
+
+  /// Realtime model to talk with; null uses the router default.
+  final String? realtimeConnectionId;
+  final String? realtimeModelId;
   final String? vcConnectionId;
   final String? vcModelId;
   final String? vcVoice;
@@ -30,6 +36,8 @@ class CharacterLiveSettings {
   Map<String, Object?> toJson() => {
     'persona': persona,
     'realtimeVoice': realtimeVoice,
+    'realtimeConnectionId': realtimeConnectionId,
+    'realtimeModelId': realtimeModelId,
     'vcConnectionId': vcConnectionId,
     'vcModelId': vcModelId,
     'vcVoice': vcVoice,
@@ -40,6 +48,8 @@ class CharacterLiveSettings {
       CharacterLiveSettings(
         persona: json['persona'] as String? ?? '',
         realtimeVoice: json['realtimeVoice'] as String?,
+        realtimeConnectionId: json['realtimeConnectionId'] as String?,
+        realtimeModelId: json['realtimeModelId'] as String?,
         vcConnectionId: json['vcConnectionId'] as String?,
         vcModelId: json['vcModelId'] as String?,
         vcVoice: json['vcVoice'] as String?,

@@ -3,22 +3,8 @@ import 'package:neiroha/data/ai/registry/capability_router.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/conversation/character_live_settings.dart';
 import 'package:neiroha/data/services/conversation/conversation_engine.dart';
-import 'package:neiroha/domain/ai/capability.dart';
+import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
-
-/// OpenAI Realtime voices; the model may offer more over time.
-const realtimeVoices = [
-  'marin',
-  'cedar',
-  'alloy',
-  'ash',
-  'ballad',
-  'coral',
-  'echo',
-  'sage',
-  'shimmer',
-  'verse',
-];
 
 Future<CharacterLiveSettings?> showLiveSettingsDialog({
   required BuildContext context,
@@ -53,6 +39,13 @@ class _LiveSettingsDialogState extends State<_LiveSettingsDialog> {
     text: widget.settings.vcVoice ?? '',
   );
   late String? _voice = widget.settings.realtimeVoice;
+  late (String, String)? _realtime =
+      widget.settings.realtimeConnectionId == null
+      ? null
+      : (
+          widget.settings.realtimeConnectionId!,
+          widget.settings.realtimeModelId ?? '',
+        );
   late String? _vcConnection = widget.settings.vcConnectionId;
   late bool _interrupt = widget.settings.allowInterruptions;
 
@@ -68,6 +61,24 @@ class _LiveSettingsDialogState extends State<_LiveSettingsDialog> {
     final l = AppLocalizations.of(context);
     final vcConnections = widget.router.serving(AiCapability.vc);
     final realtime = widget.mode == DialogMode.realtime;
+    final models = [
+      for (final c in widget.router.serving(AiCapability.realtime))
+        for (final m in c.models(AiCapability.realtime)) (c, m),
+    ];
+    final picked = models.any((e) => (e.$1.id, e.$2.id) == _realtime)
+        ? _realtime
+        : null;
+    final voices =
+        widget.router
+            .resolve<RealtimeModel>(
+              AiCapability.realtime,
+              connectionId: picked?.$1,
+              modelId: picked?.$2,
+            )
+            ?.model
+            .voices ??
+        const <String>[];
+    final voice = voices.contains(_voice) ? _voice : null;
     final vcValue = vcConnections.any((c) => c.config.id == _vcConnection)
         ? _vcConnection
         : null;
@@ -92,12 +103,33 @@ class _LiveSettingsDialogState extends State<_LiveSettingsDialog> {
               ),
               if (realtime) ...[
                 const SizedBox(height: 12),
+                DropdownButtonFormField<(String, String)?>(
+                  initialValue: picked,
+                  isExpanded: true,
+                  decoration: InputDecoration(labelText: l.liveRealtimeModel),
+                  items: [
+                    DropdownMenuItem(value: null, child: Text(l.liveDefault)),
+                    for (final (c, m) in models)
+                      DropdownMenuItem(
+                        value: (c.id, m.id),
+                        child: Text(
+                          '${c.config.name.isEmpty ? c.plugin.displayName : c.config.name}'
+                          ' · ${m.id}',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: (v) => setState(() => _realtime = v),
+                ),
+                const SizedBox(height: 12),
                 DropdownButtonFormField<String?>(
-                  initialValue: _voice,
+                  key: ValueKey(picked),
+                  initialValue: voice,
+                  isExpanded: true,
                   decoration: InputDecoration(labelText: l.liveRealtimeVoice),
                   items: [
                     DropdownMenuItem(value: null, child: Text(l.liveDefault)),
-                    for (final v in realtimeVoices)
+                    for (final v in voices)
                       DropdownMenuItem(value: v, child: Text(v)),
                   ],
                   onChanged: (v) => setState(() => _voice = v),
@@ -165,7 +197,9 @@ class _LiveSettingsDialogState extends State<_LiveSettingsDialog> {
             context,
             CharacterLiveSettings(
               persona: _persona.text.trim(),
-              realtimeVoice: _voice,
+              realtimeVoice: voice,
+              realtimeConnectionId: picked?.$1,
+              realtimeModelId: picked?.$2,
               vcConnectionId: vcValue,
               vcVoice: vcValue == null ? null : _vcVoice.text.trim(),
               allowInterruptions: _interrupt,

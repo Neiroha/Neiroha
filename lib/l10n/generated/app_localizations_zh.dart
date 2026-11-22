@@ -3423,4 +3423,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String musicSaved(String path) {
     return '已保存到 $path';
   }
+
+  @override
+  String get liveRealtimeModel => '实时模型';
 }

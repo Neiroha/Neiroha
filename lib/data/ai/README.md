@@ -18,6 +18,8 @@ protocols/   transports shared by several vendors
   openai/    OpenAI-shaped HTTP: Dio, transcriptions, speech, chat, responses
   realtime/  JSON WebSocket session + OpenAI transcription / translation /
              conversation sessions, Realtime-as-TTS stream
+  gemini/    Gemini Live (BidiGenerateContent) session: conversation,
+             streaming transcription, speech translation
 providers/<vendor>/
   <vendor>_plugin.dart       capabilities + catalog
   <vendor>_connection.dart   opens models, health check
@@ -27,6 +29,8 @@ providers/common/            AdapterTtsPlugin + AdapterBackedConnection: native
                              TTS adapter + OpenAI-protocol LLM; used as-is for
                              TTS-only engines (Azure, local servers)
 providers/on_device/         built-in engines, no account (VAD)
+providers/gemini/            native AI Studio: generateContent LLM,
+                             Interactions transcription, Live models
 ```
 
 Rules: one model class per file. "OpenAI-compatible" is a protocol, not a

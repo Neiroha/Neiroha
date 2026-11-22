@@ -32,31 +32,34 @@ AdapterBackedConnection _connect(AdapterType type, String baseUrl) =>
 
 void main() {
   test('Gemini, MiniMax and MiMo each get their own plugin with LLM', () {
-    for (final (type, url, plugin, model) in [
+    for (final (type, url, plugin, model, protocol) in [
       (
         AdapterType.geminiTts,
         'https://generativelanguage.googleapis.com',
         GeminiPlugin,
         'gemini-3.8-flash',
+        AiProtocol.geminiGenerateContent,
       ),
       (
         AdapterType.minimaxTts,
         'https://api.minimax.io',
         MiniMaxPlugin,
         'MiniMax-M3',
+        AiProtocol.openAiChat,
       ),
       (
         AdapterType.chatCompletionsTts,
         'https://api.xiaomimimo.com/v1',
         MiMoPlugin,
         'mimo-v2.6-pro',
+        AiProtocol.openAiChat,
       ),
     ]) {
       final c = _connect(type, url);
       expect(c.plugin.runtimeType, plugin);
-      expect(c.capabilities, {AiCapability.tts, AiCapability.llm});
+      expect(c.capabilities, containsAll({AiCapability.tts, AiCapability.llm}));
       expect(c.languageModel()?.descriptor.id, model);
-      expect(c.languageModel()?.descriptor.protocol, AiProtocol.openAiChat);
+      expect(c.languageModel()?.descriptor.protocol, protocol);
       expect(c.speechModel(), isNotNull, reason: type.name);
     }
   });
@@ -151,22 +154,6 @@ void main() {
     tearDown(() => server.close(force: true));
 
     String url(String path) => 'http://127.0.0.1:${server.port}$path';
-
-    test('Gemini sends Bearer chat completions on its OpenAI path', () async {
-      final c = _connect(AdapterType.geminiTts, url('/v1beta/openai'));
-      final reply = await c.languageModel()!.complete(const [
-        LlmChatMessage(role: 'user', content: 'hi'),
-      ]);
-      expect(reply, '{"speaker":"Alice"}');
-      final (path, auth, apiKey, body) = seen.single;
-      expect(path, '/v1beta/openai/chat/completions');
-      expect(auth, 'Bearer fixture');
-      expect(apiKey, isNull);
-      expect(body['model'], 'gemini-3.8-flash');
-      final health = await c.checkLlm();
-      expect(health.state, HealthState.ok);
-      expect(health.models, ['gemini-3.8-flash']);
-    });
 
     test('MiMo uses the api-key header for structured output', () async {
       final c = connectionForProvider(

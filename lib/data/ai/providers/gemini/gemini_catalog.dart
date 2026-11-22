@@ -1,17 +1,123 @@
-import 'package:neiroha/data/ai/providers/common/chat_model.dart';
-import 'package:neiroha/domain/ai/ai_feature.dart';
-import 'package:neiroha/domain/ai/model_descriptor.dart';
+import 'package:neiroha/domain/ai/ai.dart';
 
-const _structured = {AiFeature.structuredOutput};
+const _context = 1048576;
+const _inputs = {
+  Modality.text,
+  Modality.image,
+  Modality.audio,
+  Modality.video,
+  Modality.pdf,
+};
 
-/// Gemini text models on the OpenAI-compatible `/v1beta/openai/` endpoint
-/// (catalog snapshot 2026-11-17). Transcribe / Live models join in M4 / M6.
-final List<ModelDescriptor> geminiLlmCatalog = [
-  chatModel('gemini-3.8-flash', isDefault: true, features: _structured),
-  chatModel('gemini-4-argon', features: _structured),
-  chatModel('gemini-4-carbon', features: _structured),
-  chatModel('gemini-4-hydrogen', features: _structured),
-  chatModel('gemini-3.5-flash-lite', features: _structured),
-  chatModel('gemini-pro-latest', features: _structured),
-  chatModel('gemini-flash-latest', features: _structured),
+/// Text model with thinking levels and defaults from the Gemini thinking
+/// docs (read 2026-11-22). Thinking cannot be switched fully off on
+/// Gemini 3+; `minimal` is "near-off" and not offered on 3.8 Flash / 4.
+ModelDescriptor _llm(
+  String id,
+  List<ReasoningEffort> levels,
+  ReasoningEffort defaultLevel, {
+  int maxOut = 65536,
+  bool isDefault = false,
+}) => ModelDescriptor(
+  id: id,
+  capability: AiCapability.llm,
+  protocol: AiProtocol.geminiGenerateContent,
+  features: const {
+    AiFeature.structuredOutput,
+    AiFeature.toolCalls,
+    AiFeature.reasoning,
+  },
+  isDefault: isDefault,
+  llm: LlmTraits(
+    inputs: _inputs,
+    outputs: const {Modality.text},
+    tools: true,
+    parallelTools: true,
+    structuredOutput: true,
+    reasoning: ReasoningSpec(levels: levels, defaultLevel: defaultLevel),
+    contextWindow: _context,
+    maxOutputTokens: maxOut,
+  ),
+);
+
+const _lmh = [
+  ReasoningEffort.low,
+  ReasoningEffort.medium,
+  ReasoningEffort.high,
+];
+const _lmhx = [..._lmh, ReasoningEffort.xhigh];
+const _mlmh = [ReasoningEffort.minimal, ..._lmh];
+
+const _live = {
+  AiFeature.audioOutput,
+  AiFeature.textOutput,
+  AiFeature.toolCalls,
+  AiFeature.serverVad,
+  AiFeature.inputTranscription,
+};
+
+/// Google AI Studio models beyond TTS: native generateContent text models,
+/// Interactions transcription and Live (conversation, streaming
+/// transcription, translation). Names checked against `GET v1beta/models`.
+final List<ModelDescriptor> geminiCatalog = [
+  _llm('gemini-3.8-flash', _lmh, ReasoningEffort.medium, isDefault: true),
+  _llm('gemini-4-hydrogen', _lmhx, ReasoningEffort.high),
+  _llm('gemini-4-neon', _lmhx, ReasoningEffort.high),
+  _llm('gemini-4-argon', _lmh, ReasoningEffort.medium, maxOut: 32768),
+  _llm('gemini-4-carbon', _lmh, ReasoningEffort.medium, maxOut: 32768),
+  _llm('gemini-3.6-flash', _mlmh, ReasoningEffort.medium),
+  _llm('gemini-3.5-flash-lite', _mlmh, ReasoningEffort.minimal),
+  _llm('gemini-3.1-flash-lite', _mlmh, ReasoningEffort.minimal),
+  const ModelDescriptor(
+    id: 'gemini-3.5-transcribe',
+    capability: AiCapability.stt,
+    protocol: AiProtocol.geminiInteractions,
+    features: {
+      AiFeature.fileTranscription,
+      AiFeature.wordTimestamps,
+      AiFeature.diarization,
+      AiFeature.keywords,
+      AiFeature.languageDetection,
+    },
+    isDefault: true,
+  ),
+  const ModelDescriptor(
+    id: 'gemini-3.5-transcribe-live',
+    capability: AiCapability.stt,
+    protocol: AiProtocol.geminiLive,
+    features: {AiFeature.streamingTranscription, AiFeature.keywords},
+    platforms: nativePlatforms,
+  ),
+  const ModelDescriptor(
+    id: 'gemini-3.8-live',
+    capability: AiCapability.realtime,
+    protocol: AiProtocol.geminiLive,
+    features: _live,
+    platforms: nativePlatforms,
+    isDefault: true,
+  ),
+  const ModelDescriptor(
+    id: 'gemini-3.8-live-extended-thinking',
+    capability: AiCapability.realtime,
+    protocol: AiProtocol.geminiLive,
+    features: {..._live, AiFeature.reasoning},
+    platforms: nativePlatforms,
+  ),
+  const ModelDescriptor(
+    id: 'gemini-3.1-flash-live-preview',
+    capability: AiCapability.realtime,
+    protocol: AiProtocol.geminiLive,
+    features: _live,
+    platforms: nativePlatforms,
+    lifecycle: ModelLifecycle.preview,
+  ),
+  const ModelDescriptor(
+    id: 'gemini-3.5-live-translate-preview',
+    capability: AiCapability.translate,
+    protocol: AiProtocol.geminiLive,
+    features: {AiFeature.audioOutput, AiFeature.sourceTranscript},
+    platforms: nativePlatforms,
+    lifecycle: ModelLifecycle.preview,
+    isDefault: true,
+  ),
 ];

@@ -57,6 +57,7 @@ void main() {
       AiCapability.stt,
       AiCapability.realtime,
       AiCapability.translate,
+      AiCapability.music,
     });
     expect(g.languageModel()!.descriptor.id, 'gemini-3.8-flash');
     expect(g.transcriber()!.descriptor.id, 'gemini-3.5-transcribe');

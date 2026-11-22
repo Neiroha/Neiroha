@@ -7,6 +7,7 @@ import 'package:neiroha/domain/ai/capability.dart';
 import 'package:neiroha/domain/ai/model_descriptor.dart';
 import 'package:neiroha/domain/ai/models/capability_model.dart';
 import 'package:neiroha/domain/ai/models/language_model.dart';
+import 'package:neiroha/domain/ai/models/music_generator.dart';
 import 'package:neiroha/domain/ai/models/realtime_model.dart';
 import 'package:neiroha/domain/ai/models/speech_synthesizer.dart';
 import 'package:neiroha/domain/ai/models/speech_translator.dart';
@@ -71,4 +72,5 @@ extension TypedModels on ProviderConnection {
       typed(AiCapability.translate, id);
   VoiceConverter? voiceConverter([String? id]) => typed(AiCapability.vc, id);
   VoiceActivityDetector? vad([String? id]) => typed(AiCapability.vad, id);
+  MusicGenerator? musicGenerator([String? id]) => typed(AiCapability.music, id);
 }

@@ -5,14 +5,15 @@ import 'package:neiroha/domain/ai/ai.dart';
 
 import 'gemini_endpoint.dart';
 import 'llm/gemini_language_model.dart';
+import 'music/gemini_music_generator.dart';
 import 'realtime/gemini_realtime_model.dart';
 import 'stt/gemini_streaming_transcriber.dart';
 import 'stt/gemini_transcriber.dart';
 import 'translate/gemini_speech_translator.dart';
 
 /// One AI Studio key: native TTS (adapter), generateContent LLMs,
-/// Interactions transcription and Live conversation / transcription /
-/// translation.
+/// Interactions transcription and Lyria songs, and Live conversation /
+/// transcription / translation.
 class GeminiConnection extends AdapterBackedConnection {
   GeminiConnection(super.plugin, super.config);
 
@@ -27,6 +28,7 @@ class GeminiConnection extends AdapterBackedConnection {
           ? AiProtocol.geminiLive
           : AiProtocol.geminiInteractions,
     AiCapability.realtime || AiCapability.translate => AiProtocol.geminiLive,
+    AiCapability.music => AiProtocol.geminiInteractions,
     _ => null,
   };
 
@@ -47,6 +49,7 @@ class GeminiConnection extends AdapterBackedConnection {
       ),
       (AiCapability.realtime, _) => GeminiRealtimeModel(d, endpoint),
       (AiCapability.translate, _) => GeminiSpeechTranslator(d, endpoint),
+      (AiCapability.music, _) => GeminiMusicGenerator(d, endpoint),
       _ => super.open(cap, modelId),
     };
   }

@@ -120,4 +120,41 @@ final List<ModelDescriptor> geminiCatalog = [
     lifecycle: ModelLifecycle.preview,
     isDefault: true,
   ),
+  ..._lyria,
+];
+
+const _song = {
+  AiFeature.vocals,
+  AiFeature.imagePrompt,
+  AiFeature.losslessOutput,
+};
+
+/// Lyria song models (Interactions API, checked 2026-11-22): full songs
+/// with sung lyrics up to a few minutes, or fixed 30 s clips (MP3 only).
+/// `lyria-realtime-exp` streams instrumentals over Live and is not mounted.
+const _lyria = [
+  ModelDescriptor(
+    id: 'lyria-3.5',
+    capability: AiCapability.music,
+    protocol: AiProtocol.geminiInteractions,
+    displayName: 'Lyria 3.5',
+    features: _song,
+    isDefault: true,
+  ),
+  ModelDescriptor(
+    id: 'lyria-3-pro-preview',
+    capability: AiCapability.music,
+    protocol: AiProtocol.geminiInteractions,
+    displayName: 'Lyria 3 Pro',
+    features: _song,
+    lifecycle: ModelLifecycle.preview,
+  ),
+  ModelDescriptor(
+    id: 'lyria-3-clip-preview',
+    capability: AiCapability.music,
+    protocol: AiProtocol.geminiInteractions,
+    displayName: 'Lyria 3 Clip (30 s)',
+    features: {AiFeature.vocals, AiFeature.timedLyrics, AiFeature.imagePrompt},
+    lifecycle: ModelLifecycle.preview,
+  ),
 ];

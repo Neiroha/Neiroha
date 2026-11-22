@@ -1,6 +1,6 @@
 /// What a model can be used for. One model may be listed under several
 /// capabilities (e.g. a Realtime model serves both `realtime` and `tts`).
-enum AiCapability { llm, tts, stt, realtime, translate, vc, vad }
+enum AiCapability { llm, tts, stt, realtime, translate, vc, vad, music }
 
 /// Wire protocol a model mount uses. Several providers share one protocol.
 enum AiProtocol {

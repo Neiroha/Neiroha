@@ -10,7 +10,7 @@ import 'gemini_connection.dart';
 
 /// Google AI Studio: one key for native TTS, Gemini text models (native
 /// generateContent), transcription and Live (realtime voice, streaming
-/// transcription, speech translation).
+/// transcription, speech translation) and Lyria song generation.
 class GeminiPlugin extends AdapterTtsPlugin {
   const GeminiPlugin() : super(AdapterType.geminiTts);
   @override
@@ -24,6 +24,7 @@ class GeminiPlugin extends AdapterTtsPlugin {
     AiCapability.stt,
     AiCapability.realtime,
     AiCapability.translate,
+    AiCapability.music,
   };
   @override
   List<ModelDescriptor> get catalog => [ttsDescriptor, ...geminiCatalog];

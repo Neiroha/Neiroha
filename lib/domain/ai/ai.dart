@@ -12,6 +12,7 @@ export 'media/transcript.dart';
 export 'model_descriptor.dart';
 export 'models/capability_model.dart';
 export 'models/language_model.dart';
+export 'models/music_generator.dart';
 export 'models/realtime_model.dart';
 export 'models/speech_synthesizer.dart';
 export 'models/speech_translator.dart';

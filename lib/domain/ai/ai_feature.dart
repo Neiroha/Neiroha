@@ -23,6 +23,11 @@ abstract final class AiFeature {
   // llm
   static const structuredOutput = 'structuredOutput';
   static const reasoning = 'reasoning';
+  // music
+  static const vocals = 'vocals';
+  static const timedLyrics = 'timedLyrics';
+  static const imagePrompt = 'imagePrompt';
+  static const losslessOutput = 'losslessOutput';
   // vc / vad
   static const zeroShot = 'zeroShot';
   static const local = 'local';

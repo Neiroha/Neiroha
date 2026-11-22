@@ -3121,4 +3121,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get roleShowMorePending => 'Show more segments to review';
+
+  @override
+  String get playbackLoop => 'Loop playback';
+
+  @override
+  String get playbackLoopOn => 'Loop on';
+
+  @override
+  String get playbackDownload => 'Download audio';
+
+  @override
+  String get playbackMoreActions => 'More playback actions';
 }

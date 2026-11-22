@@ -5635,6 +5635,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show more segments to review'**
   String get roleShowMorePending;
+
+  /// No description provided for @playbackLoop.
+  ///
+  /// In en, this message translates to:
+  /// **'Loop playback'**
+  String get playbackLoop;
+
+  /// No description provided for @playbackLoopOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Loop on'**
+  String get playbackLoopOn;
+
+  /// No description provided for @playbackDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download audio'**
+  String get playbackDownload;
+
+  /// No description provided for @playbackMoreActions.
+  ///
+  /// In en, this message translates to:
+  /// **'More playback actions'**
+  String get playbackMoreActions;
 }
 
 class _AppLocalizationsDelegate

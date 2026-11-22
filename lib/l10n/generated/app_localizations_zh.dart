@@ -3018,4 +3018,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get roleShowMorePending => '显示更多待确认片段';
+
+  @override
+  String get playbackLoop => '循环播放';
+
+  @override
+  String get playbackLoopOn => '已开启循环';
+
+  @override
+  String get playbackDownload => '下载音频';
+
+  @override
+  String get playbackMoreActions => '更多播放操作';
 }

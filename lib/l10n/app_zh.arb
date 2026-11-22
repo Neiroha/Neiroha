@@ -971,5 +971,9 @@
       }
     }
   },
-  "roleShowMorePending": "显示更多待确认片段"
+  "roleShowMorePending": "显示更多待确认片段",
+  "playbackLoop": "循环播放",
+  "playbackLoopOn": "已开启循环",
+  "playbackDownload": "下载音频",
+  "playbackMoreActions": "更多播放操作"
 }

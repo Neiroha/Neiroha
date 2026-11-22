@@ -1363,5 +1363,9 @@
       }
     }
   },
-  "roleShowMorePending": "Show more segments to review"
+  "roleShowMorePending": "Show more segments to review",
+  "playbackLoop": "Loop playback",
+  "playbackLoopOn": "Loop on",
+  "playbackDownload": "Download audio",
+  "playbackMoreActions": "More playback actions"
 }

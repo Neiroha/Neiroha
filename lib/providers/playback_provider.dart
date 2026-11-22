@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_providers.dart';
+import 'playback_loop.dart';
 import 'package:neiroha/data/services/synthesis/soloud_audio_sink.dart';
 import 'package:neiroha/data/services/synthesis/synthesis_service.dart';
 import 'package:neiroha/domain/synthesis/streaming_audio_sink.dart';
@@ -51,7 +52,6 @@ class PlaybackState {
     this.generationComplete = false,
     this.bufferedUntil = Duration.zero,
     this.error,
-
     this.position = Duration.zero,
     this.duration = Duration.zero,
   });
@@ -68,7 +68,6 @@ class PlaybackState {
     bool? generationComplete,
     Duration? bufferedUntil,
     String? error,
-
     Duration? position,
     Duration? duration,
     bool clearMedia = false,
@@ -88,7 +87,6 @@ class PlaybackState {
       generationComplete: generationComplete ?? this.generationComplete,
       bufferedUntil: bufferedUntil ?? this.bufferedUntil,
       error: error,
-
       position: position ?? this.position,
       duration: duration ?? this.duration,
     );
@@ -119,6 +117,10 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
     _player = ref.read(audioPlayerProvider);
     _completeSub = _player.onPlayerComplete.listen((_) {
       if (state.isStreaming) return;
+      if (_shouldLoop) {
+        unawaited(_replayLoop());
+        return;
+      }
       _resetPositionPublishClock();
       state = state.copyWith(isPlaying: false, position: Duration.zero);
       unawaited(_syncNovelMediaSession(force: true));
@@ -211,6 +213,19 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
       state = state.copyWith(isPlaying: true);
     }
     await _syncNovelMediaSession(force: true);
+  }
+
+  /// Loops replay one clip; sequences and the novel reader advance instead.
+  bool get _shouldLoop =>
+      ref.read(playbackLoopProvider) &&
+      state.audioPath != null &&
+      _sequenceCancelCompleter == null &&
+      !isNovelReaderPlaybackSource(state.sourceTag);
+
+  Future<void> _replayLoop() {
+    _resetPositionPublishClock();
+    state = state.copyWith(position: Duration.zero, isPlaying: true);
+    return _player.play(_sourceFor(state.audioPath!));
   }
 
   Source _sourceFor(String path) =>
@@ -330,6 +345,7 @@ class PlaybackNotifier extends Notifier<PlaybackState> {
           _streamCancellation = null;
           removeCancel();
           await output.stop();
+          if (run == _streamRunId && _shouldLoop) await _replayLoop();
         }),
       );
       return receipt;

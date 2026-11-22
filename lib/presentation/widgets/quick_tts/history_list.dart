@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/actions/audio_download.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
@@ -231,6 +232,18 @@ class QuickTtsHistoryList extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          if (!kIsWeb)
+            TextButton.icon(
+              onPressed: () => _download(context, ref, entry),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white70,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: const Size(0, 24),
+                textStyle: const TextStyle(fontSize: 11),
+              ),
+              icon: const Icon(Icons.download_rounded, size: 14),
+              label: Text(AppLocalizations.of(context).playbackDownload),
+            ),
           TextButton.icon(
             onPressed: kIsWeb
                 ? () =>
@@ -255,5 +268,26 @@ class QuickTtsHistoryList extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _download(
+    BuildContext context,
+    WidgetRef ref,
+    db.QuickTtsHistory entry,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final saved = await downloadGeneratedAudio(
+        ref,
+        entry.audioPath!,
+        title: entry.inputText,
+      );
+      if (saved) messenger.showSnackBar(SnackBar(content: Text(l10n.uiSaved)));
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.uiFailedToSave(error))),
+      );
+    }
   }
 }

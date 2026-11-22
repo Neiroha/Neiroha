@@ -6025,6 +6025,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Done'**
   String get subtitleStageDone;
+
+  /// No description provided for @modalityText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get modalityText;
+
+  /// No description provided for @modalityImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get modalityImage;
+
+  /// No description provided for @modalityAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get modalityAudio;
+
+  /// No description provided for @modalityVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get modalityVideo;
+
+  /// No description provided for @modalityPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF'**
+  String get modalityPdf;
+
+  /// No description provided for @llmThinkUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking ?'**
+  String get llmThinkUnknown;
+
+  /// No description provided for @llmThinkNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No thinking'**
+  String get llmThinkNone;
+
+  /// No description provided for @llmThinkLevelsUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking (levels unknown)'**
+  String get llmThinkLevelsUnknown;
+
+  /// No description provided for @llmThinkLevels.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking {count} levels {from}→{to}'**
+  String llmThinkLevels(int count, String from, String to);
+
+  /// No description provided for @llmThinkCanDisable.
+  ///
+  /// In en, this message translates to:
+  /// **', can turn off'**
+  String get llmThinkCanDisable;
+
+  /// No description provided for @llmThinkDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default: {level}'**
+  String llmThinkDefault(String level);
+
+  /// No description provided for @llmThinkModes.
+  ///
+  /// In en, this message translates to:
+  /// **'Modes: {modes}'**
+  String llmThinkModes(String modes);
+
+  /// No description provided for @llmTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool calling'**
+  String get llmTools;
+
+  /// No description provided for @llmToolsNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No tool calling'**
+  String get llmToolsNo;
+
+  /// No description provided for @llmToolsUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool calling ?'**
+  String get llmToolsUnknown;
+
+  /// No description provided for @llmToolsParallel.
+  ///
+  /// In en, this message translates to:
+  /// **'Can call several tools in one turn'**
+  String get llmToolsParallel;
+
+  /// No description provided for @llmInputsUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Input ?'**
+  String get llmInputsUnknown;
+
+  /// No description provided for @llmSchema.
+  ///
+  /// In en, this message translates to:
+  /// **'JSON schema'**
+  String get llmSchema;
+
+  /// No description provided for @llmContext.
+  ///
+  /// In en, this message translates to:
+  /// **'{tokens} context'**
+  String llmContext(String tokens);
+
+  /// No description provided for @llmSourceCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in catalog'**
+  String get llmSourceCatalog;
+
+  /// No description provided for @llmSourceAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Found in this account'**
+  String get llmSourceAccount;
+
+  /// No description provided for @llmSourceUnlisted.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in catalog · not listed by this account'**
+  String get llmSourceUnlisted;
+
+  /// No description provided for @llmPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Language models · {provider}'**
+  String llmPickerTitle(String provider);
+
+  /// No description provided for @llmPickerSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search, or type a model ID'**
+  String get llmPickerSearch;
+
+  /// No description provided for @llmPickerToolsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool calling only'**
+  String get llmPickerToolsOnly;
+
+  /// No description provided for @llmPickerLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the model list…'**
+  String get llmPickerLoading;
+
+  /// No description provided for @llmPickerFound.
+  ///
+  /// In en, this message translates to:
+  /// **'The account lists {count} models; traits come from the public catalog.'**
+  String llmPickerFound(int count);
+
+  /// No description provided for @llmPickerDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Credentials rejected: {error}'**
+  String llmPickerDenied(String error);
+
+  /// No description provided for @llmPickerOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'No model list from this provider; showing the built-in catalog.'**
+  String get llmPickerOffline;
+
+  /// No description provided for @llmPickerUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {id}'**
+  String llmPickerUse(String id);
+
+  /// No description provided for @llmNeedsToolsNo.
+  ///
+  /// In en, this message translates to:
+  /// **'This model cannot call tools; role analysis needs tool calling.'**
+  String get llmNeedsToolsNo;
+
+  /// No description provided for @llmNeedsToolsUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool calling unknown; one small test request runs before the first analysis.'**
+  String get llmNeedsToolsUnknown;
+
+  /// No description provided for @llmProviderDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'(disabled)'**
+  String get llmProviderDisabled;
+
+  /// No description provided for @llmProviderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only providers that offer a language model are listed'**
+  String get llmProviderHint;
 }
 
 class _AppLocalizationsDelegate

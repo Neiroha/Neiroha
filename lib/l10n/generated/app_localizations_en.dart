@@ -3336,4 +3336,127 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subtitleStageDone => 'Done';
+
+  @override
+  String get modalityText => 'Text';
+
+  @override
+  String get modalityImage => 'Image';
+
+  @override
+  String get modalityAudio => 'Audio';
+
+  @override
+  String get modalityVideo => 'Video';
+
+  @override
+  String get modalityPdf => 'PDF';
+
+  @override
+  String get llmThinkUnknown => 'Thinking ?';
+
+  @override
+  String get llmThinkNone => 'No thinking';
+
+  @override
+  String get llmThinkLevelsUnknown => 'Thinking (levels unknown)';
+
+  @override
+  String llmThinkLevels(int count, String from, String to) {
+    return 'Thinking $count levels $from→$to';
+  }
+
+  @override
+  String get llmThinkCanDisable => ', can turn off';
+
+  @override
+  String llmThinkDefault(String level) {
+    return 'Default: $level';
+  }
+
+  @override
+  String llmThinkModes(String modes) {
+    return 'Modes: $modes';
+  }
+
+  @override
+  String get llmTools => 'Tool calling';
+
+  @override
+  String get llmToolsNo => 'No tool calling';
+
+  @override
+  String get llmToolsUnknown => 'Tool calling ?';
+
+  @override
+  String get llmToolsParallel => 'Can call several tools in one turn';
+
+  @override
+  String get llmInputsUnknown => 'Input ?';
+
+  @override
+  String get llmSchema => 'JSON schema';
+
+  @override
+  String llmContext(String tokens) {
+    return '$tokens context';
+  }
+
+  @override
+  String get llmSourceCatalog => 'Built-in catalog';
+
+  @override
+  String get llmSourceAccount => 'Found in this account';
+
+  @override
+  String get llmSourceUnlisted =>
+      'Built-in catalog · not listed by this account';
+
+  @override
+  String llmPickerTitle(String provider) {
+    return 'Language models · $provider';
+  }
+
+  @override
+  String get llmPickerSearch => 'Search, or type a model ID';
+
+  @override
+  String get llmPickerToolsOnly => 'Tool calling only';
+
+  @override
+  String get llmPickerLoading => 'Reading the model list…';
+
+  @override
+  String llmPickerFound(int count) {
+    return 'The account lists $count models; traits come from the public catalog.';
+  }
+
+  @override
+  String llmPickerDenied(String error) {
+    return 'Credentials rejected: $error';
+  }
+
+  @override
+  String get llmPickerOffline =>
+      'No model list from this provider; showing the built-in catalog.';
+
+  @override
+  String llmPickerUse(String id) {
+    return 'Use $id';
+  }
+
+  @override
+  String get llmNeedsToolsNo =>
+      'This model cannot call tools; role analysis needs tool calling.';
+
+  @override
+  String get llmNeedsToolsUnknown =>
+      'Tool calling unknown; one small test request runs before the first analysis.';
+
+  @override
+  String get llmProviderDisabled => '(disabled)';
+
+  @override
+  String get llmProviderHint =>
+      'Only providers that offer a language model are listed';
 }

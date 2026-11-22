@@ -7,10 +7,10 @@ import 'dubbing_intent_fields.dart';
 import 'package:neiroha/domain/novel/dubbing_intent.dart';
 import 'package:neiroha/domain/novel/role_skill_profile.dart';
 import 'package:neiroha/domain/novel/role_models.dart';
-import 'package:neiroha/data/services/capabilities/role_ai_connection.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'model_discover_button.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/data/ai/registry/plugin_registry.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/providers/app_providers.dart';
@@ -53,7 +53,7 @@ class _NovelRoleAnalysisControlsState
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final providers = (ref.watch(ttsProvidersStreamProvider).value ?? [])
-        .where((p) => p.supportsRoleAi)
+        .where(providerOffersLlm)
         .toList();
     final skillConfig = ref.watch(roleSkillConfigurationProvider);
     final defaults =
@@ -285,7 +285,7 @@ class _NovelRoleAnalysisControlsState
     String feedback = '',
   }) async {
     final providers = (ref.read(ttsProvidersStreamProvider).value ?? [])
-        .where((p) => p.supportsRoleAi)
+        .where(providerOffersLlm)
         .toList();
     if (providers.isEmpty || _runToken != null) return;
     final service = ref.read(roleAnalysisServiceProvider);

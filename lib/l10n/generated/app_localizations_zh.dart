@@ -3219,4 +3219,122 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get subtitleStageDone => '完成';
+
+  @override
+  String get modalityText => '文本';
+
+  @override
+  String get modalityImage => '图片';
+
+  @override
+  String get modalityAudio => '音频';
+
+  @override
+  String get modalityVideo => '视频';
+
+  @override
+  String get modalityPdf => 'PDF';
+
+  @override
+  String get llmThinkUnknown => '思考 ?';
+
+  @override
+  String get llmThinkNone => '不支持思考';
+
+  @override
+  String get llmThinkLevelsUnknown => '支持思考（档位未知）';
+
+  @override
+  String llmThinkLevels(int count, String from, String to) {
+    return '思考 $count 档 $from→$to';
+  }
+
+  @override
+  String get llmThinkCanDisable => '，可关闭';
+
+  @override
+  String llmThinkDefault(String level) {
+    return '默认：$level';
+  }
+
+  @override
+  String llmThinkModes(String modes) {
+    return '模式：$modes';
+  }
+
+  @override
+  String get llmTools => '工具调用';
+
+  @override
+  String get llmToolsNo => '不支持工具调用';
+
+  @override
+  String get llmToolsUnknown => '工具调用 ?';
+
+  @override
+  String get llmToolsParallel => '支持一次并行调用多个工具';
+
+  @override
+  String get llmInputsUnknown => '输入 ?';
+
+  @override
+  String get llmSchema => '结构化输出';
+
+  @override
+  String llmContext(String tokens) {
+    return '$tokens 上下文';
+  }
+
+  @override
+  String get llmSourceCatalog => '内置目录';
+
+  @override
+  String get llmSourceAccount => '账号中发现';
+
+  @override
+  String get llmSourceUnlisted => '内置目录 · 账号未列出';
+
+  @override
+  String llmPickerTitle(String provider) {
+    return '语言模型 · $provider';
+  }
+
+  @override
+  String get llmPickerSearch => '搜索，或直接输入模型 ID';
+
+  @override
+  String get llmPickerToolsOnly => '仅显示支持工具调用';
+
+  @override
+  String get llmPickerLoading => '正在读取模型列表…';
+
+  @override
+  String llmPickerFound(int count) {
+    return '账号列出 $count 个模型；能力来自公开目录。';
+  }
+
+  @override
+  String llmPickerDenied(String error) {
+    return '凭据被拒绝：$error';
+  }
+
+  @override
+  String get llmPickerOffline => '该服务商未提供模型列表，显示内置目录。';
+
+  @override
+  String llmPickerUse(String id) {
+    return '使用 $id';
+  }
+
+  @override
+  String get llmNeedsToolsNo => '该模型不支持工具调用，小说分角色需要工具调用。';
+
+  @override
+  String get llmNeedsToolsUnknown => '工具调用能力未知，首次分析前会发一次小请求验证。';
+
+  @override
+  String get llmProviderDisabled => '（已停用）';
+
+  @override
+  String get llmProviderHint => '只列出提供语言模型能力的服务商';
 }

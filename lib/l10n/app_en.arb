@@ -1449,5 +1449,101 @@
   "subtitleStageDetecting": "Detecting speech",
   "subtitleStageTranscribing": "Transcribing",
   "subtitleStageTranslating": "Translating",
-  "subtitleStageDone": "Done"
+  "subtitleStageDone": "Done",
+  "modalityText": "Text",
+  "modalityImage": "Image",
+  "modalityAudio": "Audio",
+  "modalityVideo": "Video",
+  "modalityPdf": "PDF",
+  "llmThinkUnknown": "Thinking ?",
+  "llmThinkNone": "No thinking",
+  "llmThinkLevelsUnknown": "Thinking (levels unknown)",
+  "llmThinkLevels": "Thinking {count} levels {from}→{to}",
+  "@llmThinkLevels": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "llmThinkCanDisable": ", can turn off",
+  "llmThinkDefault": "Default: {level}",
+  "@llmThinkDefault": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "llmThinkModes": "Modes: {modes}",
+  "@llmThinkModes": {
+    "placeholders": {
+      "modes": {
+        "type": "String"
+      }
+    }
+  },
+  "llmTools": "Tool calling",
+  "llmToolsNo": "No tool calling",
+  "llmToolsUnknown": "Tool calling ?",
+  "llmToolsParallel": "Can call several tools in one turn",
+  "llmInputsUnknown": "Input ?",
+  "llmSchema": "JSON schema",
+  "llmContext": "{tokens} context",
+  "@llmContext": {
+    "placeholders": {
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
+  "llmSourceCatalog": "Built-in catalog",
+  "llmSourceAccount": "Found in this account",
+  "llmSourceUnlisted": "Built-in catalog · not listed by this account",
+  "llmPickerTitle": "Language models · {provider}",
+  "@llmPickerTitle": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "llmPickerSearch": "Search, or type a model ID",
+  "llmPickerToolsOnly": "Tool calling only",
+  "llmPickerLoading": "Reading the model list…",
+  "llmPickerFound": "The account lists {count} models; traits come from the public catalog.",
+  "@llmPickerFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "llmPickerDenied": "Credentials rejected: {error}",
+  "@llmPickerDenied": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "llmPickerOffline": "No model list from this provider; showing the built-in catalog.",
+  "llmPickerUse": "Use {id}",
+  "@llmPickerUse": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "llmNeedsToolsNo": "This model cannot call tools; role analysis needs tool calling.",
+  "llmNeedsToolsUnknown": "Tool calling unknown; one small test request runs before the first analysis.",
+  "llmProviderDisabled": "(disabled)",
+  "llmProviderHint": "Only providers that offer a language model are listed"
 }

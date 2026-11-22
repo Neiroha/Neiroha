@@ -71,7 +71,7 @@ void main() {
       await tester.ensureVisible(providerMenu);
       await tester.tap(providerMenu);
       await tester.pumpAndSettle();
-      expect(find.text('Google AI Studio'), findsOneWidget);
+      expect(find.textContaining('Google AI Studio'), findsOneWidget);
       expect(find.text('CosyVoice'), findsNothing);
       await tester.tap(find.text('使用当前入口选择的连接').last);
       await tester.pumpAndSettle();

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:neiroha/data/ai/registry/plugin_registry.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/data/services/phase_role_repository.dart';
-import 'package:neiroha/data/services/capabilities/role_ai_connection.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/novel_role_providers.dart';
@@ -52,7 +52,7 @@ class _PhaseRoleAssignmentButtonState
           .where((a) => a.enabled && members.contains(a.id))
           .toList();
       final providers = (await database.getAllProviders())
-          .where((p) => p.supportsRoleAi)
+          .where(providerOffersLlm)
           .toList();
       final config = (await skills.load()).active;
       if (!mounted) return;

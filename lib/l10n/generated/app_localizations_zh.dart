@@ -3337,4 +3337,90 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get llmProviderHint => '只列出提供语言模型能力的服务商';
+
+  @override
+  String get voiceFilterHint => '筛选音色';
+
+  @override
+  String voiceMoreHidden(int count) {
+    return '还有 $count 个，输入关键字筛选';
+  }
+
+  @override
+  String voiceEngineVoices(String engine) {
+    return '$engine 音色';
+  }
+
+  @override
+  String get navMusic => '歌曲创作';
+
+  @override
+  String get musicModel => '模型';
+
+  @override
+  String get musicTitle => '标题';
+
+  @override
+  String get musicTitleHint => '未命名歌曲';
+
+  @override
+  String get musicPrompt => '风格与编曲';
+
+  @override
+  String get musicPromptHint => '曲风、情绪、乐器、演唱者、速度、时长……';
+
+  @override
+  String get musicLyrics => '歌词';
+
+  @override
+  String get musicLyricsHint => '留空则由模型作词；[Verse]、[Chorus] 等段落标签可安排歌曲结构。';
+
+  @override
+  String get musicInstrumental => '纯音乐（无人声）';
+
+  @override
+  String get musicLossless => '模型支持时输出无损 WAV';
+
+  @override
+  String get musicImages => '参考图片';
+
+  @override
+  String get musicAddImage => '添加图片';
+
+  @override
+  String get musicGenerate => '生成歌曲';
+
+  @override
+  String musicGenerating(int seconds) {
+    return '生成中…… $seconds 秒';
+  }
+
+  @override
+  String get musicNoModel => '没有已启用的服务商提供歌曲生成，请添加 Google Gemini。';
+
+  @override
+  String get musicEmpty => '生成的歌曲会显示在这里。';
+
+  @override
+  String get musicShowInFolder => '在文件夹中显示';
+
+  @override
+  String get musicSaveAs => '另存为……';
+
+  @override
+  String get musicDelete => '删除';
+
+  @override
+  String get musicReuse => '沿用此设定';
+
+  @override
+  String get musicNoLyrics => '纯音乐，无歌词。';
+
+  @override
+  String get musicWatermark => 'Lyria 生成的音频带有不可听的 SynthID 水印。';
+
+  @override
+  String musicSaved(String path) {
+    return '已保存到 $path';
+  }
 }

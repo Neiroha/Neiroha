@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/data/ai/registry/built_in_voices.dart';
 import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -161,8 +162,10 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
     final cached = adapterType.hasSeparateModelAndVoice
         ? await database.getVoiceEntriesForProvider(_selectedProviderId)
         : await database.getBindingsForProvider(_selectedProviderId);
-    if (cached.isNotEmpty) {
-      final voices = cached.map((b) => b.modelKey).toList()..sort();
+    // The model's own voices first; fetched rows are account voices.
+    final builtIn = builtInVoicesFor(adapterType, _modelNameCtrl.text);
+    if (cached.isNotEmpty || builtIn.isNotEmpty) {
+      final voices = mergeVoices(builtIn, cached.map((b) => b.modelKey));
       if (mounted) {
         setState(() {
           _speakers = voices;

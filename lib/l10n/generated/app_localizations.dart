@@ -6229,6 +6229,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only providers that offer a language model are listed'**
   String get llmProviderHint;
+
+  /// No description provided for @voiceFilterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter voices'**
+  String get voiceFilterHint;
+
+  /// No description provided for @voiceMoreHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} more — type to filter'**
+  String voiceMoreHidden(int count);
+
+  /// No description provided for @voiceEngineVoices.
+  ///
+  /// In en, this message translates to:
+  /// **'{engine} voices'**
+  String voiceEngineVoices(String engine);
+
+  /// No description provided for @navMusic.
+  ///
+  /// In en, this message translates to:
+  /// **'Song Studio'**
+  String get navMusic;
+
+  /// No description provided for @musicModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get musicModel;
+
+  /// No description provided for @musicTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get musicTitle;
+
+  /// No description provided for @musicTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled song'**
+  String get musicTitleHint;
+
+  /// No description provided for @musicPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Style & arrangement'**
+  String get musicPrompt;
+
+  /// No description provided for @musicPromptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Genre, mood, instruments, vocalist, tempo, length…'**
+  String get musicPromptHint;
+
+  /// No description provided for @musicLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics'**
+  String get musicLyrics;
+
+  /// No description provided for @musicLyricsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty to let the model write them. Section tags such as [Verse] and [Chorus] shape the song.'**
+  String get musicLyricsHint;
+
+  /// No description provided for @musicInstrumental.
+  ///
+  /// In en, this message translates to:
+  /// **'Instrumental (no vocals)'**
+  String get musicInstrumental;
+
+  /// No description provided for @musicLossless.
+  ///
+  /// In en, this message translates to:
+  /// **'Lossless WAV when the model offers it'**
+  String get musicLossless;
+
+  /// No description provided for @musicImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference images'**
+  String get musicImages;
+
+  /// No description provided for @musicAddImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add image'**
+  String get musicAddImage;
+
+  /// No description provided for @musicGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Compose'**
+  String get musicGenerate;
+
+  /// No description provided for @musicGenerating.
+  ///
+  /// In en, this message translates to:
+  /// **'Composing… {seconds}s'**
+  String musicGenerating(int seconds);
+
+  /// No description provided for @musicNoModel.
+  ///
+  /// In en, this message translates to:
+  /// **'No enabled provider offers song generation. Add a Google Gemini provider.'**
+  String get musicNoModel;
+
+  /// No description provided for @musicEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated songs appear here.'**
+  String get musicEmpty;
+
+  /// No description provided for @musicShowInFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in folder'**
+  String get musicShowInFolder;
+
+  /// No description provided for @musicSaveAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as…'**
+  String get musicSaveAs;
+
+  /// No description provided for @musicDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get musicDelete;
+
+  /// No description provided for @musicReuse.
+  ///
+  /// In en, this message translates to:
+  /// **'Reuse settings'**
+  String get musicReuse;
+
+  /// No description provided for @musicNoLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Instrumental, no lyrics.'**
+  String get musicNoLyrics;
+
+  /// No description provided for @musicWatermark.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyria audio carries an inaudible SynthID watermark.'**
+  String get musicWatermark;
+
+  /// No description provided for @musicSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to {path}'**
+  String musicSaved(String path);
 }
 
 class _AppLocalizationsDelegate

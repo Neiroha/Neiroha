@@ -3459,4 +3459,94 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get llmProviderHint =>
       'Only providers that offer a language model are listed';
+
+  @override
+  String get voiceFilterHint => 'Filter voices';
+
+  @override
+  String voiceMoreHidden(int count) {
+    return '$count more — type to filter';
+  }
+
+  @override
+  String voiceEngineVoices(String engine) {
+    return '$engine voices';
+  }
+
+  @override
+  String get navMusic => 'Song Studio';
+
+  @override
+  String get musicModel => 'Model';
+
+  @override
+  String get musicTitle => 'Title';
+
+  @override
+  String get musicTitleHint => 'Untitled song';
+
+  @override
+  String get musicPrompt => 'Style & arrangement';
+
+  @override
+  String get musicPromptHint =>
+      'Genre, mood, instruments, vocalist, tempo, length…';
+
+  @override
+  String get musicLyrics => 'Lyrics';
+
+  @override
+  String get musicLyricsHint =>
+      'Leave empty to let the model write them. Section tags such as [Verse] and [Chorus] shape the song.';
+
+  @override
+  String get musicInstrumental => 'Instrumental (no vocals)';
+
+  @override
+  String get musicLossless => 'Lossless WAV when the model offers it';
+
+  @override
+  String get musicImages => 'Reference images';
+
+  @override
+  String get musicAddImage => 'Add image';
+
+  @override
+  String get musicGenerate => 'Compose';
+
+  @override
+  String musicGenerating(int seconds) {
+    return 'Composing… ${seconds}s';
+  }
+
+  @override
+  String get musicNoModel =>
+      'No enabled provider offers song generation. Add a Google Gemini provider.';
+
+  @override
+  String get musicEmpty => 'Generated songs appear here.';
+
+  @override
+  String get musicShowInFolder => 'Show in folder';
+
+  @override
+  String get musicSaveAs => 'Save as…';
+
+  @override
+  String get musicDelete => 'Delete';
+
+  @override
+  String get musicReuse => 'Reuse settings';
+
+  @override
+  String get musicNoLyrics => 'Instrumental, no lyrics.';
+
+  @override
+  String get musicWatermark =>
+      'Lyria audio carries an inaudible SynthID watermark.';
+
+  @override
+  String musicSaved(String path) {
+    return 'Saved to $path';
+  }
 }

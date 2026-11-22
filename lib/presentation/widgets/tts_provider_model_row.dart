@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:neiroha/data/ai/providers/mimo/tts/chat_completions_tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/actions/browser_speech_message.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/voice_chip_list.dart';
 
 class TtsProviderModelRow extends StatefulWidget {
   final db.ModelBinding model;
   final VoidCallback onDelete;
   final BrowserSpeechBlock? webBlock;
 
+  /// Voices this model ships with (`builtInVoicesFor`); tap to expand.
+  final List<String> voices;
+
   const TtsProviderModelRow({
     super.key,
     required this.model,
     required this.onDelete,
     this.webBlock,
+    this.voices = const [],
   });
 
   @override
@@ -33,15 +37,9 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
     return 'Preset';
   }
 
-  /// Built-in voices for this model (e.g., MiMo V2/V2.5). Empty if unknown.
-  List<String> get _builtInVoices =>
-      ChatCompletionsTtsAdapter.builtInVoicesForMimoModel(
-        widget.model.modelKey,
-      );
-
   @override
   Widget build(BuildContext context) {
-    final voices = _builtInVoices;
+    final voices = widget.voices;
     final hasBuiltIns = voices.isNotEmpty;
     final block = widget.webBlock;
     return Padding(
@@ -90,28 +88,7 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
                         ),
                         child: const Icon(Icons.do_not_disturb_alt, size: 16),
                       ),
-                    if (hasBuiltIns) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          AppLocalizations.of(
-                            context,
-                          ).uiVoiceCount(voices.length),
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.white.withValues(alpha: 0.55),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 4),
-                    ],
+                    if (hasBuiltIns) VoiceCountBadge(count: voices.length),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,
@@ -163,33 +140,8 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
                   bottom: 8,
                   top: 2,
                 ),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: voices
-                      .map(
-                        (v) => Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.08),
-                            ),
-                          ),
-                          child: Text(
-                            v,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.white.withValues(alpha: 0.7),
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
+                child: VoiceChipList(
+                  voices: [for (final v in voices) (label: v, id: null)],
                 ),
               ),
           ],

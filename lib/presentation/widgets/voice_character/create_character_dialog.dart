@@ -5,12 +5,12 @@ import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/data/ai/registry/built_in_voices.dart';
 import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/ai/providers/local/cosyvoice/tts/cosyvoice_adapter.dart';
-import 'package:neiroha/data/ai/providers/mimo/tts/chat_completions_tts_adapter.dart';
 import 'package:neiroha/data/ai/providers/local/voxcpm2/tts/voxcpm2_native_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
@@ -185,18 +185,28 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
 
     List<String> voiceList = [];
 
-    // MiMo TTS preset models have built-in voices
-    final mimoVoices = ChatCompletionsTtsAdapter.builtInVoicesForMimoModel(
-      modelKey,
-    );
-    if (mimoVoices.isNotEmpty && _ttsModelType == 'preset') {
-      voiceList = mimoVoices;
+    // Voices the chosen model ships with, then account / custom voices
+    // (minus voices built into the provider's other models).
+    final type = AdapterType.values.asNameMap()[provider.adapterType];
+    final builtIn = type == null
+        ? const <String>[]
+        : builtInVoicesFor(type, modelKey);
+    if (builtIn.isNotEmpty &&
+        type == AdapterType.chatCompletionsTts &&
+        _ttsModelType == 'preset') {
+      voiceList = builtIn;
     } else {
-      // For other providers, load from cached voice entries
       final cachedVoices = await widget.database.getVoiceEntriesForProvider(
         provider.id,
       );
-      voiceList = cachedVoices.map((b) => b.modelKey).toList()..sort();
+      final elsewhere = type == null
+          ? const <String>{}
+          : builtInVoicesAcross(type, _models);
+      voiceList = mergeVoices(
+        builtIn,
+        cachedVoices.map((b) => b.modelKey),
+        hide: elsewhere,
+      );
     }
     if (kIsWeb && provider.adapterType == 'openaiTts') {
       voiceList = browserOpenAiVoiceOptions(modelKey, voiceList);

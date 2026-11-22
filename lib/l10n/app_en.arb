@@ -1545,5 +1545,59 @@
   "llmNeedsToolsNo": "This model cannot call tools; role analysis needs tool calling.",
   "llmNeedsToolsUnknown": "Tool calling unknown; one small test request runs before the first analysis.",
   "llmProviderDisabled": "(disabled)",
-  "llmProviderHint": "Only providers that offer a language model are listed"
+  "llmProviderHint": "Only providers that offer a language model are listed",
+  "voiceFilterHint": "Filter voices",
+  "voiceMoreHidden": "{count} more — type to filter",
+  "voiceEngineVoices": "{engine} voices",
+  "@voiceMoreHidden": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@voiceEngineVoices": {
+    "placeholders": {
+      "engine": {
+        "type": "String"
+      }
+    }
+  },
+  "navMusic": "Song Studio",
+  "musicModel": "Model",
+  "musicTitle": "Title",
+  "musicTitleHint": "Untitled song",
+  "musicPrompt": "Style & arrangement",
+  "musicPromptHint": "Genre, mood, instruments, vocalist, tempo, length…",
+  "musicLyrics": "Lyrics",
+  "musicLyricsHint": "Leave empty to let the model write them. Section tags such as [Verse] and [Chorus] shape the song.",
+  "musicInstrumental": "Instrumental (no vocals)",
+  "musicLossless": "Lossless WAV when the model offers it",
+  "musicImages": "Reference images",
+  "musicAddImage": "Add image",
+  "musicGenerate": "Compose",
+  "musicGenerating": "Composing… {seconds}s",
+  "musicNoModel": "No enabled provider offers song generation. Add a Google Gemini provider.",
+  "musicEmpty": "Generated songs appear here.",
+  "musicShowInFolder": "Show in folder",
+  "musicSaveAs": "Save as…",
+  "musicDelete": "Delete",
+  "musicReuse": "Reuse settings",
+  "musicNoLyrics": "Instrumental, no lyrics.",
+  "musicWatermark": "Lyria audio carries an inaudible SynthID watermark.",
+  "musicSaved": "Saved to {path}",
+  "@musicGenerating": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "@musicSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  }
 }

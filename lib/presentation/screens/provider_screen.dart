@@ -2,6 +2,8 @@ import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'package:neiroha/providers/model_capability_providers.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:neiroha/data/ai/registry/built_in_voices.dart';
+import 'package:neiroha/presentation/widgets/voice_chip_list.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:uuid/uuid.dart';
@@ -351,6 +353,18 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     _adapterType,
     ref.read(platformCapabilitiesProvider),
   );
+
+  /// Fetched or hand-added voices not built into a listed TTS model.
+  List<VoiceChipEntry> get _customVoices {
+    final builtIn = builtInVoicesAcross(
+      _adapterType,
+      _models.map((m) => m.modelKey).where(_isTtsModelKey),
+    );
+    return [
+      for (final v in _voices)
+        if (!builtIn.contains(v.modelKey)) (label: v.modelKey, id: v.id),
+    ];
+  }
 
   /// Whether a model key is a TTS model (vs LLM/ASR/multimodal).
   bool _isTtsModelKey(String modelKey) {
@@ -970,6 +984,10 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                                       baseUrl: _urlCtrl.text,
                                     )
                                   : null,
+                              voices: builtInVoicesFor(
+                                _adapterType,
+                                m.modelKey,
+                              ),
                               onDelete: () => _removeEntry(m.id),
                             ),
                           ),
@@ -982,29 +1000,14 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                               onDelete: () => _removeEntry(m.id),
                             ),
                           ),
-                      // Custom Voices — flat section. Built-in voices for known
-                      // TTS models (e.g. MiMo V2/V2.5) are rendered inline
-                      // under each model row, so this section holds only
-                      // user-added or API-fetched voices. Schema has no
-                      // model→voice link, so we can't attribute them.
-                      if (_voices.isNotEmpty) ...[
-                        SizedBox(height: 12),
-                        Text(
-                          AppLocalizations.of(context).uiCustomVoices,
-                          style: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.5),
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                        SizedBox(height: 4),
-                        ..._voices.map(
-                          (v) => _BindingRow(
-                            key: ValueKey(v.id),
-                            label: v.modelKey,
-                            icon: Icons.record_voice_over_rounded,
-                            onDelete: () => _removeEntry(v.id),
-                          ),
+                      // Account / custom voices; voices a listed TTS model
+                      // ships with are already nested under that model.
+                      if (_customVoices.isNotEmpty) ...[
+                        SizedBox(height: 8),
+                        VoiceGroupRow(
+                          title: AppLocalizations.of(context).uiCustomVoices,
+                          voices: _customVoices,
+                          onDelete: _removeEntry,
                         ),
                       ],
                     ],
@@ -1024,13 +1027,17 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                         ),
                       )
                     else
-                      ..._models.map(
-                        (v) => _BindingRow(
-                          key: ValueKey(v.id),
-                          label: v.modelKey,
-                          icon: Icons.record_voice_over_rounded,
-                          onDelete: () => _removeEntry(v.id),
-                        ),
+                      // One engine, many voices (Azure lists hundreds).
+                      VoiceGroupRow(
+                        title: AppLocalizations.of(
+                          context,
+                        ).voiceEngineVoices(_adapterType.displayName),
+                        icon: Icons.mic_rounded,
+                        voices: [
+                          for (final v in _models)
+                            (label: v.modelKey, id: v.id),
+                        ],
+                        onDelete: _removeEntry,
                       ),
                   ],
                 ],
@@ -1097,50 +1104,6 @@ class _LimitField extends StatelessWidget {
 }
 
 // ─────────────────── Shared binding row widget ───────────────────────────────
-
-class _BindingRow extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onDelete;
-
-  const _BindingRow({
-    super.key,
-    required this.label,
-    required this.icon,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceBright,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 16, color: Colors.grey),
-            SizedBox(width: 8),
-            Expanded(child: Text(label, style: const TextStyle(fontSize: 13))),
-            InkWell(
-              onTap: onDelete,
-              borderRadius: BorderRadius.circular(4),
-              child: Padding(
-                padding: EdgeInsets.all(4),
-                child: Icon(Icons.close_rounded, size: 14, color: Colors.grey),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────── Non-TTS model row with capability badges ─────────────
 
 class _NonTtsModelRow extends StatelessWidget {
   final db.ModelBinding model;

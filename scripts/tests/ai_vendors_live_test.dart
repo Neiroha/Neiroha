@@ -12,14 +12,17 @@ import 'package:neiroha/data/ai/catalog/llm_traits_catalog.dart';
 import 'package:neiroha/data/ai/core/capability_health.dart';
 import 'package:neiroha/data/ai/core/provider_connection.dart';
 import 'package:neiroha/data/ai/registry/built_in_voices.dart';
+import 'package:neiroha/data/ai/registry/capability_router.dart';
 import 'package:neiroha/data/ai/registry/plugin_registry.dart';
 import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/services/synthesis/voice_chain_runner.dart';
 import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/domain/llm/llm_contract.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
+import 'package:neiroha/domain/synthesis/voice_chain.dart';
 import 'package:path/path.dart' as p;
 
 const _timeout = Timeout(Duration(minutes: 5));
@@ -222,6 +225,38 @@ void main() {
         expect(song.timed, isTrue);
         expect(song.lyrics.map((l) => l.text).join(), contains('港口'));
         _keep('lyria-clip.mp3', song.audio);
+      },
+      skip: skip,
+      timeout: _timeout,
+    );
+  });
+
+  group('Voice chain', () {
+    final key = env['GEMINI_API_KEY'] ?? env['GEMINI_KEY'] ?? '';
+    final skip = key.isEmpty ? 'GEMINI_API_KEY / GEMINI_KEY not set' : null;
+
+    test(
+      'LLM translate → Gemini TTS',
+      () async {
+        final row = _row(AdapterType.geminiTts, '', key);
+        final runner = VoiceChainRunner(CapabilityRouter.fromProviders([row]));
+        const chain = VoiceChain([
+          VoiceChainStep(
+            kind: VoiceChainStepKind.translate,
+            targetLanguage: 'Japanese',
+          ),
+        ]);
+        final line = await runner.prepareText('指挥官，早上好。', chain);
+        // ignore: avoid_print
+        print('translated: $line');
+        expect(line, matches(RegExp(r'[\u3040-\u30ff]')));
+        final audio = await ChainedTtsAdapter(
+          createAdapter(row),
+          chain,
+          runner,
+        ).synthesize(const TtsRequest(text: '指挥官，早上好。', voice: 'Kore'));
+        expect(audio.audioBytes.length, greaterThan(4000));
+        _keep('chain-ja.wav', audio.audioBytes);
       },
       skip: skip,
       timeout: _timeout,

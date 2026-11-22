@@ -1,6 +1,6 @@
 # Provider 与适配层重构方案（v0.6 规划稿）
 
-状态：草案，2026-11-22。目标版本 v0.6.0。本稿先定方向和分期，接口名、表名在 M1 评审时冻结。
+状态：草案，2026-11-22。目标版本 v0.6.0。本稿先定方向和分期，接口名、表名在 M1 评审时冻结。进度、优先级调整与模型目录数据化见 [第 11 节](#11-进度与调整2026-11-22)。
 
 ## 1. 结论
 
@@ -185,13 +185,13 @@ assets/model_catalog/     neiroha_catalog.json（自维护，带弃用日期）+
 | 服务商 | LLM | TTS | STT | 实时对话 | 翻译 | VC | 备注 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | **OpenAI** | ✓ | Speech API（2027-01-06 停用）；`gpt-realtime-2.1-mini` 经 Realtime | `whisper-1` 等文件转写；`gpt-realtime-whisper` 流式 | `gpt-realtime-2.1` / `-mini` | `gpt-realtime-translate`（`/v1/realtime/translations`，70+ → 13 种语言） | — | 浏览器直连 Realtime 需短时凭据 |
-| **Google Gemini** | ✓ | Gemini 3.8 TTS（已接入） | `gemini-3.5-transcribe-preview`（文件）、`-live-preview`（流式），说话人分离、字时间戳 | Gemini 3.8 Live | 待核实 | — | 转写为预览版，有时长上限 |
+| **Google Gemini** | ✓ | Gemini 3.8 TTS（已接入） | `gemini-3.5-transcribe-preview`（文件）、`-live-preview`（流式），说话人分离、字时间戳 | Gemini 3.8 Live | 待核实 | — | 转写为预览版，有时长上限；音乐生成 Lyria 3 / 3.5 走 Interactions API（已接入） |
 | **ElevenLabs** | — | ✓（已接入，含 HTTP 流） | Scribe v2（文件）、Scribe v2 Realtime（WebSocket） | Agents 平台（暂不接） | Dubbing（待评估） | `/v1/speech-to-speech/{voice_id}`，`eleven_multilingual_sts_v2` | 另有 Voice Isolator 降噪 |
 | **阿里云百炼 DashScope** | Qwen | Qwen3-TTS（含实时、音色设计、复刻） | Qwen3-ASR（实时 / 文件）、Fun-ASR（热词、方言、说话人分离） | 待核实 | 待核实 | — | 北京 / 新加坡两套地址 |
 | **火山引擎豆包语音** | 方舟（豆包） | HTTP / WebSocket 单向与双向流、声音复刻、音色设计 | 大模型流式识别、录音文件识别 | 端到端实时语音大模型（3.0 邀测） | 同声传译 2.0 | — | 认证为 AppID + Token，与方舟 Key 分开 |
 | **MiniMax** | ✓ | ✓（已接入） | 待核实 | 待核实 | — | — | 国内 / 国际地址 |
 | **Azure Speech** | （Azure OpenAI 另配） | ✓（已接入） | 实时与批量转写 | — | 语音翻译 | — | 区域简写已支持 |
-| **小米 MiMo** | ✓ | MiMo V2.5 TTS（已接入） | 待核实 | — | — | — | |
+| **小米 MiMo** | ✓ | MiMo V2.5 TTS（已接入） | `mimo-v2.5-asr`，经 Chat Completions 的 `input_audio` 内容块（已接入；无 `/audio/transcriptions`） | — | — | — | 账号余额不足时所有请求先返回 402，ASR 真实效果待充值后实测 |
 | **Speaches（自托管）** | — | Kokoro / Piper | faster-whisper，OpenAI 兼容 | `/v1/realtime`（待核实） | — | — | 本地 STT 首选后端 |
 | **GPT-SoVITS / CosyVoice / IndexTTS / VoxCPM2** | — | ✓（已接入） | — | — | — | — | 本地 TTS，保持原接口 |
 | **Seed-VC / RVC** | — | — | — | — | — | 零样本 VC，Seed-VC 约 300ms 算法延迟 | 官方无 HTTP 服务，需在 Neiroha 启动器中封装 |
@@ -322,6 +322,62 @@ M1–M3 是 v0.6.0 的必需范围；M4 建议同版发布至少 STT 一项，�
 4. **本地 VC 后端**：在 Neiroha 启动器中封装 Seed-VC，还是对接现有 RVC WebUI？
 5. **首批接入的国内服务商**：DashScope 与火山引擎都覆盖 ASR / TTS / 实时，先接哪家？
 6. **旧连接合并**：只提供向导（本稿方案），还是迁移时自动合并同 Key 连接？
+
+## 11. 进度与调整（2026-11-22）
+
+### 11.1 完成情况
+
+| 阶段 | 状态 | 说明 |
+| --- | --- | --- |
+| M1 适配层骨架 | 已完成 | `domain/ai` 能力接口、插件注册表、`CapabilityRouter`；现有 TTS 适配器经 `SpeechSynthesizer` 委托 |
+| M2 数据迁移 | 未开始 | 角色实时设置（`dialog.live.*`）与处理链（`voice.chain.*`）暂存 `AppSettings` JSON |
+| M3 新 Provider 界面 | 部分 | 已有：模型行能力徽章（目录优先、名称兜底）、音色随 TTS 模型折叠、Azure 单行音色组。未做：连接列表徽章、添加向导、按能力分页、停用提示、能力路由页 |
+| M4 LLM 与 STT | 基本完成 | LLM 发现与特性合并；STT 接入 OpenAI、Gemini、MiMo（Chat 音频输入） |
+| M5 VAD 与 VC | 部分 | ElevenLabs STS 已接入；端侧 VAD、本地 VC 后端未做 |
+| M6 实时与翻译 | 部分 | Gemini Live 与 OpenAI Realtime 可按角色选模型和该模型音色；Web Realtime 未做 |
+| 计划外 | 已完成 | Gemini Lyria 歌曲创作页；角色处理链（LLM 翻译 / 改写 → TTS → VC），见 `lib/domain/synthesis/voice_chain.dart` |
+
+### 11.2 调整后的优先级
+
+1. **P0 停用提示（2027-01-06 前必须发布）。** `ModelDescriptor.shutdownAt` 已有数据，界面尚未使用。模型行显示红色停用日期；使用这些模型的角色显示警告，并提供一键迁移：桌面改用 Realtime 模型，Web 改用其他服务商。可先随 v0.5.x 发布，不等 v0.6。
+2. **P1 schema v34。** 先建 `provider_models`、`capability_defaults` 和 `connection_capabilities`，再把角色实时设置、处理链迁入独立表或角色扩展表，避免继续在 `AppSettings` 里堆 JSON。限额下沉到“连接 × 能力”后，处理链中的 LLM 调用不再占用 TTS 服务商的队列名额。
+3. **P2 界面。**
+   - Provider 页（`provider_screen.dart` 1343 行）按能力拆为标签页，列表显示能力徽章与健康汇总。
+   - 「设置 → AI 能力」路由页：字幕、歌曲、处理链、分角、选角各自的模型选择收拢为按用途的默认值，页面内仅保留覆盖入口。
+   - 角色检查器分标签：基础 / 音色 / 处理链 / 实时对话；实时设置对话框并入检查器。
+   - 工作页统一使用 `PageHeader`（52pt、可拖动窗口、主操作靠右）；新页面不再自写页头。
+4. **处理链扩展。** 新增 ASR 回听校验步骤（转写比对原文、标出漏读）和 VAD 去静音步骤；小说缓存键加入处理链哈希，修改链后旧缓存失效；本机 API / MCP 增加是否应用处理链的参数；试听显示中间文本。
+
+### 11.3 模型目录数据化
+
+目标：LLM 不再手写模型表；云端语音模型只保留各家原生协议需要的少量条目；本地 TTS 由服务自行声明。
+
+**公开来源实测（2026-11-22）**
+
+| 来源 | 规模 | 可用字段 | 适用范围 |
+| --- | --- | --- | --- |
+| OpenRouter `GET /api/v1/models`（无需凭据） | 739 个模型 | 输入 / 输出模态（text、speech 42、transcription 30、image、embeddings 等）；`supported_parameters`（tools、structured_outputs、reasoning 等）；`reasoning.supported_efforts` 与默认档位；`endpoints`（`/chat/completions`、`/responses`、`/audio/speech`、`/audio/transcriptions`）；`supported_voices`（Gemini 3.8 TTS 30 个、ElevenLabs v4 21 个）；`expiration_date`（24 个）；上下文、最大输出、价格 | OpenRouter 连接的权威来源。id 带厂商前缀，参数是其多条上游线路的并集，不得按同名直接套给直连官方的连接 |
+| models.dev `api.json` | 324 家、10022 个模型 | 按官方服务商与官方 id 组织（openai 53、google 39、xiaomi 6 并附官方 API 地址、deepseek、alibaba、moonshotai、zhipuai 等）；工具调用、结构化输出、推理与推理档位、输入输出模态、上下文与输出上限、知识截止、发布日期 | 直连官方 LLM 的主来源。许可证尚未核实，打包快照前须确认 |
+| LiteLLM（现有快照） | 6969 条 | 价格、上下文、部分能力布尔值与端点 | 离线兜底，MIT |
+
+现有代码在连接本身是 OpenRouter 时已读取模态与 `supported_parameters`（`llmTraitsFromListing`）；推理档位、端点、音色、下线日期尚未使用。
+
+**LLM 取数顺序**
+
+1. 账号实时列出的模型（决定“有哪些”）；
+2. 联网刷新的公开目录（决定“能做什么”）：直连官方用 models.dev，OpenRouter 连接用其自身列表；按日缓存，带来源与时间；
+3. 内置快照，离线时使用（LiteLLM，或许可证确认后的 models.dev）；
+4. 实际成功证据与人工覆盖（沿用 `catalog < provider < observed < user`）。
+
+落地后删除 `openai_catalog`、`gemini_catalog`、`mimo_catalog` 中的 LLM 条目，插件只保留推荐默认模型与协议特例（如 MiMo 的 `api-key` 头、Gemini 的 `/v1beta/openai/` 路径）。工作量：`scripts/tools/refresh_model_catalog.dart` 增加 models.dev 规范化；新增运行时刷新服务与缓存；`catalogVendor` 映射到 models.dev 服务商键；回归测试改为基于快照夹具。
+
+**云端语音模型**
+
+公开目录不描述各家原生协议（Gemini 原生 TTS、Azure SSML、MiMo Chat TTS / ASR、Realtime WebSocket、Lyria Interactions），这部分仍由插件目录手写，但只记录协议、流式与特性。音色表和下线日期用 OpenRouter 的 `supported_voices`、`expiration_date` 作为可刷新的提示；冲突时以账号实时列表为准。
+
+**本地 TTS**
+
+不再在应用内维护本地模型列表。扩展现有 `.well-known/neiroha-capabilities` 网关声明：模型、音色、语言、是否流式、接口路径与认证方式。Neiroha 启动器和自建服务按该格式自述，应用按声明挂载；未声明的服务回退为手动填写。
 
 ## 参考
 

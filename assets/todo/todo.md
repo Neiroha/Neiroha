@@ -4,6 +4,27 @@
 
 基线：`dev@2d514adb`（最后一次上游提交为 2026-11-09 09:23，UTC+8）。本清单随 `dev` 分支版本管理；当前实现与验收结果见下文，提交状态以 Git 为准。本轮按核心功能、macOS、脚本/CI、文档交接四批提交。`[x]` 表示代码已实现且有本地检查；云端效果和 Mac 实机验收单列，不能由假服务测试替代。使用方法及兼容性见 [开发说明](../docs/streaming-and-roles-zh.md)。
 
+## AI 能力层与界面（2026-11-22）
+
+本轮在 `feat/ai-capability-layer` 分支完成，详细进度、优先级与模型目录方案见 [Provider 重构方案第 11 节](../docs/provider-redesign-zh.md#11-进度与调整2026-11-22)。
+
+- [x] Gemini 原生 LLM / STT / Live / 翻译；Lyria 3 / 3.5 歌曲创作页（歌词、纯音乐、参考图、无损 WAV、LRC）。
+- [x] 服务商页音色随 TTS 模型折叠显示，Azure 为单行可筛选音色组；模型行按目录标注 ASR、实时、翻译、音乐等能力。
+- [x] Azure 流式 PCM（`audio/basic`）与 SSML 语言修复；MiMo `mimo-v2.5-asr` 注册为转写能力。
+- [x] 角色实时设置可选实时模型，音色列表随模型变化。
+- [x] macOS 标题栏透明融合、窗口尺寸不再逐次缩小；统一 52pt `PageHeader`，页头兼作拖动区；桌面输入与设置、服务商表单紧凑化。
+- [x] 角色处理链：LLM 翻译 / 改写 → TTS → VC，各合成入口统一经过 TTS 队列应用；检查器可视化编辑。Gemini 翻译接 TTS 已真实凭据实测。
+- [x] macOS 全量测试 426 项通过、60 项跳过；带凭据的厂商实测脚本通过（MiMo ASR 因账号余额为 402 跳过）。
+- [ ] Codex 实机复测：窗口拖动、各页紧凑布局、处理链编辑与试听。
+- [ ] MiMo 账号充值后实测 `mimo-v2.5-asr`。
+- [ ] **P0（2027-01-06 前）**：OpenAI Speech 模型停用提示与一键迁移。
+- [ ] P1：schema v34，迁移角色实时设置、处理链与能力默认值，限额下沉到“连接 × 能力”。
+- [ ] P2：Provider 按能力分页与连接徽章、「设置 → AI 能力」路由页、角色检查器分标签。
+- [ ] LLM 目录数据化：接入 models.dev（先核实许可证）与 OpenRouter 完整字段，删除插件中的手写 LLM 条目。
+- [ ] 本地 TTS 自述：扩展 `.well-known/neiroha-capabilities`，包含音色、语言、流式与接口路径。
+- [ ] 处理链扩展：ASR 回听校验、VAD 去静音、缓存键含处理链哈希、API / MCP 开关。
+- [ ] 退出时偶发崩溃：isolate 关闭阶段 sqlite finalizer 段错误（`~/Library/Logs/DiagnosticReports/Neiroha-*.ips`），待排查。
+
 ## v0.5.1（2026-11-22）
 
 - [x] [Issue #10](https://github.com/Neiroha/Neiroha/issues/10)：GPT-SoVITS 合成失败时读取 JSON 中的 `error.message`（兼容 `message`、`detail`），与状态码一起显示；空响应、非 JSON 与连接异常保留通用提示。假服务回归覆盖四种响应。

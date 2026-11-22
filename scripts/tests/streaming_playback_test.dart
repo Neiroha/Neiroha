@@ -9,6 +9,7 @@ import 'package:neiroha/domain/synthesis/streaming_audio_sink.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/providers/playback_loop.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 
 class _Player extends Fake implements AudioPlayer {
@@ -44,6 +45,11 @@ class _Sink extends Fake implements StreamingAudioSink {
   bool get isBuffering => false;
 }
 
+class _LoopOff extends PlaybackLoopNotifier {
+  @override
+  bool build() => false;
+}
+
 SynthesisReceipt _receipt(String name) => SynthesisReceipt(
   audioPath: name,
   format: const TtsAudioFormat(AudioEncoding.wav),
@@ -59,6 +65,7 @@ void main() {
     () => container = ProviderContainer(
       overrides: [
         audioPlayerProvider.overrideWithValue(_Player()),
+        playbackLoopProvider.overrideWith(_LoopOff.new),
         androidMediaSessionServiceProvider.overrideWith((ref) {
           final session = MediaSessionService(supported: false);
           ref.onDispose(session.dispose);

@@ -77,6 +77,14 @@ class SessionAudioHistory extends Notifier<List<db.QuickTtsHistory>> {
     }
   }
 
+  /// File extension of a clip owned by this history, looked up by Blob URL.
+  String? extensionForUrl(String url) {
+    for (final clip in _clips.values) {
+      if (clip.url == url) return clip.extension;
+    }
+    return null;
+  }
+
   void _release(String id) {
     final clip = _clips.remove(id);
     if (clip == null) return;

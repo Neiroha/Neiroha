@@ -5,10 +5,23 @@ import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
+import 'package:neiroha/domain/platform/platform_capabilities.dart';
 import 'package:neiroha/domain/synthesis/streaming_audio_sink.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 
+import 'browser_speech_support.dart';
 import 'synthesis_service.dart';
+
+bool supportsQuickTtsStreaming(
+  db.TtsProvider? provider,
+  db.VoiceAsset asset,
+  PlatformCapabilities platform,
+) {
+  if (provider == null || !provider.enabled) return false;
+  return platform.isWeb
+      ? supportsBrowserSpeechStreaming(provider, asset)
+      : ttsAdapterSupportsStreaming(provider, asset.modelName);
+}
 
 TtsRequest quickTtsRequest(
   db.VoiceAsset asset,
@@ -56,7 +69,12 @@ class QuickTtsService {
         cancellation: cancellation,
         interactive: true,
         sink: sink,
-        request: quickTtsRequest(asset, provider, text),
+        request: quickTtsRequest(
+          asset,
+          provider,
+          text,
+          responseFormat: sink == null ? null : 'pcm',
+        ),
       );
       final duration = result.format.encoding == AudioEncoding.pcmS16le
           ? ((await File(result.audioPath).length()) - 44) /

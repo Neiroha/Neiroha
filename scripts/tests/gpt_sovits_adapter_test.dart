@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neiroha/data/adapters/gpt_sovits_adapter.dart';
+import 'package:neiroha/data/adapters/http_error_message.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 
 void main() {
@@ -203,6 +205,77 @@ void main() {
     await handled.future.timeout(const Duration(seconds: 2));
     expect(result.audioBytes, [4, 5, 6]);
     expect(paths, ['/api/gpt-sovits/clone', '/gpt-sovits/clone']);
+  });
+
+  group('synthesis errors', () {
+    Future<Object> failWith(
+      int status, {
+      ContentType? contentType,
+      String body = '',
+    }) async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      server.listen((request) async {
+        await utf8.decoder.bind(request).join();
+        request.response.statusCode = status;
+        if (contentType != null) {
+          request.response.headers.contentType = contentType;
+        }
+        request.response.write(body);
+        await request.response.close();
+      });
+      final adapter = GptSovitsAdapter(
+        baseUrl: 'http://127.0.0.1:${server.port}',
+        apiKey: '',
+      );
+      try {
+        await adapter.synthesize(
+          const TtsRequest(text: 'hello', voice: 'genshin-keqing'),
+        );
+      } catch (error) {
+        return error;
+      }
+      fail('synthesis should fail');
+    }
+
+    test('shows the backend error message with the status code', () async {
+      final error = await failWith(
+        HttpStatus.internalServerError,
+        contentType: ContentType.json,
+        body: jsonEncode({
+          'error': {
+            'message': 'English tokenizer is unavailable',
+            'type': 'server_error',
+          },
+        }),
+      );
+      expect(error, isA<TtsHttpException>());
+      expect(error.toString(), 'HTTP 500: English tokenizer is unavailable');
+    });
+
+    test('reads FastAPI detail strings', () async {
+      final error = await failWith(
+        HttpStatus.badRequest,
+        contentType: ContentType.json,
+        body: jsonEncode({'detail': 'voice not found'}),
+      );
+      expect(error.toString(), 'HTTP 400: voice not found');
+    });
+
+    test('keeps the generic Dio error for non-JSON bodies', () async {
+      final error = await failWith(
+        HttpStatus.badGateway,
+        contentType: ContentType.html,
+        body: '<html>Bad gateway</html>',
+      );
+      expect(error, isA<DioException>());
+      expect((error as DioException).response?.statusCode, 502);
+    });
+
+    test('keeps the generic Dio error for empty bodies', () async {
+      final error = await failWith(HttpStatus.internalServerError);
+      expect(error, isA<DioException>());
+    });
   });
 }
 

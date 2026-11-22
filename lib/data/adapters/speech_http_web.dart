@@ -11,7 +11,7 @@ import 'speech_http_response.dart';
 Future<SpeechHttpResponse> postSpeech(
   Uri uri,
   Map<String, String> headers,
-  Map<String, dynamic> body,
+  Object body,
   TtsCancelToken cancellation,
   Duration timeout,
 ) async {
@@ -48,7 +48,7 @@ Future<SpeechHttpResponse> postSpeech(
 Future<web.Response> _fetch(
   Uri uri,
   web.Headers headers,
-  Map<String, dynamic> body,
+  Object body,
   web.AbortSignal signal,
 ) async {
   try {
@@ -58,7 +58,7 @@ Future<web.Response> _fetch(
           web.RequestInit(
             method: 'POST',
             headers: headers,
-            body: jsonEncode(body).toJS,
+            body: (body is String ? body : jsonEncode(body)).toJS,
             signal: signal,
             redirect: 'error',
             credentials: 'omit',

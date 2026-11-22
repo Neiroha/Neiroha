@@ -1,10 +1,10 @@
 # 流式试听、小说分角与平台开发说明
 
-本说明覆盖 Neiroha v0.5.0 的流式播放、小说分角与平台支持。项目进度和跨机器交接见 [开发清单](../todo/todo.md)。
+本说明覆盖 Neiroha v0.5.1 的流式播放、小说分角与平台支持。项目进度和跨机器交接见 [开发清单](../todo/todo.md)。
 
 ## Quick TTS
 
-在角色的 Quick TTS 面板开启自动流式播放。OpenAI Realtime 使用同一请求边接收边播放，并把完整音频写入历史。旧适配器仍在整段生成后播放。停止会取消上游请求并丢弃不完整缓存；生成完成后，正在播放的流可以继续播完，随后可从文件回放。流播放期间不能跳转到尚未生成的位置。
+在角色详情选择「优先流式」或「整段生成」，快速试听标题会显示当前方式。桌面端 OpenAI Realtime 使用同一请求边接收边播放，并把完整音频写入历史。停止会取消上游请求并丢弃不完整缓存；生成完成后，正在播放的流可以继续播完，随后可从文件回放。流播放期间不能跳转到尚未生成的位置。网页端的播放和模型限制见 [Neiroha Web](web-preview-zh.md)。
 
 音频由公共 `SynthesisService` 编排，格式由适配器声明；PCM 必须提供真实采样率和声道，压缩音频在同一个解码器中持续消费。队列并发占用持续到整个请求清理结束。小说当前句、Dialog/Phase/视频单句试听及本地 API 已接公共流服务。小说首块到达后预取后续句；完整缓存命中时直接播放文件，旧适配器继续整段生成。CosyVoice 后端接入继续跳过。
 
@@ -170,7 +170,7 @@ NEIROHA_EVAL_BUDGET_FILE=.dart_tool/role-quality-2026-11-17/budget.json dart scr
 
 ## 本地 API 增量 PCM
 
-向 `/v1/audio/speech` 提交 `stream: true` 和 `response_format: "pcm"`。只对实现增量音频的适配器开放；不支持时返回 400，不将整段生成冒充流式。响应为 `audio/pcm`，通过 `x-audio-encoding`、`x-audio-sample-rate`、`x-audio-channels` 声明真实格式。Speech 网关可通过相同格式头声明 PCM 参数。客户端须持续消费响应；断连取消当前上游请求。正常完成才写出 HTTP chunked 终止标记，失败时截断连接。关闭本地 API 也会取消音频连接。
+向 `/v1/audio/speech` 提交 `stream: true` 和 `response_format: "pcm"`。支持增量音频的模型可以在生成完成前接收音频，其余模型返回 400。除桌面 OpenAI Realtime 外，也支持 [Web 流式兼容表](web-preview-zh.md) 中使用增量音频的 HTTP 模型。响应为 `audio/pcm`，通过 `x-audio-encoding`、`x-audio-sample-rate`、`x-audio-channels` 声明真实格式。Speech 网关可通过相同格式头声明 PCM 参数。客户端须持续消费响应，断连会取消当前上游请求。正常完成才写出 HTTP chunked 终止标记，失败时截断连接。关闭本地 API 也会取消音频连接。
 
 流播不等待整段响度归一化。完整流播放结束后可在副本归一化，再更新工程缓存指针，当前播放文件不变；生成和导出共用同一次生成的完整缓存。
 

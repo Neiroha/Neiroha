@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import 'openai_tts_adapter.dart';
 import 'tts_adapter.dart';
 
 class OpenAiCompatibleAdapter extends TtsAdapter {
@@ -24,6 +25,12 @@ class OpenAiCompatibleAdapter extends TtsAdapter {
 
   @override
   Future<TtsResult> synthesize(TtsRequest request) async {
+    if (OpenAiTtsAdapter.isOfficialApiEndpoint(baseUrl) &&
+        OpenAiTtsAdapter.usesRealtime(modelName)) {
+      throw UnsupportedError(
+        'OpenAI Realtime needs the OpenAI official adapter.',
+      );
+    }
     final data = {
       'model': modelName,
       'input': request.text,

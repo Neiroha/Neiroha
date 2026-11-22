@@ -178,6 +178,9 @@ class OpenAiTtsAdapter extends TtsAdapter {
   static bool usesRealtime(String model) =>
       model.trim().toLowerCase().startsWith('gpt-realtime');
 
+  static bool isOfficialApiEndpoint(String baseUrl) =>
+      Uri.tryParse(baseUrl.trim())?.host.toLowerCase() == 'api.openai.com';
+
   /// `instructions` is ignored by (and invalid for) `tts-1` / `tts-1-hd`.
   static bool supportsInstructions(String model) =>
       !model.trim().toLowerCase().startsWith('tts-1');
@@ -316,6 +319,9 @@ class OpenAiTtsAdapter extends TtsAdapter {
 
   @override
   bool get supportsStreaming => true;
+
+  @override
+  bool streamsAudioFor(TtsRequest request) => true;
 
   @override
   ServiceRoute get serviceRoute =>

@@ -1,5 +1,7 @@
 part of '../app_database.dart';
 
+String _quickTtsStreamingKey(String id) => 'quickTts.streaming.$id';
+
 extension AppDatabaseVoiceQueries on AppDatabase {
   // --- VoiceAsset / Character CRUD ---
 
@@ -19,6 +21,19 @@ extension AppDatabaseVoiceQueries on AppDatabase {
 
   Future<bool> updateVoiceAsset(VoiceAsset asset) =>
       update(voiceAssets).replace(asset);
+
+  Stream<bool> watchQuickTtsStreaming(String id) =>
+      (select(appSettings)
+            ..where((t) => t.key.equals(_quickTtsStreamingKey(id))))
+          .watchSingleOrNull()
+          .map((row) => row?.value != 'false')
+          .distinct();
+
+  Future<void> setQuickTtsStreaming(String id, bool enabled) =>
+      transaction(() async {
+        if (await getVoiceAssetById(id) == null) return;
+        await setSetting(_quickTtsStreamingKey(id), enabled.toString());
+      });
 
   Future<int> deleteVoiceAsset(String id) => transaction(() async {
     return _deleteVoiceAssetRows(id);
@@ -48,6 +63,7 @@ extension AppDatabaseVoiceQueries on AppDatabase {
     await (delete(
       quickTtsHistories,
     )..where((t) => t.voiceAssetId.equals(id))).go();
+    await deleteSetting(_quickTtsStreamingKey(id));
     return (delete(voiceAssets)..where((t) => t.id.equals(id))).go();
   }
 

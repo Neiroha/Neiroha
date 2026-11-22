@@ -5,7 +5,19 @@
   "webStorageDescription": "Providers, voice settings, voice banks and preferences are stored in this browser. Generated audio is kept in memory until the page reloads or the tab closes.",
   "webSessionAudio": "Audio history is cleared when you reload. Download clips you want to keep.",
   "webLocalAudioUnavailable": "Reference audio and avatar files require the desktop app.",
-  "webVoiceModeUnavailable": "Choose a browser-compatible HTTP provider, model and voice without a local reference file.",
+  "webSpeechAdapterUnavailable": "This provider adapter is unavailable for web previews. Choose a browser-compatible provider in the character settings.",
+  "webSpeechProviderDisabled": "The provider for this character is disabled. Enable it or choose another provider in the character settings.",
+  "webSpeechEndpointInvalid": "The provider URL is invalid. Enter a full HTTP(S) address in the provider settings.",
+  "webRealtimeUnavailable": "OpenAI Realtime is unavailable on the web. Choose a Speech model in the character settings or use the desktop app.",
+  "webGeminiLiveUnavailable": "This model requires Gemini Live. Choose a Gemini TTS model such as gemini-3.8-flash-tts.",
+  "webOpenAiRealtimeWrongAdapter": "For Web playback with the official OpenAI endpoint, choose a Speech model. On desktop, choose the official OpenAI adapter for Realtime.",
+  "webMiMoModelRetired": "MiMo V2 TTS has retired. Choose mimo-v2.5-tts.",
+  "webSpeechLocalReference": "This character requires local reference audio. Use the desktop app or choose a character with a preset voice.",
+  "webSpeechPresetRequired": "Select an OpenAI preset voice in the character settings.",
+  "webSpeechIncompatibleVoice": "This voice is incompatible with the selected model. Choose another voice in the character settings.",
+  "quickTtsPlaybackMode": "Preview playback",
+  "quickTtsStreamPlayback": "Prefer streaming",
+  "quickTtsFullPlayback": "Generate full clip",
   "webProviderNetworkError": "The browser could not reach the provider. Check the URL and allow the Neiroha site origin on the provider (CORS).",
   "webDownloadAudio": "Download audio",
   "appTitle": "Neiroha",
@@ -61,7 +73,7 @@
   "keepTtsRunningSubtitle": "Useful for reading with Novel Reader while checking task progress or settings.",
   "keepTtsRunningEnabled": "TTS will continue when switching screens.",
   "keepTtsRunningDisabled": "Novel playback will stop when leaving the reader.",
-  "aboutSubtitle": "v0.5.0 - AI Audio Middleware & Dubbing Workstation",
+  "aboutSubtitle": "v0.5.1 - AI Audio Middleware & Dubbing Workstation",
   "uiUnassigned": "-- Unassigned --",
   "uiOrUploadANewFile": "— or upload a new file —",
   "uiWillBeRemoved": "\"{name}\" will be removed.",
@@ -1107,7 +1119,6 @@
     }
   },
   "novelImportFolderTitle": "Import novel folder",
-  "uiPreferStreaming": "Auto: prefer streaming",
   "uiStopSynthesis": "Stop synthesis",
   "uiAudioBuffering": "Buffering…",
   "roleReadMode": "Read",
@@ -1352,5 +1363,9 @@
       }
     }
   },
-  "roleShowMorePending": "Show more segments to review"
+  "roleShowMorePending": "Show more segments to review",
+  "playbackLoop": "Loop playback",
+  "playbackLoopOn": "Loop on",
+  "playbackDownload": "Download audio",
+  "playbackMoreActions": "More playback actions"
 }

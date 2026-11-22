@@ -5,13 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:neiroha/data/adapters/chat_completions_tts_adapter.dart';
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/domain/platform/platform_capabilities.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
+import 'package:neiroha/presentation/widgets/tts_provider_model_row.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 
@@ -346,6 +347,11 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
   List<db.ModelBinding> _voices = [];
   bool _fetchingModels = false;
 
+  String get _defaultModel => defaultSpeechModelForPlatform(
+    _adapterType,
+    ref.read(platformCapabilitiesProvider),
+  );
+
   /// Whether a model key is a TTS model (vs LLM/ASR/multimodal).
   bool _isTtsModelKey(String modelKey) {
     // GPT-SoVITS and OpenAI official return curated TTS-only model lists.
@@ -419,7 +425,7 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
         baseUrl: _urlCtrl.text.trim(),
         apiKey: _keyCtrl.text,
         defaultModelName: _modelCtrl.text.trim().isEmpty
-            ? _adapterType.defaultModel
+            ? _defaultModel
             : _modelCtrl.text.trim(),
       );
       await ref
@@ -519,7 +525,7 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
             baseUrl: _urlCtrl.text.trim(),
             apiKey: _keyCtrl.text,
             defaultModelName: _modelCtrl.text.trim().isEmpty
-                ? _adapterType.defaultModel
+                ? _defaultModel
                 : _modelCtrl.text.trim(),
             maxConcurrency: _parseConcurrency(),
             requestsPerMinute: Value(_parseOptionalLimit(_rpmCtrl)),
@@ -633,7 +639,7 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
       baseUrl: _urlCtrl.text.trim(),
       apiKey: _keyCtrl.text,
       defaultModelName: _modelCtrl.text.trim().isEmpty
-          ? _adapterType.defaultModel
+          ? _defaultModel
           : _modelCtrl.text.trim(),
     );
     try {
@@ -775,7 +781,10 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                   setState(() {
                     _adapterType = v;
                     if (_modelCtrl.text.isEmpty) {
-                      _modelCtrl.text = v.defaultModel;
+                      _modelCtrl.text = defaultSpeechModelForPlatform(
+                        v,
+                        capabilities,
+                      );
                     }
                   });
                 },
@@ -815,7 +824,7 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                   controller: _modelCtrl,
                   decoration: InputDecoration(
                     labelText: AppLocalizations.of(context).uiDefaultModelName,
-                    hintText: _adapterType.defaultModel,
+                    hintText: _defaultModel,
                   ),
                 ),
               ],
@@ -951,8 +960,16 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                       ..._models
                           .where((m) => _isTtsModelKey(m.modelKey))
                           .map(
-                            (m) => _TtsModelRow(
+                            (m) => TtsProviderModelRow(
+                              key: ValueKey(m.id),
                               model: m,
+                              webBlock: capabilities.isWeb
+                                  ? browserSpeechModelBlock(
+                                      _adapterType.name,
+                                      m.modelKey,
+                                      baseUrl: _urlCtrl.text,
+                                    )
+                                  : null,
                               onDelete: () => _removeEntry(m.id),
                             ),
                           ),
@@ -1116,186 +1133,6 @@ class _BindingRow extends StatelessWidget {
                 child: Icon(Icons.close_rounded, size: 14, color: Colors.grey),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────── TTS model group (model + its voices) ─────────────────
-
-class _TtsModelRow extends StatefulWidget {
-  final db.ModelBinding model;
-  final VoidCallback onDelete;
-
-  const _TtsModelRow({required this.model, required this.onDelete});
-
-  @override
-  State<_TtsModelRow> createState() => _TtsModelRowState();
-}
-
-class _TtsModelRowState extends State<_TtsModelRow> {
-  bool _expanded = false;
-
-  /// Detect TTS model type label from model name.
-  String get _typeLabel {
-    final k = widget.model.modelKey.toLowerCase();
-    if (k.contains('voiceclone') || k.contains('clone')) return 'Clone';
-    if (k.contains('voicedesign') || k.contains('design')) return 'Design';
-    return 'Preset';
-  }
-
-  /// Built-in voices for this model (e.g., MiMo V2/V2.5). Empty if unknown.
-  List<String> get _builtInVoices =>
-      ChatCompletionsTtsAdapter.builtInVoicesForMimoModel(
-        widget.model.modelKey,
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    final voices = _builtInVoices;
-    final hasBuiltIns = voices.isNotEmpty;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceBright,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header row — tap to expand if built-ins exist.
-            InkWell(
-              onTap: hasBuiltIns
-                  ? () => setState(() => _expanded = !_expanded)
-                  : null,
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.mic_rounded,
-                      size: 16,
-                      color: Colors.purpleAccent.withValues(alpha: 0.7),
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        widget.model.modelKey,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    if (hasBuiltIns) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          AppLocalizations.of(
-                            context,
-                          ).uiVoiceCount(voices.length),
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.white.withValues(alpha: 0.55),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 4),
-                    ],
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.purpleAccent.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        _typeLabel,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.purpleAccent.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ),
-                    if (hasBuiltIns)
-                      Icon(
-                        _expanded
-                            ? Icons.expand_less_rounded
-                            : Icons.expand_more_rounded,
-                        size: 16,
-                        color: Colors.white.withValues(alpha: 0.5),
-                      ),
-                    SizedBox(width: 4),
-                    InkWell(
-                      onTap: widget.onDelete,
-                      borderRadius: BorderRadius.circular(4),
-                      child: Padding(
-                        padding: EdgeInsets.all(4),
-                        child: Icon(
-                          Icons.close_rounded,
-                          size: 14,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Built-in voices, shown when expanded.
-            if (hasBuiltIns && _expanded)
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: 28,
-                  right: 12,
-                  bottom: 8,
-                  top: 2,
-                ),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: voices
-                      .map(
-                        (v) => Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.08),
-                            ),
-                          ),
-                          child: Text(
-                            v,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.white.withValues(alpha: 0.7),
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
           ],
         ),
       ),
@@ -1521,7 +1358,9 @@ class _AddProviderDialogState extends State<_AddProviderDialog> {
                 adapterType: Value(_selectedType.name),
                 baseUrl: Value(''),
                 apiKey: const Value(''),
-                defaultModelName: Value(_selectedType.defaultModel),
+                defaultModelName: Value(
+                  defaultSpeechModelForPlatform(_selectedType, capabilities),
+                ),
                 enabled: const Value(false),
               ),
             );

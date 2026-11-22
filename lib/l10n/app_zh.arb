@@ -5,7 +5,19 @@
   "webStorageDescription": "服务商、音色、音色库和偏好保存在当前浏览器。生成的音频留在本页内存中，刷新或关闭标签页后清除。",
   "webSessionAudio": "刷新后会清空试听历史。需要保留的片段可以下载。",
   "webLocalAudioUnavailable": "参考音频和头像文件需要使用桌面端。",
-  "webVoiceModeUnavailable": "请选择浏览器可用的 HTTP 服务商、模型和无需本地参考文件的音色。",
+  "webSpeechAdapterUnavailable": "此服务商适配器不支持 Web 试听。请在角色设置中选择可在浏览器使用的服务商。",
+  "webSpeechProviderDisabled": "此角色的服务商已禁用。请启用服务商，或在角色设置中更换。",
+  "webSpeechEndpointInvalid": "服务商地址无效。请在服务商设置中填写完整的 HTTP(S) 地址。",
+  "webRealtimeUnavailable": "Web 暂不支持 OpenAI Realtime。请在角色设置中选择 Speech 模型，或使用桌面端。",
+  "webGeminiLiveUnavailable": "此模型需要 Gemini Live。请选择 gemini-3.8-flash-tts 等 Gemini TTS 模型。",
+  "webOpenAiRealtimeWrongAdapter": "在 Web 使用 OpenAI 官方地址时请选择 Speech 模型。桌面端使用 Realtime 时请选择 OpenAI 官方适配器。",
+  "webMiMoModelRetired": "MiMo V2 TTS 已停用。请选择 mimo-v2.5-tts。",
+  "webSpeechLocalReference": "此角色的合成需要本地参考音频，请使用桌面端或选择预设音色角色。",
+  "webSpeechPresetRequired": "请在角色设置中选择 OpenAI 预设音色。",
+  "webSpeechIncompatibleVoice": "此音色与所选模型不兼容。请在角色设置中重新选择音色。",
+  "quickTtsPlaybackMode": "试听播放方式",
+  "quickTtsStreamPlayback": "优先流式",
+  "quickTtsFullPlayback": "整段生成",
   "webProviderNetworkError": "浏览器无法连接服务商。请检查地址，并在服务商侧允许本站来源（CORS）。",
   "webDownloadAudio": "下载音频",
   "appTitle": "Neiroha",
@@ -42,7 +54,7 @@
   "keepTtsRunningSubtitle": "适合边听小说边查看任务进度或设置。",
   "keepTtsRunningEnabled": "切换页面时 TTS 会继续运行。",
   "keepTtsRunningDisabled": "离开小说阅读器时会停止播放。",
-  "aboutSubtitle": "v0.5.0 - AI 音频中间件与配音工作站",
+  "aboutSubtitle": "v0.5.1 - AI 音频中间件与配音工作站",
   "uiUnassigned": "-- 未分配 --",
   "uiOrUploadANewFile": "— 或上传新文件 —",
   "uiWillBeRemoved": "“{name}”将被移除。",
@@ -715,7 +727,6 @@
   "statusWritingWav": "正在录制 WAV",
   "novelImported": "已导入 {chapters} 章、{segments} 个分段。",
   "novelImportFolderTitle": "导入小说文件夹",
-  "uiPreferStreaming": "自动：优先流式",
   "uiStopSynthesis": "停止生成",
   "uiAudioBuffering": "正在缓冲…",
   "roleReadMode": "阅读",
@@ -960,5 +971,9 @@
       }
     }
   },
-  "roleShowMorePending": "显示更多待确认片段"
+  "roleShowMorePending": "显示更多待确认片段",
+  "playbackLoop": "循环播放",
+  "playbackLoopOn": "已开启循环",
+  "playbackDownload": "下载音频",
+  "playbackMoreActions": "更多播放操作"
 }

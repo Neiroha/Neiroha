@@ -4,6 +4,25 @@
 
 基线：`dev@2d514adb`（最后一次上游提交为 2026-11-09 09:23，UTC+8）。本清单随 `dev` 分支版本管理；当前实现与验收结果见下文，提交状态以 Git 为准。本轮按核心功能、macOS、脚本/CI、文档交接四批提交。`[x]` 表示代码已实现且有本地检查；云端效果和 Mac 实机验收单列，不能由假服务测试替代。使用方法及兼容性见 [开发说明](../docs/streaming-and-roles-zh.md)。
 
+## v0.5.1（2026-11-22）
+
+- [x] [Issue #10](https://github.com/Neiroha/Neiroha/issues/10)：GPT-SoVITS 合成失败时读取 JSON 中的 `error.message`（兼容 `message`、`detail`），与状态码一起显示；空响应、非 JSON 与连接异常保留通用提示。假服务回归覆盖四种响应。
+- [x] [Issue #5](https://github.com/Neiroha/Neiroha/issues/5)：播放条新增循环与下载，窄面板收入同一菜单；循环设置写入 AppSettings。循环只作用于单条音频，Dialog 顺序播放与小说阅读器照常推进。桌面快速试听历史可直接下载。
+- [x] macOS 全量测试 364 项通过、30 项跳过；`flutter analyze` 与代码行数检查通过。
+- [ ] 在桌面与 Web 实机确认循环、下载对话框及窄窗口播放条布局。
+
+## Web 快速试听（2026-11-19）
+
+- [x] 统一 [Issue #9](https://github.com/Neiroha/Neiroha/issues/9) 的 Web 模型选择和生成检查。OpenAI 默认使用 Speech，显式选择的 Realtime 角色提示更换模型或使用桌面端。分别提示音色、参考音频及服务商配置问题。
+- [x] 将流式偏好移到角色设置并通过 Drift 按角色保存，快速试听标题显示播放方式。旧角色默认优先流式，已有数据库无需迁移。
+- [x] Windows 全量测试 338 项通过、30 项跳过。Web Wasm Release 已构建，Chrome 已加载应用及 Drift SQLite。新增回归覆盖两个 Realtime 模型、Speech 默认回退、预设音色、停用服务商、本地参考音频与 320 像素布局。
+- [x] Chrome Release 通过本地模拟 Speech 服务验收。PCM 在响应结束前进入 Web Audio 播放队列，停止会中断上游且不留下试听记录，正常完成的音频进入内存历史。
+- [ ] 接入带授权服务的 Web Realtime，验证两个模型的预设音色、首声、正常结束与中途取消。OpenAI 计划于 2027-01-06 停用现有 Speech 模型。 [WebRTC 接入说明](https://developers.openai.com/api/docs/guides/realtime-webrtc) · [停用时间表](https://developers.openai.com/api/docs/deprecations)
+- [x] 修复 Gemini Live、OpenAI 官方地址配通用适配器时的 Realtime 路由提示，以及 Azure 区域简写的 Web 校验。小米官方 MiMo 新默认值和旧默认继承统一使用 `mimo-v2.5-tts`，显式选中的旧模型会提示更新。
+- [x] 快速试听和本机 Speech API 支持 Gemini 3.8 TTS、ElevenLabs、MiniMax、MiMo V2.5 预设音色、Azure 的 HTTP PCM。五家均通过本地首块和断连测试；SSE 缺少完成事件时拒绝提交音频。本机 API 通过 MiniMax 渐进透传验证。
+- [x] Web Wasm Release 构建成功。Chrome 使用本地 Gemini SSE 假服务验证响应结束前开始调度音频、在途停止关闭连接、正常完成写入内存历史。Windows 全量测试 356 项通过、30 项跳过。
+- [ ] 使用各服务商的真实凭据验证实际首声、跨源直连和中途取消。通用兼容网关当前采用整段生成。
+
 ## macOS 接续入口（2026-11-17）
 
 - 先阅读本清单、[使用与开发说明](../docs/streaming-and-roles-zh.md)、[内置 skill 与评测标准](../skills/novel-role-assign/EVALUATION.md)。开发规范：保持分层、正文与人工标注保护；手写代码目标不超过 500 行，`dart scripts/tools/check_code_size.dart` 检查。

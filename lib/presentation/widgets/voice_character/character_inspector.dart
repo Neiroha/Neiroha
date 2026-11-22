@@ -11,9 +11,13 @@ import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
+import 'package:neiroha/data/services/synthesis/quick_tts_service.dart';
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'editable_character_avatar.dart';
+import 'character_model_field.dart';
+import 'quick_tts_playback_setting.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/loudness_fields.dart';
 import 'package:neiroha/presentation/widgets/voice_character/components.dart';
@@ -192,6 +196,13 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
     final allProviders =
         ref.watch(ttsProvidersStreamProvider).value ?? const <db.TtsProvider>[];
     final capabilities = ref.watch(platformCapabilitiesProvider);
+    final selected = _selectedProvider;
+    final voices = capabilities.isWeb && selected?.adapterType == 'openaiTts'
+        ? browserOpenAiVoiceOptions(
+            browserSpeechModel(selected!, _modelNameCtrl.text)!,
+            _speakers,
+          )
+        : _speakers;
     final enabledProviders = allProviders
         .where(
           (p) => p.enabled && capabilities.supportsAdapterName(p.adapterType),
@@ -332,11 +343,13 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
                 ],
               ),
             )
-          else if (_speakers.isNotEmpty) ...[
+          else if (voices.isNotEmpty) ...[
             VoiceCharacterVoiceSearchPicker(
               label: AppLocalizations.of(context).uiSelectVoice,
-              voices: _speakers,
-              selected: _selectedSpeaker,
+              voices: voices,
+              selected: voices.contains(_selectedSpeaker)
+                  ? _selectedSpeaker
+                  : null,
               onSelected: (v) => setState(() {
                 _selectedSpeaker = v;
                 _voiceNameCtrl.text = v;
@@ -355,18 +368,11 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
           ),
           if (_hasModelField) ...[
             SizedBox(height: 12),
-            TextField(
+            CharacterModelField(
               controller: _modelNameCtrl,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).uiModelName,
-                hintText: switch (_selectedProvider?.adapterType) {
-                  'openaiTts' => 'e.g. gpt-realtime-2.1-mini',
-                  'geminiTts' => 'e.g. gemini-3.8-flash-tts',
-                  'elevenLabs' => 'e.g. eleven_v4',
-                  'minimaxTts' => 'e.g. speech-2.8-hd',
-                  _ => 'e.g. tts-1',
-                },
-              ),
+              provider: selected,
+              isWeb: capabilities.isWeb,
+              onChanged: () => setState(() {}),
             ),
           ],
           if (_isGptSovits) ...[
@@ -546,11 +552,18 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
           ),
         ],
 
+        if (supportsQuickTtsStreaming(
+          allProviders.where((p) => p.id == a.providerId).firstOrNull,
+          a,
+          capabilities,
+        )) ...[
+          const SizedBox(height: 8),
+          QuickTtsPlaybackSetting(voiceId: a.id),
+        ],
         SizedBox(height: 16),
         const Divider(),
         SizedBox(height: 12),
 
-        // ── Enabled toggle ───────────────────────────────────────────────────
         Row(
           children: [
             Text(

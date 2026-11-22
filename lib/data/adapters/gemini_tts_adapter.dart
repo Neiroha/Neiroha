@@ -2,6 +2,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
+import 'package:neiroha/domain/synthesis/tts_event.dart';
+
+import 'http_speech_stream.dart';
 
 import 'tts_adapter.dart';
 import 'wav_utils.dart';
@@ -122,8 +126,26 @@ class GeminiTtsAdapter extends TtsAdapter {
   static bool usesLegacyGenerateContent(String model) =>
       RegExp(r'^(models/)?gemini-(2\.|3\.[01]-)').hasMatch(model);
 
-  @override
-  Future<TtsResult> synthesize(TtsRequest request) async {
+  static bool usesLiveModel(String model) {
+    final id = model.trim().toLowerCase().replaceFirst(RegExp(r'^models/'), '');
+    return id.startsWith('gemini-') &&
+        RegExp(r'-(live|native-audio)(-|$)').hasMatch(id);
+  }
+
+  static bool supportsStreamingModel(String model) =>
+      const {
+        'gemini-3.8-flash-tts',
+        'gemini-3.8-flash-lite-tts',
+      }.contains(model.trim().replaceFirst(RegExp(r'^models/'), '')) ||
+      model.trim().isEmpty ||
+      model.trim() == 'default';
+
+  (String, String) _voiceAndStyle(TtsRequest request) {
+    if (usesLiveModel(_model)) {
+      throw UnsupportedError(
+        'This model requires Gemini Live. Choose a Gemini TTS model.',
+      );
+    }
     if (request.refAudioPath != null && request.refAudioPath!.isNotEmpty) {
       throw Exception(
         'Gemini TTS does not support voice cloning from reference audio.',
@@ -135,7 +157,6 @@ class GeminiTtsAdapter extends TtsAdapter {
         ? request.presetVoiceName!
         : 'Kore';
     final voice = voiceIdFromLabel(rawVoice);
-    final model = _model;
 
     // Speed is not natively controllable; express it as delivery style.
     final styleParts = <String>[];
@@ -146,8 +167,77 @@ class GeminiTtsAdapter extends TtsAdapter {
     if (request.speed != 1.0) {
       styleParts.add(request.speed > 1.0 ? 'speak quickly' : 'speak slowly');
     }
-    final style = styleParts.join(', ');
+    return (voice, styleParts.join(', '));
+  }
 
+  @override
+  bool get supportsStreaming => supportsStreamingModel(_model);
+
+  @override
+  Stream<TtsEvent> synthesizeStream(
+    TtsRequest request, {
+    required TtsCancelToken cancellation,
+  }) {
+    if (!streamsAudioFor(request)) {
+      return super.synthesizeStream(request, cancellation: cancellation);
+    }
+    final (voice, style) = _voiceAndStyle(request);
+    return httpSpeechStream(
+      uri: Uri.parse(_dio.options.baseUrl).resolve('v1beta/interactions'),
+      headers: {if (apiKey.isNotEmpty) 'x-goog-api-key': apiKey},
+      body: {
+        ..._interactionsBody(_model, voice, request.text, style),
+        'response_format': {
+          'type': 'audio',
+          'mime_type': 'audio/l16',
+          'sample_rate': 24000,
+        },
+        'stream': true,
+      },
+      format: const TtsAudioFormat(
+        AudioEncoding.pcmS16le,
+        sampleRate: 24000,
+        channels: 1,
+      ),
+      decodeEvent: _decodeSpeechEvent,
+      cancellation: cancellation,
+    );
+  }
+
+  static SpeechEventFrame _decodeSpeechEvent(String event) {
+    final json = jsonDecode(event) as Map;
+    switch (json['event_type']) {
+      case 'interaction.completed':
+        final status = (json['interaction'] as Map?)?['status'];
+        if (status != null && status != 'completed') {
+          throw StateError('Gemini TTS ended with status $status.');
+        }
+        return (audio: null, done: true);
+      case 'error':
+      case 'interaction.failed':
+      case 'interaction.cancelled':
+        throw StateError('Gemini TTS stream failed.');
+      case 'step.delta':
+        final delta = json['delta'] as Map?;
+        final data = delta?['data'];
+        if (delta?['type'] == 'audio' && data is String) {
+          final mime = delta?['mime_type'] ?? delta?['mimeType'];
+          if (mime != null &&
+              !mime.toString().toLowerCase().startsWith('audio/l16')) {
+            throw const FormatException(
+              'Gemini returned an unexpected audio encoding.',
+            );
+          }
+          return (audio: base64Decode(data), done: false);
+        }
+    }
+    return (audio: null, done: false);
+  }
+
+  @override
+  Future<TtsResult> synthesize(TtsRequest request) async {
+    final (voice, style) = _voiceAndStyle(request);
+    final model = _model;
     try {
       if (!usesLegacyGenerateContent(model)) {
         try {
@@ -179,31 +269,10 @@ class GeminiTtsAdapter extends TtsAdapter {
     String text,
     String style,
   ) async {
-    final body = {
-      'model': model,
-      'input': [
-        {
-          'type': 'user_input',
-          'content': [
-            {
-              'type': 'text',
-              'text': text,
-              if (style.isNotEmpty)
-                'annotations': [
-                  {'type': 'speech_metadata', 'style': style},
-                ],
-            },
-          ],
-        },
-      ],
-      'response_format': {'type': 'audio'},
-      'generation_config': {
-        'speech_config': [
-          {'voice': voice},
-        ],
-      },
-    };
-    final resp = await _dio.post('v1beta/interactions', data: body);
+    final resp = await _dio.post(
+      'v1beta/interactions',
+      data: _interactionsBody(model, voice, text, style),
+    );
     final data = resp.data as Map<String, dynamic>;
     Map? audio;
     for (final step in (data['steps'] as List? ?? const []).whereType<Map>()) {
@@ -222,6 +291,36 @@ class GeminiTtsAdapter extends TtsAdapter {
     final mime = (audio?['mime_type'] ?? audio?['mimeType'] ?? '') as String;
     return _asWav(bytes, mime);
   }
+
+  static Map<String, dynamic> _interactionsBody(
+    String model,
+    String voice,
+    String text,
+    String style,
+  ) => {
+    'model': model,
+    'input': [
+      {
+        'type': 'user_input',
+        'content': [
+          {
+            'type': 'text',
+            'text': text,
+            if (style.isNotEmpty)
+              'annotations': [
+                {'type': 'speech_metadata', 'style': style},
+              ],
+          },
+        ],
+      },
+    ],
+    'response_format': {'type': 'audio'},
+    'generation_config': {
+      'speech_config': [
+        {'voice': voice},
+      ],
+    },
+  };
 
   Future<TtsResult> _synthesizeGenerateContent(
     String model,

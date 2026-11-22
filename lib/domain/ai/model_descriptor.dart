@@ -1,4 +1,5 @@
 import 'package:neiroha/domain/ai/capability.dart';
+import 'package:neiroha/domain/ai/llm_traits.dart';
 
 enum ModelLifecycle { preview, ga, deprecated }
 
@@ -20,6 +21,7 @@ class ModelDescriptor {
     this.replacement,
     this.source = DescriptorSource.catalog,
     this.isDefault = false,
+    this.llm,
   });
 
   final String id;
@@ -37,6 +39,29 @@ class ModelDescriptor {
 
   /// The provider's recommended model for [capability].
   final bool isDefault;
+
+  /// Language-model traits (inputs, tools, reasoning); null when unknown or
+  /// not an LLM.
+  final LlmTraits? llm;
+
+  ModelDescriptor copyWith({
+    LlmTraits? llm,
+    DescriptorSource? source,
+    String? displayName,
+  }) => ModelDescriptor(
+    id: id,
+    capability: capability,
+    protocol: protocol,
+    displayName: displayName ?? this.displayName,
+    features: features,
+    platforms: platforms,
+    lifecycle: lifecycle,
+    shutdownAt: shutdownAt,
+    replacement: replacement,
+    source: source ?? this.source,
+    isDefault: isDefault,
+    llm: llm ?? this.llm,
+  );
 
   String get label => displayName.isEmpty ? id : displayName;
   bool has(String feature) => features.contains(feature);

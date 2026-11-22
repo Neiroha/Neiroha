@@ -4,6 +4,7 @@ library;
 export 'ai_exception.dart';
 export 'ai_feature.dart';
 export 'capability.dart';
+export 'llm_traits.dart';
 export 'events/session_events.dart';
 export 'media/audio_input.dart';
 export 'media/speech_segment.dart';

@@ -75,8 +75,20 @@ class AzureTtsAdapter extends TtsAdapter {
   /// Default voice when none specified.
   static const _defaultVoice = 'en-US-AriaNeural';
 
+  /// `zh-CN` from `zh-CN-XiaoxiaoNeural`; the SSML language must match
+  /// the voice or Azure returns an empty stream.
+  static String localeOf(String voice) {
+    final m = RegExp(r'^([a-z]{2,3}-[A-Za-z]{2,4})-').firstMatch(voice);
+    return m?.group(1) ?? 'en-US';
+  }
+
   String _speechSsml(TtsRequest request) {
-    final voice = request.presetVoiceName ?? _defaultVoice;
+    final named = request.presetVoiceName?.trim() ?? '';
+    final voice = named.isNotEmpty
+        ? named
+        : request.voice.trim().isNotEmpty
+        ? request.voice.trim()
+        : _defaultVoice;
 
     // Build SSML
     final rate = request.speed != 1.0
@@ -84,7 +96,7 @@ class AzureTtsAdapter extends TtsAdapter {
         : '0%';
     return '''
 <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"
-       xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="en-US">
+       xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="${localeOf(voice)}">
   <voice name="$voice">
     <prosody rate="$rate">
       ${_escapeXml(request.text)}

@@ -7,6 +7,9 @@ models hang off capabilities. Domain types live in `lib/domain/ai/`
 ```
 core/        ProviderPlugin, ProviderConnection, ConnectionConfig, health,
              TtsAdapter contract for vendor-native speech
+catalog/     llm_traits_catalog (bundled public snapshot → LlmTraits: thinking
+             levels, tool calling, input modalities, context) and llm_discovery
+             (account `GET models` + snapshot + plugin catalog)
 registry/    plugin_registry (adapter type → plugin), capability_router,
              tts_adapter_factory (createAdapter)
 protocols/   transports shared by several vendors

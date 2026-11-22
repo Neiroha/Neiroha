@@ -10,6 +10,7 @@ import 'package:neiroha/data/ai/providers/common/adapter_tts_plugin.dart';
 import 'package:neiroha/data/ai/providers/openai/openai_plugin.dart';
 import 'package:neiroha/data/ai/providers/openai_compatible/openai_compatible_plugin.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/domain/ai/capability.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
 
 /// Plugin serving a `TtsProviders.adapterType`, so v34 can migrate rows
@@ -48,3 +49,9 @@ ProviderConnection connectionForProvider(db.TtsProvider row) =>
         },
       ),
     );
+
+/// Whether a provider row offers a language model (for pickers that list
+/// "who can do LLM" before the user chooses).
+bool providerOffersLlm(db.TtsProvider row) =>
+    AdapterType.values.asNameMap()[row.adapterType] != null &&
+    connectionForProvider(row).capabilities.contains(AiCapability.llm);

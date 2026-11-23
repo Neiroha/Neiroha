@@ -38,7 +38,8 @@ class AdapterTtsPlugin extends ProviderPlugin {
     features: {
       if (type.supportsVoiceQuery) AiFeature.presetVoices,
       if (type.supportsCloudVoiceClone) AiFeature.cloudClone,
-      if (type.requiresReferenceAudio) AiFeature.zeroShotClone,
+      if (type.requiresReferenceAudio || type == AdapterType.irodori)
+        AiFeature.zeroShotClone,
     },
     isDefault: true,
   );

@@ -128,12 +128,14 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         t == 'openaiTts' ||
         t == 'chatCompletionsTts' ||
         t == 'gptSovits' ||
+        t == 'irodori' ||
         t == 'geminiTts' ||
         t == 'elevenLabs' ||
         t == 'minimaxTts';
   }
 
   bool get _isGptSovits => _selectedProvider?.adapterType == 'gptSovits';
+  bool get _isIrodori => _selectedProvider?.adapterType == 'irodori';
 
   /// Adapters that store the synthesis language in modelName.
   bool get _usesTextLang =>
@@ -145,6 +147,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         t == 'openaiTts' ||
         t == 'chatCompletionsTts' ||
         t == 'geminiTts' ||
+        t == 'irodori' ||
         t == 'elevenLabs' ||
         t == 'minimaxTts';
   }
@@ -416,6 +419,15 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
             AppLocalizations.of(context).sectionVoiceClone,
           ),
           SizedBox(height: 8),
+          if (_isIrodori) ...[
+            CharacterModelField(
+              controller: _modelNameCtrl,
+              provider: selected,
+              isWeb: capabilities.isWeb,
+              onChanged: () => setState(() {}),
+            ),
+            SizedBox(height: 12),
+          ],
           if (!kIsWeb && a.refAudioPath != null) ...[
             Text(
               AppLocalizations.of(context).uiREFERENCEAUDIO,
@@ -505,20 +517,22 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
             ),
             SizedBox(height: 12),
           ],
-          TextField(
-            controller: _promptTextCtrl,
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: AppLocalizations.of(context).uiReferenceTranscript,
+          if (!_isIrodori) ...[
+            TextField(
+              controller: _promptTextCtrl,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).uiReferenceTranscript,
+              ),
             ),
-          ),
-          SizedBox(height: 10),
-          TextField(
-            controller: _promptLangCtrl,
-            decoration: InputDecoration(
-              labelText: AppLocalizations.of(context).uiLanguageCode,
+            SizedBox(height: 10),
+            TextField(
+              controller: _promptLangCtrl,
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).uiLanguageCode,
+              ),
             ),
-          ),
+          ],
           if (_usesTextLang) ...[
             SizedBox(height: 10),
             TextField(

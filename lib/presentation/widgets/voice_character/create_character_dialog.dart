@@ -11,6 +11,7 @@ import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/ai/providers/local/cosyvoice/tts/cosyvoice_adapter.dart';
+import 'package:neiroha/data/ai/providers/local/irodori/tts/irodori_adapter.dart';
 import 'package:neiroha/data/ai/providers/local/voxcpm2/tts/voxcpm2_native_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
@@ -137,6 +138,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
   bool get _isCosyVoice => _adapterType == 'cosyvoice';
   bool get _isVoxCpm2 => _adapterType == 'voxcpm2Native';
   bool get _isGptSovits => _adapterType == 'gptSovits';
+  bool get _isIrodori => _adapterType == 'irodori';
   bool get _isPresetVoiceProvider =>
       _adapterType == 'chatCompletionsTts' ||
       _adapterType == 'openaiCompatible' ||
@@ -144,6 +146,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       _adapterType == 'azureTts' ||
       _adapterType == 'systemTts' ||
       _adapterType == 'geminiTts' ||
+      _isIrodori ||
       _isCloudCloneProvider;
   bool get _isGeminiTts => _adapterType == 'geminiTts';
   bool get _isOpenAiTts => _adapterType == 'openaiTts';
@@ -160,11 +163,13 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       _isOpenAiTts ||
       _adapterType == 'chatCompletionsTts' ||
       _isGeminiTts ||
+      _isIrodori ||
       _isCloudCloneProvider;
 
   /// Detect TTS model type from model name.
   /// Returns 'clone', 'design', or 'preset'.
-  static String _detectTtsModelType(String modelKey) {
+  String _detectTtsModelType(String modelKey) {
+    if (_isIrodori) return 'preset';
     final k = modelKey.toLowerCase();
     if (k.contains('voiceclone') || k.contains('clone')) return 'clone';
     if (k.contains('voicedesign') || k.contains('design')) return 'design';
@@ -183,15 +188,25 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
       _voiceNameCtrl.clear();
     });
 
-    List<String> voiceList = [];
-
     // Voices the chosen model ships with, then account / custom voices
     // (minus voices built into the provider's other models).
     final type = AdapterType.values.asNameMap()[provider.adapterType];
+    List<String>? voiceSet;
+    if (type == AdapterType.irodori) {
+      try {
+        final adapter = createAdapter(provider) as IrodoriAdapter;
+        voiceSet = await adapter.getSpeakersForVoiceSet(modelKey);
+      } catch (_) {
+        // Keep cached voices available when the local backend is offline.
+      }
+    }
     final builtIn = type == null
         ? const <String>[]
         : builtInVoicesFor(type, modelKey);
-    if (builtIn.isNotEmpty &&
+    List<String> voiceList;
+    if (voiceSet != null) {
+      voiceList = voiceSet;
+    } else if (builtIn.isNotEmpty &&
         type == AdapterType.chatCompletionsTts &&
         _ttsModelType == 'preset') {
       voiceList = builtIn;
@@ -850,6 +865,19 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                             ),
                             SizedBox(height: 8),
                             ..._buildRefAudioPicker(),
+                          ],
+                          if (_isIrodori && !kIsWeb) ...[
+                            SizedBox(height: 16),
+                            ..._buildRefAudioPicker(),
+                            if (_effectiveRefAudioPath != null)
+                              TextField(
+                                controller: _instructionCtrl,
+                                decoration: InputDecoration(
+                                  labelText: AppLocalizations.of(
+                                    context,
+                                  ).uiStyleInstructionOptional,
+                                ),
+                              ),
                           ],
                         ],
 
@@ -1636,6 +1664,10 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
     TaskMode effectiveMode;
     if (_isIndexTts) {
       effectiveMode = TaskMode.cloneWithPrompt;
+    } else if (_isIrodori) {
+      effectiveMode = refAudio == null
+          ? TaskMode.presetVoice
+          : TaskMode.cloneWithPrompt;
     } else if (_isPresetVoiceProvider) {
       if (_ttsModelType == 'clone') {
         effectiveMode = TaskMode.cloneWithPrompt;

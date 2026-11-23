@@ -2090,6 +2090,7 @@ class NeirohaMcpTools {
     AdapterType.elevenLabs => 'https://api.elevenlabs.io',
     AdapterType.minimaxTts => 'https://api.minimax.io',
     AdapterType.indexTts => 'http://127.0.0.1:7860',
+    AdapterType.irodori => 'http://127.0.0.1:19000',
   };
 
   static const Map<AdapterType, String> _adapterGuide = {
@@ -2123,6 +2124,10 @@ class NeirohaMcpTools {
         'GPT-SoVITS launcher. presetVoice: voice = trained speaker, model = '
         'text language (zh/en/ja/ko). cloneWithPrompt: reference audio + '
         'prompt_text + prompt_lang, model = text language.',
+    AdapterType.irodori:
+        'Irodori launcher. model = voice set (default, meanflow, azurlane, '
+        'or local). voice = registered speaker ID. For cloneWithPrompt, '
+        'supply reference audio and optionally instruction as a style caption.',
     AdapterType.azureTts:
         'Azure Speech. base_url = https://{region}.tts.speech.microsoft.com; '
         'api_key = subscription key; voice = e.g. zh-CN-XiaoxiaoNeural.',

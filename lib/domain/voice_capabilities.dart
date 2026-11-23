@@ -21,6 +21,7 @@ abstract final class VoiceCapabilities {
       'elevenLabs' => true,
       'minimaxTts' => true,
       'indexTts' => true,
+      'irodori' => asset.refAudioPath?.trim().isNotEmpty == true,
       _ => false,
     };
   }

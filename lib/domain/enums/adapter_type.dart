@@ -10,7 +10,8 @@ enum AdapterType {
   geminiTts,
   elevenLabs,
   minimaxTts,
-  indexTts;
+  indexTts,
+  irodori;
 
   String get displayName => switch (this) {
     openaiCompatible => 'OpenAI TTS API Compatible',
@@ -25,6 +26,7 @@ enum AdapterType {
     elevenLabs => 'ElevenLabs',
     minimaxTts => 'MiniMax Speech',
     indexTts => 'IndexTTS 2.5 (WebUI)',
+    irodori => 'Irodori',
   };
 
   String get defaultModel => switch (this) {
@@ -40,6 +42,7 @@ enum AdapterType {
     elevenLabs => 'eleven_v4',
     minimaxTts => 'speech-2.8-hd',
     indexTts => 'auto',
+    irodori => 'default',
   };
 
   /// Whether this adapter type fetches models (synthesis engines) from the API.
@@ -53,6 +56,7 @@ enum AdapterType {
     geminiTts => true,
     elevenLabs => true,
     minimaxTts => true,
+    irodori => true,
     _ => false,
   };
 
@@ -67,6 +71,7 @@ enum AdapterType {
     geminiTts => true,
     elevenLabs => true,
     minimaxTts => true,
+    irodori => true,
     _ => false,
   };
 
@@ -81,6 +86,7 @@ enum AdapterType {
     geminiTts => true,
     elevenLabs => true,
     minimaxTts => true,
+    irodori => true,
     _ => false,
   };
 

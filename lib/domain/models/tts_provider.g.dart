@@ -38,4 +38,5 @@ const _$AdapterTypeEnumMap = {
   AdapterType.elevenLabs: 'elevenLabs',
   AdapterType.minimaxTts: 'minimaxTts',
   AdapterType.indexTts: 'indexTts',
+  AdapterType.irodori: 'irodori',
 };

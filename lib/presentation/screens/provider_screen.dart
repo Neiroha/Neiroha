@@ -385,8 +385,9 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
 
   /// Whether a model key is a TTS model (vs LLM/ASR/multimodal).
   bool _isTtsModelKey(String modelKey) {
-    // GPT-SoVITS and OpenAI official return curated TTS-only model lists.
+    // The local launchers list voice sets; OpenAI uses its curated TTS models.
     if (_adapterType == AdapterType.gptSovits ||
+        _adapterType == AdapterType.irodori ||
         _adapterType == AdapterType.openaiTts) {
       return true;
     }
@@ -655,6 +656,7 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     AdapterType.minimaxTts =>
       'https://api.minimax.io  (China: https://api.minimaxi.com)',
     AdapterType.indexTts => 'http://127.0.0.1:7860  (IndexTTS WebUI)',
+    AdapterType.irodori => 'http://127.0.0.1:19000',
     _ => 'https://api.openai.com/v1',
   };
 

@@ -6,6 +6,7 @@ import 'package:neiroha/data/ai/core/provider_connection.dart';
 import 'package:neiroha/data/ai/registry/built_in_voices.dart';
 import 'package:neiroha/data/ai/registry/model_badges.dart';
 import 'package:neiroha/data/services/capabilities/model_retirement.dart';
+import 'package:neiroha/presentation/widgets/ai/capability_badges.dart';
 import 'package:neiroha/presentation/widgets/ai/model_retirement_widgets.dart';
 import 'package:neiroha/data/ai/registry/plugin_registry.dart';
 import 'package:neiroha/presentation/widgets/voice_chip_list.dart';
@@ -110,6 +111,13 @@ class _ProviderListPane extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final filter = ref.watch(providerCapabilityFilterProvider);
+    final providers = filter == null
+        ? this.providers
+        : [
+            for (final p in this.providers)
+              if (rowCapabilities(p).contains(filter)) p,
+          ];
     return Container(
       color: AppTheme.surfaceDim,
       child: Column(
@@ -136,6 +144,7 @@ class _ProviderListPane extends ConsumerWidget {
               ),
             ),
           ),
+          CapabilityFilterBar(providers: this.providers),
           const Divider(height: 1),
           Expanded(
             child: providers.isEmpty
@@ -152,9 +161,17 @@ class _ProviderListPane extends ConsumerWidget {
                     buildDefaultDragHandles: false,
                     itemCount: providers.length,
                     onReorderItem: (oldIndex, newIndex) async {
-                      final list = [...providers];
-                      final item = list.removeAt(oldIndex);
-                      list.insert(newIndex, item);
+                      // Filtered rows move among themselves; others keep
+                      // their slots.
+                      final shown = [...providers];
+                      shown.insert(newIndex, shown.removeAt(oldIndex));
+                      final slots = shown.iterator;
+                      final list = [
+                        for (final p in this.providers)
+                          providers.contains(p)
+                              ? (slots..moveNext()).current
+                              : p,
+                      ];
                       await ref
                           .read(databaseProvider)
                           .reorderProviders(list.map((p) => p.id).toList());
@@ -280,6 +297,7 @@ class _ProviderRow extends ConsumerWidget {
                           color: Colors.white.withValues(alpha: 0.4),
                         ),
                       ),
+                      CapabilityBadges(provider: provider),
                       if (!supported)
                         Text(
                           l10n.uiUnavailableOnThisPlatform,

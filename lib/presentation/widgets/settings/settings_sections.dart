@@ -10,6 +10,7 @@ import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
 import 'about_settings.dart';
+import 'ai_capability_settings.dart';
 import 'api_settings.dart';
 import 'general_settings.dart';
 import 'media_settings.dart';
@@ -225,6 +226,9 @@ class SettingsSectionContent extends ConsumerWidget {
           when kIsWeb =>
         <Widget>[Text(l10n.webFeatureUnavailable)],
       SettingsSection.roleAi => const <Widget>[RoleSkillSettingsCard()],
+      SettingsSection.aiCapabilities => const <Widget>[
+        AiCapabilitySettingsCard(),
+      ],
       SettingsSection.api => const <Widget>[ApiServerSettingsCard()],
       SettingsSection.storage => <Widget>[
         StorageSettingsCard(startup: ref.watch(storageStartupProvider)),

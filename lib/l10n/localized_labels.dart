@@ -22,6 +22,7 @@ extension SettingsSectionLocalization on SettingsSection {
   String localizedLabel(AppLocalizations l10n) {
     return switch (this) {
       SettingsSection.general => l10n.settingsGeneral,
+      SettingsSection.aiCapabilities => l10n.settingsAiCapabilities,
       SettingsSection.roleAi => l10n.settingsRoleAi,
       SettingsSection.tasks => l10n.settingsTasks,
       SettingsSection.api => l10n.settingsApi,
@@ -34,6 +35,7 @@ extension SettingsSectionLocalization on SettingsSection {
   String localizedDescription(AppLocalizations l10n) {
     return switch (this) {
       SettingsSection.general => l10n.settingsGeneralDescription,
+      SettingsSection.aiCapabilities => l10n.settingsAiCapabilitiesDescription,
       SettingsSection.roleAi => l10n.settingsRoleAiDescription,
       SettingsSection.tasks => l10n.settingsTasksDescription,
       SettingsSection.api => l10n.settingsApiDescription,

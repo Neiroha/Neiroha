@@ -9,7 +9,6 @@ import 'package:neiroha/data/ai/registry/built_in_voices.dart';
 import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
-import 'package:uuid/uuid.dart';
 
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
@@ -19,11 +18,11 @@ import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'editable_character_avatar.dart';
 import 'character_model_field.dart';
 import 'quick_tts_playback_setting.dart';
+import 'character_inspector_parts.dart';
 import 'voice_chain_editor.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/loudness_fields.dart';
 import 'package:neiroha/presentation/widgets/voice_character/components.dart';
-import 'package:neiroha/presentation/widgets/voice_character/selection.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
@@ -42,6 +41,7 @@ class CharacterInspector extends ConsumerStatefulWidget {
 
 class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
   bool _saving = false;
+  InspectorTab _tab = InspectorTab.basic;
 
   late TextEditingController _nameCtrl;
   late TextEditingController _descCtrl;
@@ -254,354 +254,360 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         SizedBox(height: 8),
         Center(child: VoiceCharacterModeBadge(mode: a.taskMode)),
         SizedBox(height: 12),
-
-        // ── Description ──────────────────────────────────────────────────────
-        TextField(
-          controller: _descCtrl,
-          maxLines: 2,
-          decoration: InputDecoration(
-            labelText: AppLocalizations.of(context).uiDescriptionOptional,
-          ),
-        ),
-        SizedBox(height: 20),
-        const Divider(),
-        SizedBox(height: 12),
-
-        // ── Provider ─────────────────────────────────────────────────────────
-        VoiceCharacterSectionLabel(
-          AppLocalizations.of(context).sectionProvider,
-        ),
-        SizedBox(height: 8),
-        if (enabledProviders.isEmpty)
-          Text(
-            AppLocalizations.of(context).uiNoProvidersAvailable,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
-          )
-        else
-          DropdownButtonFormField<String>(
-            decoration: InputDecoration(
-              labelText: AppLocalizations.of(context).uiProvider,
-            ),
-            initialValue:
-                enabledProviders.any((p) => p.id == _selectedProviderId)
-                ? _selectedProviderId
-                : null,
-            items: enabledProviders
-                .map(
-                  (p) => DropdownMenuItem(
-                    value: p.id,
-                    child: Row(
-                      children: [
-                        Text(p.name),
-                        SizedBox(width: 8),
-                        Text(
-                          '(${AdapterType.values.where((t) => t.name == p.adapterType).firstOrNull?.displayName ?? p.adapterType})',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.4),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
-            onChanged: (v) {
-              if (v != null) {
-                setState(() {
-                  _selectedProviderId = v;
-                  _speakers = [];
-                  _selectedSpeaker = null;
-                });
-                _fetchSpeakers();
-              }
-            },
-          ),
+        InspectorTabs(value: _tab, onChanged: (t) => setState(() => _tab = t)),
         SizedBox(height: 16),
 
-        // ── Speed ────────────────────────────────────────────────────────────
-        TextField(
-          controller: _speedCtrl,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: AppLocalizations.of(context).uiSpeed10Normal,
+        if (_tab == InspectorTab.basic) ...[
+          TextField(
+            controller: _descCtrl,
+            maxLines: 2,
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).uiDescriptionOptional,
+            ),
           ),
-        ),
-        SizedBox(height: 12),
-        CharacterLoudnessOffsetField(
-          value: _loudnessOffsetDb,
-          onChanged: (v) => setState(() => _loudnessOffsetDb = v),
-        ),
-        SizedBox(height: 20),
-
-        // ── Mode-specific fields ─────────────────────────────────────────────
-        if (a.taskMode == 'presetVoice') ...[
-          VoiceCharacterSectionLabel(AppLocalizations.of(context).sectionVoice),
-          SizedBox(height: 8),
-          if (_loadingSpeakers)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  SizedBox(width: 10),
-                  Text(AppLocalizations.of(context).uiLoadingVoices),
-                ],
+          SizedBox(height: 12),
+          Row(
+            children: [
+              Text(
+                AppLocalizations.of(context).uiEnabled,
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
               ),
+              const Spacer(),
+              Switch(
+                value: a.enabled,
+                onChanged: (v) => ref
+                    .read(databaseProvider)
+                    .updateVoiceAsset(a.copyWith(enabled: v)),
+              ),
+            ],
+          ),
+        ],
+
+        // ── Voice: provider, speed, mode-specific fields ─────────────────────
+        if (_tab == InspectorTab.voice) ...[
+          VoiceCharacterSectionLabel(
+            AppLocalizations.of(context).sectionProvider,
+          ),
+          SizedBox(height: 8),
+          if (enabledProviders.isEmpty)
+            Text(
+              AppLocalizations.of(context).uiNoProvidersAvailable,
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
             )
-          else if (voices.isNotEmpty) ...[
-            VoiceCharacterVoiceSearchPicker(
-              label: AppLocalizations.of(context).uiSelectVoice,
-              voices: voices,
-              selected: voices.contains(_selectedSpeaker)
-                  ? _selectedSpeaker
+          else
+            DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).uiProvider,
+              ),
+              initialValue:
+                  enabledProviders.any((p) => p.id == _selectedProviderId)
+                  ? _selectedProviderId
                   : null,
-              onSelected: (v) => setState(() {
-                _selectedSpeaker = v;
-                _voiceNameCtrl.text = v;
-              }),
+              items: enabledProviders
+                  .map(
+                    (p) => DropdownMenuItem(
+                      value: p.id,
+                      child: Row(
+                        children: [
+                          Text(p.name),
+                          SizedBox(width: 8),
+                          Text(
+                            '(${AdapterType.values.where((t) => t.name == p.adapterType).firstOrNull?.displayName ?? p.adapterType})',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.4),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) {
+                  setState(() {
+                    _selectedProviderId = v;
+                    _speakers = [];
+                    _selectedSpeaker = null;
+                  });
+                  _fetchSpeakers();
+                }
+              },
+            ),
+          SizedBox(height: 16),
+
+          // ── Speed ────────────────────────────────────────────────────────────
+          TextField(
+            controller: _speedCtrl,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).uiSpeed10Normal,
+            ),
+          ),
+          SizedBox(height: 12),
+          CharacterLoudnessOffsetField(
+            value: _loudnessOffsetDb,
+            onChanged: (v) => setState(() => _loudnessOffsetDb = v),
+          ),
+          SizedBox(height: 20),
+
+          // ── Mode-specific fields ─────────────────────────────────────────────
+          if (a.taskMode == 'presetVoice') ...[
+            VoiceCharacterSectionLabel(
+              AppLocalizations.of(context).sectionVoice,
             ),
             SizedBox(height: 8),
-          ],
-          TextField(
-            controller: _voiceNameCtrl,
-            decoration: InputDecoration(
-              labelText: AppLocalizations.of(context).uiVoiceName,
-              helperText: AppLocalizations.of(
-                context,
-              ).uiFilledAutomaticallyWhenYouPickAboveOrTypeManually,
-            ),
-          ),
-          if (_hasModelField) ...[
-            SizedBox(height: 12),
-            CharacterModelField(
-              controller: _modelNameCtrl,
-              provider: selected,
-              isWeb: capabilities.isWeb,
-              onChanged: () => setState(() {}),
-            ),
-          ],
-          if (_isGptSovits) ...[
-            SizedBox(height: 12),
+            if (_loadingSpeakers)
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 10),
+                    Text(AppLocalizations.of(context).uiLoadingVoices),
+                  ],
+                ),
+              )
+            else if (voices.isNotEmpty) ...[
+              VoiceCharacterVoiceSearchPicker(
+                label: AppLocalizations.of(context).uiSelectVoice,
+                voices: voices,
+                selected: voices.contains(_selectedSpeaker)
+                    ? _selectedSpeaker
+                    : null,
+                onSelected: (v) => setState(() {
+                  _selectedSpeaker = v;
+                  _voiceNameCtrl.text = v;
+                }),
+              ),
+              SizedBox(height: 8),
+            ],
             TextField(
-              controller: _textLangCtrl,
+              controller: _voiceNameCtrl,
               decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).uiTextLanguageOptional,
-                hintText: AppLocalizations.of(context).uiZhEnJaKo,
+                labelText: AppLocalizations.of(context).uiVoiceName,
+                helperText: AppLocalizations.of(
+                  context,
+                ).uiFilledAutomaticallyWhenYouPickAboveOrTypeManually,
               ),
             ),
+            if (_hasModelField) ...[
+              SizedBox(height: 12),
+              CharacterModelField(
+                controller: _modelNameCtrl,
+                provider: selected,
+                isWeb: capabilities.isWeb,
+                onChanged: () => setState(() {}),
+              ),
+            ],
+            if (_isGptSovits) ...[
+              SizedBox(height: 12),
+              TextField(
+                controller: _textLangCtrl,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(
+                    context,
+                  ).uiTextLanguageOptional,
+                  hintText: AppLocalizations.of(context).uiZhEnJaKo,
+                ),
+              ),
+            ],
+            if (const {
+              'openaiTts',
+              'geminiTts',
+              'elevenLabs',
+              'minimaxTts',
+            }.contains(_selectedProvider?.adapterType)) ...[
+              SizedBox(height: 12),
+              TextField(
+                controller: _instructionCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(
+                    context,
+                  ).uiStyleInstructionOptional,
+                  hintText: AppLocalizations.of(
+                    context,
+                  ).uiEGSpeakSoftlyAndSlowlyPrependedToTheText,
+                ),
+              ),
+            ],
           ],
-          if (const {
-            'openaiTts',
-            'geminiTts',
-            'elevenLabs',
-            'minimaxTts',
-          }.contains(_selectedProvider?.adapterType)) ...[
-            SizedBox(height: 12),
+
+          if (a.taskMode == 'cloneWithPrompt') ...[
+            VoiceCharacterSectionLabel(
+              AppLocalizations.of(context).sectionVoiceClone,
+            ),
+            SizedBox(height: 8),
+            if (_isIrodori) ...[
+              CharacterModelField(
+                controller: _modelNameCtrl,
+                provider: selected,
+                isWeb: capabilities.isWeb,
+                onChanged: () => setState(() {}),
+              ),
+              SizedBox(height: 12),
+            ],
+            if (!kIsWeb && a.refAudioPath != null) ...[
+              Text(
+                AppLocalizations.of(context).uiREFERENCEAUDIO,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                  color: Colors.white.withValues(alpha: 0.4),
+                ),
+              ),
+              SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceDim,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final playback = ref.watch(
+                          playbackNotifierProvider.select(
+                            (state) => (
+                              audioPath: state.audioPath,
+                              isPlaying: state.isPlaying,
+                            ),
+                          ),
+                        );
+                        final isPlaying =
+                            playback.audioPath == a.refAudioPath &&
+                            playback.isPlaying;
+                        return IconButton.filled(
+                          onPressed: () async {
+                            final n = ref.read(
+                              playbackNotifierProvider.notifier,
+                            );
+                            if (isPlaying) {
+                              await n.stop();
+                            } else {
+                              await n.load(
+                                a.refAudioPath!,
+                                '${a.name} (ref)',
+                                subtitle: a.name,
+                              );
+                            }
+                          },
+                          style: IconButton.styleFrom(
+                            backgroundColor: AppTheme.accentColor,
+                            minimumSize: const Size(36, 36),
+                          ),
+                          icon: Icon(
+                            isPlaying
+                                ? Icons.stop_rounded
+                                : Icons.play_arrow_rounded,
+                            size: 18,
+                          ),
+                        );
+                      },
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            a.refAudioPath!.split(Platform.pathSeparator).last,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (a.refAudioTrimStart != null ||
+                              a.refAudioTrimEnd != null)
+                            Text(
+                              '${a.refAudioTrimStart?.toStringAsFixed(1) ?? '0.0'}s'
+                              ' → ${a.refAudioTrimEnd?.toStringAsFixed(1) ?? 'end'}s',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.white.withValues(alpha: 0.4),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 12),
+            ],
+            if (!_isIrodori) ...[
+              TextField(
+                controller: _promptTextCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).uiReferenceTranscript,
+                ),
+              ),
+              SizedBox(height: 10),
+              TextField(
+                controller: _promptLangCtrl,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).uiLanguageCode,
+                ),
+              ),
+            ],
+            if (_usesTextLang) ...[
+              SizedBox(height: 10),
+              TextField(
+                controller: _textLangCtrl,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(
+                    context,
+                  ).uiTextLanguageSynthesisOutput,
+                  hintText: AppLocalizations.of(context).uiZhEnJaKo,
+                ),
+              ),
+            ],
+            SizedBox(height: 10),
             TextField(
               controller: _instructionCtrl,
-              maxLines: 3,
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(
                   context,
                 ).uiStyleInstructionOptional,
-                hintText: AppLocalizations.of(
-                  context,
-                ).uiEGSpeakSoftlyAndSlowlyPrependedToTheText,
               ),
             ),
           ],
-        ],
 
-        if (a.taskMode == 'cloneWithPrompt') ...[
-          VoiceCharacterSectionLabel(
-            AppLocalizations.of(context).sectionVoiceClone,
-          ),
-          SizedBox(height: 8),
-          if (_isIrodori) ...[
-            CharacterModelField(
-              controller: _modelNameCtrl,
-              provider: selected,
-              isWeb: capabilities.isWeb,
-              onChanged: () => setState(() {}),
-            ),
-            SizedBox(height: 12),
-          ],
-          if (!kIsWeb && a.refAudioPath != null) ...[
-            Text(
-              AppLocalizations.of(context).uiREFERENCEAUDIO,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.2,
-                color: Colors.white.withValues(alpha: 0.4),
-              ),
+          if (a.taskMode == 'voiceDesign') ...[
+            VoiceCharacterSectionLabel(
+              AppLocalizations.of(context).sectionVoiceDesign,
             ),
             SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceDim,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                children: [
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final playback = ref.watch(
-                        playbackNotifierProvider.select(
-                          (state) => (
-                            audioPath: state.audioPath,
-                            isPlaying: state.isPlaying,
-                          ),
-                        ),
-                      );
-                      final isPlaying =
-                          playback.audioPath == a.refAudioPath &&
-                          playback.isPlaying;
-                      return IconButton.filled(
-                        onPressed: () async {
-                          final n = ref.read(playbackNotifierProvider.notifier);
-                          if (isPlaying) {
-                            await n.stop();
-                          } else {
-                            await n.load(
-                              a.refAudioPath!,
-                              '${a.name} (ref)',
-                              subtitle: a.name,
-                            );
-                          }
-                        },
-                        style: IconButton.styleFrom(
-                          backgroundColor: AppTheme.accentColor,
-                          minimumSize: const Size(36, 36),
-                        ),
-                        icon: Icon(
-                          isPlaying
-                              ? Icons.stop_rounded
-                              : Icons.play_arrow_rounded,
-                          size: 18,
-                        ),
-                      );
-                    },
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          a.refAudioPath!.split(Platform.pathSeparator).last,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (a.refAudioTrimStart != null ||
-                            a.refAudioTrimEnd != null)
-                          Text(
-                            '${a.refAudioTrimStart?.toStringAsFixed(1) ?? '0.0'}s'
-                            ' → ${a.refAudioTrimEnd?.toStringAsFixed(1) ?? 'end'}s',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.white.withValues(alpha: 0.4),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 12),
-          ],
-          if (!_isIrodori) ...[
             TextField(
-              controller: _promptTextCtrl,
-              maxLines: 3,
+              controller: _instructionCtrl,
+              maxLines: 4,
               decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).uiReferenceTranscript,
-              ),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: _promptLangCtrl,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).uiLanguageCode,
+                labelText: AppLocalizations.of(context).uiVoiceInstruction,
               ),
             ),
           ],
-          if (_usesTextLang) ...[
-            SizedBox(height: 10),
-            TextField(
-              controller: _textLangCtrl,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(
-                  context,
-                ).uiTextLanguageSynthesisOutput,
-                hintText: AppLocalizations.of(context).uiZhEnJaKo,
-              ),
-            ),
-          ],
-          SizedBox(height: 10),
-          TextField(
-            controller: _instructionCtrl,
-            decoration: InputDecoration(
-              labelText: AppLocalizations.of(
-                context,
-              ).uiStyleInstructionOptional,
-            ),
-          ),
-        ],
 
-        if (a.taskMode == 'voiceDesign') ...[
-          VoiceCharacterSectionLabel(
-            AppLocalizations.of(context).sectionVoiceDesign,
-          ),
-          SizedBox(height: 8),
-          TextField(
-            controller: _instructionCtrl,
-            maxLines: 4,
-            decoration: InputDecoration(
-              labelText: AppLocalizations.of(context).uiVoiceInstruction,
-            ),
-          ),
+          if (supportsQuickTtsStreaming(
+            allProviders.where((p) => p.id == a.providerId).firstOrNull,
+            a,
+            capabilities,
+          )) ...[
+            const SizedBox(height: 8),
+            QuickTtsPlaybackSetting(voiceId: a.id),
+          ],
         ],
-
-        if (supportsQuickTtsStreaming(
-          allProviders.where((p) => p.id == a.providerId).firstOrNull,
-          a,
-          capabilities,
-        )) ...[
-          const SizedBox(height: 8),
-          QuickTtsPlaybackSetting(voiceId: a.id),
-        ],
-        SizedBox(height: 16),
-        VoiceChainEditor(asset: a),
+        if (_tab == InspectorTab.chain) VoiceChainEditor(asset: a),
         SizedBox(height: 16),
         const Divider(),
-        SizedBox(height: 12),
-
-        Row(
-          children: [
-            Text(
-              AppLocalizations.of(context).uiEnabled,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
-            ),
-            const Spacer(),
-            Switch(
-              value: a.enabled,
-              onChanged: (v) => ref
-                  .read(databaseProvider)
-                  .updateVoiceAsset(a.copyWith(enabled: v)),
-            ),
-          ],
-        ),
         SizedBox(height: 12),
 
         // ── Save ─────────────────────────────────────────────────────────────
@@ -621,49 +627,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         ),
         SizedBox(height: 8),
 
-        // ── Duplicate / Delete ───────────────────────────────────────────────
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => _duplicateCharacter(a),
-                icon: const Icon(Icons.copy_rounded, size: 18),
-                label: Text(AppLocalizations.of(context).uiDuplicate),
-              ),
-            ),
-            SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  await ref
-                      .read(playbackNotifierProvider.notifier)
-                      .stopIfSourceTag(voiceBankQuickTestPlaybackSource);
-                  try {
-                    await ref.read(databaseProvider).deleteVoiceAsset(a.id);
-                    ref.read(selectedCharacterIdProvider.notifier).state = null;
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            AppLocalizations.of(
-                              context,
-                            ).uiFailedToDeleteCharacter(e),
-                          ),
-                        ),
-                      );
-                    }
-                  }
-                },
-                icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                label: Text(AppLocalizations.of(context).uiDelete),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.redAccent,
-                ),
-              ),
-            ),
-          ],
-        ),
+        CharacterActions(asset: a, bankId: widget.bankId),
       ],
     );
   }
@@ -747,44 +711,6 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         ),
       );
     }
-  }
-
-  Future<void> _duplicateCharacter(db.VoiceAsset asset) async {
-    final newId = const Uuid().v4();
-    final database = ref.read(databaseProvider);
-    await database.insertVoiceAsset(
-      db.VoiceAssetsCompanion(
-        id: Value(newId),
-        name: Value('${asset.name} (copy)'),
-        description: Value(asset.description),
-        providerId: Value(asset.providerId),
-        modelBindingId: Value(asset.modelBindingId),
-        modelName: Value(asset.modelName),
-        taskMode: Value(asset.taskMode),
-        refAudioPath: Value(asset.refAudioPath),
-        refAudioTrimStart: Value(asset.refAudioTrimStart),
-        refAudioTrimEnd: Value(asset.refAudioTrimEnd),
-        promptText: Value(asset.promptText),
-        promptLang: Value(asset.promptLang),
-        voiceInstruction: Value(asset.voiceInstruction),
-        presetVoiceName: Value(asset.presetVoiceName),
-        avatarPath: Value(asset.avatarPath),
-        speed: Value(asset.speed),
-        enabled: Value(asset.enabled),
-        loudnessOffsetDb: Value(asset.loudnessOffsetDb),
-      ),
-    );
-    final bankId = widget.bankId;
-    if (bankId != null) {
-      await database.addMemberToBank(
-        db.VoiceBankMembersCompanion(
-          id: Value(const Uuid().v4()),
-          bankId: Value(bankId),
-          voiceAssetId: Value(newId),
-        ),
-      );
-    }
-    ref.read(selectedCharacterIdProvider.notifier).state = newId;
   }
 }
 

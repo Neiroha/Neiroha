@@ -39,6 +39,11 @@ enum NavTab {
 
 enum SettingsSection {
   general(Icons.tune_rounded, 'General', 'Startup and workspace behavior'),
+  aiCapabilities(
+    Icons.hub_rounded,
+    'AI capabilities',
+    'Default models, per-capability limits and added models',
+  ),
   roleAi(
     Icons.psychology_alt_rounded,
     'Role assignment AI',

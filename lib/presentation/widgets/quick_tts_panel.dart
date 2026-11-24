@@ -18,7 +18,6 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/actions/browser_speech_message.dart';
 import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
-import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/browser_quick_tts.dart';
 import 'package:neiroha/providers/playback_provider.dart';
@@ -118,9 +117,6 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
             historyAsync: filteredHistory,
             onSave: _saveEntryAsVoiceAsset,
           ),
-        ),
-        const PersistentAudioBar(
-          onlyForSourceTag: voiceBankQuickTestPlaybackSource,
         ),
         if (kIsWeb)
           Padding(

@@ -91,16 +91,19 @@ class _AppShellState extends ConsumerState<AppShell> {
       playbackNotifierProvider.select((state) => state.sourceTag),
     );
     // Dialog/Phase render their own inline players, so the global bottom bar
-    // is suppressed there to avoid a double UI.
-    // Voice Bank quick tests also render inline above the test input.
+    // is suppressed there to avoid a double UI. Voice Bank quick tests play
+    // through this bar too.
     final showGlobalPlayer =
         selectedTab != NavTab.dialogTts &&
         selectedTab != NavTab.phaseTts &&
         selectedTab != NavTab.novelReader &&
         (continueTtsAcrossScreens ||
-            !isNovelReaderPlaybackSource(playbackSourceTag)) &&
-        !(selectedTab == NavTab.voiceBank &&
-            playbackSourceTag == voiceBankQuickTestPlaybackSource);
+            !isNovelReaderPlaybackSource(playbackSourceTag));
+    final globalPlayer = !showGlobalPlayer
+        ? null
+        : !kIsWeb && Platform.isWindows
+        ? const PersistentAudioBar()
+        : const SafeArea(top: false, child: PersistentAudioBar());
 
     return PopScope(
       canPop: kIsWeb || !Platform.isAndroid,
@@ -151,16 +154,24 @@ class _AppShellState extends ConsumerState<AppShell> {
                               // Pages run to the top edge: the traffic
                               // lights sit over the sidebar, and page
                               // headers double as the window's drag area.
-                              Expanded(child: _buildPageStack(selectedTab)),
+                              // The banner and player stay right of the
+                              // sidebar so it keeps the full height.
+                              Expanded(
+                                child: Column(
+                                  children: [
+                                    Expanded(
+                                      child: _buildPageStack(selectedTab),
+                                    ),
+                                    const RetirementBanner(),
+                                    ?globalPlayer,
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
                         ),
                 ),
-                const RetirementBanner(),
-                if (showGlobalPlayer)
-                  !kIsWeb && Platform.isWindows
-                      ? const PersistentAudioBar()
-                      : const SafeArea(top: false, child: PersistentAudioBar()),
+                if (compact) ...[const RetirementBanner(), ?globalPlayer],
               ],
             ),
           );

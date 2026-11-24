@@ -2,6 +2,7 @@ import 'package:neiroha/data/ai/core/connection_config.dart';
 import 'package:neiroha/data/ai/core/provider_connection.dart';
 import 'package:neiroha/data/ai/providers/common/adapter_tts_plugin.dart';
 import 'package:neiroha/domain/ai/capability.dart';
+import 'package:neiroha/domain/ai/llm_traits.dart';
 import 'package:neiroha/domain/ai/model_descriptor.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
 
@@ -28,6 +29,8 @@ class GeminiPlugin extends AdapterTtsPlugin {
   };
   @override
   List<ModelDescriptor> get catalog => [ttsDescriptor, ...geminiCatalog];
+  @override
+  Map<String, ReasoningEffort> get reasoningDefaults => geminiReasoningDefaults;
 
   @override
   ProviderConnection connect(ConnectionConfig config) =>

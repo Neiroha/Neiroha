@@ -133,3 +133,124 @@ Map<String, Object?> llmTraitsFromLiteLlm(Map<String, dynamic> raw) {
   if (raw['max_output_tokens'] case final num v) out['maxOut'] = v.toInt();
   return out;
 }
+
+/// models.dev provider → snapshot vendor key (see `catalogVendor`). Regional
+/// duplicates fold into one key; earlier providers win per model id.
+const modelsDevVendors = <String, List<String>>{
+  'openai': ['openai'],
+  'gemini': ['google'],
+  'xiaomi_mimo': ['xiaomi'],
+  'minimax': ['minimax', 'minimax-cn'],
+  'deepseek': ['deepseek'],
+  'moonshot': ['moonshotai', 'moonshotai-cn'],
+  'dashscope': ['alibaba', 'alibaba-cn'],
+  'zai': ['zhipuai', 'zai'],
+  'xai': ['xai'],
+  'mistral': ['mistral'],
+  'groq': ['groq'],
+};
+
+/// models.dev `api.json` → the snapshot shape `LlmTraitsCatalog` reads.
+/// Keeps chat models of the vendors Neiroha connects to directly; gateways
+/// (OpenRouter) describe themselves in their own listing.
+Map<String, Object?> normalizeModelsDevCatalog(
+  Map<String, dynamic> source, {
+  required String digest,
+}) {
+  final models = <String, Object?>{};
+  for (final MapEntry(key: vendor, value: providers)
+      in modelsDevVendors.entries) {
+    for (final provider in providers) {
+      final entry = source[provider];
+      if (entry is! Map || entry['models'] is! Map) continue;
+      for (final MapEntry(:key, :value) in (entry['models'] as Map).entries) {
+        if (value is! Map) continue;
+        final raw = Map<String, dynamic>.from(value);
+        final key2 = '$vendor::$key';
+        if (models.containsKey(key2)) continue;
+        final type = raw['type'];
+        final outputs = (raw['modalities'] as Map?)?['output'];
+        if ((type != null && type != 'chat') ||
+            (outputs is List && !outputs.contains('text'))) {
+          continue;
+        }
+        final llm = llmTraitsFromModelsDev(raw);
+        if (llm.isEmpty) continue;
+        models[key2] = {
+          'llm': llm,
+          if (raw['name'] is String) 'name': raw['name'],
+          if (raw['status'] == 'deprecated') 'deprecated': true,
+          if (raw['release_date'] is String) 'released': raw['release_date'],
+        };
+      }
+    }
+  }
+  if (models.isEmpty) {
+    throw const FormatException('models.dev contained no usable chat models.');
+  }
+  return {
+    'version': 1,
+    'source': 'https://models.dev/api.json',
+    'license': 'MIT (c) models.dev',
+    'sourceSha256': digest,
+    'generatedAt': DateTime.now().toUtc().toIso8601String(),
+    'models': models,
+  };
+}
+
+/// One models.dev model → `LlmTraits` JSON. Only stated fields are kept.
+Map<String, Object?> llmTraitsFromModelsDev(Map<String, dynamic> raw) {
+  final out = <String, Object?>{};
+  const known = {'text', 'image', 'audio', 'video', 'pdf'};
+  final modalities = raw['modalities'];
+  if (modalities is Map) {
+    for (final (from, to) in [('input', 'in'), ('output', 'out')]) {
+      final list = modalities[from];
+      if (list is List) {
+        out[to] = [
+          for (final m in list)
+            if (known.contains('$m')) '$m',
+        ];
+      }
+    }
+  }
+  if (raw['tool_call'] is bool) out['tools'] = raw['tool_call'];
+  if (raw['structured_output'] is bool) {
+    out['schema'] = raw['structured_output'];
+  }
+  if (raw['reasoning'] == false) {
+    out['reasoning'] = {'supported': false};
+  } else if (raw['reasoning'] == true) {
+    final options = raw['reasoning_options'];
+    final efforts = <String>{};
+    var toggle = false;
+    if (options is List) {
+      for (final o in options.whereType<Map>()) {
+        if (o['type'] == 'effort' && o['values'] is List) {
+          efforts.addAll([
+            for (final v in o['values'] as List)
+              if (_efforts.contains('$v')) '$v',
+          ]);
+        }
+        if (o['type'] == 'toggle') toggle = true;
+      }
+    }
+    // A thinking switch alongside effort levels means it can be turned off.
+    if (toggle && efforts.isNotEmpty) efforts.add('none');
+    out['reasoning'] = {
+      if (efforts.isNotEmpty)
+        'levels': [
+          for (final l in _efforts)
+            if (efforts.contains(l)) l,
+        ],
+    };
+  }
+  final limit = raw['limit'];
+  if (limit is Map) {
+    if (limit['context'] case final num v when v > 0) {
+      out['context'] = v.toInt();
+    }
+    if (limit['output'] case final num v when v > 0) out['maxOut'] = v.toInt();
+  }
+  return out;
+}

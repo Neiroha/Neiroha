@@ -48,22 +48,15 @@ const _realtime = {
 
 /// OpenAI official API. One key provides every capability below.
 final List<ModelDescriptor> openAiCatalog = [
-  // LLM — Responses API.
-  for (final (id, isDefault) in const [
-    ('gpt-6-luna', true),
-    ('gpt-6-sol', false),
-    ('gpt-6.2-sol', false),
-    ('gpt-5.5', false),
-    ('gpt-5.4-mini', false),
-    ('gpt-5.4-nano', false),
-  ])
-    _m(
-      id,
-      AiCapability.llm,
-      AiProtocol.openAiResponses,
-      features: _llmReasoning,
-      isDefault: isDefault,
-    ),
+  // LLM — Responses API. Only the recommended model is mounted; the rest
+  // comes from the public catalog (models.dev) and `GET models`.
+  _m(
+    'gpt-6-luna',
+    AiCapability.llm,
+    AiProtocol.openAiResponses,
+    features: _llmReasoning,
+    isDefault: true,
+  ),
   // TTS — Realtime models replace the Speech API.
   _m(
     'gpt-realtime-2.1-mini',

@@ -57,12 +57,32 @@ class LlmDiscovery {
     _ => null,
   };
 
-  /// Catalog models with traits, without any network call.
-  LlmInventory offline(ProviderConnection connection) =>
-      LlmInventory(connection, [
-        for (final m in connection.models(AiCapability.llm))
-          _withTraits(connection, m, null),
-      ]);
+  /// Plugin models (recommended first), then the vendor's chat models from
+  /// the public catalog, with traits, without any network call.
+  LlmInventory offline(ProviderConnection connection) {
+    final plugin = connection.models(AiCapability.llm);
+    final ids = {for (final m in plugin) m.id};
+    final vendor = catalogVendor(connection);
+    return LlmInventory(connection, [
+      for (final m in plugin) _withTraits(connection, m, null),
+      if (connection.capabilities.contains(AiCapability.llm))
+        for (final row in catalog.vendorModels(vendor))
+          if (!ids.contains(row.id))
+            if (connection.manualProtocol(AiCapability.llm, row.id)
+                case final protocol?
+                when catalog.serves(vendor, row.id, protocol))
+              _withTraits(
+                connection,
+                ModelDescriptor(
+                  id: row.id,
+                  capability: AiCapability.llm,
+                  protocol: protocol,
+                  displayName: row.name,
+                ),
+                null,
+              ),
+    ]);
+  }
 
   Future<LlmInventory> discover(ProviderConnection connection) async {
     final base = offline(connection);
@@ -110,6 +130,7 @@ class LlmDiscovery {
       if (!chat ||
           protocol == null ||
           !catalog.serves(vendor, id, protocol) ||
+          !_listingServes(raw, protocol) ||
           (alias != null && listed.containsKey(alias))) {
         continue;
       }
@@ -128,15 +149,19 @@ class LlmDiscovery {
       );
     }
     extra.sort((a, b) => a.id.compareTo(b.id));
+    // Recommended plugin models stay even when unlisted (after the rest);
+    // public-catalog models are shown only when the account lists them.
+    final pluginIds = {
+      for (final m in connection.models(AiCapability.llm)) m.id,
+    };
     return LlmInventory(
       connection,
       [
         for (final m in base.models)
           if (listed.containsKey(m.id)) mounted[m.id]!,
         ...extra,
-        // Catalog models the account does not list stay, after the rest.
         for (final m in base.models)
-          if (!listed.containsKey(m.id)) m,
+          if (!listed.containsKey(m.id) && pluginIds.contains(m.id)) m,
       ],
       state: HealthState.ok,
       listed: listed.keys.toSet(),
@@ -152,11 +177,47 @@ class LlmDiscovery {
     // > feature badges.
     final stated = listing == null ? null : llmTraitsFromListing(listing);
     final known = catalog.lookup(catalogVendor(connection), model.id);
-    final traits = (stated ?? LlmTraits.unknown)
+    var traits = (stated ?? LlmTraits.unknown)
         .orElse(model.llm)
         .orElse(known)
         .orElse(_fromFeatures(model));
-    return model.copyWith(llm: traits);
+    final reasoning = traits.reasoning;
+    final fallbackLevel = connection.plugin.reasoningDefaults[model.id];
+    if (reasoning != null &&
+        reasoning.supported &&
+        reasoning.defaultLevel == null &&
+        fallbackLevel != null) {
+      traits = traits.withReasoning(
+        ReasoningSpec(
+          levels: reasoning.levels,
+          defaultLevel: fallbackLevel,
+          modes: reasoning.modes,
+        ),
+      );
+    }
+    final vendor = catalogVendor(connection);
+    return model.copyWith(
+      llm: traits,
+      shutdownAt: listing == null ? null : listedShutdown(listing),
+      lifecycle:
+          model.lifecycle == ModelLifecycle.ga &&
+              catalog.isDeprecated(vendor, model.id)
+          ? ModelLifecycle.deprecated
+          : null,
+    );
+  }
+
+  /// False when the listing declares endpoints and none speaks [protocol].
+  static bool _listingServes(Map<String, dynamic> raw, AiProtocol protocol) {
+    final endpoints = listedEndpoints(raw);
+    final path = switch (protocol) {
+      AiProtocol.openAiResponses => '/responses',
+      AiProtocol.openAiChat => '/chat/completions',
+      _ => null,
+    };
+    return endpoints == null ||
+        path == null ||
+        endpoints.any((e) => e.endsWith(path));
   }
 
   static LlmTraits? _fromFeatures(ModelDescriptor m) => m.features.isEmpty

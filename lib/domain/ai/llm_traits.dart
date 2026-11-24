@@ -106,6 +106,17 @@ class LlmTraits {
 
   bool accepts(Modality m) => inputs?.contains(m) ?? m == Modality.text;
 
+  LlmTraits withReasoning(ReasoningSpec spec) => LlmTraits(
+    inputs: inputs,
+    outputs: outputs,
+    tools: tools,
+    parallelTools: parallelTools,
+    structuredOutput: structuredOutput,
+    reasoning: spec,
+    contextWindow: contextWindow,
+    maxOutputTokens: maxOutputTokens,
+  );
+
   /// Fills fields this one does not know from [fallback].
   LlmTraits orElse(LlmTraits? fallback) => fallback == null
       ? this

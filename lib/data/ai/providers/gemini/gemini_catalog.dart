@@ -17,7 +17,7 @@ ModelDescriptor _llm(
   List<ReasoningEffort> levels,
   ReasoningEffort defaultLevel, {
   int maxOut = 65536,
-  bool isDefault = false,
+  required bool isDefault,
 }) => ModelDescriptor(
   id: id,
   capability: AiCapability.llm,
@@ -45,8 +45,19 @@ const _lmh = [
   ReasoningEffort.medium,
   ReasoningEffort.high,
 ];
-const _lmhx = [..._lmh, ReasoningEffort.xhigh];
-const _mlmh = [ReasoningEffort.minimal, ..._lmh];
+
+/// Default thinking level per text model, from the Gemini thinking docs
+/// (read 2026-11-22). Public catalogs list the levels, not the default.
+const geminiReasoningDefaults = {
+  'gemini-3.8-flash': ReasoningEffort.medium,
+  'gemini-4-hydrogen': ReasoningEffort.high,
+  'gemini-4-neon': ReasoningEffort.high,
+  'gemini-4-argon': ReasoningEffort.medium,
+  'gemini-4-carbon': ReasoningEffort.medium,
+  'gemini-3.6-flash': ReasoningEffort.medium,
+  'gemini-3.5-flash-lite': ReasoningEffort.minimal,
+  'gemini-3.1-flash-lite': ReasoningEffort.minimal,
+};
 
 const _live = {
   AiFeature.audioOutput,
@@ -59,15 +70,11 @@ const _live = {
 /// Google AI Studio models beyond TTS: native generateContent text models,
 /// Interactions transcription and Live (conversation, streaming
 /// transcription, translation). Names checked against `GET v1beta/models`.
+///
+/// Only the recommended text model is mounted here; the rest of the Gemini
+/// text lineup comes from the public catalog (models.dev) and `GET models`.
 final List<ModelDescriptor> geminiCatalog = [
   _llm('gemini-3.8-flash', _lmh, ReasoningEffort.medium, isDefault: true),
-  _llm('gemini-4-hydrogen', _lmhx, ReasoningEffort.high),
-  _llm('gemini-4-neon', _lmhx, ReasoningEffort.high),
-  _llm('gemini-4-argon', _lmh, ReasoningEffort.medium, maxOut: 32768),
-  _llm('gemini-4-carbon', _lmh, ReasoningEffort.medium, maxOut: 32768),
-  _llm('gemini-3.6-flash', _mlmh, ReasoningEffort.medium),
-  _llm('gemini-3.5-flash-lite', _mlmh, ReasoningEffort.minimal),
-  _llm('gemini-3.1-flash-lite', _mlmh, ReasoningEffort.minimal),
   const ModelDescriptor(
     id: 'gemini-3.5-transcribe',
     capability: AiCapability.stt,

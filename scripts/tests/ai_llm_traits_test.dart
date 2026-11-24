@@ -160,8 +160,8 @@ void main() {
       expect(luna.llm!.reasoning!.levels.last, ReasoningEffort.max);
       expect(luna.llm!.accepts(Modality.pdf), isTrue);
       expect(inventory.find('gpt-6-astra')!.source, DescriptorSource.provider);
-      final sol = inventory.find('gpt-6-sol')!;
-      expect(inventory.unlisted(sol), isTrue);
+      // Hand-written lineups are gone: only listed models are shown.
+      expect(inventory.find('gpt-6-sol'), isNull);
     });
 
     test('rejected credentials keep the catalog and report failure', () async {

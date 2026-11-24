@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:ui' show AppExitResponse;
 import 'package:neiroha/providers/playback_provider.dart';
 import 'package:neiroha/providers/novel_role_providers.dart';
@@ -19,6 +21,7 @@ import 'presentation/screens/app_shell.dart';
 import 'presentation/theme/app_font.dart';
 import 'presentation/theme/app_theme.dart';
 import 'data/services/transcription/media_pcm_decoder.dart';
+import 'providers/ai_capability_providers.dart';
 import 'providers/app_providers.dart';
 import 'server/api_server.dart';
 
@@ -80,6 +83,8 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
           : (bytes, format) =>
                 decodeSpeechBytes(decoder, bytes, format.extension),
     ).wrap;
+    // Public model facts (models.dev): cached copy now, refresh daily.
+    unawaited(startModelCatalogRefresh(ref));
     _lifecycle = AppLifecycleListener(
       onExitRequested: () async {
         if (kIsWeb) return AppExitResponse.exit;

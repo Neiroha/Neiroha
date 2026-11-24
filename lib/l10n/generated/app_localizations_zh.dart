@@ -3814,4 +3814,143 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sidebarCollapse => '收起侧栏';
+
+  @override
+  String get musicSearch => '搜索歌曲';
+
+  @override
+  String musicCount(Object count) {
+    return '共 $count 首';
+  }
+
+  @override
+  String get musicNoMatch => '没有匹配的歌曲。';
+
+  @override
+  String get musicStyle => '风格';
+
+  @override
+  String get musicGenre => '曲风';
+
+  @override
+  String get musicMood => '情绪';
+
+  @override
+  String get musicInstruments => '乐器';
+
+  @override
+  String get musicVoice => '人声';
+
+  @override
+  String get musicTempo => '速度';
+
+  @override
+  String get musicStyleHint => '点击标签加入风格描述，再点一次移除。';
+
+  @override
+  String musicLyricsStats(Object lines, Object chars) {
+    return '$lines 行 · $chars 字';
+  }
+
+  @override
+  String get musicOptions => '选项';
+
+  @override
+  String get musicNowPlaying => '正在播放';
+
+  @override
+  String get musicPlay => '播放';
+
+  @override
+  String get musicPause => '暂停';
+
+  @override
+  String get musicLyricsTitle => '歌词';
+
+  @override
+  String get musicSeekHint => '点击带时间的歌词可跳转。';
+
+  @override
+  String get musicGenPop => '流行';
+
+  @override
+  String get musicGenRock => '摇滚';
+
+  @override
+  String get musicGenElectronic => '电子';
+
+  @override
+  String get musicGenFolk => '民谣';
+
+  @override
+  String get musicGenChinese => '古风';
+
+  @override
+  String get musicGenJazz => '爵士';
+
+  @override
+  String get musicGenHipHop => '嘻哈';
+
+  @override
+  String get musicGenLofi => 'Lo-fi';
+
+  @override
+  String get musicGenOrchestral => '管弦';
+
+  @override
+  String get musicGenAnime => '动漫';
+
+  @override
+  String get musicMoodHappy => '欢快';
+
+  @override
+  String get musicMoodSad => '忧伤';
+
+  @override
+  String get musicMoodEpic => '热血';
+
+  @override
+  String get musicMoodCalm => '治愈';
+
+  @override
+  String get musicMoodDreamy => '梦幻';
+
+  @override
+  String get musicMoodDark => '暗黑';
+
+  @override
+  String get musicInsPiano => '钢琴';
+
+  @override
+  String get musicInsGuitar => '木吉他';
+
+  @override
+  String get musicInsSynth => '合成器';
+
+  @override
+  String get musicInsStrings => '弦乐';
+
+  @override
+  String get musicInsGuzheng => '古筝';
+
+  @override
+  String get musicInsDrums => '鼓组';
+
+  @override
+  String get musicVoxFemale => '女声';
+
+  @override
+  String get musicVoxMale => '男声';
+
+  @override
+  String get musicVoxChoir => '合唱';
+
+  @override
+  String get musicTempoSlow => '慢速';
+
+  @override
+  String get musicTempoMid => '中速';
+
+  @override
+  String get musicTempoFast => '快速';
 }

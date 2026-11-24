@@ -3950,4 +3950,144 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sidebarCollapse => 'Collapse sidebar';
+
+  @override
+  String get musicSearch => 'Search songs';
+
+  @override
+  String musicCount(Object count) {
+    return '$count songs';
+  }
+
+  @override
+  String get musicNoMatch => 'No song matches.';
+
+  @override
+  String get musicStyle => 'Style';
+
+  @override
+  String get musicGenre => 'Genre';
+
+  @override
+  String get musicMood => 'Mood';
+
+  @override
+  String get musicInstruments => 'Instruments';
+
+  @override
+  String get musicVoice => 'Vocals';
+
+  @override
+  String get musicTempo => 'Tempo';
+
+  @override
+  String get musicStyleHint =>
+      'Tap a tag to add it to the style; tap again to remove it.';
+
+  @override
+  String musicLyricsStats(Object lines, Object chars) {
+    return '$lines lines · $chars characters';
+  }
+
+  @override
+  String get musicOptions => 'Options';
+
+  @override
+  String get musicNowPlaying => 'Now playing';
+
+  @override
+  String get musicPlay => 'Play';
+
+  @override
+  String get musicPause => 'Pause';
+
+  @override
+  String get musicLyricsTitle => 'Lyrics';
+
+  @override
+  String get musicSeekHint => 'Tap a timed line to jump there.';
+
+  @override
+  String get musicGenPop => 'Pop';
+
+  @override
+  String get musicGenRock => 'Rock';
+
+  @override
+  String get musicGenElectronic => 'Electronic';
+
+  @override
+  String get musicGenFolk => 'Folk';
+
+  @override
+  String get musicGenChinese => 'Chinese traditional';
+
+  @override
+  String get musicGenJazz => 'Jazz';
+
+  @override
+  String get musicGenHipHop => 'Hip-hop';
+
+  @override
+  String get musicGenLofi => 'Lo-fi';
+
+  @override
+  String get musicGenOrchestral => 'Orchestral';
+
+  @override
+  String get musicGenAnime => 'Anime';
+
+  @override
+  String get musicMoodHappy => 'Upbeat';
+
+  @override
+  String get musicMoodSad => 'Melancholy';
+
+  @override
+  String get musicMoodEpic => 'Epic';
+
+  @override
+  String get musicMoodCalm => 'Calm';
+
+  @override
+  String get musicMoodDreamy => 'Dreamy';
+
+  @override
+  String get musicMoodDark => 'Dark';
+
+  @override
+  String get musicInsPiano => 'Piano';
+
+  @override
+  String get musicInsGuitar => 'Acoustic guitar';
+
+  @override
+  String get musicInsSynth => 'Synthesizer';
+
+  @override
+  String get musicInsStrings => 'Strings';
+
+  @override
+  String get musicInsGuzheng => 'Guzheng';
+
+  @override
+  String get musicInsDrums => 'Drums';
+
+  @override
+  String get musicVoxFemale => 'Female vocals';
+
+  @override
+  String get musicVoxMale => 'Male vocals';
+
+  @override
+  String get musicVoxChoir => 'Choir';
+
+  @override
+  String get musicTempoSlow => 'Slow';
+
+  @override
+  String get musicTempoMid => 'Mid-tempo';
+
+  @override
+  String get musicTempoFast => 'Fast';
 }

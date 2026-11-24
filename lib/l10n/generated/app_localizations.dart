@@ -7099,6 +7099,276 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Collapse sidebar'**
   String get sidebarCollapse;
+
+  /// No description provided for @musicSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search songs'**
+  String get musicSearch;
+
+  /// No description provided for @musicCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} songs'**
+  String musicCount(Object count);
+
+  /// No description provided for @musicNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No song matches.'**
+  String get musicNoMatch;
+
+  /// No description provided for @musicStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Style'**
+  String get musicStyle;
+
+  /// No description provided for @musicGenre.
+  ///
+  /// In en, this message translates to:
+  /// **'Genre'**
+  String get musicGenre;
+
+  /// No description provided for @musicMood.
+  ///
+  /// In en, this message translates to:
+  /// **'Mood'**
+  String get musicMood;
+
+  /// No description provided for @musicInstruments.
+  ///
+  /// In en, this message translates to:
+  /// **'Instruments'**
+  String get musicInstruments;
+
+  /// No description provided for @musicVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Vocals'**
+  String get musicVoice;
+
+  /// No description provided for @musicTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo'**
+  String get musicTempo;
+
+  /// No description provided for @musicStyleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a tag to add it to the style; tap again to remove it.'**
+  String get musicStyleHint;
+
+  /// No description provided for @musicLyricsStats.
+  ///
+  /// In en, this message translates to:
+  /// **'{lines} lines · {chars} characters'**
+  String musicLyricsStats(Object lines, Object chars);
+
+  /// No description provided for @musicOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Options'**
+  String get musicOptions;
+
+  /// No description provided for @musicNowPlaying.
+  ///
+  /// In en, this message translates to:
+  /// **'Now playing'**
+  String get musicNowPlaying;
+
+  /// No description provided for @musicPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get musicPlay;
+
+  /// No description provided for @musicPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get musicPause;
+
+  /// No description provided for @musicLyricsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics'**
+  String get musicLyricsTitle;
+
+  /// No description provided for @musicSeekHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a timed line to jump there.'**
+  String get musicSeekHint;
+
+  /// No description provided for @musicGenPop.
+  ///
+  /// In en, this message translates to:
+  /// **'Pop'**
+  String get musicGenPop;
+
+  /// No description provided for @musicGenRock.
+  ///
+  /// In en, this message translates to:
+  /// **'Rock'**
+  String get musicGenRock;
+
+  /// No description provided for @musicGenElectronic.
+  ///
+  /// In en, this message translates to:
+  /// **'Electronic'**
+  String get musicGenElectronic;
+
+  /// No description provided for @musicGenFolk.
+  ///
+  /// In en, this message translates to:
+  /// **'Folk'**
+  String get musicGenFolk;
+
+  /// No description provided for @musicGenChinese.
+  ///
+  /// In en, this message translates to:
+  /// **'Chinese traditional'**
+  String get musicGenChinese;
+
+  /// No description provided for @musicGenJazz.
+  ///
+  /// In en, this message translates to:
+  /// **'Jazz'**
+  String get musicGenJazz;
+
+  /// No description provided for @musicGenHipHop.
+  ///
+  /// In en, this message translates to:
+  /// **'Hip-hop'**
+  String get musicGenHipHop;
+
+  /// No description provided for @musicGenLofi.
+  ///
+  /// In en, this message translates to:
+  /// **'Lo-fi'**
+  String get musicGenLofi;
+
+  /// No description provided for @musicGenOrchestral.
+  ///
+  /// In en, this message translates to:
+  /// **'Orchestral'**
+  String get musicGenOrchestral;
+
+  /// No description provided for @musicGenAnime.
+  ///
+  /// In en, this message translates to:
+  /// **'Anime'**
+  String get musicGenAnime;
+
+  /// No description provided for @musicMoodHappy.
+  ///
+  /// In en, this message translates to:
+  /// **'Upbeat'**
+  String get musicMoodHappy;
+
+  /// No description provided for @musicMoodSad.
+  ///
+  /// In en, this message translates to:
+  /// **'Melancholy'**
+  String get musicMoodSad;
+
+  /// No description provided for @musicMoodEpic.
+  ///
+  /// In en, this message translates to:
+  /// **'Epic'**
+  String get musicMoodEpic;
+
+  /// No description provided for @musicMoodCalm.
+  ///
+  /// In en, this message translates to:
+  /// **'Calm'**
+  String get musicMoodCalm;
+
+  /// No description provided for @musicMoodDreamy.
+  ///
+  /// In en, this message translates to:
+  /// **'Dreamy'**
+  String get musicMoodDreamy;
+
+  /// No description provided for @musicMoodDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get musicMoodDark;
+
+  /// No description provided for @musicInsPiano.
+  ///
+  /// In en, this message translates to:
+  /// **'Piano'**
+  String get musicInsPiano;
+
+  /// No description provided for @musicInsGuitar.
+  ///
+  /// In en, this message translates to:
+  /// **'Acoustic guitar'**
+  String get musicInsGuitar;
+
+  /// No description provided for @musicInsSynth.
+  ///
+  /// In en, this message translates to:
+  /// **'Synthesizer'**
+  String get musicInsSynth;
+
+  /// No description provided for @musicInsStrings.
+  ///
+  /// In en, this message translates to:
+  /// **'Strings'**
+  String get musicInsStrings;
+
+  /// No description provided for @musicInsGuzheng.
+  ///
+  /// In en, this message translates to:
+  /// **'Guzheng'**
+  String get musicInsGuzheng;
+
+  /// No description provided for @musicInsDrums.
+  ///
+  /// In en, this message translates to:
+  /// **'Drums'**
+  String get musicInsDrums;
+
+  /// No description provided for @musicVoxFemale.
+  ///
+  /// In en, this message translates to:
+  /// **'Female vocals'**
+  String get musicVoxFemale;
+
+  /// No description provided for @musicVoxMale.
+  ///
+  /// In en, this message translates to:
+  /// **'Male vocals'**
+  String get musicVoxMale;
+
+  /// No description provided for @musicVoxChoir.
+  ///
+  /// In en, this message translates to:
+  /// **'Choir'**
+  String get musicVoxChoir;
+
+  /// No description provided for @musicTempoSlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow'**
+  String get musicTempoSlow;
+
+  /// No description provided for @musicTempoMid.
+  ///
+  /// In en, this message translates to:
+  /// **'Mid-tempo'**
+  String get musicTempoMid;
+
+  /// No description provided for @musicTempoFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get musicTempoFast;
 }
 
 class _AppLocalizationsDelegate

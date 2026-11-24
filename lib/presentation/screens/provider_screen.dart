@@ -5,6 +5,7 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/layout/page_header.dart';
+import 'package:neiroha/presentation/widgets/layout/side_panes.dart';
 import 'package:neiroha/presentation/widgets/providers/capability_defaults_view.dart';
 import 'package:neiroha/presentation/widgets/providers/provider_draft.dart';
 import 'package:neiroha/presentation/widgets/providers/provider_editor.dart';
@@ -75,15 +76,15 @@ class _ProviderLayout extends ConsumerWidget {
         onBack: twoPane ? null : toProviders,
       );
       if (!twoPane) return editor;
-      return _TwoPane(
-        width: _listWidthProvider,
-        defaultWidth: 320,
+      return SidePaneRow(
+        leftWidth: _listWidthProvider,
+        leftDefault: 320,
         left: _ProviderLevelList(
           providers: providers,
           selectedId: selected.id,
           onBack: toProviders,
         ),
-        right: editor,
+        center: editor,
       );
     }
     if (!twoPane) {
@@ -91,11 +92,11 @@ class _ProviderLayout extends ConsumerWidget {
           ? page(onBack: toRoot)
           : ProviderNavPane(providers: providers);
     }
-    return _TwoPane(
-      width: _navWidthProvider,
-      defaultWidth: 248,
+    return SidePaneRow(
+      leftWidth: _navWidthProvider,
+      leftDefault: 248,
       left: ProviderNavPane(providers: providers),
-      right: page(),
+      center: page(),
     );
   }
 }
@@ -103,95 +104,6 @@ class _ProviderLayout extends ConsumerWidget {
 /// Side pane widths, kept while the app runs; null is the default.
 final _navWidthProvider = StateProvider<double?>((ref) => null);
 final _listWidthProvider = StateProvider<double?>((ref) => null);
-
-const double _minSideWidth = 200;
-
-/// A side pane beside the content, split by a divider that drags to
-/// resize and double-clicks back to [defaultWidth].
-class _TwoPane extends ConsumerWidget {
-  const _TwoPane({
-    required this.width,
-    required this.defaultWidth,
-    required this.left,
-    required this.right,
-  });
-  final StateProvider<double?> width;
-  final double defaultWidth;
-  final Widget left;
-  final Widget right;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) => LayoutBuilder(
-    builder: (context, constraints) {
-      final max = (constraints.maxWidth / 2).clamp(
-        _minSideWidth,
-        double.infinity,
-      );
-      final current = (ref.watch(width) ?? defaultWidth).clamp(
-        _minSideWidth,
-        max,
-      );
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(width: current, child: left),
-          _PaneDivider(
-            onDrag: (dx) => ref.read(width.notifier).state =
-                ((ref.read(width) ?? defaultWidth) + dx).clamp(
-                  _minSideWidth,
-                  max,
-                ),
-            onReset: () => ref.read(width.notifier).state = null,
-          ),
-          Expanded(child: right),
-        ],
-      );
-    },
-  );
-}
-
-class _PaneDivider extends StatefulWidget {
-  const _PaneDivider({required this.onDrag, required this.onReset});
-  final ValueChanged<double> onDrag;
-  final VoidCallback onReset;
-
-  @override
-  State<_PaneDivider> createState() => _PaneDividerState();
-}
-
-class _PaneDividerState extends State<_PaneDivider> {
-  bool _hot = false;
-  bool _dragging = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final active = _hot || _dragging;
-    return MouseRegion(
-      cursor: SystemMouseCursors.resizeColumn,
-      onEnter: (_) => setState(() => _hot = true),
-      onExit: (_) => setState(() => _hot = false),
-      child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onHorizontalDragStart: (_) => setState(() => _dragging = true),
-        onHorizontalDragUpdate: (d) => widget.onDrag(d.delta.dx),
-        onHorizontalDragEnd: (_) => setState(() => _dragging = false),
-        onDoubleTap: widget.onReset,
-        child: SizedBox(
-          width: 9,
-          child: Center(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 120),
-              width: active ? 3 : 1,
-              color: active
-                  ? AppTheme.accentColor.withValues(alpha: 0.7)
-                  : Theme.of(context).dividerColor,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 /// The provider list beside a provider's settings, headed by a way back to
 /// the AI services navigation.

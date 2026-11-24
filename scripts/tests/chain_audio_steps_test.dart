@@ -85,6 +85,35 @@ void main() {
       expect(c.score, 0);
       expect(c.missing, ['good night']);
     });
+
+    // Seen with real STT (speech_check_live_test): numbers come back as
+    // digits and 她 / 他 sound the same.
+    test('numbers match across scripts; homophones are not misses', () {
+      expect(compareSpeech('明日の朝九時に', '明日の朝9時に').clean, isTrue);
+      expect(compareSpeech('二十五个人，一百零三页', '25个人，103页').clean, isTrue);
+      expect(compareSpeech('We meet at three.', 'We meet at 3.').clean, isTrue);
+      expect(compareSpeech('她把信放进抽屉', '他把信放进抽屉').clean, isTrue);
+      expect(compareSpeech('我们一起走', '我们一起走').clean, isTrue);
+      final kana = compareSpeech('手紙を引き出しにしまって', '手紙をひきだしにしまって');
+      expect(kana.clean, isTrue);
+      expect(kana.score, 1);
+      // A kanji word left out is still a miss.
+      expect(compareSpeech('窓を閉めると静か', '静か').missing, ['窓を閉めると']);
+    });
+
+    test('long runs the text lacks are reported as extra', () {
+      final c = compareSpeech(
+        'We will meet at the library.',
+        'All right, let me read that aloud. We will meet at the library.',
+      );
+      expect(c.missing, isEmpty);
+      expect(c.extra, ['all right let me read that aloud']);
+      expect(c.clean, isFalse);
+      expect(
+        compareSpeech('Hello world', 'uh hello there world').clean,
+        isTrue,
+      );
+    });
   });
 
   group('SilenceTrimStage', () {

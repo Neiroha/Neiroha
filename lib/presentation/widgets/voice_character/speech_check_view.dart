@@ -56,10 +56,19 @@ class _CheckLine extends StatelessWidget {
         Colors.greenAccent,
         l.chainCheckClean('$score'),
       ),
+      SpeechCheck(missing: []) => (
+        Icons.warning_amber_rounded,
+        Colors.amberAccent,
+        '$score% · ${l.chainCheckExtra(check.extra.join(' / '))}',
+      ),
       _ => (
         Icons.warning_amber_rounded,
         Colors.amberAccent,
-        l.chainCheckMissing('$score', check.missing.join(' / ')),
+        [
+          l.chainCheckMissing('$score', check.missing.join(' / ')),
+          if (check.extra.isNotEmpty)
+            l.chainCheckExtra(check.extra.join(' / ')),
+        ].join(' · '),
       ),
     };
     return Tooltip(

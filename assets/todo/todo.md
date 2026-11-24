@@ -33,7 +33,8 @@
 - [x] 实时对话的 VC 按停顿分段（约 1.2–4 s）逐段转换，首段转换完即播放（RVC 实测首音 1.9 s / 回复 5.1 s）；陪伴模式应用角色自己的处理链，链中有变声时不再叠加实时设置的 VC。
 - [x] 小说缓存键包含处理链（未启用处理链的角色缓存不变）；本机 API `apply_chain` 与 MCP `synthesize_speech.apply_chain` 开关，默认运行处理链（此前 API / MCP 不运行处理链）；复制角色时一并复制处理链。
 - [x] 处理链扩展：去静音（首尾留 60 ms，超过 0.35 s 的停顿缩短，按 10 ms 能量判定）与 ASR 回听校验（转写后与台词逐字 / 逐词比对，列出漏读；与播放并行，不拖慢首音）。逐句与整句路径均生效，检查器显示最近的回听结果。
-- [ ] 回听校验用真实 STT 实测（中文 / 英文 / 日文漏读检出率）。
+- [x] 回听校验真实 STT 实测（`speech_check_live_test.dart`，OpenAI Realtime 合成，OpenAI / Gemini 转写，中英日各 3 句完整读与漏读一个分句）：漏读检出 18/18。首轮误报 3/18（她→他同音、九→9、three→3:00），比对改为数字统一、她它→他与的地得同音折叠后降为 1/18（日文汉字被转写成假名）；再加“汉字漏掉处多出假名视为写法不同”的规则。另发现 Realtime 朗读偶尔先说“All right, let me read that aloud…”，回听新增“多读”（连续 4 个以上多出的字词），朗读提示也明确禁止开场白。
+- [ ] Realtime 偶尔把标点读出来（实测一次读出 “comma”），单词级多读低于阈值不报告；需要时可对标点词单独检测。
 - [x] 退出崩溃：并非 sqlite，而是 flutter_soloud 5.3 的 `applicationWillTerminate:` 调用两个动态查找、未绑定（为 0）的原生符号（`EXC_BAD_ACCESS` at 0）。`MainFlutterWindow` 注册插件后移除其退出观察者（该清理仅针对 VST3 宿主，本应用未使用）。修复前每次退出必现，修复后连续三次启动 / 退出无崩溃报告。
 - [x] flutter_soloud 升级到 5.3.2（上游 #618 修复同一崩溃），已撤回 `MainFlutterWindow` 中的规避；Release 连续三次启动 / 退出无崩溃报告。
 - [x] 本机 API `/v1/jobs` 异步任务：创建、列表、状态、取消 / 删除、重试（新 attempt）、SSE 进度、`GET /v1/jobs/:id/audio` 与 `GET /v1/audio/speech/:id`。任务落盘于数据目录 `api_jobs/`，重启后未完成的标记失败，保留最近 200 个已完成任务。

@@ -4090,4 +4090,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get musicTempoFast => 'Fast';
+
+  @override
+  String chainCheckExtra(Object extra) {
+    return 'Extra: $extra';
+  }
 }

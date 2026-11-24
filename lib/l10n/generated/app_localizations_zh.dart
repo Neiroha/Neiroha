@@ -3953,4 +3953,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get musicTempoFast => '快速';
+
+  @override
+  String chainCheckExtra(Object extra) {
+    return '多读：$extra';
+  }
 }

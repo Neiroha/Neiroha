@@ -1260,5 +1260,6 @@
   "musicVoxChoir": "合唱",
   "musicTempoSlow": "慢速",
   "musicTempoMid": "中速",
-  "musicTempoFast": "快速"
+  "musicTempoFast": "快速",
+  "chainCheckExtra": "多读：{extra}"
 }

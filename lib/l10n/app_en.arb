@@ -1793,5 +1793,7 @@
   "musicVoxChoir": "Choir",
   "musicTempoSlow": "Slow",
   "musicTempoMid": "Mid-tempo",
-  "musicTempoFast": "Fast"
+  "musicTempoFast": "Fast",
+  "chainCheckExtra": "Extra: {extra}",
+  "@chainCheckExtra": {"placeholders": {"extra": {}}}
 }

@@ -7369,6 +7369,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fast'**
   String get musicTempoFast;
+
+  /// No description provided for @chainCheckExtra.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra: {extra}'**
+  String chainCheckExtra(Object extra);
 }
 
 class _AppLocalizationsDelegate

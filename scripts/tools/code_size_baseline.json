@@ -7,7 +7,6 @@
   "lib/presentation/widgets/loudness_normalize_dialog.dart": 802,
   "lib/presentation/widgets/novel_reader/chapters.dart": 753,
   "lib/presentation/widgets/novel_reader/controls.dart": 883,
-  "lib/presentation/widgets/novel_reader/playback.dart": 1120,
   "lib/presentation/widgets/novel_reader/reader_pane.dart": 620,
   "lib/presentation/widgets/phase_tts/segment_card.dart": 637,
   "lib/presentation/widgets/phase_tts/segment_voice_panel.dart": 981,

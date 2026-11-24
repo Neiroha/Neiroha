@@ -46,6 +46,8 @@ import 'package:uuid/uuid.dart';
 
 part '../widgets/novel_reader/editor.dart';
 part '../widgets/novel_reader/playback.dart';
+part '../widgets/novel_reader/generation.dart';
+part '../widgets/novel_reader/book_export.dart';
 part '../widgets/novel_reader/chapters.dart';
 part '../widgets/novel_reader/reader_pane.dart';
 part '../widgets/novel_reader/controls.dart';

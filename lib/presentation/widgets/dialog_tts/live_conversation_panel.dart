@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/data/services/synthesis/voice_chain_runner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/conversation/character_live_settings.dart';
@@ -113,6 +114,10 @@ class _LiveConversationPanelState extends ConsumerState<LiveConversationPanel> {
                 .firstOrNull,
             settings: _settings,
             io: io,
+            chain: await VoiceChainHook.load(
+              ref.read(databaseProvider),
+              character.id,
+            ),
           );
       _engine = engine;
       _sub = engine.events.listen(_onEvent);

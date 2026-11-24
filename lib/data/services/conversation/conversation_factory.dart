@@ -3,7 +3,9 @@ import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/synthesis/quick_tts_service.dart';
 import 'package:neiroha/data/services/synthesis/sentence_speech_pipeline.dart';
+import 'package:neiroha/data/services/synthesis/voice_chain_runner.dart';
 import 'package:neiroha/domain/ai/ai.dart';
+import 'package:neiroha/domain/synthesis/voice_chain.dart';
 
 import 'character_live_settings.dart';
 import 'companion_conversation.dart';
@@ -13,8 +15,12 @@ import 'realtime_conversation.dart';
 /// Builds a live dialog engine for one character from whatever capabilities
 /// the enabled providers offer.
 class ConversationFactory {
-  const ConversationFactory(this.router, {this.decode});
+  ConversationFactory(this.router, {this.decode, VoiceChainRunner? runner})
+    : runner = runner ?? VoiceChainRunner(router);
   final CapabilityRouter router;
+
+  /// Runs the character chain's steps (tests pass a fake).
+  final VoiceChainRunner runner;
 
   /// Decoder for encoded TTS / VC output in the companion's sentence stream.
   final AudioDecoder? decode;
@@ -67,12 +73,29 @@ class ConversationFactory {
           voiceInstruction: character.voiceInstruction,
         );
 
+  /// The live-settings VC, unless the character's chain converts already.
+  VoiceConversionStage? companionConversion(
+    CharacterLiveSettings settings,
+    VoiceChain chain,
+  ) => chain.audioSteps.isEmpty ? conversionFor(settings) : null;
+
+  /// The character's TTS wrapped by its chain when the chain has steps.
+  TtsAdapter voiceThroughChain(TtsAdapter adapter, VoiceChain chain) =>
+      chain.isActive
+      ? ChainedTtsAdapter(adapter, chain, runner, decode: decode)
+      : adapter;
+
+  /// Companion replies go through the character's own processing chain
+  /// ([chain]: translate / rewrite, then its VC). The live-settings VC is
+  /// used only when the chain converts nothing, so speech is never
+  /// converted twice.
   ConversationEngine create({
     required DialogMode mode,
     required db.VoiceAsset character,
     required db.TtsProvider? characterProvider,
     required CharacterLiveSettings settings,
     required ConversationAudioIo io,
+    VoiceChain chain = VoiceChain.empty,
   }) => switch (mode) {
     DialogMode.realtime => () {
       final model =
@@ -87,6 +110,7 @@ class ConversationFactory {
             ? settings.realtimeVoice
             : null,
         conversion: conversionFor(settings),
+        decode: decode,
         allowInterruptions: settings.allowInterruptions,
       );
     }(),
@@ -96,15 +120,15 @@ class ConversationFactory {
       llm: _need<LanguageModel>(AiCapability.llm),
       io: io,
       systemPrompt: personaFor(character, settings),
-      conversion: conversionFor(settings),
+      conversion: companionConversion(settings, chain),
       decode: decode,
       speak: (text, cancellation) {
         final provider =
             characterProvider ??
             (throw StateError('${character.name} has no TTS provider.'));
-        return createAdapter(
-          provider,
-          modelName: character.modelName,
+        return voiceThroughChain(
+          createAdapter(provider, modelName: character.modelName),
+          chain,
         ).synthesizeStream(
           quickTtsRequest(character, provider, text, responseFormat: 'pcm'),
           cancellation: cancellation,

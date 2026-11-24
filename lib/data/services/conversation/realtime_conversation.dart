@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:neiroha/data/ai/protocols/audio/pcm_resample.dart';
+import 'package:neiroha/data/services/synthesis/sentence_speech_pipeline.dart'
+    show AudioDecoder;
 import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
@@ -23,14 +25,18 @@ class RealtimeConversation implements ConversationEngine {
     required this.instructions,
     this.voice,
     this.conversion,
+    this.decode,
     this.allowInterruptions = false,
-  }) : _player = ReplyPlayer(io, conversion: conversion);
+  }) : _player = ReplyPlayer(io, conversion: conversion, decode: decode);
 
   final RealtimeModel model;
   final ConversationAudioIo io;
   final String instructions;
   final String? voice;
   final VoiceConversionStage? conversion;
+
+  /// Lets phrase-by-phrase VC read converters that return encoded files.
+  final AudioDecoder? decode;
   final bool allowInterruptions;
   final ReplyPlayer _player;
 
@@ -110,7 +116,8 @@ class RealtimeConversation implements ConversationEngine {
       case ResponseDone(:final text):
         _emit(CharacterTurn(text ?? '', done: true));
         if (!_replying) return;
-        if (conversion != null) _state(ConversationState.thinking);
+        // Converting the whole reply takes a moment before it plays.
+        if (_player.convertsWholeReply) _state(ConversationState.thinking);
         _playback = _player
             .end()
             .catchError((Object e) {

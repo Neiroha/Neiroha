@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:neiroha/data/services/music/song_library.dart';
-import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 
-/// Generated songs, newest first; the selected one shows its lyrics.
-class SongList extends StatelessWidget {
+import 'song_now_playing.dart';
+
+enum SongAction { reuse, showInFolder, saveAs, delete }
+
+/// The song library beside the selected song's detail; stacked on narrow
+/// panes.
+class SongList extends StatefulWidget {
   const SongList({
     super.key,
     required this.songs,
@@ -24,43 +28,114 @@ class SongList extends StatelessWidget {
   final void Function(SongRecord song, SongAction action) onAction;
 
   @override
+  State<SongList> createState() => _SongListState();
+}
+
+class _SongListState extends State<SongList> {
+  final _query = TextEditingController();
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final songs = widget.songs;
     if (songs.isEmpty) {
       return Center(
-        child: Text(
-          l.musicEmpty,
-          style: const TextStyle(color: Colors.white38),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.library_music_rounded,
+              size: 56,
+              color: Colors.white.withValues(alpha: 0.12),
+            ),
+            const SizedBox(height: 12),
+            Text(l.musicEmpty, style: const TextStyle(color: Colors.white38)),
+          ],
         ),
       );
     }
-    final current = selected ?? songs.first;
-    return Column(
+    final current = widget.selected ?? songs.first;
+    final shown = [
+      for (final s in songs)
+        if (songMatches(s, _query.text)) s,
+    ];
+    final library = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
-          height: 220,
-          child: ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: songs.length,
-            itemBuilder: (_, i) => _SongTile(
-              song: songs[i],
-              selected: songs[i].audioPath == current.audioPath,
-              playing: songs[i].audioPath == playingPath,
-              onTap: () => onSelect(songs[i]),
-              onPlay: () => onPlay(songs[i]),
-              onAction: (a) => onAction(songs[i], a),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+          child: TextField(
+            controller: _query,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              isDense: true,
+              prefixIcon: const Icon(Icons.search_rounded, size: 18),
+              hintText: l.musicSearch,
             ),
           ),
         ),
-        const Divider(height: 1),
-        Expanded(child: LyricsView(song: current)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+          child: Text(
+            l.musicCount(songs.length),
+            style: const TextStyle(fontSize: 11, color: Colors.white38),
+          ),
+        ),
+        Expanded(
+          child: shown.isEmpty
+              ? Center(
+                  child: Text(
+                    l.musicNoMatch,
+                    style: const TextStyle(color: Colors.white38),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+                  itemCount: shown.length,
+                  itemBuilder: (_, i) => _SongTile(
+                    song: shown[i],
+                    selected: shown[i].audioPath == current.audioPath,
+                    playing: shown[i].audioPath == widget.playingPath,
+                    onTap: () => widget.onSelect(shown[i]),
+                    onPlay: () => widget.onPlay(shown[i]),
+                  ),
+                ),
+        ),
       ],
+    );
+    final detail = SongDetail(
+      key: ValueKey(current.audioPath),
+      song: current,
+      onPlay: widget.onPlay,
+      onAction: widget.onAction,
+    );
+    return LayoutBuilder(
+      builder: (context, box) => box.maxWidth >= 720
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(width: 280, child: library),
+                const VerticalDivider(width: 1),
+                Expanded(child: detail),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(height: 240, child: library),
+                const Divider(height: 1),
+                Expanded(child: detail),
+              ],
+            ),
     );
   }
 }
-
-enum SongAction { reuse, showInFolder, saveAs, delete }
 
 class _SongTile extends StatelessWidget {
   const _SongTile({
@@ -69,108 +144,75 @@ class _SongTile extends StatelessWidget {
     required this.playing,
     required this.onTap,
     required this.onPlay,
-    required this.onAction,
   });
   final SongRecord song;
   final bool selected, playing;
   final VoidCallback onTap, onPlay;
-  final ValueChanged<SongAction> onAction;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final when = MaterialLocalizations.of(context);
-    return Card(
-      color: selected ? AppTheme.surfaceBright : null,
-      margin: const EdgeInsets.only(bottom: 6),
-      child: ListTile(
-        dense: true,
-        onTap: onTap,
-        leading: IconButton(
-          tooltip: playing ? null : song.title,
-          icon: Icon(
-            playing ? Icons.graphic_eq_rounded : Icons.play_circle_rounded,
-          ),
-          onPressed: onPlay,
-        ),
-        title: Text(song.title, overflow: TextOverflow.ellipsis),
-        subtitle: Text(
-          '${song.model} · ${when.formatShortDate(song.created)} '
-          '${when.formatTimeOfDay(TimeOfDay.fromDateTime(song.created))}',
-          style: const TextStyle(fontSize: 11),
-        ),
-        trailing: PopupMenuButton<SongAction>(
-          onSelected: onAction,
-          itemBuilder: (_) => [
-            PopupMenuItem(value: SongAction.reuse, child: Text(l.musicReuse)),
-            PopupMenuItem(
-              value: SongAction.showInFolder,
-              child: Text(l.musicShowInFolder),
-            ),
-            PopupMenuItem(value: SongAction.saveAs, child: Text(l.musicSaveAs)),
-            PopupMenuItem(value: SongAction.delete, child: Text(l.musicDelete)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Lyrics grouped by section, with `mm:ss` stamps when the model timed them.
-class LyricsView extends StatelessWidget {
-  const LyricsView({super.key, required this.song});
-  final SongRecord song;
-
-  static String _stamp(Duration d) =>
-      '${d.inMinutes.toString().padLeft(2, '0')}:'
-      '${(d.inSeconds % 60).toString().padLeft(2, '0')}';
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final theme = Theme.of(context).textTheme;
-    final lines = song.lyrics;
-    String? section;
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        Text(song.title, style: theme.titleMedium),
-        const SizedBox(height: 4),
-        SelectableText(
-          song.prompt,
-          style: theme.bodySmall?.copyWith(color: Colors.white54),
-        ),
-        const SizedBox(height: 16),
-        if (lines.isEmpty)
-          Text(l.musicNoLyrics, style: const TextStyle(color: Colors.white38)),
-        for (final LyricLine line in lines) ...[
-          if (line.section != null && line.section != section)
-            Padding(
-              padding: const EdgeInsets.only(top: 12, bottom: 4),
-              child: Text(
-                (section = line.section)!,
-                style: theme.labelSmall?.copyWith(color: Colors.white38),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Material(
+        color: selected
+            ? AppTheme.accentColor.withValues(alpha: 0.14)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onTap,
+          onDoubleTap: onPlay,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (line.start != null)
-                  SizedBox(
-                    width: 48,
-                    child: Text(
-                      _stamp(line.start!),
-                      style: theme.bodySmall?.copyWith(color: Colors.white38),
-                    ),
+                SongCover(title: song.title, size: 44, playing: playing),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        song.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: playing ? AppTheme.accentColor : null,
+                        ),
+                      ),
+                      Text(
+                        '${song.instrumental ? '♪ ' : ''}${song.model} · '
+                        '${when.formatShortDate(song.created)} '
+                        '${when.formatTimeOfDay(TimeOfDay.fromDateTime(song.created))}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.white38,
+                        ),
+                      ),
+                    ],
                   ),
-                Expanded(child: SelectableText(line.text)),
+                ),
+                IconButton(
+                  tooltip: playing ? l.musicNowPlaying : l.musicPlay,
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    playing
+                        ? Icons.graphic_eq_rounded
+                        : Icons.play_circle_outline_rounded,
+                    color: playing ? AppTheme.accentColor : null,
+                  ),
+                  onPressed: onPlay,
+                ),
               ],
             ),
           ),
-        ],
-      ],
+        ),
+      ),
     );
   }
 }

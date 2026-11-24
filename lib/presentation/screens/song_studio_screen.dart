@@ -15,12 +15,12 @@ import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:neiroha/presentation/widgets/export_progress.dart';
 import 'package:neiroha/presentation/widgets/music/song_list.dart';
+import 'package:neiroha/presentation/widgets/music/song_now_playing.dart';
+import 'package:neiroha/presentation/widgets/music/style_presets.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 import 'package:path/path.dart' as p;
-
-const songStudioPlaybackSource = 'song_studio';
 
 /// Song Studio: style prompt + lyrics (+ reference images) → a finished
 /// song from whichever enabled provider offers the music capability
@@ -155,6 +155,16 @@ class _SongStudioScreenState extends ConsumerState<SongStudioScreen> {
           _title.text = song.title;
           _prompt.text = song.prompt;
           _instrumental = song.instrumental;
+          if (!song.instrumental) {
+            _lyrics.text = [
+              for (final (i, line) in song.lyrics.indexed) ...[
+                if (line.section != null &&
+                    (i == 0 || song.lyrics[i - 1].section != line.section))
+                  '[${line.section}]',
+                line.text,
+              ],
+            ].join('\n');
+          }
         });
       case SongAction.showInFolder:
         await revealInFileManager(song.audioPath);
@@ -197,7 +207,7 @@ class _SongStudioScreenState extends ConsumerState<SongStudioScreen> {
         const Divider(height: 1),
         Expanded(
           child: ResizableSplitPane(
-            initialLeftFraction: 0.38,
+            initialLeftFraction: 0.36,
             compactRightIcon: Icons.queue_music_rounded,
             compactRightLabel: l.navMusic,
             left: _controls(l, router),
@@ -231,8 +241,9 @@ class _SongStudioScreenState extends ConsumerState<SongStudioScreen> {
         !running &&
         (_prompt.text.trim().isNotEmpty || _lyrics.text.trim().isNotEmpty);
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
       children: [
+        _Section(icon: Icons.auto_awesome_rounded, title: l.musicModel),
         if (choices.isEmpty)
           Text(
             l.musicNoModel,
@@ -242,7 +253,7 @@ class _SongStudioScreenState extends ConsumerState<SongStudioScreen> {
           DropdownButtonFormField<(String, String)>(
             initialValue: pick,
             isExpanded: true,
-            decoration: InputDecoration(labelText: l.musicModel),
+            decoration: const InputDecoration(isDense: true),
             items: [
               for (final (c, m) in choices)
                 DropdownMenuItem(
@@ -264,7 +275,18 @@ class _SongStudioScreenState extends ConsumerState<SongStudioScreen> {
             hintText: l.musicTitleHint,
           ),
         ),
-        const SizedBox(height: 12),
+        _Section(icon: Icons.palette_rounded, title: l.musicStyle),
+        Text(
+          l.musicStyleHint,
+          style: const TextStyle(fontSize: 11, color: Colors.white38),
+        ),
+        const SizedBox(height: 8),
+        StylePresetPicker(
+          controller: _prompt,
+          enabled: !running,
+          onChanged: () => setState(() {}),
+        ),
+        const SizedBox(height: 4),
         TextField(
           controller: _prompt,
           minLines: 2,
@@ -276,41 +298,66 @@ class _SongStudioScreenState extends ConsumerState<SongStudioScreen> {
             alignLabelWithHint: true,
           ),
         ),
-        const SizedBox(height: 12),
         if (!_instrumental) ...[
+          _Section(
+            icon: Icons.lyrics_rounded,
+            title: l.musicLyrics,
+            trailing: _lyrics.text.isEmpty
+                ? null
+                : TextButton(
+                    onPressed: running
+                        ? null
+                        : () => setState(() => _lyrics.clear()),
+                    child: Text(l.uiClear),
+                  ),
+          ),
           TextField(
             controller: _lyrics,
             minLines: 6,
             maxLines: 16,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              labelText: l.musicLyrics,
               helperText: l.musicLyricsHint,
               helperMaxLines: 3,
               alignLabelWithHint: true,
             ),
           ),
-          Wrap(
-            spacing: 6,
+          Row(
             children: [
-              for (final tag in const [
-                '[Intro]',
-                '[Verse]',
-                '[Chorus]',
-                '[Bridge]',
-                '[Outro]',
-              ])
-                ActionChip(
-                  label: Text(tag, style: const TextStyle(fontSize: 11)),
-                  onPressed: () => setState(() {
-                    final t = _lyrics.text;
-                    _lyrics.text =
-                        '${t.isEmpty || t.endsWith('\n') ? t : '$t\n'}$tag\n';
-                  }),
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  children: [
+                    for (final tag in const [
+                      '[Intro]',
+                      '[Verse]',
+                      '[Chorus]',
+                      '[Bridge]',
+                      '[Outro]',
+                    ])
+                      ActionChip(
+                        label: Text(tag, style: const TextStyle(fontSize: 11)),
+                        onPressed: () => setState(() {
+                          final t = _lyrics.text;
+                          _lyrics.text =
+                              '${t.isEmpty || t.endsWith('\n') ? t : '$t\n'}$tag\n';
+                        }),
+                      ),
+                  ],
                 ),
+              ),
+              Text(
+                l.musicLyricsStats(
+                  '\n'.allMatches(_lyrics.text.trim()).length +
+                      (_lyrics.text.trim().isEmpty ? 0 : 1),
+                  _lyrics.text.replaceAll(RegExp(r'\s'), '').length,
+                ),
+                style: const TextStyle(fontSize: 11, color: Colors.white38),
+              ),
             ],
           ),
         ],
+        _Section(icon: Icons.tune_rounded, title: l.musicOptions),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           value: _instrumental,
@@ -375,4 +422,32 @@ class _SongStudioScreenState extends ConsumerState<SongStudioScreen> {
       ],
     );
   }
+}
+
+/// A form section title.
+class _Section extends StatelessWidget {
+  const _Section({required this.icon, required this.title, this.trailing});
+  final IconData icon;
+  final String title;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 16, bottom: 8),
+    child: Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.white54),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ),
+        ?trailing,
+      ],
+    ),
+  );
 }

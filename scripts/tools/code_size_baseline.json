@@ -22,6 +22,5 @@
   "lib/presentation/widgets/voice_character/components.dart": 672,
   "lib/presentation/widgets/voice_character/create_character_dialog.dart": 1738,
   "lib/server/api_server.dart": 540,
-  "lib/server/mcp/neiroha_mcp_tools.dart": 2207,
   "scripts/tests/voice_database_boundaries_test.dart": 583
 }

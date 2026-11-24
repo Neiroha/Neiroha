@@ -1842,9 +1842,14 @@
   "provAvailableModels": "Models you can add · {count}",
   "@provAvailableModels": {"placeholders": {"count": {"type": "int"}}},
   "provAvailableModelsHint": "Listed by the model catalog or your account. Added models appear in the defaults, the model order and every model picker; starring one as the default adds it too.",
-  "quickTtsSendHint": "{keys} to generate, Enter for a new line",
-  "@quickTtsSendHint": {"placeholders": {"keys": {"type": "String"}}},
+  "quickTtsSendHint": "Enter to generate, Shift+Enter for a new line",
   "voiceRequired": "Choose a voice",
   "voiceNotForModel": "{model} does not offer the voice {voice}; choose another",
-  "@voiceNotForModel": {"placeholders": {"voice": {"type": "String"}, "model": {"type": "String"}}}
+  "@voiceNotForModel": {"placeholders": {"voice": {"type": "String"}, "model": {"type": "String"}}},
+  "bankSwitch": "Switch voice bank",
+  "bankActions": "Voice bank actions",
+  "paneCharacterSettings": "Character settings",
+  "navOrderTitle": "Sidebar order",
+  "navOrderSubtitle": "Drag to reorder the pages in the sidebar; AI services and Settings stay at the bottom.",
+  "navOrderReset": "Restore default"
 }

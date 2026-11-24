@@ -4091,9 +4091,7 @@ class AppLocalizationsZh extends AppLocalizations {
       '来自模型目录或账户列表。添加后才会出现在默认模型、模型顺序和各处的模型选择里；点星标设为默认也会自动添加。';
 
   @override
-  String quickTtsSendHint(String keys) {
-    return '$keys 生成；Enter 换行';
-  }
+  String get quickTtsSendHint => 'Enter 生成，Shift+Enter 换行';
 
   @override
   String get voiceRequired => '请选择音色';
@@ -4102,4 +4100,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String voiceNotForModel(String voice, String model) {
     return '$model 不支持音色 $voice，请重新选择';
   }
+
+  @override
+  String get bankSwitch => '切换语音库';
+
+  @override
+  String get bankActions => '语音库操作';
+
+  @override
+  String get paneCharacterSettings => '角色设置';
+
+  @override
+  String get navOrderTitle => '侧边栏顺序';
+
+  @override
+  String get navOrderSubtitle => '拖动调整左侧页面的上下顺序；AI 服务与设置固定在底部。';
+
+  @override
+  String get navOrderReset => '恢复默认';
 }

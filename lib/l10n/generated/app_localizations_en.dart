@@ -4244,9 +4244,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Listed by the model catalog or your account. Added models appear in the defaults, the model order and every model picker; starring one as the default adds it too.';
 
   @override
-  String quickTtsSendHint(String keys) {
-    return '$keys to generate, Enter for a new line';
-  }
+  String get quickTtsSendHint =>
+      'Enter to generate, Shift+Enter for a new line';
 
   @override
   String get voiceRequired => 'Choose a voice';
@@ -4255,4 +4254,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String voiceNotForModel(String voice, String model) {
     return '$model does not offer the voice $voice; choose another';
   }
+
+  @override
+  String get bankSwitch => 'Switch voice bank';
+
+  @override
+  String get bankActions => 'Voice bank actions';
+
+  @override
+  String get paneCharacterSettings => 'Character settings';
+
+  @override
+  String get navOrderTitle => 'Sidebar order';
+
+  @override
+  String get navOrderSubtitle =>
+      'Drag to reorder the pages in the sidebar; AI services and Settings stay at the bottom.';
+
+  @override
+  String get navOrderReset => 'Restore default';
 }

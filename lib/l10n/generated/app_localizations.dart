@@ -7595,8 +7595,8 @@ abstract class AppLocalizations {
   /// No description provided for @quickTtsSendHint.
   ///
   /// In en, this message translates to:
-  /// **'{keys} to generate, Enter for a new line'**
-  String quickTtsSendHint(String keys);
+  /// **'Enter to generate, Shift+Enter for a new line'**
+  String get quickTtsSendHint;
 
   /// No description provided for @voiceRequired.
   ///
@@ -7609,6 +7609,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{model} does not offer the voice {voice}; choose another'**
   String voiceNotForModel(String voice, String model);
+
+  /// No description provided for @bankSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch voice bank'**
+  String get bankSwitch;
+
+  /// No description provided for @bankActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice bank actions'**
+  String get bankActions;
+
+  /// No description provided for @paneCharacterSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Character settings'**
+  String get paneCharacterSettings;
+
+  /// No description provided for @navOrderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sidebar order'**
+  String get navOrderTitle;
+
+  /// No description provided for @navOrderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder the pages in the sidebar; AI services and Settings stay at the bottom.'**
+  String get navOrderSubtitle;
+
+  /// No description provided for @navOrderReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore default'**
+  String get navOrderReset;
 }
 
 class _AppLocalizationsDelegate

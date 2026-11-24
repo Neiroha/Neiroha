@@ -1298,9 +1298,14 @@
   "roleToolTest": "测试",
   "provAvailableModels": "可添加的模型 · {count}",
   "provAvailableModelsHint": "来自模型目录或账户列表。添加后才会出现在默认模型、模型顺序和各处的模型选择里；点星标设为默认也会自动添加。",
-  "quickTtsSendHint": "{keys} 生成；Enter 换行",
-  "@quickTtsSendHint": {"placeholders": {"keys": {"type": "String"}}},
+  "quickTtsSendHint": "Enter 生成，Shift+Enter 换行",
   "voiceRequired": "请选择音色",
   "voiceNotForModel": "{model} 不支持音色 {voice}，请重新选择",
-  "@voiceNotForModel": {"placeholders": {"voice": {"type": "String"}, "model": {"type": "String"}}}
+  "@voiceNotForModel": {"placeholders": {"voice": {"type": "String"}, "model": {"type": "String"}}},
+  "bankSwitch": "切换语音库",
+  "bankActions": "语音库操作",
+  "paneCharacterSettings": "角色设置",
+  "navOrderTitle": "侧边栏顺序",
+  "navOrderSubtitle": "拖动调整左侧页面的上下顺序；AI 服务与设置固定在底部。",
+  "navOrderReset": "恢复默认"
 }

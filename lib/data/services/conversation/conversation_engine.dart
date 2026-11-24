@@ -2,9 +2,16 @@ import 'dart:typed_data';
 
 import 'package:neiroha/domain/synthesis/streaming_audio_sink.dart';
 
-/// Character dialog modes: the classic script editor, a full-duplex Realtime
-/// model, or a cascaded ASR → LLM → TTS companion using the character voice.
-enum DialogMode { script, realtime, companion }
+/// How a character chat runs: an AI companion (an LLM answers, with tools
+/// and a structured reply, and the character's own voice speaks it; the
+/// microphone goes through STT) or a full-duplex Realtime call.
+enum ChatEngine {
+  companion,
+  realtime;
+
+  static ChatEngine fromName(String name) =>
+      values.where((e) => e.name == name).firstOrNull ?? companion;
+}
 
 enum ConversationState { idle, connecting, listening, thinking, speaking }
 
@@ -23,11 +30,22 @@ class UserTurn extends ConversationEvent {
   final String text;
 }
 
-/// Character reply text: deltas while streaming, then [done].
+/// Character reply text: deltas while streaming, then [done]. A structured
+/// reply also carries its [emotion] and delivery [style].
 class CharacterTurn extends ConversationEvent {
-  const CharacterTurn(this.text, {this.done = false});
+  const CharacterTurn(this.text, {this.done = false, this.emotion, this.style});
   final String text;
   final bool done;
+  final String? emotion;
+  final String? style;
+}
+
+/// The character called a tool while answering.
+class ToolUsed extends ConversationEvent {
+  const ToolUsed(this.name, this.arguments, this.result);
+  final String name;
+  final String arguments;
+  final String result;
 }
 
 class ConversationFailed extends ConversationEvent {

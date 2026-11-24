@@ -8,8 +8,8 @@ import 'package:neiroha/data/services/conversation/conversation_engine.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/screens/subtitle_studio_screen.dart';
-import 'package:neiroha/presentation/widgets/dialog_tts/dialog_mode_view.dart';
-import 'package:neiroha/presentation/widgets/dialog_tts/live_conversation_panel.dart';
+import 'package:neiroha/presentation/screens/character_chat_screen.dart';
+import 'package:neiroha/presentation/widgets/character_chat/new_chat_dialog.dart';
 import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
@@ -56,49 +56,79 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('live modes stay disabled without the capabilities', (
+  testWidgets('a new chat offers only the engines the services run', (
     tester,
   ) async {
     await pump(
       tester,
-      const DialogModeView(
-        bankAssets: [],
-        voiceId: null,
-        script: Text('script-pane'),
+      Builder(
+        builder: (context) => TextButton(
+          onPressed: () => showNewChatDialog(
+            context: context,
+            characters: const [],
+            available: const {},
+          ),
+          child: const Text('open'),
+        ),
       ),
       const [],
     );
-    expect(find.text('script-pane'), findsOneWidget);
-    final view = tester.widget<SegmentedButton<DialogMode>>(
-      find.byType(SegmentedButton<DialogMode>),
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(find.text('请先在语音库中添加角色。'), findsOneWidget);
+    final create = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, '创建'),
     );
-    final enabled = {
-      for (final s in view.segments) (s.label as Text).data: s.enabled,
-    };
-    expect(enabled, {'剧本': true, '实时对话': false, '陪聊': false});
+    expect(create.onPressed, isNull);
   });
 
-  testWidgets('OpenAI enables realtime and companion; switching shows panel', (
-    tester,
-  ) async {
-    await pump(
-      tester,
-      const DialogModeView(
-        bankAssets: [],
-        voiceId: null,
-        script: Text('script-pane'),
+  testWidgets('character chat creates a live call with OpenAI', (tester) async {
+    final openAi = _openAi();
+    await database.insertProvider(
+      db.TtsProvidersCompanion.insert(
+        id: openAi.id,
+        name: openAi.name,
+        adapterType: openAi.adapterType,
+        baseUrl: openAi.baseUrl,
       ),
-      [_openAi()],
     );
-    final view = tester.widget<SegmentedButton<DialogMode>>(
-      find.byType(SegmentedButton<DialogMode>),
+    await database.insertVoiceAsset(
+      db.VoiceAssetsCompanion.insert(
+        id: 'nagato',
+        name: '长门',
+        providerId: openAi.id,
+        taskMode: 'presetVoice',
+      ),
     );
-    expect(view.segments.every((s) => s.enabled), isTrue);
-    await tester.tap(find.text('实时对话'));
+    await pump(tester, const CharacterChatScreen(), [openAi]);
+    expect(find.text('还没有聊天，选一个角色开始吧。'), findsOneWidget);
+    await tester.tap(find.byTooltip('新聊天'));
     await tester.pumpAndSettle();
-    expect(find.byType(LiveConversationPanel), findsOneWidget);
-    expect(find.text('script-pane'), findsNothing);
-    expect(find.text('选择角色'), findsOneWidget);
+    final engines = tester.widget<SegmentedButton<ChatEngine>>(
+      find.byType(SegmentedButton<ChatEngine>),
+    );
+    expect(engines.segments.every((s) => s.enabled), isTrue);
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('长门').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('实时通话'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, '创建'));
+    await tester.pumpAndSettle();
+    final sessions = (await tester.runAsync(
+      () => database.watchChatSessions().first,
+    ))!;
+    expect(sessions.single.engine, 'realtime');
+    expect(sessions.single.title, '长门');
+    expect(find.text('开始通话'), findsOneWidget);
+    expect(find.textContaining('开始通话后直接说话'), findsOneWidget);
+    // Drift closes its stream queries on a timer once nothing listens.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+    // Drift closes its stream queries on a timer once nothing listens.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('subtitle studio shows routed capabilities', (tester) async {

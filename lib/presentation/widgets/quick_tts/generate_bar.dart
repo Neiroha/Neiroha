@@ -16,6 +16,10 @@ class QuickTtsGenerateBar extends StatefulWidget {
     required this.onGenerate,
     required this.onStop,
     this.roomy = false,
+    this.hintText,
+    this.sendIcon = Icons.auto_awesome_rounded,
+    this.sendTooltip,
+    this.leading,
   });
 
   final TextEditingController controller;
@@ -25,6 +29,14 @@ class QuickTtsGenerateBar extends StatefulWidget {
   final VoidCallback? onGenerate;
   final VoidCallback onStop;
   final bool roomy;
+
+  /// Overrides for other composers (the character chat).
+  final String? hintText;
+  final IconData sendIcon;
+  final String? sendTooltip;
+
+  /// A button before the text, e.g. the microphone.
+  final Widget? leading;
 
   @override
   State<QuickTtsGenerateBar> createState() => _QuickTtsGenerateBarState();
@@ -69,7 +81,9 @@ class _QuickTtsGenerateBarState extends State<QuickTtsGenerateBar> {
             onPressed: widget.onStop,
           )
         : IconButton.filled(
-            tooltip: '${l10n.uiGenerate} · ${l10n.quickTtsSendHint}',
+            tooltip:
+                widget.sendTooltip ??
+                '${l10n.uiGenerate} · ${l10n.quickTtsSendHint}',
             onPressed: _canSend ? widget.onGenerate : null,
             style: IconButton.styleFrom(
               backgroundColor: AppTheme.accentColor,
@@ -78,7 +92,7 @@ class _QuickTtsGenerateBarState extends State<QuickTtsGenerateBar> {
               ),
               minimumSize: const Size(32, 32),
             ),
-            icon: const Icon(Icons.auto_awesome_rounded, size: 16),
+            icon: Icon(widget.sendIcon, size: 16),
           );
 
     return Container(
@@ -92,6 +106,11 @@ class _QuickTtsGenerateBarState extends State<QuickTtsGenerateBar> {
         // The button stays on the last line as the box grows.
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          if (widget.leading case final leading?)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(6, 6, 0, 6),
+              child: leading,
+            ),
           Expanded(
             child: Focus(
               onKeyEvent: _onKey,
@@ -105,7 +124,7 @@ class _QuickTtsGenerateBarState extends State<QuickTtsGenerateBar> {
                   keyboardType: TextInputType.multiline,
                   style: TextStyle(fontSize: fontSize, height: 1.4),
                   decoration: InputDecoration(
-                    hintText: l10n.uiTypeSomethingToTest,
+                    hintText: widget.hintText ?? l10n.uiTypeSomethingToTest,
                     hintStyle: TextStyle(
                       color: Colors.white.withValues(alpha: 0.3),
                       fontSize: fontSize,

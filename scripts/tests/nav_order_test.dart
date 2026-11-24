@@ -8,14 +8,30 @@ import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/nav_order_provider.dart';
 
 void main() {
-  test('stored order wins; unknown names drop, missing pages append', () {
+  test('stored order wins; unknown names drop, missing pages slot in', () {
     expect(NavOrder.parse(null), NavOrder.defaults);
     final order = NavOrder.parse(
       'voiceBank, nope,dialogTts,voiceBank,settings',
     );
-    expect(order.take(2), [NavTab.voiceBank, NavTab.dialogTts]);
+    expect(
+      order.indexOf(NavTab.voiceBank),
+      lessThan(order.indexOf(NavTab.dialogTts)),
+    );
     expect(order, hasLength(NavOrder.defaults.length));
     expect(order, isNot(contains(NavTab.settings)));
+  });
+
+  test('a page added later lands after its default neighbour', () {
+    // An order saved before Character Chat existed.
+    final order = NavOrder.parse(
+      'voiceBank,dialogTts,novelReader,phaseTts,videoDub,subtitles,music,'
+      'voiceAssets',
+    );
+    expect(order.take(3), [
+      NavTab.voiceBank,
+      NavTab.dialogTts,
+      NavTab.characterChat,
+    ]);
   });
 
   test('a move is saved and survives a restart', () async {

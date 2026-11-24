@@ -13,7 +13,6 @@ import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/chat_list_view.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/create_project_dialog.dart';
-import 'package:neiroha/presentation/widgets/dialog_tts/dialog_mode_view.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/editor_project_bar.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/input_bar.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/project_list_header.dart';

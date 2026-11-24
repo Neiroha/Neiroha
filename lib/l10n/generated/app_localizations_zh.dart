@@ -3049,28 +3049,22 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get liveModeScript => '剧本';
+  String get liveModeRealtime => '实时通话';
 
   @override
-  String get liveModeRealtime => '实时对话';
+  String get liveModeCompanion => '角色陪聊';
 
   @override
-  String get liveModeCompanion => '陪聊';
+  String get liveModeRealtimeHint => '接入 Realtime 模型，像打电话一样实时语音对话';
 
   @override
-  String get liveModeScriptHint => '编写台词，为每句生成角色语音';
-
-  @override
-  String get liveModeRealtimeHint => '接入 Realtime 模型的全双工语音对话';
-
-  @override
-  String get liveModeCompanionHint => '语音识别 → 大模型 → 角色自己的 TTS 音色';
+  String get liveModeCompanionHint => '大模型思考回复（可调用工具），角色用自己的音色说出来';
 
   @override
   String get liveNeedsRealtime => '需要带 Realtime 模型的服务商（如 OpenAI）';
 
   @override
-  String get liveNeedsCompanion => '需要启用语音识别和大模型能力';
+  String get liveNeedsCompanion => '需要启用大模型（LLM）能力';
 
   @override
   String get liveStateIdle => '未开始';
@@ -3088,32 +3082,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get liveStateSpeaking => '说话中';
 
   @override
-  String get liveNoCharacter => '选择角色';
-
-  @override
   String get liveVcActive => '回复会转换为角色音色';
 
   @override
   String get liveSettings => '角色对话设置';
 
   @override
-  String get liveStart => '开始';
-
-  @override
-  String get liveStop => '结束';
-
-  @override
-  String get liveEmptyRealtime => '点击开始后直接说话，角色会实时回应；想随时打断请戴耳机并在设置中开启。';
-
-  @override
-  String get liveEmptyCompanion => '点击开始后直接说话，停顿后角色会用自己的声音回答。';
-
-  @override
-  String get liveTypeHint => '也可以输入文字';
-
-  @override
   String liveSettingsTitle(String name) {
-    return '实时对话 · $name';
+    return '聊天设置 · $name';
   }
 
   @override
@@ -4118,4 +4094,111 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get navOrderReset => '恢复默认';
+
+  @override
+  String get navCharacterChat => '角色聊天';
+
+  @override
+  String get chatNew => '新聊天';
+
+  @override
+  String get chatListEmpty => '还没有聊天，选一个角色开始吧。';
+
+  @override
+  String get chatPick => '选择一段聊天，或新建一段';
+
+  @override
+  String get chatCharacter => '角色';
+
+  @override
+  String get chatEngine => '方式';
+
+  @override
+  String get chatTitleOptional => '标题（可选）';
+
+  @override
+  String get chatNoCharacters => '请先在语音库中添加角色。';
+
+  @override
+  String chatDeleteConfirm(String title) {
+    return '删除「$title」及其中的全部消息？';
+  }
+
+  @override
+  String chatComposerHint(String name) {
+    return '发消息给 $name';
+  }
+
+  @override
+  String get chatMicStart => '语音输入（麦克风）';
+
+  @override
+  String get chatMicStop => '停止聆听';
+
+  @override
+  String get chatMicUnavailable => '语音输入需要启用语音识别和 VAD 能力';
+
+  @override
+  String get chatCallStart => '开始通话';
+
+  @override
+  String get chatCallEnd => '挂断';
+
+  @override
+  String chatEmptyCompanion(String name) {
+    return '输入文字，或打开麦克风直接说话，$name会用自己的声音回答。';
+  }
+
+  @override
+  String chatEmptyRealtime(String name) {
+    return '开始通话后直接说话，$name会实时回应；也可以打字。';
+  }
+
+  @override
+  String get chatToolTime => '看了一眼时间';
+
+  @override
+  String chatToolRemember(String fact) {
+    return '记住了：$fact';
+  }
+
+  @override
+  String chatToolForget(String fact) {
+    return '忘记了：$fact';
+  }
+
+  @override
+  String chatToolOther(String name) {
+    return '使用了 $name';
+  }
+
+  @override
+  String get chatMemory => '记忆';
+
+  @override
+  String get chatMemoryEmpty => '还没记住什么。和角色聊聊你自己吧。';
+
+  @override
+  String get chatLlmModel => '对话模型';
+
+  @override
+  String get chatUseTools => '允许角色使用工具';
+
+  @override
+  String get chatUseToolsHint => '查看时间、记住你说过的事。需要模型支持函数调用。';
+
+  @override
+  String chatEmotion(String emotion) {
+    String _temp0 = intl.Intl.selectLogic(emotion, {
+      'happy': '开心',
+      'sad': '难过',
+      'angry': '生气',
+      'surprised': '惊讶',
+      'shy': '害羞',
+      'serious': '认真',
+      'playful': '俏皮',
+      'other': '平静',
+    });
+    return '$_temp0';
+  }
 }

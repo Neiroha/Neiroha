@@ -3155,33 +3155,25 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get liveModeScript => 'Script';
+  String get liveModeRealtime => 'Live call';
 
   @override
-  String get liveModeRealtime => 'Realtime';
-
-  @override
-  String get liveModeCompanion => 'Companion';
-
-  @override
-  String get liveModeScriptHint =>
-      'Write lines and generate each character voice';
+  String get liveModeCompanion => 'AI companion';
 
   @override
   String get liveModeRealtimeHint =>
-      'Full-duplex voice chat with a Realtime model';
+      'Talk in real time with a Realtime model, like a phone call';
 
   @override
   String get liveModeCompanionHint =>
-      'Speech recognition → LLM → the character own TTS voice';
+      'An LLM answers with tools; the character\'s own voice speaks';
 
   @override
   String get liveNeedsRealtime =>
       'Needs a provider with a Realtime model (e.g. OpenAI)';
 
   @override
-  String get liveNeedsCompanion =>
-      'Needs providers with speech-to-text and an LLM';
+  String get liveNeedsCompanion => 'Needs a language model (LLM) service';
 
   @override
   String get liveStateIdle => 'Idle';
@@ -3199,34 +3191,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get liveStateSpeaking => 'Speaking';
 
   @override
-  String get liveNoCharacter => 'Pick a character';
-
-  @override
   String get liveVcActive => 'Replies are converted to the character timbre';
 
   @override
   String get liveSettings => 'Character live settings';
 
   @override
-  String get liveStart => 'Start';
-
-  @override
-  String get liveStop => 'Stop';
-
-  @override
-  String get liveEmptyRealtime =>
-      'Press Start and talk. The character answers in real time; use headphones if you want to interrupt it.';
-
-  @override
-  String get liveEmptyCompanion =>
-      'Press Start and talk. When you pause, the character replies with its own voice.';
-
-  @override
-  String get liveTypeHint => 'Or type a message';
-
-  @override
   String liveSettingsTitle(String name) {
-    return 'Live dialog · $name';
+    return 'Chat settings · $name';
   }
 
   @override
@@ -4273,4 +4245,114 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navOrderReset => 'Restore default';
+
+  @override
+  String get navCharacterChat => 'Character Chat';
+
+  @override
+  String get chatNew => 'New chat';
+
+  @override
+  String get chatListEmpty => 'No chats yet. Start one with a character.';
+
+  @override
+  String get chatPick => 'Pick a chat, or start a new one';
+
+  @override
+  String get chatCharacter => 'Character';
+
+  @override
+  String get chatEngine => 'Mode';
+
+  @override
+  String get chatTitleOptional => 'Title (optional)';
+
+  @override
+  String get chatNoCharacters => 'Add a character in the Voice Bank first.';
+
+  @override
+  String chatDeleteConfirm(String title) {
+    return 'Delete \"$title\" and all of its messages?';
+  }
+
+  @override
+  String chatComposerHint(String name) {
+    return 'Message $name';
+  }
+
+  @override
+  String get chatMicStart => 'Talk (microphone)';
+
+  @override
+  String get chatMicStop => 'Stop listening';
+
+  @override
+  String get chatMicUnavailable =>
+      'Speaking needs speech recognition and VAD services';
+
+  @override
+  String get chatCallStart => 'Start call';
+
+  @override
+  String get chatCallEnd => 'Hang up';
+
+  @override
+  String chatEmptyCompanion(String name) {
+    return 'Type a message, or turn on the microphone and talk. $name answers in their own voice.';
+  }
+
+  @override
+  String chatEmptyRealtime(String name) {
+    return 'Start the call and just talk; $name answers in real time. You can type too.';
+  }
+
+  @override
+  String get chatToolTime => 'Checked the time';
+
+  @override
+  String chatToolRemember(String fact) {
+    return 'Remembered: $fact';
+  }
+
+  @override
+  String chatToolForget(String fact) {
+    return 'Forgot: $fact';
+  }
+
+  @override
+  String chatToolOther(String name) {
+    return 'Used $name';
+  }
+
+  @override
+  String get chatMemory => 'Memory';
+
+  @override
+  String get chatMemoryEmpty =>
+      'Nothing remembered yet. Tell the character something about yourself.';
+
+  @override
+  String get chatLlmModel => 'Chat model';
+
+  @override
+  String get chatUseTools => 'Let the character use tools';
+
+  @override
+  String get chatUseToolsHint =>
+      'Check the time and remember what you tell them. The model must support function calling.';
+
+  @override
+  String chatEmotion(String emotion) {
+    String _temp0 = intl.Intl.selectLogic(emotion, {
+      'happy': 'happy',
+      'sad': 'sad',
+      'angry': 'angry',
+      'surprised': 'surprised',
+      'shy': 'shy',
+      'serious': 'serious',
+      'playful': 'playful',
+      'other': 'calm',
+    });
+    return '$_temp0';
+  }
 }

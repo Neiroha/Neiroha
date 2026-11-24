@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 
+import '../character_chat_screen.dart';
 import '../dialog_tts_screen.dart';
 import '../novel_reader_screen.dart';
 import '../phase_tts_screen.dart';
@@ -21,6 +22,9 @@ Widget buildWorkspace(
   ),
   NavTab.novelReader => const NovelReaderScreen(key: ValueKey('novelReader')),
   NavTab.dialogTts => const DialogTtsScreen(key: ValueKey('dialogTts')),
+  NavTab.characterChat => const CharacterChatScreen(
+    key: ValueKey('characterChat'),
+  ),
   NavTab.videoDub => VideoDubScreen(
     key: const ValueKey('videoDub'),
     active: active,

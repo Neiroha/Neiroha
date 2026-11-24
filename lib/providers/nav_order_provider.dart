@@ -11,6 +11,7 @@ class NavOrder extends AsyncNotifier<List<NavTab>> {
   static const defaults = [
     NavTab.novelReader,
     NavTab.dialogTts,
+    NavTab.characterChat,
     NavTab.phaseTts,
     NavTab.videoDub,
     NavTab.subtitles,
@@ -19,17 +20,24 @@ class NavOrder extends AsyncNotifier<List<NavTab>> {
     NavTab.voiceBank,
   ];
 
-  /// Stored names in order; unknown names are dropped and pages added
-  /// since are appended where the defaults put them last.
+  /// Stored names in order; unknown names are dropped. A page added since
+  /// the order was saved goes right after the page it follows by default.
   static List<NavTab> parse(String? raw) {
-    final stored = [
+    final order = <NavTab>{
       for (final name in (raw ?? '').split(','))
         if (NavTab.fromName(name.trim()) case final tab?
             when defaults.contains(tab))
           tab,
-    ];
-    final order = stored.toSet().toList();
-    return [...order, ...defaults.where((t) => !order.contains(t))];
+    }.toList();
+    if (order.isEmpty) return defaults;
+    for (final (i, tab) in defaults.indexed) {
+      if (order.contains(tab)) continue;
+      final before = defaults
+          .take(i)
+          .lastWhere(order.contains, orElse: () => tab);
+      order.insert(before == tab ? 0 : order.indexOf(before) + 1, tab);
+    }
+    return order;
   }
 
   @override

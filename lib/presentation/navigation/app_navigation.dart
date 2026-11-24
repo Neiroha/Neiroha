@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/legacy.dart';
 enum NavTab {
   novelReader(Icons.menu_book_rounded, 'Novel Reader'),
   dialogTts(Icons.forum_rounded, 'Dialog TTS'),
+  characterChat(Icons.record_voice_over_rounded, 'Character Chat'),
   phaseTts(Icons.auto_stories_rounded, 'Phase TTS'),
   videoDub(Icons.movie_filter_rounded, 'Video Dub'),
   subtitles(Icons.subtitles_rounded, 'Transcribe & Translate'),
@@ -20,6 +21,7 @@ enum NavTab {
   bool get requiresDesktop => switch (this) {
     novelReader ||
     dialogTts ||
+    characterChat ||
     phaseTts ||
     videoDub ||
     subtitles ||

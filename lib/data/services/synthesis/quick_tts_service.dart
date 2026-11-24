@@ -28,6 +28,7 @@ TtsRequest quickTtsRequest(
   db.TtsProvider provider,
   String text, {
   String? responseFormat,
+  String style = '',
 }) => TtsRequest(
   text: text,
   voice: asset.presetVoiceName ?? asset.name,
@@ -36,7 +37,11 @@ TtsRequest quickTtsRequest(
   responseFormat: responseFormat,
   presetVoiceName: asset.presetVoiceName,
   textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
-  voiceInstruction: asset.voiceInstruction,
+  // A reply's delivery style adds to the character's own instruction.
+  voiceInstruction: [
+    asset.voiceInstruction?.trim() ?? '',
+    style.trim(),
+  ].where((s) => s.isNotEmpty).join('. ').nullIfEmpty,
   refAudioPath: asset.refAudioPath,
   promptText: asset.promptText,
   promptLang: asset.promptLang,
@@ -110,4 +115,8 @@ class QuickTtsService {
       rethrow;
     }
   }
+}
+
+extension on String {
+  String? get nullIfEmpty => isEmpty ? null : this;
 }

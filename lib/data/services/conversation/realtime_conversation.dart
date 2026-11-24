@@ -8,6 +8,7 @@ import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
 
+import 'character_tools.dart';
 import 'conversation_engine.dart';
 import 'reply_player.dart';
 
@@ -27,7 +28,11 @@ class RealtimeConversation implements ConversationEngine {
     this.conversion,
     this.decode,
     this.allowInterruptions = false,
+    this.tools = const [],
   }) : _player = ReplyPlayer(io, conversion: conversion, decode: decode);
+
+  /// Functions the character may call, when the session supports them.
+  final List<CharacterTool> tools;
 
   final RealtimeModel model;
   final ConversationAudioIo io;
@@ -45,6 +50,11 @@ class RealtimeConversation implements ConversationEngine {
   StreamSubscription<AiSessionEvent>? _sessionSub;
   StreamSubscription<Uint8List>? _micSub;
   bool _replying = false;
+
+  /// The reply being played, to truncate it at what was heard.
+  String? _replyItem;
+  DateTime? _replyStarted;
+  int _replyReceivedMs = 0;
   Future<void> _playback = Future.value();
   Future<void> _queue = Future.value();
 
@@ -66,6 +76,7 @@ class RealtimeConversation implements ConversationEngine {
         voice: voice,
         serverVad: true,
         transcribeInput: true,
+        tools: [for (final t in tools) t.spec],
       ),
     );
     _session = session;
@@ -100,9 +111,22 @@ class RealtimeConversation implements ConversationEngine {
         _emit(UserTurn(text));
       case TranscriptDelta(:final text):
         _emit(CharacterTurn(text));
-      case AudioDelta(:final pcm, :final sampleRate):
+      case FunctionCallRequested(:final callId, :final name, :final arguments):
+        final result = await runCharacterTool(tools, name, arguments);
+        _emit(ToolUsed(name, arguments, result));
+        if (_session case final ToolCallingRealtimeSession s) {
+          s.sendToolResult(callId, result);
+        }
+      case AudioDelta(:final pcm, :final sampleRate, :final itemId):
+        if (itemId != null && itemId != _replyItem) {
+          _replyItem = itemId;
+          _replyReceivedMs = 0;
+          _replyStarted = null;
+        }
+        _replyReceivedMs += pcm.length * 1000 ~/ (sampleRate * 2);
         if (!_replying) {
           _replying = true;
+          _replyStarted = DateTime.now();
           _state(ConversationState.speaking);
           await _player.begin(
             TtsAudioFormat(
@@ -133,6 +157,16 @@ class RealtimeConversation implements ConversationEngine {
 
   Future<void> _interrupt() async {
     _session?.cancelResponse();
+    // Tell the model where the user cut in, so it does not assume they
+    // heard the rest of the reply.
+    final item = _replyItem, started = _replyStarted;
+    if (_session case final ToolCallingRealtimeSession s?
+        when item != null && started != null) {
+      final played = DateTime.now().difference(started).inMilliseconds;
+      s.truncate(item, played.clamp(0, _replyReceivedMs));
+    }
+    _replyItem = null;
+    _replyStarted = null;
     await _player.stop();
     _replying = false;
   }

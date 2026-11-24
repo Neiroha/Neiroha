@@ -15,6 +15,9 @@ class CharacterLiveSettings {
     this.vcModelId,
     this.vcVoice,
     this.allowInterruptions = false,
+    this.llmConnectionId,
+    this.llmModelId,
+    this.useTools = true,
   });
 
   final String persona;
@@ -28,6 +31,13 @@ class CharacterLiveSettings {
   final String? vcVoice;
   final bool allowInterruptions;
 
+  /// Language model for the AI companion; null uses the router default.
+  final String? llmConnectionId;
+  final String? llmModelId;
+
+  /// Lets the character use its tools (time, chat memory).
+  final bool useTools;
+
   bool get usesVoiceConversion =>
       vcConnectionId != null && (vcVoice?.trim().isNotEmpty ?? false);
 
@@ -40,6 +50,9 @@ class CharacterLiveSettings {
     'vcModelId': vcModelId,
     'vcVoice': vcVoice,
     'allowInterruptions': allowInterruptions,
+    'llmConnectionId': llmConnectionId,
+    'llmModelId': llmModelId,
+    'useTools': useTools,
   };
 
   factory CharacterLiveSettings.fromJson(Map<String, dynamic> json) =>
@@ -52,6 +65,9 @@ class CharacterLiveSettings {
         vcModelId: json['vcModelId'] as String?,
         vcVoice: json['vcVoice'] as String?,
         allowInterruptions: json['allowInterruptions'] as bool? ?? false,
+        llmConnectionId: json['llmConnectionId'] as String?,
+        llmModelId: json['llmModelId'] as String?,
+        useTools: json['useTools'] as bool? ?? true,
       );
 
   static Future<CharacterLiveSettings> load(

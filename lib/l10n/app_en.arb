@@ -1380,28 +1380,20 @@
       }
     }
   },
-  "liveModeScript": "Script",
-  "liveModeRealtime": "Realtime",
-  "liveModeCompanion": "Companion",
-  "liveModeScriptHint": "Write lines and generate each character voice",
-  "liveModeRealtimeHint": "Full-duplex voice chat with a Realtime model",
-  "liveModeCompanionHint": "Speech recognition → LLM → the character own TTS voice",
+  "liveModeRealtime": "Live call",
+  "liveModeCompanion": "AI companion",
+  "liveModeRealtimeHint": "Talk in real time with a Realtime model, like a phone call",
+  "liveModeCompanionHint": "An LLM answers with tools; the character''s own voice speaks",
   "liveNeedsRealtime": "Needs a provider with a Realtime model (e.g. OpenAI)",
-  "liveNeedsCompanion": "Needs providers with speech-to-text and an LLM",
+  "liveNeedsCompanion": "Needs a language model (LLM) service",
   "liveStateIdle": "Idle",
   "liveStateConnecting": "Connecting",
   "liveStateListening": "Listening",
   "liveStateThinking": "Thinking",
   "liveStateSpeaking": "Speaking",
-  "liveNoCharacter": "Pick a character",
   "liveVcActive": "Replies are converted to the character timbre",
   "liveSettings": "Character live settings",
-  "liveStart": "Start",
-  "liveStop": "Stop",
-  "liveEmptyRealtime": "Press Start and talk. The character answers in real time; use headphones if you want to interrupt it.",
-  "liveEmptyCompanion": "Press Start and talk. When you pause, the character replies with its own voice.",
-  "liveTypeHint": "Or type a message",
-  "liveSettingsTitle": "Live dialog · {name}",
+  "liveSettingsTitle": "Chat settings · {name}",
   "@liveSettingsTitle": {
     "placeholders": {
       "name": {
@@ -1635,20 +1627,49 @@
   "chainNeedsSetup": "Needs setup",
   "chainNoStreaming": "Voice conversion runs sentence by sentence: playback starts once the first sentence is converted. On the web, converters that only return files convert the whole line first.",
   "retireBadge": "Retires {date}",
-  "@retireBadge": {"placeholders": {"date": {}}},
+  "@retireBadge": {
+    "placeholders": {
+      "date": {}
+    }
+  },
   "retireHint": "{model} stops working on {date}. Switch to {replacement}.",
-  "@retireHint": {"placeholders": {"model": {}, "date": {}, "replacement": {}}},
+  "@retireHint": {
+    "placeholders": {
+      "model": {},
+      "date": {},
+      "replacement": {}
+    }
+  },
   "retireHintNoReplacement": "{model} stops working on {date}. Pick a model from another provider.",
-  "@retireHintNoReplacement": {"placeholders": {"model": {}, "date": {}}},
+  "@retireHintNoReplacement": {
+    "placeholders": {
+      "model": {},
+      "date": {}
+    }
+  },
   "retireBanner": "{count} characters use models that stop working on {date} ({days} days left).",
-  "@retireBanner": {"placeholders": {"count": {}, "date": {}, "days": {}}},
+  "@retireBanner": {
+    "placeholders": {
+      "count": {},
+      "date": {},
+      "days": {}
+    }
+  },
   "retireMigrate": "Migrate",
   "retireMigrateTitle": "Move characters to replacement models?",
   "retireMigrateManual": "No replacement runs here; change these in the character inspector:",
   "retireMigrated": "Moved {count} characters.",
-  "@retireMigrated": {"placeholders": {"count": {}}},
+  "@retireMigrated": {
+    "placeholders": {
+      "count": {}
+    }
+  },
   "retireSwitchTo": "Switch to {model}",
-  "@retireSwitchTo": {"placeholders": {"model": {}}},
+  "@retireSwitchTo": {
+    "placeholders": {
+      "model": {}
+    }
+  },
   "retireLater": "Later",
   "chainTrim": "Trim silence",
   "chainVerify": "ASR check",
@@ -1656,11 +1677,24 @@
   "chainVerifyHint": "Transcribes what was spoken, compares it with the line and lists skipped words. Playback is not delayed.",
   "chainVerifyLanguage": "Recognition language (optional)",
   "chainCheckMissing": "Heard {score}% · missing: {missing}",
-  "@chainCheckMissing": {"placeholders": {"score": {}, "missing": {}}},
+  "@chainCheckMissing": {
+    "placeholders": {
+      "score": {},
+      "missing": {}
+    }
+  },
   "chainCheckClean": "Heard {score}% · nothing missing",
-  "@chainCheckClean": {"placeholders": {"score": {}}},
+  "@chainCheckClean": {
+    "placeholders": {
+      "score": {}
+    }
+  },
   "chainCheckFailed": "ASR check failed: {error}",
-  "@chainCheckFailed": {"placeholders": {"error": {}}},
+  "@chainCheckFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "chainCheckNone": "No ASR check yet; preview the character to run one.",
   "settingsAiCapabilities": "AI capabilities",
   "settingsAiCapabilitiesDescription": "Default models, per-capability limits and added models",
@@ -1678,7 +1712,12 @@
   "capNoConnections": "No enabled connection offers this capability.",
   "capLimits": "Limits",
   "capLimitsTitle": "{capability} limits · {connection}",
-  "@capLimitsTitle": {"placeholders": {"capability": {}, "connection": {}}},
+  "@capLimitsTitle": {
+    "placeholders": {
+      "capability": {},
+      "connection": {}
+    }
+  },
   "capLimitsHint": "Leave a field empty to inherit the connection limit. Each capability queues on its own, so language-model calls do not take speech slots.",
   "capInherited": "Inherited",
   "capConcurrency": "Concurrent requests",
@@ -1690,7 +1729,11 @@
   "capModelId": "Model id",
   "capDisplayName": "Display name (optional)",
   "capModelRejected": "This connection cannot open model {model}.",
-  "@capModelRejected": {"placeholders": {"model": {}}},
+  "@capModelRejected": {
+    "placeholders": {
+      "model": {}
+    }
+  },
   "capOff": "Off",
   "capAll": "All",
   "inspectorTabBasic": "Basics",
@@ -1698,9 +1741,17 @@
   "provTabOverview": "Overview",
   "provCapabilities": "Capabilities",
   "provCapUse": "Use {capability} on this connection",
-  "@provCapUse": {"placeholders": {"capability": {}}},
+  "@provCapUse": {
+    "placeholders": {
+      "capability": {}
+    }
+  },
   "provCapOffHint": "{capability} is off here; features will not route to this connection.",
-  "@provCapOffHint": {"placeholders": {"capability": {}}},
+  "@provCapOffHint": {
+    "placeholders": {
+      "capability": {}
+    }
+  },
   "provConnectionOff": "This connection is turned off. Switch it on in the list before features use its models.",
   "provSetDefault": "Set as default",
   "provIsDefault": "Default",
@@ -1715,7 +1766,11 @@
   "provHealthUnknown": "Unknown",
   "provHealthNotChecked": "Not checked yet",
   "provHealthSome": "Some capabilities failed: {list}",
-  "@provHealthSome": {"placeholders": {"list": {}}},
+  "@provHealthSome": {
+    "placeholders": {
+      "list": {}
+    }
+  },
   "provLimitsConnection": "Connection limits",
   "provLimitsPerCapability": "Per capability",
   "provAddPick": "Choose a provider",
@@ -1749,7 +1804,11 @@
   "sidebarCollapse": "Collapse sidebar",
   "musicSearch": "Search songs",
   "musicCount": "{count} songs",
-  "@musicCount": {"placeholders": {"count": {}}},
+  "@musicCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
   "musicNoMatch": "No song matches.",
   "musicStyle": "Style",
   "musicGenre": "Genre",
@@ -1759,7 +1818,12 @@
   "musicTempo": "Tempo",
   "musicStyleHint": "Tap a tag to add it to the style; tap again to remove it.",
   "musicLyricsStats": "{lines} lines · {chars} characters",
-  "@musicLyricsStats": {"placeholders": {"lines": {}, "chars": {}}},
+  "@musicLyricsStats": {
+    "placeholders": {
+      "lines": {},
+      "chars": {}
+    }
+  },
   "musicOptions": "Options",
   "musicNowPlaying": "Now playing",
   "musicPlay": "Play",
@@ -1795,11 +1859,23 @@
   "musicTempoMid": "Mid-tempo",
   "musicTempoFast": "Fast",
   "chainCheckExtra": "Extra: {extra}",
-  "@chainCheckExtra": {"placeholders": {"extra": {}}},
+  "@chainCheckExtra": {
+    "placeholders": {
+      "extra": {}
+    }
+  },
   "capModelUnavailable": "{model} (unavailable)",
-  "@capModelUnavailable": {"placeholders": {"model": {}}},
+  "@capModelUnavailable": {
+    "placeholders": {
+      "model": {}
+    }
+  },
   "capFollowDefault": "Follow default ({model})",
-  "@capFollowDefault": {"placeholders": {"model": {}}},
+  "@capFollowDefault": {
+    "placeholders": {
+      "model": {}
+    }
+  },
   "capFollowDefaultNone": "Follow default",
   "subtitleModels": "Models",
   "subtitleTranslateModel": "Translation model",
@@ -1812,44 +1888,178 @@
   "provHubFeatureModelsHint": "These features do not follow the defaults below",
   "provHubResetFeatureModel": "Follow the default again",
   "provModelCount": "{count, plural, =1{1 model} other{{count} models}}",
-  "@provModelCount": {"placeholders": {"count": {"type": "int"}}},
+  "@provModelCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "provConnection": "Connection",
   "settingsAiServicesHint": "Providers, default models and role AI",
   "capAutomaticInOrder": "Automatic: in the order below ({model})",
-  "@capAutomaticInOrder": {"placeholders": {"model": {}}},
+  "@capAutomaticInOrder": {
+    "placeholders": {
+      "model": {}
+    }
+  },
   "capAutoOrderHint": "With no default set, the first available connection below and its preferred model are used. Drag the handles to reorder; switched-off connections are skipped.",
   "capPreferred": "Preferred",
   "capPreferredModel": "Preferred: {model}",
-  "@capPreferredModel": {"placeholders": {"model": {}}},
+  "@capPreferredModel": {
+    "placeholders": {
+      "model": {}
+    }
+  },
   "capModelAdded": "Added",
   "capModelOrder": "Model order",
   "capUseCustomModel": "Use “{model}” on {connection}",
-  "@capUseCustomModel": {"placeholders": {"model": {}, "connection": {}}},
+  "@capUseCustomModel": {
+    "placeholders": {
+      "model": {},
+      "connection": {}
+    }
+  },
   "provHubConnectionsShort": "{count, plural, =1{1 connection} other{{count} connections}} · {enabled} on",
-  "@provHubConnectionsShort": {"placeholders": {"count": {"type": "int"}, "enabled": {"type": "int"}}},
+  "@provHubConnectionsShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "enabled": {
+        "type": "int"
+      }
+    }
+  },
   "provProvidersHint": "Tap to open its settings; drag the handle to reorder",
   "roleAnalysisModelPick": "Analysis model",
   "roleModelFollowDefault": "Follow the default LLM ({model})",
-  "@roleModelFollowDefault": {"placeholders": {"model": {}}},
+  "@roleModelFollowDefault": {
+    "placeholders": {
+      "model": {}
+    }
+  },
   "roleModelHint": "Role assignment checks and corrects itself through function calling. Type to search; a picked model is tested at once.",
   "roleToolChecking": "Testing function calling…",
   "roleToolSupported": "Supports function calling",
   "roleToolUnsupported": "No function calling: role assignment cannot correct itself, pick another model",
   "roleToolUnknown": "Function calling not tested yet",
   "roleToolFailed": "Function calling test failed: {error}",
-  "@roleToolFailed": {"placeholders": {"error": {}}},
+  "@roleToolFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "roleToolTest": "Test",
   "provAvailableModels": "Models you can add · {count}",
-  "@provAvailableModels": {"placeholders": {"count": {"type": "int"}}},
+  "@provAvailableModels": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "provAvailableModelsHint": "Listed by the model catalog or your account. Added models appear in the defaults, the model order and every model picker; starring one as the default adds it too.",
   "quickTtsSendHint": "Enter to generate, Shift+Enter for a new line",
   "voiceRequired": "Choose a voice",
   "voiceNotForModel": "{model} does not offer the voice {voice}; choose another",
-  "@voiceNotForModel": {"placeholders": {"voice": {"type": "String"}, "model": {"type": "String"}}},
+  "@voiceNotForModel": {
+    "placeholders": {
+      "voice": {
+        "type": "String"
+      },
+      "model": {
+        "type": "String"
+      }
+    }
+  },
   "bankSwitch": "Switch voice bank",
   "bankActions": "Voice bank actions",
   "paneCharacterSettings": "Character settings",
   "navOrderTitle": "Sidebar order",
   "navOrderSubtitle": "Drag to reorder the pages in the sidebar; AI services and Settings stay at the bottom.",
-  "navOrderReset": "Restore default"
+  "navOrderReset": "Restore default",
+  "navCharacterChat": "Character Chat",
+  "chatNew": "New chat",
+  "chatListEmpty": "No chats yet. Start one with a character.",
+  "chatPick": "Pick a chat, or start a new one",
+  "chatCharacter": "Character",
+  "chatEngine": "Mode",
+  "chatTitleOptional": "Title (optional)",
+  "chatNoCharacters": "Add a character in the Voice Bank first.",
+  "chatDeleteConfirm": "Delete \"{title}\" and all of its messages?",
+  "@chatDeleteConfirm": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "chatComposerHint": "Message {name}",
+  "@chatComposerHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatMicStart": "Talk (microphone)",
+  "chatMicStop": "Stop listening",
+  "chatMicUnavailable": "Speaking needs speech recognition and VAD services",
+  "chatCallStart": "Start call",
+  "chatCallEnd": "Hang up",
+  "chatEmptyCompanion": "Type a message, or turn on the microphone and talk. {name} answers in their own voice.",
+  "@chatEmptyCompanion": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatEmptyRealtime": "Start the call and just talk; {name} answers in real time. You can type too.",
+  "@chatEmptyRealtime": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatToolTime": "Checked the time",
+  "chatToolRemember": "Remembered: {fact}",
+  "@chatToolRemember": {
+    "placeholders": {
+      "fact": {
+        "type": "String"
+      }
+    }
+  },
+  "chatToolForget": "Forgot: {fact}",
+  "@chatToolForget": {
+    "placeholders": {
+      "fact": {
+        "type": "String"
+      }
+    }
+  },
+  "chatToolOther": "Used {name}",
+  "@chatToolOther": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatMemory": "Memory",
+  "chatMemoryEmpty": "Nothing remembered yet. Tell the character something about yourself.",
+  "chatLlmModel": "Chat model",
+  "chatUseTools": "Let the character use tools",
+  "chatUseToolsHint": "Check the time and remember what you tell them. The model must support function calling.",
+  "chatEmotion": "{emotion, select, happy{happy} sad{sad} angry{angry} surprised{surprised} shy{shy} serious{serious} playful{playful} other{calm}}",
+  "@chatEmotion": {
+    "placeholders": {
+      "emotion": {
+        "type": "String"
+      }
+    }
+  }
 }

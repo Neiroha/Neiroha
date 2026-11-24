@@ -5690,40 +5690,28 @@ abstract class AppLocalizations {
   /// **'Transcription failed: {error}'**
   String transcribeFailed(String error);
 
-  /// No description provided for @liveModeScript.
-  ///
-  /// In en, this message translates to:
-  /// **'Script'**
-  String get liveModeScript;
-
   /// No description provided for @liveModeRealtime.
   ///
   /// In en, this message translates to:
-  /// **'Realtime'**
+  /// **'Live call'**
   String get liveModeRealtime;
 
   /// No description provided for @liveModeCompanion.
   ///
   /// In en, this message translates to:
-  /// **'Companion'**
+  /// **'AI companion'**
   String get liveModeCompanion;
-
-  /// No description provided for @liveModeScriptHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Write lines and generate each character voice'**
-  String get liveModeScriptHint;
 
   /// No description provided for @liveModeRealtimeHint.
   ///
   /// In en, this message translates to:
-  /// **'Full-duplex voice chat with a Realtime model'**
+  /// **'Talk in real time with a Realtime model, like a phone call'**
   String get liveModeRealtimeHint;
 
   /// No description provided for @liveModeCompanionHint.
   ///
   /// In en, this message translates to:
-  /// **'Speech recognition → LLM → the character own TTS voice'**
+  /// **'An LLM answers with tools; the character\'\'s own voice speaks'**
   String get liveModeCompanionHint;
 
   /// No description provided for @liveNeedsRealtime.
@@ -5735,7 +5723,7 @@ abstract class AppLocalizations {
   /// No description provided for @liveNeedsCompanion.
   ///
   /// In en, this message translates to:
-  /// **'Needs providers with speech-to-text and an LLM'**
+  /// **'Needs a language model (LLM) service'**
   String get liveNeedsCompanion;
 
   /// No description provided for @liveStateIdle.
@@ -5768,12 +5756,6 @@ abstract class AppLocalizations {
   /// **'Speaking'**
   String get liveStateSpeaking;
 
-  /// No description provided for @liveNoCharacter.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick a character'**
-  String get liveNoCharacter;
-
   /// No description provided for @liveVcActive.
   ///
   /// In en, this message translates to:
@@ -5786,40 +5768,10 @@ abstract class AppLocalizations {
   /// **'Character live settings'**
   String get liveSettings;
 
-  /// No description provided for @liveStart.
-  ///
-  /// In en, this message translates to:
-  /// **'Start'**
-  String get liveStart;
-
-  /// No description provided for @liveStop.
-  ///
-  /// In en, this message translates to:
-  /// **'Stop'**
-  String get liveStop;
-
-  /// No description provided for @liveEmptyRealtime.
-  ///
-  /// In en, this message translates to:
-  /// **'Press Start and talk. The character answers in real time; use headphones if you want to interrupt it.'**
-  String get liveEmptyRealtime;
-
-  /// No description provided for @liveEmptyCompanion.
-  ///
-  /// In en, this message translates to:
-  /// **'Press Start and talk. When you pause, the character replies with its own voice.'**
-  String get liveEmptyCompanion;
-
-  /// No description provided for @liveTypeHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Or type a message'**
-  String get liveTypeHint;
-
   /// No description provided for @liveSettingsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Live dialog · {name}'**
+  /// **'Chat settings · {name}'**
   String liveSettingsTitle(String name);
 
   /// No description provided for @livePersona.
@@ -7645,6 +7597,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Restore default'**
   String get navOrderReset;
+
+  /// No description provided for @navCharacterChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Character Chat'**
+  String get navCharacterChat;
+
+  /// No description provided for @chatNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get chatNew;
+
+  /// No description provided for @chatListEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No chats yet. Start one with a character.'**
+  String get chatListEmpty;
+
+  /// No description provided for @chatPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a chat, or start a new one'**
+  String get chatPick;
+
+  /// No description provided for @chatCharacter.
+  ///
+  /// In en, this message translates to:
+  /// **'Character'**
+  String get chatCharacter;
+
+  /// No description provided for @chatEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode'**
+  String get chatEngine;
+
+  /// No description provided for @chatTitleOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Title (optional)'**
+  String get chatTitleOptional;
+
+  /// No description provided for @chatNoCharacters.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a character in the Voice Bank first.'**
+  String get chatNoCharacters;
+
+  /// No description provided for @chatDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{title}\" and all of its messages?'**
+  String chatDeleteConfirm(String title);
+
+  /// No description provided for @chatComposerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Message {name}'**
+  String chatComposerHint(String name);
+
+  /// No description provided for @chatMicStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Talk (microphone)'**
+  String get chatMicStart;
+
+  /// No description provided for @chatMicStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop listening'**
+  String get chatMicStop;
+
+  /// No description provided for @chatMicUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking needs speech recognition and VAD services'**
+  String get chatMicUnavailable;
+
+  /// No description provided for @chatCallStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start call'**
+  String get chatCallStart;
+
+  /// No description provided for @chatCallEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Hang up'**
+  String get chatCallEnd;
+
+  /// No description provided for @chatEmptyCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a message, or turn on the microphone and talk. {name} answers in their own voice.'**
+  String chatEmptyCompanion(String name);
+
+  /// No description provided for @chatEmptyRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Start the call and just talk; {name} answers in real time. You can type too.'**
+  String chatEmptyRealtime(String name);
+
+  /// No description provided for @chatToolTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked the time'**
+  String get chatToolTime;
+
+  /// No description provided for @chatToolRemember.
+  ///
+  /// In en, this message translates to:
+  /// **'Remembered: {fact}'**
+  String chatToolRemember(String fact);
+
+  /// No description provided for @chatToolForget.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot: {fact}'**
+  String chatToolForget(String fact);
+
+  /// No description provided for @chatToolOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Used {name}'**
+  String chatToolOther(String name);
+
+  /// No description provided for @chatMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get chatMemory;
+
+  /// No description provided for @chatMemoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing remembered yet. Tell the character something about yourself.'**
+  String get chatMemoryEmpty;
+
+  /// No description provided for @chatLlmModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat model'**
+  String get chatLlmModel;
+
+  /// No description provided for @chatUseTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Let the character use tools'**
+  String get chatUseTools;
+
+  /// No description provided for @chatUseToolsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the time and remember what you tell them. The model must support function calling.'**
+  String get chatUseToolsHint;
+
+  /// No description provided for @chatEmotion.
+  ///
+  /// In en, this message translates to:
+  /// **'{emotion, select, happy{happy} sad{sad} angry{angry} surprised{surprised} shy{shy} serious{serious} playful{playful} other{calm}}'**
+  String chatEmotion(String emotion);
 }
 
 class _AppLocalizationsDelegate

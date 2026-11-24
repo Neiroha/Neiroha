@@ -6,6 +6,7 @@ extension NavTabLocalization on NavTab {
     return switch (this) {
       NavTab.novelReader => l10n.navNovelReader,
       NavTab.dialogTts => l10n.navDialogTts,
+      NavTab.characterChat => l10n.navCharacterChat,
       NavTab.phaseTts => l10n.navPhaseTts,
       NavTab.videoDub => l10n.navVideoDub,
       NavTab.subtitles => l10n.navSubtitles,

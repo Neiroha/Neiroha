@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:neiroha/data/ai/core/provider_connection.dart';
 import 'package:neiroha/data/ai/registry/capability_router.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/conversation/character_live_settings.dart';
@@ -7,34 +8,36 @@ import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/presentation/widgets/ai/vc_voice_field.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 
-Future<CharacterLiveSettings?> showLiveSettingsDialog({
+/// The character's chat settings: persona, the model that answers (an LLM
+/// for the companion, a Realtime model and voice for a call), tools and VC.
+Future<CharacterLiveSettings?> showChatSettingsDialog({
   required BuildContext context,
   required db.VoiceAsset character,
   required CharacterLiveSettings settings,
   required CapabilityRouter router,
-  required DialogMode mode,
+  required ChatEngine engine,
 }) => showDialog<CharacterLiveSettings>(
   context: context,
-  builder: (_) => _LiveSettingsDialog(character, settings, router, mode),
+  builder: (_) => _ChatSettingsDialog(character, settings, router, engine),
 );
 
-class _LiveSettingsDialog extends StatefulWidget {
-  const _LiveSettingsDialog(
+class _ChatSettingsDialog extends StatefulWidget {
+  const _ChatSettingsDialog(
     this.character,
     this.settings,
     this.router,
-    this.mode,
+    this.engine,
   );
   final db.VoiceAsset character;
   final CharacterLiveSettings settings;
   final CapabilityRouter router;
-  final DialogMode mode;
+  final ChatEngine engine;
 
   @override
-  State<_LiveSettingsDialog> createState() => _LiveSettingsDialogState();
+  State<_ChatSettingsDialog> createState() => _ChatSettingsDialogState();
 }
 
-class _LiveSettingsDialogState extends State<_LiveSettingsDialog> {
+class _ChatSettingsDialogState extends State<_ChatSettingsDialog> {
   late final _persona = TextEditingController(text: widget.settings.persona);
   late final _vcVoice = TextEditingController(
     text: widget.settings.vcVoice ?? '',
@@ -49,6 +52,44 @@ class _LiveSettingsDialogState extends State<_LiveSettingsDialog> {
         );
   late String? _vcConnection = widget.settings.vcConnectionId;
   late bool _interrupt = widget.settings.allowInterruptions;
+  late bool _tools = widget.settings.useTools;
+  late (String, String)? _llm = widget.settings.llmConnectionId == null
+      ? null
+      : (widget.settings.llmConnectionId!, widget.settings.llmModelId ?? '');
+
+  String _connectionName(ProviderConnection c) =>
+      c.config.name.isEmpty ? c.plugin.displayName : c.config.name;
+
+  List<(ProviderConnection, ModelDescriptor)> _models(AiCapability cap) => [
+    for (final c in widget.router.serving(cap))
+      for (final m in widget.router.modelsOf(c, cap)) (c, m),
+  ];
+
+  Widget _modelField(
+    String label,
+    List<(ProviderConnection, ModelDescriptor)> models,
+    (String, String)? value,
+    ValueChanged<(String, String)?> onChanged,
+  ) => DropdownButtonFormField<(String, String)?>(
+    initialValue: value,
+    isExpanded: true,
+    decoration: InputDecoration(labelText: label),
+    items: [
+      DropdownMenuItem(
+        value: null,
+        child: Text(AppLocalizations.of(context).liveDefault),
+      ),
+      for (final (c, m) in models)
+        DropdownMenuItem(
+          value: (c.id, m.id),
+          child: Text(
+            '${_connectionName(c)} · ${m.id}',
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+    ],
+    onChanged: onChanged,
+  );
 
   @override
   void dispose() {
@@ -61,12 +102,10 @@ class _LiveSettingsDialogState extends State<_LiveSettingsDialog> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final vcConnections = widget.router.serving(AiCapability.vc);
-    final realtime = widget.mode == DialogMode.realtime;
-    final models = [
-      for (final c in widget.router.serving(AiCapability.realtime))
-        for (final m in widget.router.modelsOf(c, AiCapability.realtime))
-          (c, m),
-    ];
+    final realtime = widget.engine == ChatEngine.realtime;
+    final models = _models(AiCapability.realtime);
+    final llms = _models(AiCapability.llm);
+    final llm = llms.any((e) => (e.$1.id, e.$2.id) == _llm) ? _llm : null;
     final picked = models.any((e) => (e.$1.id, e.$2.id) == _realtime)
         ? _realtime
         : null;
@@ -103,25 +142,20 @@ class _LiveSettingsDialogState extends State<_LiveSettingsDialog> {
                   helperMaxLines: 2,
                 ),
               ),
+              const SizedBox(height: 12),
+              if (!realtime)
+                _modelField(
+                  l.chatLlmModel,
+                  llms,
+                  llm,
+                  (v) => setState(() => _llm = v),
+                ),
               if (realtime) ...[
-                const SizedBox(height: 12),
-                DropdownButtonFormField<(String, String)?>(
-                  initialValue: picked,
-                  isExpanded: true,
-                  decoration: InputDecoration(labelText: l.liveRealtimeModel),
-                  items: [
-                    DropdownMenuItem(value: null, child: Text(l.liveDefault)),
-                    for (final (c, m) in models)
-                      DropdownMenuItem(
-                        value: (c.id, m.id),
-                        child: Text(
-                          '${c.config.name.isEmpty ? c.plugin.displayName : c.config.name}'
-                          ' · ${m.id}',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                  ],
-                  onChanged: (v) => setState(() => _realtime = v),
+                _modelField(
+                  l.liveRealtimeModel,
+                  models,
+                  picked,
+                  (v) => setState(() => _realtime = v),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String?>(
@@ -144,6 +178,13 @@ class _LiveSettingsDialogState extends State<_LiveSettingsDialog> {
                   onChanged: (v) => setState(() => _interrupt = v),
                 ),
               ],
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _tools,
+                title: Text(l.chatUseTools),
+                subtitle: Text(l.chatUseToolsHint),
+                onChanged: (v) => setState(() => _tools = v),
+              ),
               const SizedBox(height: 16),
               Text(
                 l.liveVcTitle,
@@ -200,12 +241,21 @@ class _LiveSettingsDialogState extends State<_LiveSettingsDialog> {
             context,
             CharacterLiveSettings(
               persona: _persona.text.trim(),
-              realtimeVoice: voice,
-              realtimeConnectionId: picked?.$1,
-              realtimeModelId: picked?.$2,
+              realtimeVoice: realtime ? voice : widget.settings.realtimeVoice,
+              realtimeConnectionId: realtime
+                  ? picked?.$1
+                  : widget.settings.realtimeConnectionId,
+              realtimeModelId: realtime
+                  ? picked?.$2
+                  : widget.settings.realtimeModelId,
               vcConnectionId: vcValue,
               vcVoice: vcValue == null ? null : _vcVoice.text.trim(),
               allowInterruptions: _interrupt,
+              llmConnectionId: realtime
+                  ? widget.settings.llmConnectionId
+                  : llm?.$1,
+              llmModelId: realtime ? widget.settings.llmModelId : llm?.$2,
+              useTools: _tools,
             ),
           ),
           child: Text(l.uiSave),

@@ -59,54 +59,47 @@ class _DialogTtsEditorState extends ConsumerState<_DialogTtsEditor> {
             initialLeftFraction: 0.68,
             compactRightIcon: Icons.tune_rounded,
             compactRightLabel: AppLocalizations.of(context).navSettings,
-            left: DialogModeView(
-              bankAssets: bankAssets,
-              voiceId: _inputVoiceId,
-              script: LayoutBuilder(
-                builder: (ctx, leftConstraints) {
-                  final inputMaxHeight = leftConstraints.maxHeight * 0.3;
-                  return Column(
-                    children: [
-                      Expanded(
-                        child: ChatListView(
-                          linesAsync: linesAsync,
-                          assetMap: assetMap,
-                          generatingLineIds: _generatingLineIds,
-                          onPlay: _playLine,
-                          onPlayFrom: (startIndex) => _playFrom(
-                            linesAsync.value ?? const [],
-                            startIndex,
-                            assetMap,
-                          ),
-                          onGenerate: bankAssets.isEmpty
-                              ? null
-                              : (line) =>
-                                    _generateOne(project, line, bankAssets),
-                          onDelete: (id) => ref
-                              .read(databaseProvider)
-                              .deleteDialogTtsLine(id),
-                          onReorder: (oldIndex, newIndex) => ref
-                              .read(databaseProvider)
-                              .reorderDialogLine(
-                                widget.projectId,
-                                oldIndex,
-                                newIndex,
-                              ),
+            left: LayoutBuilder(
+              builder: (ctx, leftConstraints) {
+                final inputMaxHeight = leftConstraints.maxHeight * 0.3;
+                return Column(
+                  children: [
+                    Expanded(
+                      child: ChatListView(
+                        linesAsync: linesAsync,
+                        assetMap: assetMap,
+                        generatingLineIds: _generatingLineIds,
+                        onPlay: _playLine,
+                        onPlayFrom: (startIndex) => _playFrom(
+                          linesAsync.value ?? const [],
+                          startIndex,
+                          assetMap,
                         ),
+                        onGenerate: bankAssets.isEmpty
+                            ? null
+                            : (line) => _generateOne(project, line, bankAssets),
+                        onDelete: (id) =>
+                            ref.read(databaseProvider).deleteDialogTtsLine(id),
+                        onReorder: (oldIndex, newIndex) => ref
+                            .read(databaseProvider)
+                            .reorderDialogLine(
+                              widget.projectId,
+                              oldIndex,
+                              newIndex,
+                            ),
                       ),
-                      const PersistentAudioBar(),
-                      InputBar(
-                        bankAssets: bankAssets,
-                        voiceId: _inputVoiceId,
-                        onVoiceChanged: (v) =>
-                            setState(() => _inputVoiceId = v),
-                        onSend: (text) => _addLine(project, bankAssets, text),
-                        maxHeight: inputMaxHeight,
-                      ),
-                    ],
-                  );
-                },
-              ),
+                    ),
+                    const PersistentAudioBar(),
+                    InputBar(
+                      bankAssets: bankAssets,
+                      voiceId: _inputVoiceId,
+                      onVoiceChanged: (v) => setState(() => _inputVoiceId = v),
+                      onSend: (text) => _addLine(project, bankAssets, text),
+                      maxHeight: inputMaxHeight,
+                    ),
+                  ],
+                );
+              },
             ),
             rightBuilder: (_) => SettingsPanel(
               linesAsync: linesAsync,

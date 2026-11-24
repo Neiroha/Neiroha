@@ -21,6 +21,10 @@ db.TtsProvider _openAi() => db.TtsProvider(
   maxConcurrency: 1,
 );
 
+/// Text inside the picker's field (the menu keeps its own copies).
+Finder field(String text) =>
+    find.descendant(of: find.byType(TextField), matching: find.text(text));
+
 void main() {
   final router = CapabilityRouter.fromProviders([_openAi()]);
 
@@ -52,8 +56,8 @@ void main() {
   ) async {
     final picked = <(String, String)?>[];
     await pump(tester, null, picked.add);
-    expect(find.text('跟随默认'), findsOneWidget);
-    await tester.tap(find.text('跟随默认'));
+    expect(field('跟随默认'), findsOneWidget);
+    await tester.tap(find.byType(TextField));
     await tester.pumpAndSettle();
     final stt = router.modelsOf(router.connections.first, AiCapability.stt);
     expect(stt, isNotEmpty);
@@ -64,6 +68,21 @@ void main() {
 
   testWidgets('a choice no longer served shows as unavailable', (tester) async {
     await pump(tester, ('gone', 'old-asr'), (_) {});
-    expect(find.text('old-asr（当前不可用）'), findsOneWidget);
+    expect(field('old-asr（当前不可用）'), findsOneWidget);
+  });
+
+  testWidgets('typing filters the list', (tester) async {
+    await pump(tester, null, (_) {});
+    await tester.tap(find.byType(TextField));
+    await tester.pumpAndSettle();
+    final stt = router.modelsOf(router.connections.first, AiCapability.stt);
+    await tester.enterText(find.byType(TextField), stt.last.label);
+    await tester.pumpAndSettle();
+    // The menu measures every entry offstage; only shown ones are hittable.
+    expect(
+      find.text('OpenAI · ${stt.first.label}').hitTestable(),
+      findsNothing,
+    );
+    expect(find.text('OpenAI · ${stt.last.label}').hitTestable(), findsWidgets);
   });
 }

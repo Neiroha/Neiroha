@@ -107,8 +107,13 @@ void main() {
     // Each step offers its models, following the defaults until one is
     // picked for this page.
     expect(find.text('使用的模型'), findsOneWidget);
-    expect(find.textContaining('跟随默认（OpenAI ·'), findsNWidgets(2));
-    expect(find.textContaining('跟随默认（On-device ·'), findsOneWidget);
+    // Each picker's field shows its current choice.
+    Finder field(String text) => find.descendant(
+      of: find.byType(TextField),
+      matching: find.textContaining(text),
+    );
+    expect(field('跟随默认（OpenAI ·'), findsNWidgets(2));
+    expect(field('跟随默认（On-device ·'), findsOneWidget);
     final run = tester.widget<FilledButton>(
       find.ancestor(of: find.text('开始转写'), matching: find.byType(FilledButton)),
     );

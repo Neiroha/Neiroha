@@ -49,7 +49,16 @@ void main() {
     store = SpeechJobStore(dir, run: runs.call, keep: 3);
     await store.open();
   });
-  tearDown(() => dir.delete(recursive: true));
+  // Windows scanners can hold a just-written file for a moment.
+  tearDown(() async {
+    for (var i = 0; i < 10; i++) {
+      try {
+        return await dir.delete(recursive: true);
+      } on FileSystemException {
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      }
+    }
+  });
 
   const body = {'input': '你好', 'voice': 'kiki'};
 

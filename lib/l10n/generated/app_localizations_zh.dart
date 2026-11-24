@@ -4080,4 +4080,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get roleToolTest => '测试';
+
+  @override
+  String provAvailableModels(int count) {
+    return '可添加的模型 · $count';
+  }
+
+  @override
+  String get provAvailableModelsHint =>
+      '来自模型目录或账户列表。添加后才会出现在默认模型、模型顺序和各处的模型选择里；点星标设为默认也会自动添加。';
 }

@@ -4233,4 +4233,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get roleToolTest => 'Test';
+
+  @override
+  String provAvailableModels(int count) {
+    return 'Models you can add · $count';
+  }
+
+  @override
+  String get provAvailableModelsHint =>
+      'Listed by the model catalog or your account. Added models appear in the defaults, the model order and every model picker; starring one as the default adds it too.';
 }

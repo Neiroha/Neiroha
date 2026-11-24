@@ -7579,6 +7579,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Test'**
   String get roleToolTest;
+
+  /// No description provided for @provAvailableModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Models you can add · {count}'**
+  String provAvailableModels(int count);
+
+  /// No description provided for @provAvailableModelsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Listed by the model catalog or your account. Added models appear in the defaults, the model order and every model picker; starring one as the default adds it too.'**
+  String get provAvailableModelsHint;
 }
 
 class _AppLocalizationsDelegate

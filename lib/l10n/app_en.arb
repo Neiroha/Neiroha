@@ -1838,5 +1838,8 @@
   "roleToolUnknown": "Function calling not tested yet",
   "roleToolFailed": "Function calling test failed: {error}",
   "@roleToolFailed": {"placeholders": {"error": {}}},
-  "roleToolTest": "Test"
+  "roleToolTest": "Test",
+  "provAvailableModels": "Models you can add · {count}",
+  "@provAvailableModels": {"placeholders": {"count": {"type": "int"}}},
+  "provAvailableModelsHint": "Listed by the model catalog or your account. Added models appear in the defaults, the model order and every model picker; starring one as the default adds it too."
 }

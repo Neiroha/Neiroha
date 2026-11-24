@@ -20,7 +20,6 @@
   "lib/presentation/widgets/voice_bank/voice_bank_widgets.dart": 519,
   "lib/presentation/widgets/voice_character/character_inspector.dart": 717,
   "lib/presentation/widgets/voice_character/components.dart": 672,
-  "lib/presentation/widgets/voice_character/create_character_dialog.dart": 1738,
   "lib/server/api_server.dart": 540,
   "scripts/tests/voice_database_boundaries_test.dart": 583
 }

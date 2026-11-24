@@ -212,7 +212,10 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         : _speakers;
     final enabledProviders = allProviders
         .where(
-          (p) => p.enabled && capabilities.supportsAdapterName(p.adapterType),
+          (p) =>
+              p.enabled &&
+              speaksText(p.adapterType) &&
+              capabilities.supportsAdapterName(p.adapterType),
         )
         .toList();
     // Always include the current provider even if disabled

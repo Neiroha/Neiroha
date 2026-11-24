@@ -388,6 +388,7 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
     // The local launchers list voice sets; OpenAI uses its curated TTS models.
     if (_adapterType == AdapterType.gptSovits ||
         _adapterType == AdapterType.irodori ||
+        _adapterType == AdapterType.rvc ||
         _adapterType == AdapterType.openaiTts) {
       return true;
     }
@@ -657,6 +658,8 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
       'https://api.minimax.io  (China: https://api.minimaxi.com)',
     AdapterType.indexTts => 'http://127.0.0.1:7860  (IndexTTS WebUI)',
     AdapterType.irodori => 'http://127.0.0.1:19000',
+    AdapterType.rvc =>
+      'http://127.0.0.1:19001  (Neiroha-RVC, voice conversion)',
     _ => 'https://api.openai.com/v1',
   };
 

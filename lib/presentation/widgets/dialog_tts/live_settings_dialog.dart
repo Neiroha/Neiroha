@@ -4,6 +4,7 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/conversation/character_live_settings.dart';
 import 'package:neiroha/data/services/conversation/conversation_engine.dart';
 import 'package:neiroha/domain/ai/ai.dart';
+import 'package:neiroha/presentation/widgets/ai/vc_voice_field.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 Future<CharacterLiveSettings?> showLiveSettingsDialog({
@@ -176,12 +177,13 @@ class _LiveSettingsDialogState extends State<_LiveSettingsDialog> {
                 }),
               ),
               if (vcValue != null)
-                TextField(
+                VcVoiceField(
                   controller: _vcVoice,
-                  decoration: InputDecoration(
-                    labelText: l.liveVcVoice,
-                    helperText: l.liveVcVoiceHint,
-                  ),
+                  label: l.liveVcVoice,
+                  helperText: l.liveVcVoiceHint,
+                  connection: vcConnections
+                      .where((c) => c.config.id == vcValue)
+                      .firstOrNull,
                 ),
             ],
           ),

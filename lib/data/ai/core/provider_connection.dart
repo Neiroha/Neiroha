@@ -74,3 +74,37 @@ extension TypedModels on ProviderConnection {
   VoiceActivityDetector? vad([String? id]) => typed(AiCapability.vad, id);
   MusicGenerator? musicGenerator([String? id]) => typed(AiCapability.music, id);
 }
+
+/// A voice a live model offers, as `(id, display name)`.
+typedef VoiceOption = ({String id, String name});
+
+/// Connections whose models and voices come from the server at runtime
+/// (local engines that load checkpoints), not from a plugin catalog.
+abstract interface class LiveModelDiscovery {
+  /// Models the server lists for [cap]; catalog models when it lists none.
+  Future<List<ModelDescriptor>> listModels(AiCapability cap);
+
+  /// Voices for [modelId]; every voice when [modelId] is null.
+  Future<List<VoiceOption>> listVoices(AiCapability cap, {String? modelId});
+}
+
+/// Catalog models plus, for [LiveModelDiscovery] connections, what the
+/// server lists now. A failed listing keeps the catalog.
+Future<List<ModelDescriptor>> discoverModels(
+  ProviderConnection connection,
+  AiCapability cap,
+) async {
+  final catalog = connection.models(cap);
+  if (connection is! LiveModelDiscovery) return catalog;
+  try {
+    final listed = await (connection as LiveModelDiscovery).listModels(cap);
+    final ids = {for (final m in catalog) m.id};
+    return [
+      ...catalog,
+      for (final m in listed)
+        if (!ids.contains(m.id)) m,
+    ];
+  } catch (_) {
+    return catalog;
+  }
+}

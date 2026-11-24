@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:neiroha/data/ai/core/provider_connection.dart';
 import 'package:neiroha/data/ai/registry/capability_router.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/synthesis/voice_chain_runner.dart';
@@ -9,6 +10,7 @@ import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/domain/synthesis/voice_chain.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/ai/vc_voice_field.dart';
 import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
@@ -261,6 +263,23 @@ class _StepDialogState extends State<_StepDialog> {
       : (widget.step.connectionId!, widget.step.modelId ?? '');
   late bool _enabled = widget.step.enabled;
 
+  /// Models local servers list right now (RVC checkpoints), by connection.
+  final Map<String, List<ModelDescriptor>> _live = {};
+
+  @override
+  void initState() {
+    super.initState();
+    final cap = widget.step.kind.isText ? AiCapability.llm : AiCapability.vc;
+    for (final c in widget.router.serving(cap)) {
+      if (c is! LiveModelDiscovery) continue;
+      unawaited(
+        discoverModels(c, cap).then((models) {
+          if (mounted) setState(() => _live[c.id] = models);
+        }),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _language.dispose();
@@ -276,7 +295,7 @@ class _StepDialogState extends State<_StepDialog> {
     final cap = kind.isText ? AiCapability.llm : AiCapability.vc;
     final models = [
       for (final c in widget.router.serving(cap))
-        for (final m in c.models(cap)) (c, m),
+        for (final m in _live[c.id] ?? c.models(cap)) (c, m),
     ];
     final picked = models.any((e) => (e.$1.id, e.$2.id) == _model)
         ? _model
@@ -342,9 +361,13 @@ class _StepDialogState extends State<_StepDialog> {
                   hintText: l.chainInstructionHint,
                 ),
               ),
-              VoiceChainStepKind.convert => TextField(
+              VoiceChainStepKind.convert => VcVoiceField(
                 controller: _voice,
-                decoration: InputDecoration(labelText: l.chainTargetVoice),
+                label: l.chainTargetVoice,
+                connection: widget.router.connections
+                    .where((c) => c.id == picked?.$1)
+                    .firstOrNull,
+                modelId: picked?.$2,
               ),
             },
             SwitchListTile(

@@ -2091,6 +2091,7 @@ class NeirohaMcpTools {
     AdapterType.minimaxTts => 'https://api.minimax.io',
     AdapterType.indexTts => 'http://127.0.0.1:7860',
     AdapterType.irodori => 'http://127.0.0.1:19000',
+    AdapterType.rvc => 'http://127.0.0.1:19001',
   };
 
   static const Map<AdapterType, String> _adapterGuide = {
@@ -2124,6 +2125,10 @@ class NeirohaMcpTools {
         'GPT-SoVITS launcher. presetVoice: voice = trained speaker, model = '
         'text language (zh/en/ja/ko). cloneWithPrompt: reference audio + '
         'prompt_text + prompt_lang, model = text language.',
+    AdapterType.rvc:
+        'Neiroha-RVC voice conversion only; it cannot be a character voice. '
+        'Use it as a VC step (character processing chain or live settings): '
+        'model = checkpoint id or auto, voice = catalog voice id.',
     AdapterType.irodori:
         'Irodori launcher. model = voice set (default, meanflow, azurlane, '
         'or local). voice = registered speaker ID. For cloneWithPrompt, '

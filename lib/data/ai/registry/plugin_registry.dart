@@ -3,6 +3,7 @@ import 'package:neiroha/data/ai/core/provider_connection.dart';
 import 'package:neiroha/data/ai/core/provider_plugin.dart';
 import 'package:neiroha/data/ai/providers/elevenlabs/elevenlabs_plugin.dart';
 import 'package:neiroha/data/ai/providers/gemini/gemini_plugin.dart';
+import 'package:neiroha/data/ai/providers/local/rvc/rvc_plugin.dart';
 import 'package:neiroha/data/ai/providers/mimo/mimo_plugin.dart';
 import 'package:neiroha/data/ai/providers/minimax/minimax_plugin.dart';
 import 'package:neiroha/data/ai/providers/on_device/on_device_plugin.dart';
@@ -32,6 +33,7 @@ ProviderPlugin pluginForAdapterType(String adapterType, {String baseUrl = ''}) {
           ? const MiMoPlugin()
           : const ChatCompletionsTtsPlugin(),
     AdapterType.systemTts => OnDevicePlugin(),
+    AdapterType.rvc => const RvcPlugin(),
     _ => AdapterTtsPlugin(type),
   };
 }

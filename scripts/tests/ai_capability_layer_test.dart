@@ -60,6 +60,13 @@ void main() {
     test('every adapter type maps to one plugin with TTS', () {
       for (final type in AdapterType.values) {
         if (type == AdapterType.systemTts) continue; // on-device, see below
+        if (!type.synthesizesSpeech) {
+          // Audio-only engines (RVC) serve voice conversion instead.
+          final connection = connectionForProvider(_row(type));
+          expect(connection.capabilities, {AiCapability.vc}, reason: type.name);
+          expect(connection.voiceConverter(), isNotNull, reason: type.name);
+          continue;
+        }
         final connection = connectionForProvider(_row(type));
         expect(connection.capabilities, contains(AiCapability.tts));
         expect(connection.defaultModel(AiCapability.tts), isNotNull);

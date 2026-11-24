@@ -106,7 +106,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navVoiceBank => 'Voice Bank';
 
   @override
-  String get navProviders => 'Providers';
+  String get navProviders => 'AI Services';
 
   @override
   String get navSettings => 'Settings';
@@ -4095,4 +4095,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String chainCheckExtra(Object extra) {
     return 'Extra: $extra';
   }
+
+  @override
+  String capModelUnavailable(Object model) {
+    return '$model (unavailable)';
+  }
+
+  @override
+  String capFollowDefault(Object model) {
+    return 'Follow default ($model)';
+  }
+
+  @override
+  String get capFollowDefaultNone => 'Follow default';
+
+  @override
+  String get subtitleModels => 'Models';
+
+  @override
+  String get subtitleTranslateModel => 'Translation model';
+
+  @override
+  String get provHubDefaults => 'Default models';
+
+  @override
+  String get provHubDefaultsHint =>
+      'The model each capability uses by default; click a provider to open it';
+
+  @override
+  String get provHubDefaultsShort => 'What each capability runs on';
+
+  @override
+  String get provHubRoleAiShort => 'Profiles, model and stage prompts';
+
+  @override
+  String get provHubConnections => 'Providers';
+
+  @override
+  String get provHubFeatureModels => 'Models chosen by features';
+
+  @override
+  String get provHubFeatureModelsHint =>
+      'These features do not follow the defaults below';
+
+  @override
+  String get provHubResetFeatureModel => 'Follow the default again';
+
+  @override
+  String provModelCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count models',
+      one: '1 model',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get provConnection => 'Connection';
+
+  @override
+  String get settingsAiServicesHint => 'Providers, default models and role AI';
 }

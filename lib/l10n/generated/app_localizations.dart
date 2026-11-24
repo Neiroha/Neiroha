@@ -263,7 +263,7 @@ abstract class AppLocalizations {
   /// No description provided for @navProviders.
   ///
   /// In en, this message translates to:
-  /// **'Providers'**
+  /// **'AI Services'**
   String get navProviders;
 
   /// No description provided for @navSettings.
@@ -7375,6 +7375,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Extra: {extra}'**
   String chainCheckExtra(Object extra);
+
+  /// No description provided for @capModelUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'{model} (unavailable)'**
+  String capModelUnavailable(Object model);
+
+  /// No description provided for @capFollowDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow default ({model})'**
+  String capFollowDefault(Object model);
+
+  /// No description provided for @capFollowDefaultNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow default'**
+  String get capFollowDefaultNone;
+
+  /// No description provided for @subtitleModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Models'**
+  String get subtitleModels;
+
+  /// No description provided for @subtitleTranslateModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation model'**
+  String get subtitleTranslateModel;
+
+  /// No description provided for @provHubDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Default models'**
+  String get provHubDefaults;
+
+  /// No description provided for @provHubDefaultsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The model each capability uses by default; click a provider to open it'**
+  String get provHubDefaultsHint;
+
+  /// No description provided for @provHubDefaultsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'What each capability runs on'**
+  String get provHubDefaultsShort;
+
+  /// No description provided for @provHubRoleAiShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Profiles, model and stage prompts'**
+  String get provHubRoleAiShort;
+
+  /// No description provided for @provHubConnections.
+  ///
+  /// In en, this message translates to:
+  /// **'Providers'**
+  String get provHubConnections;
+
+  /// No description provided for @provHubFeatureModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Models chosen by features'**
+  String get provHubFeatureModels;
+
+  /// No description provided for @provHubFeatureModelsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'These features do not follow the defaults below'**
+  String get provHubFeatureModelsHint;
+
+  /// No description provided for @provHubResetFeatureModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the default again'**
+  String get provHubResetFeatureModel;
+
+  /// No description provided for @provModelCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 model} other{{count} models}}'**
+  String provModelCount(int count);
+
+  /// No description provided for @provConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection'**
+  String get provConnection;
+
+  /// No description provided for @settingsAiServicesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Providers, default models and role AI'**
+  String get settingsAiServicesHint;
 }
 
 class _AppLocalizationsDelegate

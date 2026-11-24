@@ -95,7 +95,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get navVoiceBank => '语音库';
 
   @override
-  String get navProviders => '服务商';
+  String get navProviders => 'AI 服务';
 
   @override
   String get navSettings => '设置';
@@ -3958,4 +3958,58 @@ class AppLocalizationsZh extends AppLocalizations {
   String chainCheckExtra(Object extra) {
     return '多读：$extra';
   }
+
+  @override
+  String capModelUnavailable(Object model) {
+    return '$model（当前不可用）';
+  }
+
+  @override
+  String capFollowDefault(Object model) {
+    return '跟随默认（$model）';
+  }
+
+  @override
+  String get capFollowDefaultNone => '跟随默认';
+
+  @override
+  String get subtitleModels => '使用的模型';
+
+  @override
+  String get subtitleTranslateModel => '翻译用大模型';
+
+  @override
+  String get provHubDefaults => '默认模型';
+
+  @override
+  String get provHubDefaultsHint => '各能力默认用哪个模型；点服务商名可打开它的设置';
+
+  @override
+  String get provHubDefaultsShort => '各能力默认用哪个模型';
+
+  @override
+  String get provHubRoleAiShort => '方案、模型与阶段提示词';
+
+  @override
+  String get provHubConnections => '服务商';
+
+  @override
+  String get provHubFeatureModels => '功能单独指定的模型';
+
+  @override
+  String get provHubFeatureModelsHint => '这些功能不跟随下方的默认模型';
+
+  @override
+  String get provHubResetFeatureModel => '恢复跟随默认';
+
+  @override
+  String provModelCount(int count) {
+    return '$count 个模型';
+  }
+
+  @override
+  String get provConnection => '连接';
+
+  @override
+  String get settingsAiServicesHint => '服务商、默认模型与分角色 AI';
 }

@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/ai/catalog/llm_discovery.dart';
@@ -12,6 +13,8 @@ import 'package:neiroha/presentation/widgets/settings/ai_capability_dialogs.dart
 import 'package:neiroha/presentation/widgets/settings/ai_capability_settings.dart';
 import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/app_providers.dart';
+
+import 'package:uuid/uuid.dart';
 
 import 'provider_models.dart';
 
@@ -37,6 +40,10 @@ typedef _Entry = ({
   ModelDescriptor model,
   String source,
   VoidCallback? onDelete,
+
+  /// Set for a model listed by the catalog or the account but not added:
+  /// only added models reach the defaults and pickers.
+  Future<void> Function()? onAdd,
 });
 
 class _ProviderCapabilityTabState extends ConsumerState<ProviderCapabilityTab> {
@@ -58,9 +65,45 @@ class _ProviderCapabilityTabState extends ConsumerState<ProviderCapabilityTab> {
   List<_Entry> _entries(ProviderConnection c, AppLocalizations l) {
     final database = ref.read(databaseProvider);
     final entries = <_Entry>[];
+    final added = ref.watch(providerModelsProvider).value ?? const [];
+    final own = {for (final m in c.models(cap)) m.id};
+    bool kept(String id) =>
+        own.contains(id) ||
+        added.any(
+          (r) =>
+              r.connectionId == c.id &&
+              r.capability == cap.name &&
+              r.modelId == id,
+        );
     void add(ModelDescriptor m, String source, [VoidCallback? onDelete]) {
-      if (entries.any((e) => e.model.id == m.id)) return;
-      entries.add((model: m, source: source, onDelete: onDelete));
+      final i = entries.indexWhere((e) => e.model.id == m.id);
+      final entry = (
+        model: m,
+        source: source,
+        onDelete: onDelete,
+        onAdd: kept(m.id)
+            ? null
+            : () => database.upsertProviderModel(
+                db.ProviderModelsCompanion.insert(
+                  id: const Uuid().v4(),
+                  connectionId: c.id,
+                  modelId: m.id,
+                  capability: cap.name,
+                  displayName: Value(m.displayName),
+                ),
+              ),
+      );
+      if (i < 0) {
+        entries.add(entry);
+      } else if (onDelete != null) {
+        // The added row replaces the listed one so it can be removed.
+        entries[i] = (
+          model: entries[i].model,
+          source: source,
+          onDelete: onDelete,
+          onAdd: null,
+        );
+      }
     }
 
     String source(ModelDescriptor m, LlmInventory? inv) =>
@@ -103,7 +146,6 @@ class _ProviderCapabilityTabState extends ConsumerState<ProviderCapabilityTab> {
         });
       }
     }
-    final added = ref.watch(providerModelsProvider).value ?? const [];
     for (final r in added) {
       if (r.connectionId != c.id || r.capability != cap.name) continue;
       final m = c.describe(cap, r.modelId);
@@ -141,6 +183,34 @@ class _ProviderCapabilityTabState extends ConsumerState<ProviderCapabilityTab> {
             e.model.label.toLowerCase().contains(query))
           e,
     ];
+    final usable = [
+      for (final e in shown)
+        if (e.onAdd == null) e,
+    ];
+    final available = [
+      for (final e in shown)
+        if (e.onAdd != null) e,
+    ];
+    Widget tile(_Entry e) => ProviderModelTile(
+      key: ValueKey(e.model.id),
+      label: e.model.label,
+      id: e.model.id,
+      source: e.source,
+      features: cap == AiCapability.llm
+          ? const []
+          : [for (final f in e.model.features) featureLabel(l, f)],
+      details: cap == AiCapability.llm
+          ? LlmTraitsChips(e.model.llm ?? LlmTraits.unknown)
+          : null,
+      shutdownAt: e.model.shutdownAt,
+      isDefault: isDefault(e.model),
+      onSetDefault: () async {
+        await e.onAdd?.call();
+        await database.setCapabilityDefault(cap.name, (c.id, e.model.id));
+      },
+      onAdd: e.onAdd,
+      onDelete: e.onDelete,
+    );
     final live = cap == AiCapability.llm && _live
         ? ref.watch(llmInventoryProvider(widget.provider.id))
         : null;
@@ -155,7 +225,8 @@ class _ProviderCapabilityTabState extends ConsumerState<ProviderCapabilityTab> {
           ),
         CapabilitySwitch(connectionId: c.id, cap: cap),
         SectionHeader(
-          '${capabilityLabel(l, cap)} · ${all.length}',
+          '${capabilityLabel(l, cap)} · '
+          '${all.where((e) => e.onAdd == null).length}',
           actions: [
             if (cap == AiCapability.llm)
               TextButton.icon(
@@ -195,24 +266,18 @@ class _ProviderCapabilityTabState extends ConsumerState<ProviderCapabilityTab> {
             l.modelNoModels,
             style: const TextStyle(fontSize: 12, color: Colors.white38),
           ),
-        for (final e in shown)
-          ProviderModelTile(
-            key: ValueKey(e.model.id),
-            label: e.model.label,
-            id: e.model.id,
-            source: e.source,
-            features: cap == AiCapability.llm
-                ? const []
-                : [for (final f in e.model.features) featureLabel(l, f)],
-            details: cap == AiCapability.llm
-                ? LlmTraitsChips(e.model.llm ?? LlmTraits.unknown)
-                : null,
-            shutdownAt: e.model.shutdownAt,
-            isDefault: isDefault(e.model),
-            onSetDefault: () =>
-                database.setCapabilityDefault(cap.name, (c.id, e.model.id)),
-            onDelete: e.onDelete,
+        for (final e in usable) tile(e),
+        if (available.isNotEmpty) ...[
+          SectionHeader(l.provAvailableModels(available.length)),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              l.provAvailableModelsHint,
+              style: const TextStyle(fontSize: 12, color: Colors.white38),
+            ),
           ),
+          for (final e in available) tile(e),
+        ],
       ],
     );
   }

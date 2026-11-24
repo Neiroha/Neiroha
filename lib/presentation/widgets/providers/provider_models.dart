@@ -156,6 +156,7 @@ class ProviderModelTile extends StatelessWidget {
     this.shutdownAt,
     this.isDefault = false,
     this.onSetDefault,
+    this.onAdd,
     this.onDelete,
   });
   final String label;
@@ -168,6 +169,9 @@ class ProviderModelTile extends StatelessWidget {
   final String? shutdownAt;
   final bool isDefault;
   final VoidCallback? onSetDefault;
+
+  /// Adds a listed model to the connection's models.
+  final VoidCallback? onAdd;
   final VoidCallback? onDelete;
 
   @override
@@ -227,6 +231,13 @@ class ProviderModelTile extends StatelessWidget {
               visualDensity: VisualDensity.compact,
               icon: const Icon(Icons.star_border_rounded, size: 18),
               onPressed: onSetDefault,
+            ),
+          if (onAdd != null)
+            IconButton(
+              tooltip: l.capAddModel,
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+              onPressed: onAdd,
             ),
           if (onDelete != null)
             IconButton(

@@ -4,8 +4,11 @@ import 'dart:async';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:neiroha/data/ai/catalog/llm_discovery.dart';
 import 'package:neiroha/data/ai/catalog/llm_traits_catalog.dart';
+import 'package:neiroha/data/ai/core/capability_health.dart';
 import 'package:neiroha/data/ai/registry/plugin_registry.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/ai/ai.dart';
@@ -33,7 +36,10 @@ void main() {
   setUp(() => database = db.AppDatabase.forTesting(NativeDatabase.memory()));
   tearDown(() => database.close());
 
-  Future<void> pump(WidgetTester tester) async {
+  Future<void> pump(
+    WidgetTester tester, {
+    List<Override> overrides = const [],
+  }) async {
     await tester.binding.setSurfaceSize(const Size(1200, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
@@ -52,6 +58,7 @@ void main() {
             (_) => Completer<LlmTraitsCatalog>().future,
           ),
           providerBindingsProvider.overrideWith((_, _) async => const []),
+          ...overrides,
         ],
         child: MaterialApp(
           locale: const Locale('zh'),
@@ -109,5 +116,35 @@ void main() {
     final lanes = await tester.runAsync(database.getConnectionCapabilities);
     expect(lanes!.single.capability, 'llm');
     expect(lanes.single.enabled, isFalse);
+  }, timeout: const Timeout(Duration(seconds: 60)));
+
+  testWidgets('a model the account lists can be added', (tester) async {
+    final connection = connectionForProvider(_openAi());
+    await pump(
+      tester,
+      overrides: [
+        llmInventoryProvider.overrideWith(
+          (_, _) async => LlmInventory(connection, [
+            ...connection.models(AiCapability.llm),
+            const ModelDescriptor(
+              id: 'gpt-9-test',
+              capability: AiCapability.llm,
+              protocol: AiProtocol.openAiResponses,
+              source: DescriptorSource.provider,
+            ),
+          ], state: HealthState.ok),
+        ),
+      ],
+    );
+    await openTab(tester, '大模型');
+    await tester.tap(find.text('从账号发现'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('可添加的模型 · 1'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.add_circle_outline_rounded));
+    await tester.pump();
+    final rows = await tester.runAsync(database.getProviderModels);
+    expect(rows!.single.modelId, 'gpt-9-test');
+    expect(rows.single.capability, 'llm');
   }, timeout: const Timeout(Duration(seconds: 60)));
 }

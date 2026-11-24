@@ -7471,6 +7471,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Providers, default models and role AI'**
   String get settingsAiServicesHint;
+
+  /// No description provided for @capAutomaticInOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic: in the order below ({model})'**
+  String capAutomaticInOrder(Object model);
+
+  /// No description provided for @capAutoOrderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'With no default set, the first available connection below and its preferred model are used. Drag the handles to reorder; switched-off connections are skipped.'**
+  String get capAutoOrderHint;
+
+  /// No description provided for @capPreferred.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferred'**
+  String get capPreferred;
+
+  /// No description provided for @capPreferredModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferred: {model}'**
+  String capPreferredModel(Object model);
+
+  /// No description provided for @capModelAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added'**
+  String get capModelAdded;
+
+  /// No description provided for @capModelOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Model order'**
+  String get capModelOrder;
+
+  /// No description provided for @capUseCustomModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Use “{model}” on {connection}'**
+  String capUseCustomModel(Object model, Object connection);
+
+  /// No description provided for @provHubConnectionsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 connection} other{{count} connections}} · {enabled} on'**
+  String provHubConnectionsShort(int count, int enabled);
+
+  /// No description provided for @provProvidersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to open its settings; drag the handle to reorder'**
+  String get provProvidersHint;
+
+  /// No description provided for @roleAnalysisModelPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis model'**
+  String get roleAnalysisModelPick;
+
+  /// No description provided for @roleModelFollowDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the default LLM ({model})'**
+  String roleModelFollowDefault(Object model);
+
+  /// No description provided for @roleModelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Role assignment checks and corrects itself through function calling. Type to search; a picked model is tested at once.'**
+  String get roleModelHint;
+
+  /// No description provided for @roleToolChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Testing function calling…'**
+  String get roleToolChecking;
+
+  /// No description provided for @roleToolSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Supports function calling'**
+  String get roleToolSupported;
+
+  /// No description provided for @roleToolUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'No function calling: role assignment cannot correct itself, pick another model'**
+  String get roleToolUnsupported;
+
+  /// No description provided for @roleToolUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Function calling not tested yet'**
+  String get roleToolUnknown;
+
+  /// No description provided for @roleToolFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Function calling test failed: {error}'**
+  String roleToolFailed(Object error);
+
+  /// No description provided for @roleToolTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Test'**
+  String get roleToolTest;
 }
 
 class _AppLocalizationsDelegate

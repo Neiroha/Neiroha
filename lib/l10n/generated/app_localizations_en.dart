@@ -4157,4 +4157,80 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAiServicesHint => 'Providers, default models and role AI';
+
+  @override
+  String capAutomaticInOrder(Object model) {
+    return 'Automatic: in the order below ($model)';
+  }
+
+  @override
+  String get capAutoOrderHint =>
+      'With no default set, the first available connection below and its preferred model are used. Drag the handles to reorder; switched-off connections are skipped.';
+
+  @override
+  String get capPreferred => 'Preferred';
+
+  @override
+  String capPreferredModel(Object model) {
+    return 'Preferred: $model';
+  }
+
+  @override
+  String get capModelAdded => 'Added';
+
+  @override
+  String get capModelOrder => 'Model order';
+
+  @override
+  String capUseCustomModel(Object model, Object connection) {
+    return 'Use “$model” on $connection';
+  }
+
+  @override
+  String provHubConnectionsShort(int count, int enabled) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count connections',
+      one: '1 connection',
+    );
+    return '$_temp0 · $enabled on';
+  }
+
+  @override
+  String get provProvidersHint =>
+      'Tap to open its settings; drag the handle to reorder';
+
+  @override
+  String get roleAnalysisModelPick => 'Analysis model';
+
+  @override
+  String roleModelFollowDefault(Object model) {
+    return 'Follow the default LLM ($model)';
+  }
+
+  @override
+  String get roleModelHint =>
+      'Role assignment checks and corrects itself through function calling. Type to search; a picked model is tested at once.';
+
+  @override
+  String get roleToolChecking => 'Testing function calling…';
+
+  @override
+  String get roleToolSupported => 'Supports function calling';
+
+  @override
+  String get roleToolUnsupported =>
+      'No function calling: role assignment cannot correct itself, pick another model';
+
+  @override
+  String get roleToolUnknown => 'Function calling not tested yet';
+
+  @override
+  String roleToolFailed(Object error) {
+    return 'Function calling test failed: $error';
+  }
+
+  @override
+  String get roleToolTest => 'Test';
 }

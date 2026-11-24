@@ -4012,4 +4012,72 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsAiServicesHint => '服务商、默认模型与分角色 AI';
+
+  @override
+  String capAutomaticInOrder(Object model) {
+    return '自动：按下方顺序（$model）';
+  }
+
+  @override
+  String get capAutoOrderHint =>
+      '未指定默认模型时，按下方顺序取第一个可用的连接及其首选模型。拖动左侧手柄调整顺序；关闭的连接会被跳过。';
+
+  @override
+  String get capPreferred => '首选';
+
+  @override
+  String capPreferredModel(Object model) {
+    return '首选 $model';
+  }
+
+  @override
+  String get capModelAdded => '自添加';
+
+  @override
+  String get capModelOrder => '模型顺序';
+
+  @override
+  String capUseCustomModel(Object model, Object connection) {
+    return '在 $connection 使用“$model”';
+  }
+
+  @override
+  String provHubConnectionsShort(int count, int enabled) {
+    return '$count 个连接 · $enabled 个已启用';
+  }
+
+  @override
+  String get provProvidersHint => '点按进入设置；拖动手柄调整顺序';
+
+  @override
+  String get roleAnalysisModelPick => '分析模型';
+
+  @override
+  String roleModelFollowDefault(Object model) {
+    return '跟随默认大模型（$model）';
+  }
+
+  @override
+  String get roleModelHint =>
+      '分角色依靠工具调用（function calling）来校对和纠错；可输入搜索，选择后会自动测试。';
+
+  @override
+  String get roleToolChecking => '正在测试工具调用…';
+
+  @override
+  String get roleToolSupported => '支持工具调用';
+
+  @override
+  String get roleToolUnsupported => '不支持工具调用，分角色无法纠错，请换一个模型';
+
+  @override
+  String get roleToolUnknown => '尚未测试工具调用';
+
+  @override
+  String roleToolFailed(Object error) {
+    return '工具调用测试失败：$error';
+  }
+
+  @override
+  String get roleToolTest => '测试';
 }

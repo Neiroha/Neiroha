@@ -14,10 +14,16 @@ class DiscoveredModel {
     required this.id,
     required this.name,
     required this.capability,
+    this.voices = const [],
+    this.languages = const [],
   });
   final String id;
   final String name;
   final ModelCapability capability;
+
+  /// Voices and languages a service declares for this model (v2).
+  final List<String> voices;
+  final List<String> languages;
 }
 
 class ModelDiscoveryService {
@@ -218,6 +224,17 @@ class ModelDiscoveryService {
             row['id'] as String,
             route,
           ),
+          voices: [
+            for (final v in (row['voices'] as List?) ?? const [])
+              if (v is Map && v['id'] is String)
+                v['name'] is String && v['name'] != v['id']
+                    ? '${v['name']} [${v['id']}]'
+                    : v['id'] as String,
+          ],
+          languages: [
+            for (final l in (row['languages'] as List?) ?? const [])
+              if (l is String) l,
+          ],
         ),
     ];
   }

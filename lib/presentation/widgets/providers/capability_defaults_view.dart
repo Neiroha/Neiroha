@@ -1,28 +1,25 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/ai/core/provider_connection.dart';
-import 'package:neiroha/data/ai/providers/on_device/on_device_plugin.dart';
 import 'package:neiroha/data/ai/registry/capability_router.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/subtitles/subtitle_pipeline.dart';
 import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
-import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/ai/capability_model_picker.dart';
 import 'package:neiroha/presentation/widgets/layout/page_header.dart';
-import 'package:neiroha/presentation/widgets/settings/ai_capability_dialogs.dart';
 import 'package:neiroha/presentation/widgets/settings/ai_capability_settings.dart';
 import 'package:neiroha/presentation/widgets/settings/settings_shared.dart';
 import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
-import 'provider_hub.dart';
+import 'capability_lanes.dart';
 
 /// 「AI 服务 → 默认模型」: what each capability runs on, which connections
 /// serve it, and the models features picked for themselves.
 class CapabilityDefaultsView extends StatelessWidget {
-  const CapabilityDefaultsView({super.key});
+  const CapabilityDefaultsView({super.key, this.onBack});
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +31,7 @@ class CapabilityDefaultsView extends StatelessWidget {
           icon: Icons.hub_rounded,
           title: l.provHubDefaults,
           subtitle: l.provHubDefaultsHint,
+          onBack: onBack,
         ),
         const Divider(height: 1),
         const Expanded(
@@ -203,13 +201,10 @@ class _CapabilityCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final database = ref.read(databaseProvider);
-    final offering = [
-      for (final c in router.connections)
-        if (c.capabilities.contains(cap)) c,
-    ];
+    final auto = router.automatic(cap);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 12, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -223,162 +218,38 @@ class _CapabilityCard extends ConsumerWidget {
                   cap: cap,
                   router: router,
                   value: router.defaults[cap],
+                  automaticLabel: auto == null
+                      ? l.capAutomatic
+                      : l.capAutomaticInOrder(routedLabel(auto)),
                   onChanged: (v) => database.setCapabilityDefault(cap.name, v),
                 ),
               ),
             ),
-            const Divider(),
-            if (offering.isEmpty)
-              Text(
-                l.capNoConnections,
-                style: const TextStyle(color: Colors.white54),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 2),
+              child: Text(
+                l.capAutoOrderHint,
+                style: const TextStyle(fontSize: 12, color: Colors.white38),
               ),
-            for (final c in offering)
-              _ConnectionLane(
+            ),
+            if (router.ordered(cap).isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Text(
+                  l.capNoConnections,
+                  style: const TextStyle(color: Colors.white54),
+                ),
+              )
+            else
+              CapabilityLaneList(
                 cap: cap,
-                connection: c,
                 router: router,
-                lane: lanes
-                    .where((r) => r.connectionId == c.id)
-                    .where((r) => r.capability == cap.name)
-                    .firstOrNull,
-                added: [
-                  for (final m in added)
-                    if (m.connectionId == c.id && m.capability == cap.name) m,
-                ],
+                lanes: lanes,
+                added: added,
               ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ConnectionLane extends ConsumerWidget {
-  const _ConnectionLane({
-    required this.cap,
-    required this.connection,
-    required this.router,
-    required this.lane,
-    required this.added,
-  });
-  final AiCapability cap;
-  final ProviderConnection connection;
-  final CapabilityRouter router;
-  final db.ConnectionCapability? lane;
-  final List<db.ProviderModel> added;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l = AppLocalizations.of(context);
-    final database = ref.read(databaseProvider);
-    final on = router.offers(connection, cap);
-    final custom = lane != null && laneHasLimits(lane!);
-    final count = router.modelsOf(connection, cap).length;
-    // The built-in on-device connection has no row to open.
-    final openable = connection.id != OnDevicePlugin.connectionId;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Switch(
-                value: on,
-                onChanged: (v) => database.upsertConnectionCapability(
-                  db.ConnectionCapabilitiesCompanion(
-                    connectionId: Value(connection.id),
-                    capability: Value(cap.name),
-                    enabled: Value(v),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(6),
-                    onTap: openable
-                        ? () => openProvider(ref, connection.id, cap: cap)
-                        : null,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 6,
-                      ),
-                      child: Text.rich(
-                        TextSpan(
-                          text: connectionName(connection),
-                          style: TextStyle(color: on ? null : Colors.white38),
-                          children: [
-                            if (on)
-                              TextSpan(
-                                text: '  ${l.provModelCount(count)}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white38,
-                                ),
-                              ),
-                          ],
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              TextButton.icon(
-                icon: Icon(
-                  Icons.speed_rounded,
-                  size: 16,
-                  color: custom ? AppTheme.accentColor : null,
-                ),
-                label: Text(custom ? l.capLimits : l.capInherited),
-                onPressed: () => showDialog<void>(
-                  context: context,
-                  builder: (_) => CapabilityLimitsDialog(
-                    title: l.capLimitsTitle(
-                      capabilityLabel(l, cap),
-                      connectionName(connection),
-                    ),
-                    connectionId: connection.id,
-                    capability: cap,
-                    lane: lane,
-                  ),
-                ),
-              ),
-              IconButton(
-                tooltip: l.capAddModel,
-                icon: const Icon(Icons.add_rounded, size: 18),
-                onPressed: () =>
-                    addCapabilityModel(context, ref, connection, cap),
-              ),
-            ],
-          ),
-          if (added.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(left: 56, bottom: 4),
-              child: Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  for (final m in added)
-                    InputChip(
-                      visualDensity: VisualDensity.compact,
-                      label: Text(
-                        m.displayName?.isNotEmpty == true
-                            ? '${m.displayName} (${m.modelId})'
-                            : m.modelId,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      onDeleted: () => database.deleteProviderModel(m.id),
-                    ),
-                ],
-              ),
-            ),
-        ],
       ),
     );
   }

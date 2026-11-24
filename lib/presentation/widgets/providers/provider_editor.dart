@@ -20,8 +20,11 @@ import 'provider_speech_tab.dart';
 /// Editor of one provider row, one tab per capability it offers:
 /// overview (account and health), each capability, then limits.
 class ProviderEditor extends ConsumerStatefulWidget {
-  const ProviderEditor({super.key, required this.provider});
+  const ProviderEditor({super.key, required this.provider, this.onBack});
   final db.TtsProvider provider;
+
+  /// Shown as a back button on narrow windows, where the list is hidden.
+  final VoidCallback? onBack;
 
   @override
   ConsumerState<ProviderEditor> createState() => _ProviderEditorState();
@@ -152,9 +155,19 @@ class _ProviderEditorState extends ConsumerState<ProviderEditor> {
           WindowDragArea(
             child: Container(
               constraints: const BoxConstraints(minHeight: 52),
-              padding: const EdgeInsets.fromLTRB(24, 6, 12, 6),
+              padding: EdgeInsets.fromLTRB(
+                widget.onBack == null ? 24 : 8,
+                6,
+                12,
+                6,
+              ),
               child: Row(
                 children: [
+                  if (widget.onBack case final back?)
+                    IconButton(
+                      onPressed: back,
+                      icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                    ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

@@ -2,17 +2,28 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/layout/page_header.dart';
+import 'package:neiroha/presentation/widgets/layout/window_drag_area.dart';
 import 'package:neiroha/presentation/widgets/settings/role_skill_settings.dart';
 
 import 'capability_defaults_view.dart';
 import 'provider_draft.dart';
+import 'provider_list.dart';
 
-/// What the right pane of the AI services page shows.
-enum ProviderPageView { defaults, roleAi, provider }
+/// The AI services page: a root level (the pages beside the navigation)
+/// and the provider level (one provider's settings beside the list).
+enum ProviderPageView {
+  defaults,
+  roleAi,
+  providers,
+
+  /// The selected provider's settings.
+  provider,
+}
 
 final providerPageViewProvider = StateProvider<ProviderPageView>(
   (ref) => ProviderPageView.defaults,
@@ -23,44 +34,88 @@ final providerFocusCapabilityProvider = StateProvider<AiCapability?>(
   (ref) => null,
 );
 
-/// Shows provider [id] in the editor, on [cap]'s tab when given.
+/// On narrow windows only one pane shows: the navigation, or this page.
+final providerCompactPageOpenProvider = StateProvider<bool>((ref) => false);
+
+/// Shows provider [id]'s settings, on [cap]'s tab when given.
 void openProvider(WidgetRef ref, String id, {AiCapability? cap}) {
   ref.read(selectedProviderIdProvider.notifier).state = id;
   ref.read(providerFocusCapabilityProvider.notifier).state = cap;
   ref.read(providerPageViewProvider.notifier).state = ProviderPageView.provider;
+  ref.read(providerCompactPageOpenProvider.notifier).state = true;
 }
 
-/// The pages above the provider list: defaults per capability, and the
-/// role assignment AI.
-class ProviderHubTiles extends ConsumerWidget {
-  const ProviderHubTiles({super.key});
+/// Shows a root page of the AI services page.
+void showProviderPage(WidgetRef ref, ProviderPageView view) {
+  ref.read(providerPageViewProvider.notifier).state = view;
+  ref.read(providerCompactPageOpenProvider.notifier).state = true;
+}
+
+/// The root navigation: defaults per capability, the role assignment AI
+/// and the providers.
+class ProviderNavPane extends ConsumerWidget {
+  const ProviderNavPane({super.key, required this.providers});
+  final List<db.TtsProvider> providers;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final view = ref.watch(providerPageViewProvider);
-    void show(ProviderPageView v) =>
-        ref.read(providerPageViewProvider.notifier).state = v;
-    return Padding(
-      padding: const EdgeInsets.only(top: 2, bottom: 6),
+    final enabled = providers.where((p) => p.enabled).length;
+    return Container(
+      color: AppTheme.surfaceDim,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _HubTile(
-            icon: Icons.hub_rounded,
-            title: l.provHubDefaults,
-            subtitle: l.provHubDefaultsShort,
-            selected: view == ProviderPageView.defaults,
-            onTap: () => show(ProviderPageView.defaults),
-          ),
-          // Role analysis needs the desktop task runtime.
-          if (!kIsWeb)
-            _HubTile(
-              icon: Icons.psychology_alt_rounded,
-              title: l.settingsRoleAi,
-              subtitle: l.provHubRoleAiShort,
-              selected: view == ProviderPageView.roleAi,
-              onTap: () => show(ProviderPageView.roleAi),
+          WindowDragArea(
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 52),
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.fromLTRB(20, 6, 12, 6),
+              child: Text(
+                l.navProviders,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              ),
             ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              children: [
+                _HubTile(
+                  icon: Icons.hub_rounded,
+                  title: l.provHubDefaults,
+                  subtitle: l.provHubDefaultsShort,
+                  selected: view == ProviderPageView.defaults,
+                  onTap: () => showProviderPage(ref, ProviderPageView.defaults),
+                ),
+                // Role analysis needs the desktop task runtime.
+                if (!kIsWeb)
+                  _HubTile(
+                    icon: Icons.psychology_alt_rounded,
+                    title: l.settingsRoleAi,
+                    subtitle: l.provHubRoleAiShort,
+                    selected: view == ProviderPageView.roleAi,
+                    onTap: () => showProviderPage(ref, ProviderPageView.roleAi),
+                  ),
+                _HubTile(
+                  icon: Icons.dns_rounded,
+                  title: l.provHubConnections,
+                  subtitle: l.provHubConnectionsShort(
+                    providers.length,
+                    enabled,
+                  ),
+                  selected:
+                      view == ProviderPageView.providers ||
+                      view == ProviderPageView.provider,
+                  onTap: () =>
+                      showProviderPage(ref, ProviderPageView.providers),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -142,9 +197,58 @@ class _HubTile extends StatelessWidget {
   );
 }
 
+/// 「AI 服务 → 服务商」: every connection; a row opens its settings.
+class ProvidersPage extends ConsumerWidget {
+  const ProvidersPage({super.key, required this.providers, this.onBack});
+  final List<db.TtsProvider> providers;
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Keep rows readable on wide panes: cap and center them.
+        final side = ((constraints.maxWidth - HubPageBody.maxWidth) / 2).clamp(
+          8.0,
+          double.infinity,
+        );
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            PageHeader(
+              icon: Icons.dns_rounded,
+              title: l.provHubConnections,
+              subtitle: l.provProvidersHint,
+              onBack: onBack,
+              actions: [
+                FilledButton.tonalIcon(
+                  onPressed: () => showAddProviderDialog(context, ref),
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: Text(l.uiAddProvider),
+                ),
+              ],
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ProviderList(
+                providers: providers,
+                selectedId: null,
+                showChevron: true,
+                padding: EdgeInsets.symmetric(horizontal: side),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 /// 「AI 服务 → 分角色 AI」: the shared profile, model and stage prompts.
 class RoleAiView extends StatelessWidget {
-  const RoleAiView({super.key});
+  const RoleAiView({super.key, this.onBack});
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -156,6 +260,7 @@ class RoleAiView extends StatelessWidget {
           icon: Icons.psychology_alt_rounded,
           title: l.settingsRoleAi,
           subtitle: l.settingsRoleAiDescription,
+          onBack: onBack,
         ),
         const Divider(height: 1),
         const Expanded(child: HubPageBody(children: [RoleSkillSettingsCard()])),

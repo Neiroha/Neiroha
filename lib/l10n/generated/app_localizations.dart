@@ -7591,6 +7591,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Listed by the model catalog or your account. Added models appear in the defaults, the model order and every model picker; starring one as the default adds it too.'**
   String get provAvailableModelsHint;
+
+  /// No description provided for @quickTtsSendHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{keys} to generate, Enter for a new line'**
+  String quickTtsSendHint(String keys);
+
+  /// No description provided for @voiceRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a voice'**
+  String get voiceRequired;
+
+  /// No description provided for @voiceNotForModel.
+  ///
+  /// In en, this message translates to:
+  /// **'{model} does not offer the voice {voice}; choose another'**
+  String voiceNotForModel(String voice, String model);
 }
 
 class _AppLocalizationsDelegate

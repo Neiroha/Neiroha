@@ -4089,4 +4089,17 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get provAvailableModelsHint =>
       '来自模型目录或账户列表。添加后才会出现在默认模型、模型顺序和各处的模型选择里；点星标设为默认也会自动添加。';
+
+  @override
+  String quickTtsSendHint(String keys) {
+    return '$keys 生成；Enter 换行';
+  }
+
+  @override
+  String get voiceRequired => '请选择音色';
+
+  @override
+  String voiceNotForModel(String voice, String model) {
+    return '$model 不支持音色 $voice，请重新选择';
+  }
 }

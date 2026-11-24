@@ -4242,4 +4242,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get provAvailableModelsHint =>
       'Listed by the model catalog or your account. Added models appear in the defaults, the model order and every model picker; starring one as the default adds it too.';
+
+  @override
+  String quickTtsSendHint(String keys) {
+    return '$keys to generate, Enter for a new line';
+  }
+
+  @override
+  String get voiceRequired => 'Choose a voice';
+
+  @override
+  String voiceNotForModel(String voice, String model) {
+    return '$model does not offer the voice $voice; choose another';
+  }
 }

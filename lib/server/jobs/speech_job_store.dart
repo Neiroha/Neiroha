@@ -165,8 +165,8 @@ class SpeechJobStore {
     final job = SpeechJob._(const Uuid().v4(), body, DateTime.now());
     _jobs[job.id] = job;
     await _save(job);
-    _start(job);
-    unawaited(_prune());
+    await _prune();
+    await _start(job);
     return job;
   }
 
@@ -185,7 +185,7 @@ class SpeechJobStore {
       ..finishedAt = null;
     if (await _audio(id).exists()) await _audio(id).delete();
     await _changed(job);
-    _start(job);
+    await _start(job);
     return job;
   }
 
@@ -214,20 +214,22 @@ class SpeechJobStore {
     return await f.exists() ? f.readAsBytes() : null;
   }
 
-  void _start(SpeechJob job) {
+  /// Starts [job]; completes once its running state is saved, while the
+  /// synthesis carries on.
+  Future<void> _start(SpeechJob job) async {
     final cancel = job._cancel = TtsCancelToken();
     final attempt = job.attempt;
     bool current() =>
         identical(job._cancel, cancel) &&
         job.attempt == attempt &&
         !job.status.finished;
+    job
+      ..status = SpeechJobStatus.running
+      ..startedAt = DateTime.now();
+    // Started before the status is saved; awaited (errors included) below.
+    final running = run(job.body, cancel)..ignore();
+    await _changed(job);
     unawaited(() async {
-      job
-        ..status = SpeechJobStatus.running
-        ..startedAt = DateTime.now();
-      // Started before the status is saved; awaited (errors included) below.
-      final running = run(job.body, cancel)..ignore();
-      await _changed(job);
       try {
         final result = await running;
         if (!current()) return;

@@ -53,12 +53,15 @@ void main() {
 
   const body = {'input': '你好', 'voice': 'kiki'};
 
+  /// Completes when the job has finished and its files are written.
+  Future<void> finished(String id) => store.watch(id).last;
+
   group('SpeechJobStore', () {
     test('a job runs, succeeds and keeps its audio on disk', () async {
       final job = await store.create(Map.of(body));
       expect(job.status, SpeechJobStatus.running);
       runs.succeed();
-      await pumpEventQueue();
+      await finished(job.id);
       expect(job.status, SpeechJobStatus.succeeded);
       expect(await store.audio(job.id), [1, 2, 3]);
       expect(job.toJson()['result'], {
@@ -73,14 +76,13 @@ void main() {
       final cancelled = await store.cancelOrDelete(job.id);
       expect(cancelled?.status, SpeechJobStatus.cancelled);
       expect(runs.tokens.single.isCancelled, isTrue);
-      await pumpEventQueue();
       expect(job.status, SpeechJobStatus.cancelled);
 
       final again = await store.retry(job.id);
       expect(again?.attempt, 2);
       expect(await store.retry(job.id), isNull, reason: 'still running');
       runs.succeed(1);
-      await pumpEventQueue();
+      await finished(job.id);
       expect(job.status, SpeechJobStatus.succeeded);
       // A finished job is deleted, files and all.
       expect(await store.cancelOrDelete(job.id), isNull);
@@ -91,7 +93,7 @@ void main() {
     test('a failure keeps the error', () async {
       final job = await store.create(Map.of(body));
       runs.pending.single.completeError(StateError('engine down'));
-      await pumpEventQueue();
+      await finished(job.id);
       expect(job.status, SpeechJobStatus.failed);
       expect(job.error, contains('engine down'));
     });
@@ -99,8 +101,8 @@ void main() {
     test('jobs survive a restart; unfinished ones come back failed', () async {
       final done = await store.create(Map.of(body));
       runs.succeed();
+      await finished(done.id);
       final open = await store.create({'input': 'b', 'voice': 'kiki'});
-      await pumpEventQueue();
 
       final reopened = SpeechJobStore(dir, run: runs.call);
       await reopened.open();
@@ -113,12 +115,11 @@ void main() {
 
     test('only the newest finished jobs are kept', () async {
       for (var i = 0; i < 5; i++) {
-        await store.create({'input': '$i', 'voice': 'kiki'});
+        final job = await store.create({'input': '$i', 'voice': 'kiki'});
         runs.succeed(i);
-        await pumpEventQueue();
+        await finished(job.id);
       }
       await store.create({'input': 'last', 'voice': 'kiki'});
-      await pumpEventQueue();
       final kept = store.list();
       expect(kept.where((j) => j.status.finished), hasLength(3));
       expect(kept.first.body['input'], 'last');
@@ -172,7 +173,7 @@ void main() {
 
       expect((await call('GET', '/v1/jobs/$id/audio')).$1, 409);
       runs.succeed();
-      await pumpEventQueue();
+      await finished(id);
       final (_, job) = await call('GET', '/v1/jobs/$id');
       expect(job['status'], 'succeeded');
       final audio = await handler(

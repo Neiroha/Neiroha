@@ -139,7 +139,9 @@ class _CapabilityModelPickerState extends State<CapabilityModelPicker> {
         .label;
     return LayoutBuilder(
       builder: (context, constraints) => DropdownMenu<(String, String)>(
-        key: ValueKey((cap, current)),
+        // The menu sets its text from the selection only when created:
+        // rebuild it when the automatic entry starts pointing elsewhere.
+        key: ValueKey((cap, current, _selectedLabel)),
         controller: _text,
         initialSelection: initial,
         enabled: widget.enabled,

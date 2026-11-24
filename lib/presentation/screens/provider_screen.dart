@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:neiroha/data/ai/core/provider_connection.dart';
 import 'package:neiroha/data/ai/registry/built_in_voices.dart';
 import 'package:neiroha/data/ai/registry/model_badges.dart';
+import 'package:neiroha/data/services/capabilities/model_retirement.dart';
+import 'package:neiroha/presentation/widgets/ai/model_retirement_widgets.dart';
 import 'package:neiroha/data/ai/registry/plugin_registry.dart';
 import 'package:neiroha/presentation/widgets/voice_chip_list.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1017,6 +1019,10 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                                 _adapterType,
                                 m.modelKey,
                               ),
+                              shutdownAt: retiringDescriptor(
+                                _connection,
+                                m.modelKey,
+                              )?.shutdownAt,
                               onDelete: () => _removeEntry(m.id),
                             ),
                           ),
@@ -1027,6 +1033,10 @@ class _ProviderEditorState extends ConsumerState<_ProviderEditor> {
                             (m) => _NonTtsModelRow(
                               model: m,
                               badges: modelBadges(m.modelKey, _connection),
+                              shutdownAt: retiringDescriptor(
+                                _connection,
+                                m.modelKey,
+                              )?.shutdownAt,
                               onDelete: () => _removeEntry(m.id),
                             ),
                           ),
@@ -1140,11 +1150,13 @@ class _NonTtsModelRow extends StatelessWidget {
   final VoidCallback onDelete;
 
   final List<String> badges;
+  final String? shutdownAt;
 
   const _NonTtsModelRow({
     required this.model,
     required this.onDelete,
     required this.badges,
+    this.shutdownAt,
   });
 
   Color _badgeColor(String cap) => switch (cap) {
@@ -1198,6 +1210,7 @@ class _NonTtsModelRow extends StatelessWidget {
                 ),
               ),
             ),
+            if (shutdownAt case final date?) RetirementChip(shutdownAt: date),
             SizedBox(width: 4),
             InkWell(
               onTap: onDelete,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/widgets/ai/model_retirement_widgets.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
@@ -14,12 +15,16 @@ class TtsProviderModelRow extends StatefulWidget {
   /// Voices this model ships with (`builtInVoicesFor`); tap to expand.
   final List<String> voices;
 
+  /// Vendor shutdown date (`yyyy-MM-dd`), shown as a red tag.
+  final String? shutdownAt;
+
   const TtsProviderModelRow({
     super.key,
     required this.model,
     required this.onDelete,
     this.webBlock,
     this.voices = const [],
+    this.shutdownAt,
   });
 
   @override
@@ -88,6 +93,8 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
                         ),
                         child: const Icon(Icons.do_not_disturb_alt, size: 16),
                       ),
+                    if (widget.shutdownAt case final date?)
+                      RetirementChip(shutdownAt: date),
                     if (hasBuiltIns) VoiceCountBadge(count: voices.length),
                     Container(
                       padding: const EdgeInsets.symmetric(

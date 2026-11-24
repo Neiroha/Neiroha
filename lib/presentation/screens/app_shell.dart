@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/widgets/ai/model_retirement_widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart'
@@ -155,6 +156,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                           ),
                         ),
                 ),
+                const RetirementBanner(),
                 if (showGlobalPlayer)
                   !kIsWeb && Platform.isWindows
                       ? const PersistentAudioBar()

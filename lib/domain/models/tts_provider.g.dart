@@ -39,4 +39,5 @@ const _$AdapterTypeEnumMap = {
   AdapterType.minimaxTts: 'minimaxTts',
   AdapterType.indexTts: 'indexTts',
   AdapterType.irodori: 'irodori',
+  AdapterType.rvc: 'rvc',
 };

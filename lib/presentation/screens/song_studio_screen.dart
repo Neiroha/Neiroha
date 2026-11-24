@@ -75,7 +75,7 @@ class _SongStudioScreenState extends ConsumerState<SongStudioScreen> {
 
   List<(ProviderConnection, ModelDescriptor)> _choices(CapabilityRouter? r) => [
     for (final c in r?.serving(AiCapability.music) ?? const [])
-      for (final m in c.models(AiCapability.music)) (c, m),
+      for (final m in r!.modelsOf(c, AiCapability.music)) (c, m),
   ];
 
   Future<void> _addImages() async {

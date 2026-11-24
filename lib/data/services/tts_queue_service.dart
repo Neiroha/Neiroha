@@ -6,7 +6,11 @@ import 'dart:math' as math;
 import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 export 'package:neiroha/domain/synthesis/tts_cancellation.dart';
+export 'package:neiroha/domain/ai/capability.dart' show AiCapability;
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/domain/ai/capability.dart';
+
+import 'queue_limits.dart';
 
 enum TtsQueueTaskStatus { queued, running, completed, failed }
 
@@ -78,6 +82,22 @@ class TtsQueueService {
   static const Duration _minuteWindow = Duration(minutes: 1);
 
   final Map<String, _ProviderQueueState> _states = {};
+  Map<String, db.ConnectionCapability> _laneRows = const {};
+
+  /// Per-capability limits (`connection_capabilities`); lanes without a row
+  /// use the connection's own limits.
+  void setCapabilityLimits(Iterable<db.ConnectionCapability> rows) {
+    _laneRows = {for (final r in rows) _laneOf(r): r};
+    _states.keys.toList().forEach(_drain);
+  }
+
+  static String _laneOf(db.ConnectionCapability r) => queueLane(
+    r.connectionId,
+    AiCapability.values.asNameMap()[r.capability] ?? AiCapability.tts,
+  );
+
+  QueueLimits _limits(db.TtsProvider p, AiCapability cap) =>
+      QueueLimits.of(p, _laneRows[queueLane(p.id, cap)]);
   final StreamController<TtsQueueSnapshot> _snapshotController =
       StreamController<TtsQueueSnapshot>.broadcast();
   final List<TtsQueueTaskSnapshot> _recentFinished = <TtsQueueTaskSnapshot>[];
@@ -136,14 +156,17 @@ class TtsQueueService {
     String label = 'TTS request',
     TtsCancelToken? cancelToken,
     bool interactive = false,
+    AiCapability capability = AiCapability.tts,
   }) {
     if (cancelToken?.isCancelled ?? false) {
       return Future<T>.error(const TtsCancelledException());
     }
-    final state = _states.putIfAbsent(provider.id, () => _ProviderQueueState());
+    final lane = queueLane(provider.id, capability);
+    final state = _states.putIfAbsent(lane, () => _ProviderQueueState());
     final queuedTask = _QueuedTtsTask<T>(
       id: '${++_nextTaskId}',
       provider: provider,
+      capability: capability,
       source: source,
       label: label,
       estimatedTokens: math.max(1, estimatedTokens),
@@ -158,10 +181,10 @@ class TtsQueueService {
       if (!state.pending.remove(queuedTask)) return;
       queuedTask.completer.completeError(const TtsCancelledException());
       _emitSnapshot();
-      _drain(provider.id);
+      _drain(lane);
     });
     _emitSnapshot();
-    _drain(provider.id);
+    _drain(lane);
     return queuedTask.completer.future.whenComplete(() {
       removeCancelListener?.call();
     });
@@ -184,7 +207,10 @@ class TtsQueueService {
       while (true) {
         cancellation.throwIfCancelled();
         final tokens = estimateTokens(request);
-        final wait = state.waitBeforeStart(provider, tokens);
+        final wait = state.waitBeforeStart(
+          _limits(provider, AiCapability.tts),
+          tokens,
+        );
         if (wait <= Duration.zero) {
           state.recordStart(tokens);
           return;
@@ -234,10 +260,10 @@ class TtsQueueService {
 
     while (state.pending.isNotEmpty) {
       final next = state.pending.first;
-      final maxConcurrency = _maxConcurrency(next.provider);
-      if (state.activeTasks.length >= maxConcurrency) return;
+      final limits = _limits(next.provider, next.capability);
+      if (state.activeTasks.length >= limits.maxConcurrency) return;
 
-      final wait = state.waitBeforeStart(next.provider, next.estimatedTokens);
+      final wait = state.waitBeforeStart(limits, next.estimatedTokens);
       if (wait > Duration.zero) {
         state.timer = Timer(wait, () => _drain(providerId));
         return;
@@ -274,10 +300,6 @@ class TtsQueueService {
     }
   }
 
-  int _maxConcurrency(db.TtsProvider provider) {
-    return provider.maxConcurrency.clamp(1, 64).toInt();
-  }
-
   void _addRecent(TtsQueueTaskSnapshot task) {
     _recentFinished.insert(0, task);
     if (_recentFinished.length > 50) {
@@ -303,7 +325,7 @@ class _ProviderQueueState {
   DateTime _dayStart = _today(DateTime.now());
   Timer? timer;
 
-  Duration waitBeforeStart(db.TtsProvider provider, int tokens) {
+  Duration waitBeforeStart(QueueLimits provider, int tokens) {
     final now = DateTime.now();
     _prune(now);
     _resetDayIfNeeded(now);
@@ -397,6 +419,7 @@ class _QueuedTtsTask<T> {
   _QueuedTtsTask({
     required this.id,
     required this.provider,
+    required this.capability,
     required this.source,
     required this.label,
     required this.estimatedTokens,
@@ -405,6 +428,7 @@ class _QueuedTtsTask<T> {
 
   final String id;
   final db.TtsProvider provider;
+  final AiCapability capability;
   final String source;
   final String label;
   final int estimatedTokens;

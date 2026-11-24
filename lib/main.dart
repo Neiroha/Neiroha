@@ -13,7 +13,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'data/database/app_database.dart' show AppDatabaseStorageQueries;
+import 'data/database/app_database.dart'
+    show AppDatabaseAiQueries, AppDatabaseStorageQueries;
 import 'data/storage/path_service.dart';
 import 'l10n/app_locale.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -67,6 +68,7 @@ class NeirohaApp extends ConsumerStatefulWidget {
 
 class _NeirohaAppState extends ConsumerState<NeirohaApp> {
   late final AppLifecycleListener _lifecycle;
+  late final StreamSubscription<Object?> _capabilityLimits;
   Future<void>? _webSettings;
   @override
   void initState() {
@@ -83,6 +85,11 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
           : (bytes, format) =>
                 decodeSpeechBytes(decoder, bytes, format.extension),
     ).wrap;
+    // Queue lanes follow the per-capability limits as they are edited.
+    _capabilityLimits = ref
+        .read(databaseProvider)
+        .watchConnectionCapabilities()
+        .listen(ref.read(ttsQueueServiceProvider).setCapabilityLimits);
     // Public model facts (models.dev): cached copy now, refresh daily.
     unawaited(startModelCatalogRefresh(ref));
     _lifecycle = AppLifecycleListener(
@@ -106,6 +113,7 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
   @override
   void dispose() {
     _lifecycle.dispose();
+    unawaited(_capabilityLimits.cancel());
     super.dispose();
   }
 

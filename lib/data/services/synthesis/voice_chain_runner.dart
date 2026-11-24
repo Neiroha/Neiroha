@@ -346,7 +346,10 @@ class VoiceChainHook {
     db.AppDatabase database,
     String assetId,
   ) async {
-    final raw = await database.getSetting(VoiceChain.key(assetId));
+    final raw = await database.getVoiceAssetSetting(
+      assetId,
+      db.CharacterSettingSlot.chain,
+    );
     if (raw == null || raw.isEmpty) return VoiceChain.empty;
     try {
       return VoiceChain.fromJson(jsonDecode(raw));
@@ -359,8 +362,9 @@ class VoiceChainHook {
     db.AppDatabase database,
     String assetId,
     VoiceChain chain,
-  ) => database.setSetting(
-    VoiceChain.key(assetId),
+  ) => database.setVoiceAssetSetting(
+    assetId,
+    db.CharacterSettingSlot.chain,
     jsonEncode(chain.normalized().toJson()),
   );
 
@@ -369,9 +373,7 @@ class VoiceChainHook {
     if (id == null) return adapter;
     final chain = await load(database, id);
     if (!chain.isActive) return adapter;
-    final router = CapabilityRouter.fromProviders(
-      await database.getAllProviders(),
-    );
+    final router = await CapabilityRouter.load(database);
     return ChainedTtsAdapter(
       adapter,
       chain,

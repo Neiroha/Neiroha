@@ -177,6 +177,7 @@ class RoleReviewService {
         session.chargedTokens += reserve;
         await repository.save(session);
         final result = await queue.enqueue(
+          capability: AiCapability.llm,
           provider: provider,
           source: 'Novel local review',
           label: 'turn ${session.calls}',

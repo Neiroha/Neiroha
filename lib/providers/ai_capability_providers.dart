@@ -11,11 +11,31 @@ import 'app_providers.dart';
 
 /// Capability router over the enabled provider connections. Features ask it
 /// for `stt`, `vad`, `vc`… instead of reading provider rows directly.
-final aiCapabilityRouterProvider = StreamProvider<CapabilityRouter>(
-  (ref) => ref
-      .watch(databaseProvider)
-      .watchAllProviders()
-      .map(CapabilityRouter.fromProviders),
+/// Includes the per-connection capability switches, added models and
+/// defaults of the v34 tables.
+final aiCapabilityRouterProvider = FutureProvider<CapabilityRouter>((
+  ref,
+) async {
+  final rows = await ref.watch(ttsProvidersStreamProvider.future);
+  return CapabilityRouter.fromProviders(
+    rows,
+    defaultRows: await ref.watch(capabilityDefaultsProvider.future),
+    capabilityRows: await ref.watch(connectionCapabilitiesProvider.future),
+    modelRows: await ref.watch(providerModelsProvider.future),
+  );
+});
+
+final connectionCapabilitiesProvider =
+    StreamProvider<List<ConnectionCapability>>(
+      (ref) => ref.watch(databaseProvider).watchConnectionCapabilities(),
+    );
+
+final providerModelsProvider = StreamProvider<List<ProviderModel>>(
+  (ref) => ref.watch(databaseProvider).watchProviderModels(),
+);
+
+final capabilityDefaultsProvider = StreamProvider<List<CapabilityDefault>>(
+  (ref) => ref.watch(databaseProvider).watchCapabilityDefaults(),
 );
 
 final modelCatalogRefresherProvider = Provider<ModelCatalogRefresher>(

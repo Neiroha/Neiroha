@@ -81,6 +81,7 @@ class RoleDirectionService {
         ? {'type': 'string', 'enum': voices.map((v) => v.id).toList()}
         : {'type': 'string', 'maxLength': 500};
     final result = await queue.enqueue(
+      capability: AiCapability.llm,
       provider: provider,
       source: 'Novel director',
       label: task.name,

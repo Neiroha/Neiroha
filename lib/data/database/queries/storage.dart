@@ -22,11 +22,6 @@ extension AppDatabaseStorageQueries on AppDatabase {
     return {for (final row in rows) row.key: row.value};
   }
 
-  Stream<Map<String, String>> watchSettingsWithPrefix(String prefix) =>
-      (select(appSettings)..where((t) => t.key.like('$prefix%'))).watch().map(
-        (rows) => {for (final row in rows) row.key: row.value},
-      );
-
   Future<int> deleteSetting(String key) =>
       (delete(appSettings)..where((t) => t.key.equals(key))).go();
 

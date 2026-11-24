@@ -13658,6 +13658,1922 @@ class TimelineClipsCompanion extends UpdateCompanion<TimelineClip> {
   }
 }
 
+class $VoiceAssetSettingsTable extends VoiceAssetSettings
+    with TableInfo<$VoiceAssetSettingsTable, VoiceAssetSetting> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VoiceAssetSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _voiceAssetIdMeta = const VerificationMeta(
+    'voiceAssetId',
+  );
+  @override
+  late final GeneratedColumn<String> voiceAssetId = GeneratedColumn<String>(
+    'voice_asset_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES voice_assets (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _chainJsonMeta = const VerificationMeta(
+    'chainJson',
+  );
+  @override
+  late final GeneratedColumn<String> chainJson = GeneratedColumn<String>(
+    'chain_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _liveJsonMeta = const VerificationMeta(
+    'liveJson',
+  );
+  @override
+  late final GeneratedColumn<String> liveJson = GeneratedColumn<String>(
+    'live_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [voiceAssetId, chainJson, liveJson];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'voice_asset_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VoiceAssetSetting> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('voice_asset_id')) {
+      context.handle(
+        _voiceAssetIdMeta,
+        voiceAssetId.isAcceptableOrUnknown(
+          data['voice_asset_id']!,
+          _voiceAssetIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_voiceAssetIdMeta);
+    }
+    if (data.containsKey('chain_json')) {
+      context.handle(
+        _chainJsonMeta,
+        chainJson.isAcceptableOrUnknown(data['chain_json']!, _chainJsonMeta),
+      );
+    }
+    if (data.containsKey('live_json')) {
+      context.handle(
+        _liveJsonMeta,
+        liveJson.isAcceptableOrUnknown(data['live_json']!, _liveJsonMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {voiceAssetId};
+  @override
+  VoiceAssetSetting map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VoiceAssetSetting(
+      voiceAssetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}voice_asset_id'],
+      )!,
+      chainJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chain_json'],
+      ),
+      liveJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}live_json'],
+      ),
+    );
+  }
+
+  @override
+  $VoiceAssetSettingsTable createAlias(String alias) {
+    return $VoiceAssetSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class VoiceAssetSetting extends DataClass
+    implements Insertable<VoiceAssetSetting> {
+  final String voiceAssetId;
+  final String? chainJson;
+  final String? liveJson;
+  const VoiceAssetSetting({
+    required this.voiceAssetId,
+    this.chainJson,
+    this.liveJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['voice_asset_id'] = Variable<String>(voiceAssetId);
+    if (!nullToAbsent || chainJson != null) {
+      map['chain_json'] = Variable<String>(chainJson);
+    }
+    if (!nullToAbsent || liveJson != null) {
+      map['live_json'] = Variable<String>(liveJson);
+    }
+    return map;
+  }
+
+  VoiceAssetSettingsCompanion toCompanion(bool nullToAbsent) {
+    return VoiceAssetSettingsCompanion(
+      voiceAssetId: Value(voiceAssetId),
+      chainJson: chainJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(chainJson),
+      liveJson: liveJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(liveJson),
+    );
+  }
+
+  factory VoiceAssetSetting.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VoiceAssetSetting(
+      voiceAssetId: serializer.fromJson<String>(json['voiceAssetId']),
+      chainJson: serializer.fromJson<String?>(json['chainJson']),
+      liveJson: serializer.fromJson<String?>(json['liveJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'voiceAssetId': serializer.toJson<String>(voiceAssetId),
+      'chainJson': serializer.toJson<String?>(chainJson),
+      'liveJson': serializer.toJson<String?>(liveJson),
+    };
+  }
+
+  VoiceAssetSetting copyWith({
+    String? voiceAssetId,
+    Value<String?> chainJson = const Value.absent(),
+    Value<String?> liveJson = const Value.absent(),
+  }) => VoiceAssetSetting(
+    voiceAssetId: voiceAssetId ?? this.voiceAssetId,
+    chainJson: chainJson.present ? chainJson.value : this.chainJson,
+    liveJson: liveJson.present ? liveJson.value : this.liveJson,
+  );
+  VoiceAssetSetting copyWithCompanion(VoiceAssetSettingsCompanion data) {
+    return VoiceAssetSetting(
+      voiceAssetId: data.voiceAssetId.present
+          ? data.voiceAssetId.value
+          : this.voiceAssetId,
+      chainJson: data.chainJson.present ? data.chainJson.value : this.chainJson,
+      liveJson: data.liveJson.present ? data.liveJson.value : this.liveJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VoiceAssetSetting(')
+          ..write('voiceAssetId: $voiceAssetId, ')
+          ..write('chainJson: $chainJson, ')
+          ..write('liveJson: $liveJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(voiceAssetId, chainJson, liveJson);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VoiceAssetSetting &&
+          other.voiceAssetId == this.voiceAssetId &&
+          other.chainJson == this.chainJson &&
+          other.liveJson == this.liveJson);
+}
+
+class VoiceAssetSettingsCompanion extends UpdateCompanion<VoiceAssetSetting> {
+  final Value<String> voiceAssetId;
+  final Value<String?> chainJson;
+  final Value<String?> liveJson;
+  final Value<int> rowid;
+  const VoiceAssetSettingsCompanion({
+    this.voiceAssetId = const Value.absent(),
+    this.chainJson = const Value.absent(),
+    this.liveJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VoiceAssetSettingsCompanion.insert({
+    required String voiceAssetId,
+    this.chainJson = const Value.absent(),
+    this.liveJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : voiceAssetId = Value(voiceAssetId);
+  static Insertable<VoiceAssetSetting> custom({
+    Expression<String>? voiceAssetId,
+    Expression<String>? chainJson,
+    Expression<String>? liveJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (voiceAssetId != null) 'voice_asset_id': voiceAssetId,
+      if (chainJson != null) 'chain_json': chainJson,
+      if (liveJson != null) 'live_json': liveJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VoiceAssetSettingsCompanion copyWith({
+    Value<String>? voiceAssetId,
+    Value<String?>? chainJson,
+    Value<String?>? liveJson,
+    Value<int>? rowid,
+  }) {
+    return VoiceAssetSettingsCompanion(
+      voiceAssetId: voiceAssetId ?? this.voiceAssetId,
+      chainJson: chainJson ?? this.chainJson,
+      liveJson: liveJson ?? this.liveJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (voiceAssetId.present) {
+      map['voice_asset_id'] = Variable<String>(voiceAssetId.value);
+    }
+    if (chainJson.present) {
+      map['chain_json'] = Variable<String>(chainJson.value);
+    }
+    if (liveJson.present) {
+      map['live_json'] = Variable<String>(liveJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VoiceAssetSettingsCompanion(')
+          ..write('voiceAssetId: $voiceAssetId, ')
+          ..write('chainJson: $chainJson, ')
+          ..write('liveJson: $liveJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ConnectionCapabilitiesTable extends ConnectionCapabilities
+    with TableInfo<$ConnectionCapabilitiesTable, ConnectionCapability> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ConnectionCapabilitiesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _connectionIdMeta = const VerificationMeta(
+    'connectionId',
+  );
+  @override
+  late final GeneratedColumn<String> connectionId = GeneratedColumn<String>(
+    'connection_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES tts_providers (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _capabilityMeta = const VerificationMeta(
+    'capability',
+  );
+  @override
+  late final GeneratedColumn<String> capability = GeneratedColumn<String>(
+    'capability',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _maxConcurrencyMeta = const VerificationMeta(
+    'maxConcurrency',
+  );
+  @override
+  late final GeneratedColumn<int> maxConcurrency = GeneratedColumn<int>(
+    'max_concurrency',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _requestsPerMinuteMeta = const VerificationMeta(
+    'requestsPerMinute',
+  );
+  @override
+  late final GeneratedColumn<int> requestsPerMinute = GeneratedColumn<int>(
+    'requests_per_minute',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _requestsPerDayMeta = const VerificationMeta(
+    'requestsPerDay',
+  );
+  @override
+  late final GeneratedColumn<int> requestsPerDay = GeneratedColumn<int>(
+    'requests_per_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tokensPerMinuteMeta = const VerificationMeta(
+    'tokensPerMinute',
+  );
+  @override
+  late final GeneratedColumn<int> tokensPerMinute = GeneratedColumn<int>(
+    'tokens_per_minute',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tokensPerDayMeta = const VerificationMeta(
+    'tokensPerDay',
+  );
+  @override
+  late final GeneratedColumn<int> tokensPerDay = GeneratedColumn<int>(
+    'tokens_per_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serviceOverrideMeta = const VerificationMeta(
+    'serviceOverride',
+  );
+  @override
+  late final GeneratedColumn<String> serviceOverride = GeneratedColumn<String>(
+    'service_override',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    connectionId,
+    capability,
+    enabled,
+    maxConcurrency,
+    requestsPerMinute,
+    requestsPerDay,
+    tokensPerMinute,
+    tokensPerDay,
+    serviceOverride,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'connection_capabilities';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ConnectionCapability> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('connection_id')) {
+      context.handle(
+        _connectionIdMeta,
+        connectionId.isAcceptableOrUnknown(
+          data['connection_id']!,
+          _connectionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_connectionIdMeta);
+    }
+    if (data.containsKey('capability')) {
+      context.handle(
+        _capabilityMeta,
+        capability.isAcceptableOrUnknown(data['capability']!, _capabilityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_capabilityMeta);
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    }
+    if (data.containsKey('max_concurrency')) {
+      context.handle(
+        _maxConcurrencyMeta,
+        maxConcurrency.isAcceptableOrUnknown(
+          data['max_concurrency']!,
+          _maxConcurrencyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('requests_per_minute')) {
+      context.handle(
+        _requestsPerMinuteMeta,
+        requestsPerMinute.isAcceptableOrUnknown(
+          data['requests_per_minute']!,
+          _requestsPerMinuteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('requests_per_day')) {
+      context.handle(
+        _requestsPerDayMeta,
+        requestsPerDay.isAcceptableOrUnknown(
+          data['requests_per_day']!,
+          _requestsPerDayMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tokens_per_minute')) {
+      context.handle(
+        _tokensPerMinuteMeta,
+        tokensPerMinute.isAcceptableOrUnknown(
+          data['tokens_per_minute']!,
+          _tokensPerMinuteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tokens_per_day')) {
+      context.handle(
+        _tokensPerDayMeta,
+        tokensPerDay.isAcceptableOrUnknown(
+          data['tokens_per_day']!,
+          _tokensPerDayMeta,
+        ),
+      );
+    }
+    if (data.containsKey('service_override')) {
+      context.handle(
+        _serviceOverrideMeta,
+        serviceOverride.isAcceptableOrUnknown(
+          data['service_override']!,
+          _serviceOverrideMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {connectionId, capability};
+  @override
+  ConnectionCapability map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ConnectionCapability(
+      connectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}connection_id'],
+      )!,
+      capability: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}capability'],
+      )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+      maxConcurrency: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}max_concurrency'],
+      ),
+      requestsPerMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}requests_per_minute'],
+      ),
+      requestsPerDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}requests_per_day'],
+      ),
+      tokensPerMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_per_minute'],
+      ),
+      tokensPerDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_per_day'],
+      ),
+      serviceOverride: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}service_override'],
+      ),
+    );
+  }
+
+  @override
+  $ConnectionCapabilitiesTable createAlias(String alias) {
+    return $ConnectionCapabilitiesTable(attachedDatabase, alias);
+  }
+}
+
+class ConnectionCapability extends DataClass
+    implements Insertable<ConnectionCapability> {
+  final String connectionId;
+  final String capability;
+  final bool enabled;
+  final int? maxConcurrency;
+  final int? requestsPerMinute;
+  final int? requestsPerDay;
+  final int? tokensPerMinute;
+  final int? tokensPerDay;
+
+  /// Base URL for this capability when it differs from the connection's.
+  final String? serviceOverride;
+  const ConnectionCapability({
+    required this.connectionId,
+    required this.capability,
+    required this.enabled,
+    this.maxConcurrency,
+    this.requestsPerMinute,
+    this.requestsPerDay,
+    this.tokensPerMinute,
+    this.tokensPerDay,
+    this.serviceOverride,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['connection_id'] = Variable<String>(connectionId);
+    map['capability'] = Variable<String>(capability);
+    map['enabled'] = Variable<bool>(enabled);
+    if (!nullToAbsent || maxConcurrency != null) {
+      map['max_concurrency'] = Variable<int>(maxConcurrency);
+    }
+    if (!nullToAbsent || requestsPerMinute != null) {
+      map['requests_per_minute'] = Variable<int>(requestsPerMinute);
+    }
+    if (!nullToAbsent || requestsPerDay != null) {
+      map['requests_per_day'] = Variable<int>(requestsPerDay);
+    }
+    if (!nullToAbsent || tokensPerMinute != null) {
+      map['tokens_per_minute'] = Variable<int>(tokensPerMinute);
+    }
+    if (!nullToAbsent || tokensPerDay != null) {
+      map['tokens_per_day'] = Variable<int>(tokensPerDay);
+    }
+    if (!nullToAbsent || serviceOverride != null) {
+      map['service_override'] = Variable<String>(serviceOverride);
+    }
+    return map;
+  }
+
+  ConnectionCapabilitiesCompanion toCompanion(bool nullToAbsent) {
+    return ConnectionCapabilitiesCompanion(
+      connectionId: Value(connectionId),
+      capability: Value(capability),
+      enabled: Value(enabled),
+      maxConcurrency: maxConcurrency == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxConcurrency),
+      requestsPerMinute: requestsPerMinute == null && nullToAbsent
+          ? const Value.absent()
+          : Value(requestsPerMinute),
+      requestsPerDay: requestsPerDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(requestsPerDay),
+      tokensPerMinute: tokensPerMinute == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tokensPerMinute),
+      tokensPerDay: tokensPerDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tokensPerDay),
+      serviceOverride: serviceOverride == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serviceOverride),
+    );
+  }
+
+  factory ConnectionCapability.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ConnectionCapability(
+      connectionId: serializer.fromJson<String>(json['connectionId']),
+      capability: serializer.fromJson<String>(json['capability']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+      maxConcurrency: serializer.fromJson<int?>(json['maxConcurrency']),
+      requestsPerMinute: serializer.fromJson<int?>(json['requestsPerMinute']),
+      requestsPerDay: serializer.fromJson<int?>(json['requestsPerDay']),
+      tokensPerMinute: serializer.fromJson<int?>(json['tokensPerMinute']),
+      tokensPerDay: serializer.fromJson<int?>(json['tokensPerDay']),
+      serviceOverride: serializer.fromJson<String?>(json['serviceOverride']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'connectionId': serializer.toJson<String>(connectionId),
+      'capability': serializer.toJson<String>(capability),
+      'enabled': serializer.toJson<bool>(enabled),
+      'maxConcurrency': serializer.toJson<int?>(maxConcurrency),
+      'requestsPerMinute': serializer.toJson<int?>(requestsPerMinute),
+      'requestsPerDay': serializer.toJson<int?>(requestsPerDay),
+      'tokensPerMinute': serializer.toJson<int?>(tokensPerMinute),
+      'tokensPerDay': serializer.toJson<int?>(tokensPerDay),
+      'serviceOverride': serializer.toJson<String?>(serviceOverride),
+    };
+  }
+
+  ConnectionCapability copyWith({
+    String? connectionId,
+    String? capability,
+    bool? enabled,
+    Value<int?> maxConcurrency = const Value.absent(),
+    Value<int?> requestsPerMinute = const Value.absent(),
+    Value<int?> requestsPerDay = const Value.absent(),
+    Value<int?> tokensPerMinute = const Value.absent(),
+    Value<int?> tokensPerDay = const Value.absent(),
+    Value<String?> serviceOverride = const Value.absent(),
+  }) => ConnectionCapability(
+    connectionId: connectionId ?? this.connectionId,
+    capability: capability ?? this.capability,
+    enabled: enabled ?? this.enabled,
+    maxConcurrency: maxConcurrency.present
+        ? maxConcurrency.value
+        : this.maxConcurrency,
+    requestsPerMinute: requestsPerMinute.present
+        ? requestsPerMinute.value
+        : this.requestsPerMinute,
+    requestsPerDay: requestsPerDay.present
+        ? requestsPerDay.value
+        : this.requestsPerDay,
+    tokensPerMinute: tokensPerMinute.present
+        ? tokensPerMinute.value
+        : this.tokensPerMinute,
+    tokensPerDay: tokensPerDay.present ? tokensPerDay.value : this.tokensPerDay,
+    serviceOverride: serviceOverride.present
+        ? serviceOverride.value
+        : this.serviceOverride,
+  );
+  ConnectionCapability copyWithCompanion(ConnectionCapabilitiesCompanion data) {
+    return ConnectionCapability(
+      connectionId: data.connectionId.present
+          ? data.connectionId.value
+          : this.connectionId,
+      capability: data.capability.present
+          ? data.capability.value
+          : this.capability,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      maxConcurrency: data.maxConcurrency.present
+          ? data.maxConcurrency.value
+          : this.maxConcurrency,
+      requestsPerMinute: data.requestsPerMinute.present
+          ? data.requestsPerMinute.value
+          : this.requestsPerMinute,
+      requestsPerDay: data.requestsPerDay.present
+          ? data.requestsPerDay.value
+          : this.requestsPerDay,
+      tokensPerMinute: data.tokensPerMinute.present
+          ? data.tokensPerMinute.value
+          : this.tokensPerMinute,
+      tokensPerDay: data.tokensPerDay.present
+          ? data.tokensPerDay.value
+          : this.tokensPerDay,
+      serviceOverride: data.serviceOverride.present
+          ? data.serviceOverride.value
+          : this.serviceOverride,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConnectionCapability(')
+          ..write('connectionId: $connectionId, ')
+          ..write('capability: $capability, ')
+          ..write('enabled: $enabled, ')
+          ..write('maxConcurrency: $maxConcurrency, ')
+          ..write('requestsPerMinute: $requestsPerMinute, ')
+          ..write('requestsPerDay: $requestsPerDay, ')
+          ..write('tokensPerMinute: $tokensPerMinute, ')
+          ..write('tokensPerDay: $tokensPerDay, ')
+          ..write('serviceOverride: $serviceOverride')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    connectionId,
+    capability,
+    enabled,
+    maxConcurrency,
+    requestsPerMinute,
+    requestsPerDay,
+    tokensPerMinute,
+    tokensPerDay,
+    serviceOverride,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ConnectionCapability &&
+          other.connectionId == this.connectionId &&
+          other.capability == this.capability &&
+          other.enabled == this.enabled &&
+          other.maxConcurrency == this.maxConcurrency &&
+          other.requestsPerMinute == this.requestsPerMinute &&
+          other.requestsPerDay == this.requestsPerDay &&
+          other.tokensPerMinute == this.tokensPerMinute &&
+          other.tokensPerDay == this.tokensPerDay &&
+          other.serviceOverride == this.serviceOverride);
+}
+
+class ConnectionCapabilitiesCompanion
+    extends UpdateCompanion<ConnectionCapability> {
+  final Value<String> connectionId;
+  final Value<String> capability;
+  final Value<bool> enabled;
+  final Value<int?> maxConcurrency;
+  final Value<int?> requestsPerMinute;
+  final Value<int?> requestsPerDay;
+  final Value<int?> tokensPerMinute;
+  final Value<int?> tokensPerDay;
+  final Value<String?> serviceOverride;
+  final Value<int> rowid;
+  const ConnectionCapabilitiesCompanion({
+    this.connectionId = const Value.absent(),
+    this.capability = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.maxConcurrency = const Value.absent(),
+    this.requestsPerMinute = const Value.absent(),
+    this.requestsPerDay = const Value.absent(),
+    this.tokensPerMinute = const Value.absent(),
+    this.tokensPerDay = const Value.absent(),
+    this.serviceOverride = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ConnectionCapabilitiesCompanion.insert({
+    required String connectionId,
+    required String capability,
+    this.enabled = const Value.absent(),
+    this.maxConcurrency = const Value.absent(),
+    this.requestsPerMinute = const Value.absent(),
+    this.requestsPerDay = const Value.absent(),
+    this.tokensPerMinute = const Value.absent(),
+    this.tokensPerDay = const Value.absent(),
+    this.serviceOverride = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : connectionId = Value(connectionId),
+       capability = Value(capability);
+  static Insertable<ConnectionCapability> custom({
+    Expression<String>? connectionId,
+    Expression<String>? capability,
+    Expression<bool>? enabled,
+    Expression<int>? maxConcurrency,
+    Expression<int>? requestsPerMinute,
+    Expression<int>? requestsPerDay,
+    Expression<int>? tokensPerMinute,
+    Expression<int>? tokensPerDay,
+    Expression<String>? serviceOverride,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (connectionId != null) 'connection_id': connectionId,
+      if (capability != null) 'capability': capability,
+      if (enabled != null) 'enabled': enabled,
+      if (maxConcurrency != null) 'max_concurrency': maxConcurrency,
+      if (requestsPerMinute != null) 'requests_per_minute': requestsPerMinute,
+      if (requestsPerDay != null) 'requests_per_day': requestsPerDay,
+      if (tokensPerMinute != null) 'tokens_per_minute': tokensPerMinute,
+      if (tokensPerDay != null) 'tokens_per_day': tokensPerDay,
+      if (serviceOverride != null) 'service_override': serviceOverride,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ConnectionCapabilitiesCompanion copyWith({
+    Value<String>? connectionId,
+    Value<String>? capability,
+    Value<bool>? enabled,
+    Value<int?>? maxConcurrency,
+    Value<int?>? requestsPerMinute,
+    Value<int?>? requestsPerDay,
+    Value<int?>? tokensPerMinute,
+    Value<int?>? tokensPerDay,
+    Value<String?>? serviceOverride,
+    Value<int>? rowid,
+  }) {
+    return ConnectionCapabilitiesCompanion(
+      connectionId: connectionId ?? this.connectionId,
+      capability: capability ?? this.capability,
+      enabled: enabled ?? this.enabled,
+      maxConcurrency: maxConcurrency ?? this.maxConcurrency,
+      requestsPerMinute: requestsPerMinute ?? this.requestsPerMinute,
+      requestsPerDay: requestsPerDay ?? this.requestsPerDay,
+      tokensPerMinute: tokensPerMinute ?? this.tokensPerMinute,
+      tokensPerDay: tokensPerDay ?? this.tokensPerDay,
+      serviceOverride: serviceOverride ?? this.serviceOverride,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (connectionId.present) {
+      map['connection_id'] = Variable<String>(connectionId.value);
+    }
+    if (capability.present) {
+      map['capability'] = Variable<String>(capability.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (maxConcurrency.present) {
+      map['max_concurrency'] = Variable<int>(maxConcurrency.value);
+    }
+    if (requestsPerMinute.present) {
+      map['requests_per_minute'] = Variable<int>(requestsPerMinute.value);
+    }
+    if (requestsPerDay.present) {
+      map['requests_per_day'] = Variable<int>(requestsPerDay.value);
+    }
+    if (tokensPerMinute.present) {
+      map['tokens_per_minute'] = Variable<int>(tokensPerMinute.value);
+    }
+    if (tokensPerDay.present) {
+      map['tokens_per_day'] = Variable<int>(tokensPerDay.value);
+    }
+    if (serviceOverride.present) {
+      map['service_override'] = Variable<String>(serviceOverride.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConnectionCapabilitiesCompanion(')
+          ..write('connectionId: $connectionId, ')
+          ..write('capability: $capability, ')
+          ..write('enabled: $enabled, ')
+          ..write('maxConcurrency: $maxConcurrency, ')
+          ..write('requestsPerMinute: $requestsPerMinute, ')
+          ..write('requestsPerDay: $requestsPerDay, ')
+          ..write('tokensPerMinute: $tokensPerMinute, ')
+          ..write('tokensPerDay: $tokensPerDay, ')
+          ..write('serviceOverride: $serviceOverride, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProviderModelsTable extends ProviderModels
+    with TableInfo<$ProviderModelsTable, ProviderModel> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProviderModelsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _connectionIdMeta = const VerificationMeta(
+    'connectionId',
+  );
+  @override
+  late final GeneratedColumn<String> connectionId = GeneratedColumn<String>(
+    'connection_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES tts_providers (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _modelIdMeta = const VerificationMeta(
+    'modelId',
+  );
+  @override
+  late final GeneratedColumn<String> modelId = GeneratedColumn<String>(
+    'model_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _capabilityMeta = const VerificationMeta(
+    'capability',
+  );
+  @override
+  late final GeneratedColumn<String> capability = GeneratedColumn<String>(
+    'capability',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _routeMeta = const VerificationMeta('route');
+  @override
+  late final GeneratedColumn<String> route = GeneratedColumn<String>(
+    'route',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _displayNameMeta = const VerificationMeta(
+    'displayName',
+  );
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+    'display_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _featuresJsonMeta = const VerificationMeta(
+    'featuresJson',
+  );
+  @override
+  late final GeneratedColumn<String> featuresJson = GeneratedColumn<String>(
+    'features_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _lifecycleMeta = const VerificationMeta(
+    'lifecycle',
+  );
+  @override
+  late final GeneratedColumn<String> lifecycle = GeneratedColumn<String>(
+    'lifecycle',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _shutdownAtMeta = const VerificationMeta(
+    'shutdownAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> shutdownAt = GeneratedColumn<DateTime>(
+    'shutdown_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('manual'),
+  );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    connectionId,
+    modelId,
+    capability,
+    route,
+    displayName,
+    featuresJson,
+    lifecycle,
+    shutdownAt,
+    source,
+    enabled,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'provider_models';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProviderModel> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('connection_id')) {
+      context.handle(
+        _connectionIdMeta,
+        connectionId.isAcceptableOrUnknown(
+          data['connection_id']!,
+          _connectionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_connectionIdMeta);
+    }
+    if (data.containsKey('model_id')) {
+      context.handle(
+        _modelIdMeta,
+        modelId.isAcceptableOrUnknown(data['model_id']!, _modelIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_modelIdMeta);
+    }
+    if (data.containsKey('capability')) {
+      context.handle(
+        _capabilityMeta,
+        capability.isAcceptableOrUnknown(data['capability']!, _capabilityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_capabilityMeta);
+    }
+    if (data.containsKey('route')) {
+      context.handle(
+        _routeMeta,
+        route.isAcceptableOrUnknown(data['route']!, _routeMeta),
+      );
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+        _displayNameMeta,
+        displayName.isAcceptableOrUnknown(
+          data['display_name']!,
+          _displayNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('features_json')) {
+      context.handle(
+        _featuresJsonMeta,
+        featuresJson.isAcceptableOrUnknown(
+          data['features_json']!,
+          _featuresJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('lifecycle')) {
+      context.handle(
+        _lifecycleMeta,
+        lifecycle.isAcceptableOrUnknown(data['lifecycle']!, _lifecycleMeta),
+      );
+    }
+    if (data.containsKey('shutdown_at')) {
+      context.handle(
+        _shutdownAtMeta,
+        shutdownAt.isAcceptableOrUnknown(data['shutdown_at']!, _shutdownAtMeta),
+      );
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {connectionId, modelId, capability},
+  ];
+  @override
+  ProviderModel map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProviderModel(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      connectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}connection_id'],
+      )!,
+      modelId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model_id'],
+      )!,
+      capability: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}capability'],
+      )!,
+      route: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}route'],
+      ),
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      ),
+      featuresJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}features_json'],
+      )!,
+      lifecycle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lifecycle'],
+      ),
+      shutdownAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}shutdown_at'],
+      ),
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+    );
+  }
+
+  @override
+  $ProviderModelsTable createAlias(String alias) {
+    return $ProviderModelsTable(attachedDatabase, alias);
+  }
+}
+
+class ProviderModel extends DataClass implements Insertable<ProviderModel> {
+  final String id;
+  final String connectionId;
+  final String modelId;
+  final String capability;
+  final String? route;
+  final String? displayName;
+  final String featuresJson;
+  final String? lifecycle;
+  final DateTime? shutdownAt;
+
+  /// `manual` (added by the user) or `discovered` (listed by the server).
+  final String source;
+  final bool enabled;
+  const ProviderModel({
+    required this.id,
+    required this.connectionId,
+    required this.modelId,
+    required this.capability,
+    this.route,
+    this.displayName,
+    required this.featuresJson,
+    this.lifecycle,
+    this.shutdownAt,
+    required this.source,
+    required this.enabled,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['connection_id'] = Variable<String>(connectionId);
+    map['model_id'] = Variable<String>(modelId);
+    map['capability'] = Variable<String>(capability);
+    if (!nullToAbsent || route != null) {
+      map['route'] = Variable<String>(route);
+    }
+    if (!nullToAbsent || displayName != null) {
+      map['display_name'] = Variable<String>(displayName);
+    }
+    map['features_json'] = Variable<String>(featuresJson);
+    if (!nullToAbsent || lifecycle != null) {
+      map['lifecycle'] = Variable<String>(lifecycle);
+    }
+    if (!nullToAbsent || shutdownAt != null) {
+      map['shutdown_at'] = Variable<DateTime>(shutdownAt);
+    }
+    map['source'] = Variable<String>(source);
+    map['enabled'] = Variable<bool>(enabled);
+    return map;
+  }
+
+  ProviderModelsCompanion toCompanion(bool nullToAbsent) {
+    return ProviderModelsCompanion(
+      id: Value(id),
+      connectionId: Value(connectionId),
+      modelId: Value(modelId),
+      capability: Value(capability),
+      route: route == null && nullToAbsent
+          ? const Value.absent()
+          : Value(route),
+      displayName: displayName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayName),
+      featuresJson: Value(featuresJson),
+      lifecycle: lifecycle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lifecycle),
+      shutdownAt: shutdownAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(shutdownAt),
+      source: Value(source),
+      enabled: Value(enabled),
+    );
+  }
+
+  factory ProviderModel.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProviderModel(
+      id: serializer.fromJson<String>(json['id']),
+      connectionId: serializer.fromJson<String>(json['connectionId']),
+      modelId: serializer.fromJson<String>(json['modelId']),
+      capability: serializer.fromJson<String>(json['capability']),
+      route: serializer.fromJson<String?>(json['route']),
+      displayName: serializer.fromJson<String?>(json['displayName']),
+      featuresJson: serializer.fromJson<String>(json['featuresJson']),
+      lifecycle: serializer.fromJson<String?>(json['lifecycle']),
+      shutdownAt: serializer.fromJson<DateTime?>(json['shutdownAt']),
+      source: serializer.fromJson<String>(json['source']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'connectionId': serializer.toJson<String>(connectionId),
+      'modelId': serializer.toJson<String>(modelId),
+      'capability': serializer.toJson<String>(capability),
+      'route': serializer.toJson<String?>(route),
+      'displayName': serializer.toJson<String?>(displayName),
+      'featuresJson': serializer.toJson<String>(featuresJson),
+      'lifecycle': serializer.toJson<String?>(lifecycle),
+      'shutdownAt': serializer.toJson<DateTime?>(shutdownAt),
+      'source': serializer.toJson<String>(source),
+      'enabled': serializer.toJson<bool>(enabled),
+    };
+  }
+
+  ProviderModel copyWith({
+    String? id,
+    String? connectionId,
+    String? modelId,
+    String? capability,
+    Value<String?> route = const Value.absent(),
+    Value<String?> displayName = const Value.absent(),
+    String? featuresJson,
+    Value<String?> lifecycle = const Value.absent(),
+    Value<DateTime?> shutdownAt = const Value.absent(),
+    String? source,
+    bool? enabled,
+  }) => ProviderModel(
+    id: id ?? this.id,
+    connectionId: connectionId ?? this.connectionId,
+    modelId: modelId ?? this.modelId,
+    capability: capability ?? this.capability,
+    route: route.present ? route.value : this.route,
+    displayName: displayName.present ? displayName.value : this.displayName,
+    featuresJson: featuresJson ?? this.featuresJson,
+    lifecycle: lifecycle.present ? lifecycle.value : this.lifecycle,
+    shutdownAt: shutdownAt.present ? shutdownAt.value : this.shutdownAt,
+    source: source ?? this.source,
+    enabled: enabled ?? this.enabled,
+  );
+  ProviderModel copyWithCompanion(ProviderModelsCompanion data) {
+    return ProviderModel(
+      id: data.id.present ? data.id.value : this.id,
+      connectionId: data.connectionId.present
+          ? data.connectionId.value
+          : this.connectionId,
+      modelId: data.modelId.present ? data.modelId.value : this.modelId,
+      capability: data.capability.present
+          ? data.capability.value
+          : this.capability,
+      route: data.route.present ? data.route.value : this.route,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      featuresJson: data.featuresJson.present
+          ? data.featuresJson.value
+          : this.featuresJson,
+      lifecycle: data.lifecycle.present ? data.lifecycle.value : this.lifecycle,
+      shutdownAt: data.shutdownAt.present
+          ? data.shutdownAt.value
+          : this.shutdownAt,
+      source: data.source.present ? data.source.value : this.source,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProviderModel(')
+          ..write('id: $id, ')
+          ..write('connectionId: $connectionId, ')
+          ..write('modelId: $modelId, ')
+          ..write('capability: $capability, ')
+          ..write('route: $route, ')
+          ..write('displayName: $displayName, ')
+          ..write('featuresJson: $featuresJson, ')
+          ..write('lifecycle: $lifecycle, ')
+          ..write('shutdownAt: $shutdownAt, ')
+          ..write('source: $source, ')
+          ..write('enabled: $enabled')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    connectionId,
+    modelId,
+    capability,
+    route,
+    displayName,
+    featuresJson,
+    lifecycle,
+    shutdownAt,
+    source,
+    enabled,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProviderModel &&
+          other.id == this.id &&
+          other.connectionId == this.connectionId &&
+          other.modelId == this.modelId &&
+          other.capability == this.capability &&
+          other.route == this.route &&
+          other.displayName == this.displayName &&
+          other.featuresJson == this.featuresJson &&
+          other.lifecycle == this.lifecycle &&
+          other.shutdownAt == this.shutdownAt &&
+          other.source == this.source &&
+          other.enabled == this.enabled);
+}
+
+class ProviderModelsCompanion extends UpdateCompanion<ProviderModel> {
+  final Value<String> id;
+  final Value<String> connectionId;
+  final Value<String> modelId;
+  final Value<String> capability;
+  final Value<String?> route;
+  final Value<String?> displayName;
+  final Value<String> featuresJson;
+  final Value<String?> lifecycle;
+  final Value<DateTime?> shutdownAt;
+  final Value<String> source;
+  final Value<bool> enabled;
+  final Value<int> rowid;
+  const ProviderModelsCompanion({
+    this.id = const Value.absent(),
+    this.connectionId = const Value.absent(),
+    this.modelId = const Value.absent(),
+    this.capability = const Value.absent(),
+    this.route = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.featuresJson = const Value.absent(),
+    this.lifecycle = const Value.absent(),
+    this.shutdownAt = const Value.absent(),
+    this.source = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProviderModelsCompanion.insert({
+    required String id,
+    required String connectionId,
+    required String modelId,
+    required String capability,
+    this.route = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.featuresJson = const Value.absent(),
+    this.lifecycle = const Value.absent(),
+    this.shutdownAt = const Value.absent(),
+    this.source = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       connectionId = Value(connectionId),
+       modelId = Value(modelId),
+       capability = Value(capability);
+  static Insertable<ProviderModel> custom({
+    Expression<String>? id,
+    Expression<String>? connectionId,
+    Expression<String>? modelId,
+    Expression<String>? capability,
+    Expression<String>? route,
+    Expression<String>? displayName,
+    Expression<String>? featuresJson,
+    Expression<String>? lifecycle,
+    Expression<DateTime>? shutdownAt,
+    Expression<String>? source,
+    Expression<bool>? enabled,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (connectionId != null) 'connection_id': connectionId,
+      if (modelId != null) 'model_id': modelId,
+      if (capability != null) 'capability': capability,
+      if (route != null) 'route': route,
+      if (displayName != null) 'display_name': displayName,
+      if (featuresJson != null) 'features_json': featuresJson,
+      if (lifecycle != null) 'lifecycle': lifecycle,
+      if (shutdownAt != null) 'shutdown_at': shutdownAt,
+      if (source != null) 'source': source,
+      if (enabled != null) 'enabled': enabled,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProviderModelsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? connectionId,
+    Value<String>? modelId,
+    Value<String>? capability,
+    Value<String?>? route,
+    Value<String?>? displayName,
+    Value<String>? featuresJson,
+    Value<String?>? lifecycle,
+    Value<DateTime?>? shutdownAt,
+    Value<String>? source,
+    Value<bool>? enabled,
+    Value<int>? rowid,
+  }) {
+    return ProviderModelsCompanion(
+      id: id ?? this.id,
+      connectionId: connectionId ?? this.connectionId,
+      modelId: modelId ?? this.modelId,
+      capability: capability ?? this.capability,
+      route: route ?? this.route,
+      displayName: displayName ?? this.displayName,
+      featuresJson: featuresJson ?? this.featuresJson,
+      lifecycle: lifecycle ?? this.lifecycle,
+      shutdownAt: shutdownAt ?? this.shutdownAt,
+      source: source ?? this.source,
+      enabled: enabled ?? this.enabled,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (connectionId.present) {
+      map['connection_id'] = Variable<String>(connectionId.value);
+    }
+    if (modelId.present) {
+      map['model_id'] = Variable<String>(modelId.value);
+    }
+    if (capability.present) {
+      map['capability'] = Variable<String>(capability.value);
+    }
+    if (route.present) {
+      map['route'] = Variable<String>(route.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (featuresJson.present) {
+      map['features_json'] = Variable<String>(featuresJson.value);
+    }
+    if (lifecycle.present) {
+      map['lifecycle'] = Variable<String>(lifecycle.value);
+    }
+    if (shutdownAt.present) {
+      map['shutdown_at'] = Variable<DateTime>(shutdownAt.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProviderModelsCompanion(')
+          ..write('id: $id, ')
+          ..write('connectionId: $connectionId, ')
+          ..write('modelId: $modelId, ')
+          ..write('capability: $capability, ')
+          ..write('route: $route, ')
+          ..write('displayName: $displayName, ')
+          ..write('featuresJson: $featuresJson, ')
+          ..write('lifecycle: $lifecycle, ')
+          ..write('shutdownAt: $shutdownAt, ')
+          ..write('source: $source, ')
+          ..write('enabled: $enabled, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CapabilityDefaultsTable extends CapabilityDefaults
+    with TableInfo<$CapabilityDefaultsTable, CapabilityDefault> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CapabilityDefaultsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _capabilityMeta = const VerificationMeta(
+    'capability',
+  );
+  @override
+  late final GeneratedColumn<String> capability = GeneratedColumn<String>(
+    'capability',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _purposeMeta = const VerificationMeta(
+    'purpose',
+  );
+  @override
+  late final GeneratedColumn<String> purpose = GeneratedColumn<String>(
+    'purpose',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _connectionIdMeta = const VerificationMeta(
+    'connectionId',
+  );
+  @override
+  late final GeneratedColumn<String> connectionId = GeneratedColumn<String>(
+    'connection_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES tts_providers (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _modelIdMeta = const VerificationMeta(
+    'modelId',
+  );
+  @override
+  late final GeneratedColumn<String> modelId = GeneratedColumn<String>(
+    'model_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    capability,
+    purpose,
+    connectionId,
+    modelId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'capability_defaults';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CapabilityDefault> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('capability')) {
+      context.handle(
+        _capabilityMeta,
+        capability.isAcceptableOrUnknown(data['capability']!, _capabilityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_capabilityMeta);
+    }
+    if (data.containsKey('purpose')) {
+      context.handle(
+        _purposeMeta,
+        purpose.isAcceptableOrUnknown(data['purpose']!, _purposeMeta),
+      );
+    }
+    if (data.containsKey('connection_id')) {
+      context.handle(
+        _connectionIdMeta,
+        connectionId.isAcceptableOrUnknown(
+          data['connection_id']!,
+          _connectionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_connectionIdMeta);
+    }
+    if (data.containsKey('model_id')) {
+      context.handle(
+        _modelIdMeta,
+        modelId.isAcceptableOrUnknown(data['model_id']!, _modelIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_modelIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {capability, purpose};
+  @override
+  CapabilityDefault map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CapabilityDefault(
+      capability: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}capability'],
+      )!,
+      purpose: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}purpose'],
+      )!,
+      connectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}connection_id'],
+      )!,
+      modelId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model_id'],
+      )!,
+    );
+  }
+
+  @override
+  $CapabilityDefaultsTable createAlias(String alias) {
+    return $CapabilityDefaultsTable(attachedDatabase, alias);
+  }
+}
+
+class CapabilityDefault extends DataClass
+    implements Insertable<CapabilityDefault> {
+  final String capability;
+  final String purpose;
+  final String connectionId;
+  final String modelId;
+  const CapabilityDefault({
+    required this.capability,
+    required this.purpose,
+    required this.connectionId,
+    required this.modelId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['capability'] = Variable<String>(capability);
+    map['purpose'] = Variable<String>(purpose);
+    map['connection_id'] = Variable<String>(connectionId);
+    map['model_id'] = Variable<String>(modelId);
+    return map;
+  }
+
+  CapabilityDefaultsCompanion toCompanion(bool nullToAbsent) {
+    return CapabilityDefaultsCompanion(
+      capability: Value(capability),
+      purpose: Value(purpose),
+      connectionId: Value(connectionId),
+      modelId: Value(modelId),
+    );
+  }
+
+  factory CapabilityDefault.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CapabilityDefault(
+      capability: serializer.fromJson<String>(json['capability']),
+      purpose: serializer.fromJson<String>(json['purpose']),
+      connectionId: serializer.fromJson<String>(json['connectionId']),
+      modelId: serializer.fromJson<String>(json['modelId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'capability': serializer.toJson<String>(capability),
+      'purpose': serializer.toJson<String>(purpose),
+      'connectionId': serializer.toJson<String>(connectionId),
+      'modelId': serializer.toJson<String>(modelId),
+    };
+  }
+
+  CapabilityDefault copyWith({
+    String? capability,
+    String? purpose,
+    String? connectionId,
+    String? modelId,
+  }) => CapabilityDefault(
+    capability: capability ?? this.capability,
+    purpose: purpose ?? this.purpose,
+    connectionId: connectionId ?? this.connectionId,
+    modelId: modelId ?? this.modelId,
+  );
+  CapabilityDefault copyWithCompanion(CapabilityDefaultsCompanion data) {
+    return CapabilityDefault(
+      capability: data.capability.present
+          ? data.capability.value
+          : this.capability,
+      purpose: data.purpose.present ? data.purpose.value : this.purpose,
+      connectionId: data.connectionId.present
+          ? data.connectionId.value
+          : this.connectionId,
+      modelId: data.modelId.present ? data.modelId.value : this.modelId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CapabilityDefault(')
+          ..write('capability: $capability, ')
+          ..write('purpose: $purpose, ')
+          ..write('connectionId: $connectionId, ')
+          ..write('modelId: $modelId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(capability, purpose, connectionId, modelId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CapabilityDefault &&
+          other.capability == this.capability &&
+          other.purpose == this.purpose &&
+          other.connectionId == this.connectionId &&
+          other.modelId == this.modelId);
+}
+
+class CapabilityDefaultsCompanion extends UpdateCompanion<CapabilityDefault> {
+  final Value<String> capability;
+  final Value<String> purpose;
+  final Value<String> connectionId;
+  final Value<String> modelId;
+  final Value<int> rowid;
+  const CapabilityDefaultsCompanion({
+    this.capability = const Value.absent(),
+    this.purpose = const Value.absent(),
+    this.connectionId = const Value.absent(),
+    this.modelId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CapabilityDefaultsCompanion.insert({
+    required String capability,
+    this.purpose = const Value.absent(),
+    required String connectionId,
+    required String modelId,
+    this.rowid = const Value.absent(),
+  }) : capability = Value(capability),
+       connectionId = Value(connectionId),
+       modelId = Value(modelId);
+  static Insertable<CapabilityDefault> custom({
+    Expression<String>? capability,
+    Expression<String>? purpose,
+    Expression<String>? connectionId,
+    Expression<String>? modelId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (capability != null) 'capability': capability,
+      if (purpose != null) 'purpose': purpose,
+      if (connectionId != null) 'connection_id': connectionId,
+      if (modelId != null) 'model_id': modelId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CapabilityDefaultsCompanion copyWith({
+    Value<String>? capability,
+    Value<String>? purpose,
+    Value<String>? connectionId,
+    Value<String>? modelId,
+    Value<int>? rowid,
+  }) {
+    return CapabilityDefaultsCompanion(
+      capability: capability ?? this.capability,
+      purpose: purpose ?? this.purpose,
+      connectionId: connectionId ?? this.connectionId,
+      modelId: modelId ?? this.modelId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (capability.present) {
+      map['capability'] = Variable<String>(capability.value);
+    }
+    if (purpose.present) {
+      map['purpose'] = Variable<String>(purpose.value);
+    }
+    if (connectionId.present) {
+      map['connection_id'] = Variable<String>(connectionId.value);
+    }
+    if (modelId.present) {
+      map['model_id'] = Variable<String>(modelId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CapabilityDefaultsCompanion(')
+          ..write('capability: $capability, ')
+          ..write('purpose: $purpose, ')
+          ..write('connectionId: $connectionId, ')
+          ..write('modelId: $modelId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -13699,6 +15615,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SubtitleCuesTable subtitleCues = $SubtitleCuesTable(this);
   late final $AudioTracksTable audioTracks = $AudioTracksTable(this);
   late final $TimelineClipsTable timelineClips = $TimelineClipsTable(this);
+  late final $VoiceAssetSettingsTable voiceAssetSettings =
+      $VoiceAssetSettingsTable(this);
+  late final $ConnectionCapabilitiesTable connectionCapabilities =
+      $ConnectionCapabilitiesTable(this);
+  late final $ProviderModelsTable providerModels = $ProviderModelsTable(this);
+  late final $CapabilityDefaultsTable capabilityDefaults =
+      $CapabilityDefaultsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -13727,6 +15650,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     subtitleCues,
     audioTracks,
     timelineClips,
+    voiceAssetSettings,
+    connectionCapabilities,
+    providerModels,
+    capabilityDefaults,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -13778,6 +15705,34 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('novel_role_edits', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'voice_assets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('voice_asset_settings', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'tts_providers',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('connection_capabilities', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'tts_providers',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('provider_models', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'tts_providers',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('capability_defaults', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -14004,6 +15959,70 @@ final class $$TtsProvidersTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $ConnectionCapabilitiesTable,
+    List<ConnectionCapability>
+  >
+  _connectionCapabilitiesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.connectionCapabilities,
+        aliasName: 'tts_providers__id__connection_capabilities__connection_id',
+      );
+
+  $$ConnectionCapabilitiesTableProcessedTableManager
+  get connectionCapabilitiesRefs {
+    final manager = $$ConnectionCapabilitiesTableTableManager(
+      $_db,
+      $_db.connectionCapabilities,
+    ).filter((f) => f.connectionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _connectionCapabilitiesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ProviderModelsTable, List<ProviderModel>>
+  _providerModelsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.providerModels,
+    aliasName: 'tts_providers__id__provider_models__connection_id',
+  );
+
+  $$ProviderModelsTableProcessedTableManager get providerModelsRefs {
+    final manager = $$ProviderModelsTableTableManager(
+      $_db,
+      $_db.providerModels,
+    ).filter((f) => f.connectionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_providerModelsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$CapabilityDefaultsTable, List<CapabilityDefault>>
+  _capabilityDefaultsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.capabilityDefaults,
+        aliasName: 'tts_providers__id__capability_defaults__connection_id',
+      );
+
+  $$CapabilityDefaultsTableProcessedTableManager get capabilityDefaultsRefs {
+    final manager = $$CapabilityDefaultsTableTableManager(
+      $_db,
+      $_db.capabilityDefaults,
+    ).filter((f) => f.connectionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _capabilityDefaultsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$TtsProvidersTableFilterComposer
@@ -14121,6 +16140,82 @@ class $$TtsProvidersTableFilterComposer
           }) => $$VoiceAssetsTableFilterComposer(
             $db: $db,
             $table: $db.voiceAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> connectionCapabilitiesRefs(
+    Expression<bool> Function($$ConnectionCapabilitiesTableFilterComposer f) f,
+  ) {
+    final $$ConnectionCapabilitiesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.connectionCapabilities,
+          getReferencedColumn: (t) => t.connectionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ConnectionCapabilitiesTableFilterComposer(
+                $db: $db,
+                $table: $db.connectionCapabilities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> providerModelsRefs(
+    Expression<bool> Function($$ProviderModelsTableFilterComposer f) f,
+  ) {
+    final $$ProviderModelsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.providerModels,
+      getReferencedColumn: (t) => t.connectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProviderModelsTableFilterComposer(
+            $db: $db,
+            $table: $db.providerModels,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> capabilityDefaultsRefs(
+    Expression<bool> Function($$CapabilityDefaultsTableFilterComposer f) f,
+  ) {
+    final $$CapabilityDefaultsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.capabilityDefaults,
+      getReferencedColumn: (t) => t.connectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CapabilityDefaultsTableFilterComposer(
+            $db: $db,
+            $table: $db.capabilityDefaults,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -14317,6 +16412,83 @@ class $$TtsProvidersTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> connectionCapabilitiesRefs<T extends Object>(
+    Expression<T> Function($$ConnectionCapabilitiesTableAnnotationComposer a) f,
+  ) {
+    final $$ConnectionCapabilitiesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.connectionCapabilities,
+          getReferencedColumn: (t) => t.connectionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ConnectionCapabilitiesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.connectionCapabilities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> providerModelsRefs<T extends Object>(
+    Expression<T> Function($$ProviderModelsTableAnnotationComposer a) f,
+  ) {
+    final $$ProviderModelsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.providerModels,
+      getReferencedColumn: (t) => t.connectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProviderModelsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.providerModels,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> capabilityDefaultsRefs<T extends Object>(
+    Expression<T> Function($$CapabilityDefaultsTableAnnotationComposer a) f,
+  ) {
+    final $$CapabilityDefaultsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.capabilityDefaults,
+          getReferencedColumn: (t) => t.connectionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$CapabilityDefaultsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.capabilityDefaults,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$TtsProvidersTableTableManager
@@ -14332,7 +16504,13 @@ class $$TtsProvidersTableTableManager
           $$TtsProvidersTableUpdateCompanionBuilder,
           (TtsProvider, $$TtsProvidersTableReferences),
           TtsProvider,
-          PrefetchHooks Function({bool modelBindingsRefs, bool voiceAssetsRefs})
+          PrefetchHooks Function({
+            bool modelBindingsRefs,
+            bool voiceAssetsRefs,
+            bool connectionCapabilitiesRefs,
+            bool providerModelsRefs,
+            bool capabilityDefaultsRefs,
+          })
         > {
   $$TtsProvidersTableTableManager(_$AppDatabase db, $TtsProvidersTable table)
     : super(
@@ -14418,12 +16596,21 @@ class $$TtsProvidersTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({modelBindingsRefs = false, voiceAssetsRefs = false}) {
+              ({
+                modelBindingsRefs = false,
+                voiceAssetsRefs = false,
+                connectionCapabilitiesRefs = false,
+                providerModelsRefs = false,
+                capabilityDefaultsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (modelBindingsRefs) db.modelBindings,
                     if (voiceAssetsRefs) db.voiceAssets,
+                    if (connectionCapabilitiesRefs) db.connectionCapabilities,
+                    if (providerModelsRefs) db.providerModels,
+                    if (capabilityDefaultsRefs) db.capabilityDefaults,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -14470,6 +16657,69 @@ class $$TtsProvidersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (connectionCapabilitiesRefs)
+                        await $_getPrefetchedData<
+                          TtsProvider,
+                          $TtsProvidersTable,
+                          ConnectionCapability
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TtsProvidersTableReferences
+                              ._connectionCapabilitiesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TtsProvidersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).connectionCapabilitiesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.connectionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (providerModelsRefs)
+                        await $_getPrefetchedData<
+                          TtsProvider,
+                          $TtsProvidersTable,
+                          ProviderModel
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TtsProvidersTableReferences
+                              ._providerModelsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TtsProvidersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).providerModelsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.connectionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (capabilityDefaultsRefs)
+                        await $_getPrefetchedData<
+                          TtsProvider,
+                          $TtsProvidersTable,
+                          CapabilityDefault
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TtsProvidersTableReferences
+                              ._capabilityDefaultsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TtsProvidersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).capabilityDefaultsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.connectionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -14490,7 +16740,13 @@ typedef $$TtsProvidersTableProcessedTableManager =
       $$TtsProvidersTableUpdateCompanionBuilder,
       (TtsProvider, $$TtsProvidersTableReferences),
       TtsProvider,
-      PrefetchHooks Function({bool modelBindingsRefs, bool voiceAssetsRefs})
+      PrefetchHooks Function({
+        bool modelBindingsRefs,
+        bool voiceAssetsRefs,
+        bool connectionCapabilitiesRefs,
+        bool providerModelsRefs,
+        bool capabilityDefaultsRefs,
+      })
     >;
 typedef $$ModelBindingsTableCreateCompanionBuilder =
     ModelBindingsCompanion Function({
@@ -14946,6 +17202,27 @@ final class $$VoiceAssetsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$VoiceAssetSettingsTable, List<VoiceAssetSetting>>
+  _voiceAssetSettingsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.voiceAssetSettings,
+        aliasName: 'voice_assets__id__voice_asset_settings__voice_asset_id',
+      );
+
+  $$VoiceAssetSettingsTableProcessedTableManager get voiceAssetSettingsRefs {
+    final manager = $$VoiceAssetSettingsTableTableManager(
+      $_db,
+      $_db.voiceAssetSettings,
+    ).filter((f) => f.voiceAssetId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _voiceAssetSettingsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$VoiceAssetsTableFilterComposer
@@ -15161,6 +17438,31 @@ class $$VoiceAssetsTableFilterComposer
           }) => $$NovelVoiceBindingsTableFilterComposer(
             $db: $db,
             $table: $db.novelVoiceBindings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> voiceAssetSettingsRefs(
+    Expression<bool> Function($$VoiceAssetSettingsTableFilterComposer f) f,
+  ) {
+    final $$VoiceAssetSettingsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.voiceAssetSettings,
+      getReferencedColumn: (t) => t.voiceAssetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceAssetSettingsTableFilterComposer(
+            $db: $db,
+            $table: $db.voiceAssetSettings,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -15505,6 +17807,32 @@ class $$VoiceAssetsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> voiceAssetSettingsRefs<T extends Object>(
+    Expression<T> Function($$VoiceAssetSettingsTableAnnotationComposer a) f,
+  ) {
+    final $$VoiceAssetSettingsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.voiceAssetSettings,
+          getReferencedColumn: (t) => t.voiceAssetId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$VoiceAssetSettingsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.voiceAssetSettings,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$VoiceAssetsTableTableManager
@@ -15526,6 +17854,7 @@ class $$VoiceAssetsTableTableManager
             bool ttsJobsRefs,
             bool quickTtsHistoriesRefs,
             bool novelVoiceBindingsRefs,
+            bool voiceAssetSettingsRefs,
           })
         > {
   $$VoiceAssetsTableTableManager(_$AppDatabase db, $VoiceAssetsTable table)
@@ -15642,6 +17971,7 @@ class $$VoiceAssetsTableTableManager
                 ttsJobsRefs = false,
                 quickTtsHistoriesRefs = false,
                 novelVoiceBindingsRefs = false,
+                voiceAssetSettingsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -15650,6 +17980,7 @@ class $$VoiceAssetsTableTableManager
                     if (ttsJobsRefs) db.ttsJobs,
                     if (quickTtsHistoriesRefs) db.quickTtsHistories,
                     if (novelVoiceBindingsRefs) db.novelVoiceBindings,
+                    if (voiceAssetSettingsRefs) db.voiceAssetSettings,
                   ],
                   addJoins:
                       <
@@ -15771,6 +18102,27 @@ class $$VoiceAssetsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (voiceAssetSettingsRefs)
+                        await $_getPrefetchedData<
+                          VoiceAsset,
+                          $VoiceAssetsTable,
+                          VoiceAssetSetting
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VoiceAssetsTableReferences
+                              ._voiceAssetSettingsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VoiceAssetsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).voiceAssetSettingsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.voiceAssetId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -15797,6 +18149,7 @@ typedef $$VoiceAssetsTableProcessedTableManager =
         bool ttsJobsRefs,
         bool quickTtsHistoriesRefs,
         bool novelVoiceBindingsRefs,
+        bool voiceAssetSettingsRefs,
       })
     >;
 typedef $$VoiceBanksTableCreateCompanionBuilder =
@@ -25374,6 +27727,1503 @@ typedef $$TimelineClipsTableProcessedTableManager =
       TimelineClip,
       PrefetchHooks Function()
     >;
+typedef $$VoiceAssetSettingsTableCreateCompanionBuilder =
+    VoiceAssetSettingsCompanion Function({
+      required String voiceAssetId,
+      Value<String?> chainJson,
+      Value<String?> liveJson,
+      Value<int> rowid,
+    });
+typedef $$VoiceAssetSettingsTableUpdateCompanionBuilder =
+    VoiceAssetSettingsCompanion Function({
+      Value<String> voiceAssetId,
+      Value<String?> chainJson,
+      Value<String?> liveJson,
+      Value<int> rowid,
+    });
+
+final class $$VoiceAssetSettingsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $VoiceAssetSettingsTable,
+          VoiceAssetSetting
+        > {
+  $$VoiceAssetSettingsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $VoiceAssetsTable _voiceAssetIdTable(_$AppDatabase db) => db
+      .voiceAssets
+      .createAlias('voice_asset_settings__voice_asset_id__voice_assets__id');
+
+  $$VoiceAssetsTableProcessedTableManager get voiceAssetId {
+    final $_column = $_itemColumn<String>('voice_asset_id')!;
+
+    final manager = $$VoiceAssetsTableTableManager(
+      $_db,
+      $_db.voiceAssets,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_voiceAssetIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$VoiceAssetSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $VoiceAssetSettingsTable> {
+  $$VoiceAssetSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get chainJson => $composableBuilder(
+    column: $table.chainJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get liveJson => $composableBuilder(
+    column: $table.liveJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VoiceAssetsTableFilterComposer get voiceAssetId {
+    final $$VoiceAssetsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voiceAssetId,
+      referencedTable: $db.voiceAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceAssetsTableFilterComposer(
+            $db: $db,
+            $table: $db.voiceAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VoiceAssetSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $VoiceAssetSettingsTable> {
+  $$VoiceAssetSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get chainJson => $composableBuilder(
+    column: $table.chainJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get liveJson => $composableBuilder(
+    column: $table.liveJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VoiceAssetsTableOrderingComposer get voiceAssetId {
+    final $$VoiceAssetsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voiceAssetId,
+      referencedTable: $db.voiceAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceAssetsTableOrderingComposer(
+            $db: $db,
+            $table: $db.voiceAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VoiceAssetSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VoiceAssetSettingsTable> {
+  $$VoiceAssetSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get chainJson =>
+      $composableBuilder(column: $table.chainJson, builder: (column) => column);
+
+  GeneratedColumn<String> get liveJson =>
+      $composableBuilder(column: $table.liveJson, builder: (column) => column);
+
+  $$VoiceAssetsTableAnnotationComposer get voiceAssetId {
+    final $$VoiceAssetsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voiceAssetId,
+      referencedTable: $db.voiceAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VoiceAssetsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.voiceAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VoiceAssetSettingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $VoiceAssetSettingsTable,
+          VoiceAssetSetting,
+          $$VoiceAssetSettingsTableFilterComposer,
+          $$VoiceAssetSettingsTableOrderingComposer,
+          $$VoiceAssetSettingsTableAnnotationComposer,
+          $$VoiceAssetSettingsTableCreateCompanionBuilder,
+          $$VoiceAssetSettingsTableUpdateCompanionBuilder,
+          (VoiceAssetSetting, $$VoiceAssetSettingsTableReferences),
+          VoiceAssetSetting,
+          PrefetchHooks Function({bool voiceAssetId})
+        > {
+  $$VoiceAssetSettingsTableTableManager(
+    _$AppDatabase db,
+    $VoiceAssetSettingsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VoiceAssetSettingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VoiceAssetSettingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VoiceAssetSettingsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> voiceAssetId = const Value.absent(),
+                Value<String?> chainJson = const Value.absent(),
+                Value<String?> liveJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VoiceAssetSettingsCompanion(
+                voiceAssetId: voiceAssetId,
+                chainJson: chainJson,
+                liveJson: liveJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String voiceAssetId,
+                Value<String?> chainJson = const Value.absent(),
+                Value<String?> liveJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VoiceAssetSettingsCompanion.insert(
+                voiceAssetId: voiceAssetId,
+                chainJson: chainJson,
+                liveJson: liveJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$VoiceAssetSettingsTable, VoiceAssetSetting>(
+                    table,
+                  ),
+                  $$VoiceAssetSettingsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({voiceAssetId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (voiceAssetId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.voiceAssetId,
+                                referencedTable:
+                                    $$VoiceAssetSettingsTableReferences
+                                        ._voiceAssetIdTable(db),
+                                referencedColumn:
+                                    $$VoiceAssetSettingsTableReferences
+                                        ._voiceAssetIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$VoiceAssetSettingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $VoiceAssetSettingsTable,
+      VoiceAssetSetting,
+      $$VoiceAssetSettingsTableFilterComposer,
+      $$VoiceAssetSettingsTableOrderingComposer,
+      $$VoiceAssetSettingsTableAnnotationComposer,
+      $$VoiceAssetSettingsTableCreateCompanionBuilder,
+      $$VoiceAssetSettingsTableUpdateCompanionBuilder,
+      (VoiceAssetSetting, $$VoiceAssetSettingsTableReferences),
+      VoiceAssetSetting,
+      PrefetchHooks Function({bool voiceAssetId})
+    >;
+typedef $$ConnectionCapabilitiesTableCreateCompanionBuilder =
+    ConnectionCapabilitiesCompanion Function({
+      required String connectionId,
+      required String capability,
+      Value<bool> enabled,
+      Value<int?> maxConcurrency,
+      Value<int?> requestsPerMinute,
+      Value<int?> requestsPerDay,
+      Value<int?> tokensPerMinute,
+      Value<int?> tokensPerDay,
+      Value<String?> serviceOverride,
+      Value<int> rowid,
+    });
+typedef $$ConnectionCapabilitiesTableUpdateCompanionBuilder =
+    ConnectionCapabilitiesCompanion Function({
+      Value<String> connectionId,
+      Value<String> capability,
+      Value<bool> enabled,
+      Value<int?> maxConcurrency,
+      Value<int?> requestsPerMinute,
+      Value<int?> requestsPerDay,
+      Value<int?> tokensPerMinute,
+      Value<int?> tokensPerDay,
+      Value<String?> serviceOverride,
+      Value<int> rowid,
+    });
+
+final class $$ConnectionCapabilitiesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ConnectionCapabilitiesTable,
+          ConnectionCapability
+        > {
+  $$ConnectionCapabilitiesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $TtsProvidersTable _connectionIdTable(_$AppDatabase db) => db
+      .ttsProviders
+      .createAlias('connection_capabilities__connection_id__tts_providers__id');
+
+  $$TtsProvidersTableProcessedTableManager get connectionId {
+    final $_column = $_itemColumn<String>('connection_id')!;
+
+    final manager = $$TtsProvidersTableTableManager(
+      $_db,
+      $_db.ttsProviders,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_connectionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ConnectionCapabilitiesTableFilterComposer
+    extends Composer<_$AppDatabase, $ConnectionCapabilitiesTable> {
+  $$ConnectionCapabilitiesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get capability => $composableBuilder(
+    column: $table.capability,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get maxConcurrency => $composableBuilder(
+    column: $table.maxConcurrency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get requestsPerMinute => $composableBuilder(
+    column: $table.requestsPerMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get requestsPerDay => $composableBuilder(
+    column: $table.requestsPerDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensPerMinute => $composableBuilder(
+    column: $table.tokensPerMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensPerDay => $composableBuilder(
+    column: $table.tokensPerDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serviceOverride => $composableBuilder(
+    column: $table.serviceOverride,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TtsProvidersTableFilterComposer get connectionId {
+    final $$TtsProvidersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.connectionId,
+      referencedTable: $db.ttsProviders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TtsProvidersTableFilterComposer(
+            $db: $db,
+            $table: $db.ttsProviders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConnectionCapabilitiesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ConnectionCapabilitiesTable> {
+  $$ConnectionCapabilitiesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get capability => $composableBuilder(
+    column: $table.capability,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get maxConcurrency => $composableBuilder(
+    column: $table.maxConcurrency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get requestsPerMinute => $composableBuilder(
+    column: $table.requestsPerMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get requestsPerDay => $composableBuilder(
+    column: $table.requestsPerDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tokensPerMinute => $composableBuilder(
+    column: $table.tokensPerMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tokensPerDay => $composableBuilder(
+    column: $table.tokensPerDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get serviceOverride => $composableBuilder(
+    column: $table.serviceOverride,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TtsProvidersTableOrderingComposer get connectionId {
+    final $$TtsProvidersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.connectionId,
+      referencedTable: $db.ttsProviders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TtsProvidersTableOrderingComposer(
+            $db: $db,
+            $table: $db.ttsProviders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConnectionCapabilitiesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ConnectionCapabilitiesTable> {
+  $$ConnectionCapabilitiesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get capability => $composableBuilder(
+    column: $table.capability,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<int> get maxConcurrency => $composableBuilder(
+    column: $table.maxConcurrency,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get requestsPerMinute => $composableBuilder(
+    column: $table.requestsPerMinute,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get requestsPerDay => $composableBuilder(
+    column: $table.requestsPerDay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tokensPerMinute => $composableBuilder(
+    column: $table.tokensPerMinute,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tokensPerDay => $composableBuilder(
+    column: $table.tokensPerDay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get serviceOverride => $composableBuilder(
+    column: $table.serviceOverride,
+    builder: (column) => column,
+  );
+
+  $$TtsProvidersTableAnnotationComposer get connectionId {
+    final $$TtsProvidersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.connectionId,
+      referencedTable: $db.ttsProviders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TtsProvidersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ttsProviders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConnectionCapabilitiesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ConnectionCapabilitiesTable,
+          ConnectionCapability,
+          $$ConnectionCapabilitiesTableFilterComposer,
+          $$ConnectionCapabilitiesTableOrderingComposer,
+          $$ConnectionCapabilitiesTableAnnotationComposer,
+          $$ConnectionCapabilitiesTableCreateCompanionBuilder,
+          $$ConnectionCapabilitiesTableUpdateCompanionBuilder,
+          (ConnectionCapability, $$ConnectionCapabilitiesTableReferences),
+          ConnectionCapability,
+          PrefetchHooks Function({bool connectionId})
+        > {
+  $$ConnectionCapabilitiesTableTableManager(
+    _$AppDatabase db,
+    $ConnectionCapabilitiesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ConnectionCapabilitiesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ConnectionCapabilitiesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ConnectionCapabilitiesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> connectionId = const Value.absent(),
+                Value<String> capability = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<int?> maxConcurrency = const Value.absent(),
+                Value<int?> requestsPerMinute = const Value.absent(),
+                Value<int?> requestsPerDay = const Value.absent(),
+                Value<int?> tokensPerMinute = const Value.absent(),
+                Value<int?> tokensPerDay = const Value.absent(),
+                Value<String?> serviceOverride = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ConnectionCapabilitiesCompanion(
+                connectionId: connectionId,
+                capability: capability,
+                enabled: enabled,
+                maxConcurrency: maxConcurrency,
+                requestsPerMinute: requestsPerMinute,
+                requestsPerDay: requestsPerDay,
+                tokensPerMinute: tokensPerMinute,
+                tokensPerDay: tokensPerDay,
+                serviceOverride: serviceOverride,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String connectionId,
+                required String capability,
+                Value<bool> enabled = const Value.absent(),
+                Value<int?> maxConcurrency = const Value.absent(),
+                Value<int?> requestsPerMinute = const Value.absent(),
+                Value<int?> requestsPerDay = const Value.absent(),
+                Value<int?> tokensPerMinute = const Value.absent(),
+                Value<int?> tokensPerDay = const Value.absent(),
+                Value<String?> serviceOverride = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ConnectionCapabilitiesCompanion.insert(
+                connectionId: connectionId,
+                capability: capability,
+                enabled: enabled,
+                maxConcurrency: maxConcurrency,
+                requestsPerMinute: requestsPerMinute,
+                requestsPerDay: requestsPerDay,
+                tokensPerMinute: tokensPerMinute,
+                tokensPerDay: tokensPerDay,
+                serviceOverride: serviceOverride,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $ConnectionCapabilitiesTable,
+                    ConnectionCapability
+                  >(table),
+                  $$ConnectionCapabilitiesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({connectionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (connectionId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.connectionId,
+                                referencedTable:
+                                    $$ConnectionCapabilitiesTableReferences
+                                        ._connectionIdTable(db),
+                                referencedColumn:
+                                    $$ConnectionCapabilitiesTableReferences
+                                        ._connectionIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ConnectionCapabilitiesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ConnectionCapabilitiesTable,
+      ConnectionCapability,
+      $$ConnectionCapabilitiesTableFilterComposer,
+      $$ConnectionCapabilitiesTableOrderingComposer,
+      $$ConnectionCapabilitiesTableAnnotationComposer,
+      $$ConnectionCapabilitiesTableCreateCompanionBuilder,
+      $$ConnectionCapabilitiesTableUpdateCompanionBuilder,
+      (ConnectionCapability, $$ConnectionCapabilitiesTableReferences),
+      ConnectionCapability,
+      PrefetchHooks Function({bool connectionId})
+    >;
+typedef $$ProviderModelsTableCreateCompanionBuilder =
+    ProviderModelsCompanion Function({
+      required String id,
+      required String connectionId,
+      required String modelId,
+      required String capability,
+      Value<String?> route,
+      Value<String?> displayName,
+      Value<String> featuresJson,
+      Value<String?> lifecycle,
+      Value<DateTime?> shutdownAt,
+      Value<String> source,
+      Value<bool> enabled,
+      Value<int> rowid,
+    });
+typedef $$ProviderModelsTableUpdateCompanionBuilder =
+    ProviderModelsCompanion Function({
+      Value<String> id,
+      Value<String> connectionId,
+      Value<String> modelId,
+      Value<String> capability,
+      Value<String?> route,
+      Value<String?> displayName,
+      Value<String> featuresJson,
+      Value<String?> lifecycle,
+      Value<DateTime?> shutdownAt,
+      Value<String> source,
+      Value<bool> enabled,
+      Value<int> rowid,
+    });
+
+final class $$ProviderModelsTableReferences
+    extends BaseReferences<_$AppDatabase, $ProviderModelsTable, ProviderModel> {
+  $$ProviderModelsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $TtsProvidersTable _connectionIdTable(_$AppDatabase db) => db
+      .ttsProviders
+      .createAlias('provider_models__connection_id__tts_providers__id');
+
+  $$TtsProvidersTableProcessedTableManager get connectionId {
+    final $_column = $_itemColumn<String>('connection_id')!;
+
+    final manager = $$TtsProvidersTableTableManager(
+      $_db,
+      $_db.ttsProviders,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_connectionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ProviderModelsTableFilterComposer
+    extends Composer<_$AppDatabase, $ProviderModelsTable> {
+  $$ProviderModelsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modelId => $composableBuilder(
+    column: $table.modelId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get capability => $composableBuilder(
+    column: $table.capability,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get route => $composableBuilder(
+    column: $table.route,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get featuresJson => $composableBuilder(
+    column: $table.featuresJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lifecycle => $composableBuilder(
+    column: $table.lifecycle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get shutdownAt => $composableBuilder(
+    column: $table.shutdownAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TtsProvidersTableFilterComposer get connectionId {
+    final $$TtsProvidersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.connectionId,
+      referencedTable: $db.ttsProviders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TtsProvidersTableFilterComposer(
+            $db: $db,
+            $table: $db.ttsProviders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProviderModelsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProviderModelsTable> {
+  $$ProviderModelsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modelId => $composableBuilder(
+    column: $table.modelId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get capability => $composableBuilder(
+    column: $table.capability,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get route => $composableBuilder(
+    column: $table.route,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get featuresJson => $composableBuilder(
+    column: $table.featuresJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lifecycle => $composableBuilder(
+    column: $table.lifecycle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get shutdownAt => $composableBuilder(
+    column: $table.shutdownAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TtsProvidersTableOrderingComposer get connectionId {
+    final $$TtsProvidersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.connectionId,
+      referencedTable: $db.ttsProviders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TtsProvidersTableOrderingComposer(
+            $db: $db,
+            $table: $db.ttsProviders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProviderModelsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProviderModelsTable> {
+  $$ProviderModelsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get modelId =>
+      $composableBuilder(column: $table.modelId, builder: (column) => column);
+
+  GeneratedColumn<String> get capability => $composableBuilder(
+    column: $table.capability,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get route =>
+      $composableBuilder(column: $table.route, builder: (column) => column);
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get featuresJson => $composableBuilder(
+    column: $table.featuresJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lifecycle =>
+      $composableBuilder(column: $table.lifecycle, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get shutdownAt => $composableBuilder(
+    column: $table.shutdownAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  $$TtsProvidersTableAnnotationComposer get connectionId {
+    final $$TtsProvidersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.connectionId,
+      referencedTable: $db.ttsProviders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TtsProvidersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ttsProviders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProviderModelsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProviderModelsTable,
+          ProviderModel,
+          $$ProviderModelsTableFilterComposer,
+          $$ProviderModelsTableOrderingComposer,
+          $$ProviderModelsTableAnnotationComposer,
+          $$ProviderModelsTableCreateCompanionBuilder,
+          $$ProviderModelsTableUpdateCompanionBuilder,
+          (ProviderModel, $$ProviderModelsTableReferences),
+          ProviderModel,
+          PrefetchHooks Function({bool connectionId})
+        > {
+  $$ProviderModelsTableTableManager(
+    _$AppDatabase db,
+    $ProviderModelsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProviderModelsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProviderModelsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProviderModelsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> connectionId = const Value.absent(),
+                Value<String> modelId = const Value.absent(),
+                Value<String> capability = const Value.absent(),
+                Value<String?> route = const Value.absent(),
+                Value<String?> displayName = const Value.absent(),
+                Value<String> featuresJson = const Value.absent(),
+                Value<String?> lifecycle = const Value.absent(),
+                Value<DateTime?> shutdownAt = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProviderModelsCompanion(
+                id: id,
+                connectionId: connectionId,
+                modelId: modelId,
+                capability: capability,
+                route: route,
+                displayName: displayName,
+                featuresJson: featuresJson,
+                lifecycle: lifecycle,
+                shutdownAt: shutdownAt,
+                source: source,
+                enabled: enabled,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String connectionId,
+                required String modelId,
+                required String capability,
+                Value<String?> route = const Value.absent(),
+                Value<String?> displayName = const Value.absent(),
+                Value<String> featuresJson = const Value.absent(),
+                Value<String?> lifecycle = const Value.absent(),
+                Value<DateTime?> shutdownAt = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProviderModelsCompanion.insert(
+                id: id,
+                connectionId: connectionId,
+                modelId: modelId,
+                capability: capability,
+                route: route,
+                displayName: displayName,
+                featuresJson: featuresJson,
+                lifecycle: lifecycle,
+                shutdownAt: shutdownAt,
+                source: source,
+                enabled: enabled,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ProviderModelsTable, ProviderModel>(table),
+                  $$ProviderModelsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({connectionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (connectionId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.connectionId,
+                                referencedTable: $$ProviderModelsTableReferences
+                                    ._connectionIdTable(db),
+                                referencedColumn:
+                                    $$ProviderModelsTableReferences
+                                        ._connectionIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ProviderModelsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProviderModelsTable,
+      ProviderModel,
+      $$ProviderModelsTableFilterComposer,
+      $$ProviderModelsTableOrderingComposer,
+      $$ProviderModelsTableAnnotationComposer,
+      $$ProviderModelsTableCreateCompanionBuilder,
+      $$ProviderModelsTableUpdateCompanionBuilder,
+      (ProviderModel, $$ProviderModelsTableReferences),
+      ProviderModel,
+      PrefetchHooks Function({bool connectionId})
+    >;
+typedef $$CapabilityDefaultsTableCreateCompanionBuilder =
+    CapabilityDefaultsCompanion Function({
+      required String capability,
+      Value<String> purpose,
+      required String connectionId,
+      required String modelId,
+      Value<int> rowid,
+    });
+typedef $$CapabilityDefaultsTableUpdateCompanionBuilder =
+    CapabilityDefaultsCompanion Function({
+      Value<String> capability,
+      Value<String> purpose,
+      Value<String> connectionId,
+      Value<String> modelId,
+      Value<int> rowid,
+    });
+
+final class $$CapabilityDefaultsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $CapabilityDefaultsTable,
+          CapabilityDefault
+        > {
+  $$CapabilityDefaultsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $TtsProvidersTable _connectionIdTable(_$AppDatabase db) => db
+      .ttsProviders
+      .createAlias('capability_defaults__connection_id__tts_providers__id');
+
+  $$TtsProvidersTableProcessedTableManager get connectionId {
+    final $_column = $_itemColumn<String>('connection_id')!;
+
+    final manager = $$TtsProvidersTableTableManager(
+      $_db,
+      $_db.ttsProviders,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_connectionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$CapabilityDefaultsTableFilterComposer
+    extends Composer<_$AppDatabase, $CapabilityDefaultsTable> {
+  $$CapabilityDefaultsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get capability => $composableBuilder(
+    column: $table.capability,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get purpose => $composableBuilder(
+    column: $table.purpose,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modelId => $composableBuilder(
+    column: $table.modelId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TtsProvidersTableFilterComposer get connectionId {
+    final $$TtsProvidersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.connectionId,
+      referencedTable: $db.ttsProviders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TtsProvidersTableFilterComposer(
+            $db: $db,
+            $table: $db.ttsProviders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CapabilityDefaultsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CapabilityDefaultsTable> {
+  $$CapabilityDefaultsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get capability => $composableBuilder(
+    column: $table.capability,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get purpose => $composableBuilder(
+    column: $table.purpose,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modelId => $composableBuilder(
+    column: $table.modelId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TtsProvidersTableOrderingComposer get connectionId {
+    final $$TtsProvidersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.connectionId,
+      referencedTable: $db.ttsProviders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TtsProvidersTableOrderingComposer(
+            $db: $db,
+            $table: $db.ttsProviders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CapabilityDefaultsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CapabilityDefaultsTable> {
+  $$CapabilityDefaultsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get capability => $composableBuilder(
+    column: $table.capability,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get purpose =>
+      $composableBuilder(column: $table.purpose, builder: (column) => column);
+
+  GeneratedColumn<String> get modelId =>
+      $composableBuilder(column: $table.modelId, builder: (column) => column);
+
+  $$TtsProvidersTableAnnotationComposer get connectionId {
+    final $$TtsProvidersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.connectionId,
+      referencedTable: $db.ttsProviders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TtsProvidersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ttsProviders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CapabilityDefaultsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CapabilityDefaultsTable,
+          CapabilityDefault,
+          $$CapabilityDefaultsTableFilterComposer,
+          $$CapabilityDefaultsTableOrderingComposer,
+          $$CapabilityDefaultsTableAnnotationComposer,
+          $$CapabilityDefaultsTableCreateCompanionBuilder,
+          $$CapabilityDefaultsTableUpdateCompanionBuilder,
+          (CapabilityDefault, $$CapabilityDefaultsTableReferences),
+          CapabilityDefault,
+          PrefetchHooks Function({bool connectionId})
+        > {
+  $$CapabilityDefaultsTableTableManager(
+    _$AppDatabase db,
+    $CapabilityDefaultsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CapabilityDefaultsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CapabilityDefaultsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CapabilityDefaultsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> capability = const Value.absent(),
+                Value<String> purpose = const Value.absent(),
+                Value<String> connectionId = const Value.absent(),
+                Value<String> modelId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CapabilityDefaultsCompanion(
+                capability: capability,
+                purpose: purpose,
+                connectionId: connectionId,
+                modelId: modelId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String capability,
+                Value<String> purpose = const Value.absent(),
+                required String connectionId,
+                required String modelId,
+                Value<int> rowid = const Value.absent(),
+              }) => CapabilityDefaultsCompanion.insert(
+                capability: capability,
+                purpose: purpose,
+                connectionId: connectionId,
+                modelId: modelId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CapabilityDefaultsTable, CapabilityDefault>(
+                    table,
+                  ),
+                  $$CapabilityDefaultsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({connectionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (connectionId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.connectionId,
+                                referencedTable:
+                                    $$CapabilityDefaultsTableReferences
+                                        ._connectionIdTable(db),
+                                referencedColumn:
+                                    $$CapabilityDefaultsTableReferences
+                                        ._connectionIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$CapabilityDefaultsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CapabilityDefaultsTable,
+      CapabilityDefault,
+      $$CapabilityDefaultsTableFilterComposer,
+      $$CapabilityDefaultsTableOrderingComposer,
+      $$CapabilityDefaultsTableAnnotationComposer,
+      $$CapabilityDefaultsTableCreateCompanionBuilder,
+      $$CapabilityDefaultsTableUpdateCompanionBuilder,
+      (CapabilityDefault, $$CapabilityDefaultsTableReferences),
+      CapabilityDefault,
+      PrefetchHooks Function({bool connectionId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -25424,4 +29274,15 @@ class $AppDatabaseManager {
       $$AudioTracksTableTableManager(_db, _db.audioTracks);
   $$TimelineClipsTableTableManager get timelineClips =>
       $$TimelineClipsTableTableManager(_db, _db.timelineClips);
+  $$VoiceAssetSettingsTableTableManager get voiceAssetSettings =>
+      $$VoiceAssetSettingsTableTableManager(_db, _db.voiceAssetSettings);
+  $$ConnectionCapabilitiesTableTableManager get connectionCapabilities =>
+      $$ConnectionCapabilitiesTableTableManager(
+        _db,
+        _db.connectionCapabilities,
+      );
+  $$ProviderModelsTableTableManager get providerModels =>
+      $$ProviderModelsTableTableManager(_db, _db.providerModels);
+  $$CapabilityDefaultsTableTableManager get capabilityDefaults =>
+      $$CapabilityDefaultsTableTableManager(_db, _db.capabilityDefaults);
 }

@@ -315,7 +315,7 @@ class _StepDialogState extends State<_StepDialog> {
     final models = [
       if (cap != null)
         for (final c in widget.router.serving(cap))
-          for (final m in _live[c.id] ?? c.models(cap)) (c, m),
+          for (final m in _live[c.id] ?? widget.router.modelsOf(c, cap)) (c, m),
     ];
     final picked = models.any((e) => (e.$1.id, e.$2.id) == _model)
         ? _model

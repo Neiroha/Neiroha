@@ -264,12 +264,11 @@ final ttsProvidersStreamProvider = StreamProvider((ref) {
 final voiceChainSignaturesProvider = StreamProvider<Map<String, String>>(
   (ref) => ref
       .watch(databaseProvider)
-      .watchSettingsWithPrefix('voice.chain.')
+      .watchVoiceChains()
       .map(
         (rows) => {
           for (final MapEntry(:key, :value) in rows.entries)
-            if (_chainSignature(value) case final s when s.isNotEmpty)
-              key.substring('voice.chain.'.length): s,
+            if (_chainSignature(value) case final s when s.isNotEmpty) key: s,
         },
       ),
 );

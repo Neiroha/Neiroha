@@ -4,7 +4,7 @@ import 'package:neiroha/data/database/app_database.dart';
 
 /// Per-character settings for live dialog: persona prompt, Realtime model and
 /// voice, and an optional VC target that restores the character's timbre.
-/// Stored in app settings until the v34 provider tables land.
+/// Stored in `voice_asset_settings.live_json`.
 class CharacterLiveSettings {
   const CharacterLiveSettings({
     this.persona = '',
@@ -30,8 +30,6 @@ class CharacterLiveSettings {
 
   bool get usesVoiceConversion =>
       vcConnectionId != null && (vcVoice?.trim().isNotEmpty ?? false);
-
-  static String key(String voiceAssetId) => 'dialog.live.$voiceAssetId';
 
   Map<String, Object?> toJson() => {
     'persona': persona,
@@ -60,7 +58,10 @@ class CharacterLiveSettings {
     AppDatabase db,
     String voiceAssetId,
   ) async {
-    final raw = await db.getSetting(key(voiceAssetId));
+    final raw = await db.getVoiceAssetSetting(
+      voiceAssetId,
+      CharacterSettingSlot.live,
+    );
     if (raw == null || raw.isEmpty) return const CharacterLiveSettings();
     try {
       return CharacterLiveSettings.fromJson(
@@ -72,7 +73,11 @@ class CharacterLiveSettings {
   }
 
   Future<void> save(AppDatabase db, String voiceAssetId) =>
-      db.setSetting(key(voiceAssetId), jsonEncode(toJson()));
+      db.setVoiceAssetSetting(
+        voiceAssetId,
+        CharacterSettingSlot.live,
+        jsonEncode(toJson()),
+      );
 }
 
 /// Default persona when the user has not written one.

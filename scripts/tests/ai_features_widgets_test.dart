@@ -42,7 +42,7 @@ void main() {
         overrides: [
           databaseProvider.overrideWithValue(database),
           aiCapabilityRouterProvider.overrideWith(
-            (_) => Stream.value(CapabilityRouter.fromProviders(rows)),
+            (_) async => CapabilityRouter.fromProviders(rows),
           ),
         ],
         child: MaterialApp(

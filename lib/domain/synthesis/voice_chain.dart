@@ -133,8 +133,6 @@ class VoiceChain {
       if (!s.kind.isText) s,
   ]);
 
-  static String key(String voiceAssetId) => 'voice.chain.$voiceAssetId';
-
   /// What the chain does to the audio, for cache keys: empty when it does
   /// nothing, so characters without a chain keep their cached audio.
   String get signature => isActive

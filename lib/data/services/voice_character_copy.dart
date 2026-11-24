@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:neiroha/data/database/app_database.dart' as db;
-import 'package:neiroha/domain/synthesis/voice_chain.dart';
 import 'package:uuid/uuid.dart';
 
 /// Copies a character, its processing chain and (with [bankId]) its bank
@@ -34,9 +33,9 @@ Future<String> duplicateVoiceCharacter(
         loudnessOffsetDb: Value(asset.loudnessOffsetDb),
       ),
     );
-    final chain = await database.getSetting(VoiceChain.key(asset.id));
-    if (chain != null && chain.isNotEmpty) {
-      await database.setSetting(VoiceChain.key(newId), chain);
+    for (final slot in db.CharacterSettingSlot.values) {
+      final json = await database.getVoiceAssetSetting(asset.id, slot);
+      if (json != null) await database.setVoiceAssetSetting(newId, slot, json);
     }
     if (bankId != null) {
       await database.addMemberToBank(

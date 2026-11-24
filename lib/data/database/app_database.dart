@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import 'tables.dart';
+import 'ai_tables.dart';
 import 'novel_role_tables.dart';
 import 'database_connection.dart'
     if (dart.library.js_interop) 'database_connection_web.dart';
@@ -15,6 +16,7 @@ part 'queries/tts.dart';
 part 'queries/projects.dart';
 part 'queries/novel.dart';
 part 'queries/storage.dart';
+part 'queries/ai.dart';
 
 @DriftDatabase(
   tables: [
@@ -41,6 +43,10 @@ part 'queries/storage.dart';
     SubtitleCues,
     AudioTracks,
     TimelineClips,
+    VoiceAssetSettings,
+    ConnectionCapabilities,
+    ProviderModels,
+    CapabilityDefaults,
   ],
 )
 class AppDatabase extends _$AppDatabase {

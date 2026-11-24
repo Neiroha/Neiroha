@@ -64,7 +64,8 @@ class _LiveSettingsDialogState extends State<_LiveSettingsDialog> {
     final realtime = widget.mode == DialogMode.realtime;
     final models = [
       for (final c in widget.router.serving(AiCapability.realtime))
-        for (final m in c.models(AiCapability.realtime)) (c, m),
+        for (final m in widget.router.modelsOf(c, AiCapability.realtime))
+          (c, m),
     ];
     final picked = models.any((e) => (e.$1.id, e.$2.id) == _realtime)
         ? _realtime

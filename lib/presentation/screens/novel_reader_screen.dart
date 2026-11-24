@@ -50,6 +50,9 @@ part '../widgets/novel_reader/chapters.dart';
 part '../widgets/novel_reader/reader_pane.dart';
 part '../widgets/novel_reader/controls.dart';
 part '../widgets/novel_reader/settings_panel.dart';
+part '../widgets/novel_reader/settings_controls.dart';
+part '../widgets/novel_reader/dialogue_rules_dialog.dart';
+part '../widgets/novel_reader/text_filter_rules_dialog.dart';
 part '../widgets/novel_reader/project_shell.dart';
 
 /// Lightweight novel reader: import text chapters, read them comfortably, and

@@ -331,7 +331,7 @@ M1–M3 是 v0.6.0 的必需范围；M4 建议同版发布至少 STT 一项，�
 | --- | --- | --- |
 | M1 适配层骨架 | 已完成 | `domain/ai` 能力接口、插件注册表、`CapabilityRouter`；现有 TTS 适配器经 `SpeechSynthesizer` 委托 |
 | M2 数据迁移 | 部分 | schema v34（2026-11-24）：`voice_asset_settings`（处理链与实时设置自 `AppSettings` 迁入）、`connection_capabilities`（按能力开关与限额，队列按“连接 × 能力”分道）、`provider_models`（自行添加的模型）、`capability_defaults`（能力 / 用途默认）。未做：`provider_connections` / `provider_voices` 取代旧表、钥匙串 |
-| M3 新 Provider 界面 | 部分 | 已有：模型行能力徽章（目录优先、名称兜底）、音色随 TTS 模型折叠、Azure 单行音色组、停用日期标签与一键迁移、连接列表能力徽章与按能力分页、「设置 → AI 能力」路由页、角色检查器分标签（2026-11-24）。未做：添加向导、健康汇总 |
+| M3 新 Provider 界面 | 部分 | 已有：模型行能力徽章（目录优先、名称兜底）、音色随 TTS 模型折叠、Azure 单行音色组、停用日期标签与一键迁移、连接列表能力徽章与按能力分页、「设置 → AI 能力」路由页、角色检查器分标签、编辑页按能力分标签（概览 / 各能力 / 限额，可设能力默认模型与从账号发现 LLM）、卡片式添加、按能力健康检测与列表汇总点（2026-11-24）。未做：按插件 `auth` 字段生成表单、添加时的能力矩阵勾选 |
 | M4 LLM 与 STT | 基本完成 | LLM 发现与特性合并；STT 接入 OpenAI、Gemini、MiMo（Chat 音频输入） |
 | M5 VAD 与 VC | 部分 | ElevenLabs STS 与本地 RVC（2026-11-23）已接入；处理链去静音（能量判定）与 ASR 回听校验（2026-11-24）；端侧 VAD 模型未做 |
 | M6 实时与翻译 | 部分 | Gemini Live 与 OpenAI Realtime 可按角色选模型和该模型音色；Web Realtime 未做 |

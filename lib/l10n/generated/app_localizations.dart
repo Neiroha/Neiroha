@@ -6503,8 +6503,308 @@ abstract class AppLocalizations {
   /// No description provided for @chainNoStreaming.
   ///
   /// In en, this message translates to:
-  /// **'Voice conversion needs the whole line, so this character no longer streams.'**
+  /// **'Voice conversion runs sentence by sentence: playback starts once the first sentence is converted. On the web, converters that only return files convert the whole line first.'**
   String get chainNoStreaming;
+
+  /// No description provided for @retireBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Retires {date}'**
+  String retireBadge(Object date);
+
+  /// No description provided for @retireHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{model} stops working on {date}. Switch to {replacement}.'**
+  String retireHint(Object model, Object date, Object replacement);
+
+  /// No description provided for @retireHintNoReplacement.
+  ///
+  /// In en, this message translates to:
+  /// **'{model} stops working on {date}. Pick a model from another provider.'**
+  String retireHintNoReplacement(Object model, Object date);
+
+  /// No description provided for @retireBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} characters use models that stop working on {date} ({days} days left).'**
+  String retireBanner(Object count, Object date, Object days);
+
+  /// No description provided for @retireMigrate.
+  ///
+  /// In en, this message translates to:
+  /// **'Migrate'**
+  String get retireMigrate;
+
+  /// No description provided for @retireMigrateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move characters to replacement models?'**
+  String get retireMigrateTitle;
+
+  /// No description provided for @retireMigrateManual.
+  ///
+  /// In en, this message translates to:
+  /// **'No replacement runs here; change these in the character inspector:'**
+  String get retireMigrateManual;
+
+  /// No description provided for @retireMigrated.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved {count} characters.'**
+  String retireMigrated(Object count);
+
+  /// No description provided for @retireSwitchTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to {model}'**
+  String retireSwitchTo(Object model);
+
+  /// No description provided for @retireLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get retireLater;
+
+  /// No description provided for @chainTrim.
+  ///
+  /// In en, this message translates to:
+  /// **'Trim silence'**
+  String get chainTrim;
+
+  /// No description provided for @chainVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'ASR check'**
+  String get chainVerify;
+
+  /// No description provided for @chainTrimHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cuts silence at both ends of each sentence and shortens pauses longer than 0.35 s.'**
+  String get chainTrimHint;
+
+  /// No description provided for @chainVerifyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribes what was spoken, compares it with the line and lists skipped words. Playback is not delayed.'**
+  String get chainVerifyHint;
+
+  /// No description provided for @chainVerifyLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognition language (optional)'**
+  String get chainVerifyLanguage;
+
+  /// No description provided for @chainCheckMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Heard {score}% · missing: {missing}'**
+  String chainCheckMissing(Object score, Object missing);
+
+  /// No description provided for @chainCheckClean.
+  ///
+  /// In en, this message translates to:
+  /// **'Heard {score}% · nothing missing'**
+  String chainCheckClean(Object score);
+
+  /// No description provided for @chainCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'ASR check failed: {error}'**
+  String chainCheckFailed(Object error);
+
+  /// No description provided for @chainCheckNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No ASR check yet; preview the character to run one.'**
+  String get chainCheckNone;
+
+  /// No description provided for @settingsAiCapabilities.
+  ///
+  /// In en, this message translates to:
+  /// **'AI capabilities'**
+  String get settingsAiCapabilities;
+
+  /// No description provided for @settingsAiCapabilitiesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Default models, per-capability limits and added models'**
+  String get settingsAiCapabilitiesDescription;
+
+  /// No description provided for @capLlm.
+  ///
+  /// In en, this message translates to:
+  /// **'Language model'**
+  String get capLlm;
+
+  /// No description provided for @capTts.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech synthesis'**
+  String get capTts;
+
+  /// No description provided for @capStt.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech recognition'**
+  String get capStt;
+
+  /// No description provided for @capRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime voice'**
+  String get capRealtime;
+
+  /// No description provided for @capTranslate.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech translation'**
+  String get capTranslate;
+
+  /// No description provided for @capVc.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice conversion'**
+  String get capVc;
+
+  /// No description provided for @capVad.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice activity'**
+  String get capVad;
+
+  /// No description provided for @capMusic.
+  ///
+  /// In en, this message translates to:
+  /// **'Music'**
+  String get capMusic;
+
+  /// No description provided for @capDefaultModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Default model'**
+  String get capDefaultModel;
+
+  /// No description provided for @capAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic (first available)'**
+  String get capAutomatic;
+
+  /// No description provided for @capConnections.
+  ///
+  /// In en, this message translates to:
+  /// **'Connections'**
+  String get capConnections;
+
+  /// No description provided for @capNoConnections.
+  ///
+  /// In en, this message translates to:
+  /// **'No enabled connection offers this capability.'**
+  String get capNoConnections;
+
+  /// No description provided for @capLimits.
+  ///
+  /// In en, this message translates to:
+  /// **'Limits'**
+  String get capLimits;
+
+  /// No description provided for @capLimitsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{capability} limits · {connection}'**
+  String capLimitsTitle(Object capability, Object connection);
+
+  /// No description provided for @capLimitsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave a field empty to inherit the connection limit. Each capability queues on its own, so language-model calls do not take speech slots.'**
+  String get capLimitsHint;
+
+  /// No description provided for @capInherited.
+  ///
+  /// In en, this message translates to:
+  /// **'Inherited'**
+  String get capInherited;
+
+  /// No description provided for @capConcurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Concurrent requests'**
+  String get capConcurrency;
+
+  /// No description provided for @capRpm.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests / minute'**
+  String get capRpm;
+
+  /// No description provided for @capRpd.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests / day'**
+  String get capRpd;
+
+  /// No description provided for @capTpm.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens / minute'**
+  String get capTpm;
+
+  /// No description provided for @capTpd.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens / day'**
+  String get capTpd;
+
+  /// No description provided for @capAddModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Add model'**
+  String get capAddModel;
+
+  /// No description provided for @capModelId.
+  ///
+  /// In en, this message translates to:
+  /// **'Model id'**
+  String get capModelId;
+
+  /// No description provided for @capDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name (optional)'**
+  String get capDisplayName;
+
+  /// No description provided for @capModelRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'This connection cannot open model {model}.'**
+  String capModelRejected(Object model);
+
+  /// No description provided for @capOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get capOff;
+
+  /// No description provided for @capAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get capAll;
+
+  /// No description provided for @inspectorTabBasic.
+  ///
+  /// In en, this message translates to:
+  /// **'Basics'**
+  String get inspectorTabBasic;
+
+  /// No description provided for @inspectorTabVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get inspectorTabVoice;
 }
 
 class _AppLocalizationsDelegate

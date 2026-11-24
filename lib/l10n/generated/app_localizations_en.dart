@@ -3615,5 +3615,184 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chainNoStreaming =>
-      'Voice conversion needs the whole line, so this character no longer streams.';
+      'Voice conversion runs sentence by sentence: playback starts once the first sentence is converted. On the web, converters that only return files convert the whole line first.';
+
+  @override
+  String retireBadge(Object date) {
+    return 'Retires $date';
+  }
+
+  @override
+  String retireHint(Object model, Object date, Object replacement) {
+    return '$model stops working on $date. Switch to $replacement.';
+  }
+
+  @override
+  String retireHintNoReplacement(Object model, Object date) {
+    return '$model stops working on $date. Pick a model from another provider.';
+  }
+
+  @override
+  String retireBanner(Object count, Object date, Object days) {
+    return '$count characters use models that stop working on $date ($days days left).';
+  }
+
+  @override
+  String get retireMigrate => 'Migrate';
+
+  @override
+  String get retireMigrateTitle => 'Move characters to replacement models?';
+
+  @override
+  String get retireMigrateManual =>
+      'No replacement runs here; change these in the character inspector:';
+
+  @override
+  String retireMigrated(Object count) {
+    return 'Moved $count characters.';
+  }
+
+  @override
+  String retireSwitchTo(Object model) {
+    return 'Switch to $model';
+  }
+
+  @override
+  String get retireLater => 'Later';
+
+  @override
+  String get chainTrim => 'Trim silence';
+
+  @override
+  String get chainVerify => 'ASR check';
+
+  @override
+  String get chainTrimHint =>
+      'Cuts silence at both ends of each sentence and shortens pauses longer than 0.35 s.';
+
+  @override
+  String get chainVerifyHint =>
+      'Transcribes what was spoken, compares it with the line and lists skipped words. Playback is not delayed.';
+
+  @override
+  String get chainVerifyLanguage => 'Recognition language (optional)';
+
+  @override
+  String chainCheckMissing(Object score, Object missing) {
+    return 'Heard $score% · missing: $missing';
+  }
+
+  @override
+  String chainCheckClean(Object score) {
+    return 'Heard $score% · nothing missing';
+  }
+
+  @override
+  String chainCheckFailed(Object error) {
+    return 'ASR check failed: $error';
+  }
+
+  @override
+  String get chainCheckNone =>
+      'No ASR check yet; preview the character to run one.';
+
+  @override
+  String get settingsAiCapabilities => 'AI capabilities';
+
+  @override
+  String get settingsAiCapabilitiesDescription =>
+      'Default models, per-capability limits and added models';
+
+  @override
+  String get capLlm => 'Language model';
+
+  @override
+  String get capTts => 'Speech synthesis';
+
+  @override
+  String get capStt => 'Speech recognition';
+
+  @override
+  String get capRealtime => 'Realtime voice';
+
+  @override
+  String get capTranslate => 'Speech translation';
+
+  @override
+  String get capVc => 'Voice conversion';
+
+  @override
+  String get capVad => 'Voice activity';
+
+  @override
+  String get capMusic => 'Music';
+
+  @override
+  String get capDefaultModel => 'Default model';
+
+  @override
+  String get capAutomatic => 'Automatic (first available)';
+
+  @override
+  String get capConnections => 'Connections';
+
+  @override
+  String get capNoConnections =>
+      'No enabled connection offers this capability.';
+
+  @override
+  String get capLimits => 'Limits';
+
+  @override
+  String capLimitsTitle(Object capability, Object connection) {
+    return '$capability limits · $connection';
+  }
+
+  @override
+  String get capLimitsHint =>
+      'Leave a field empty to inherit the connection limit. Each capability queues on its own, so language-model calls do not take speech slots.';
+
+  @override
+  String get capInherited => 'Inherited';
+
+  @override
+  String get capConcurrency => 'Concurrent requests';
+
+  @override
+  String get capRpm => 'Requests / minute';
+
+  @override
+  String get capRpd => 'Requests / day';
+
+  @override
+  String get capTpm => 'Tokens / minute';
+
+  @override
+  String get capTpd => 'Tokens / day';
+
+  @override
+  String get capAddModel => 'Add model';
+
+  @override
+  String get capModelId => 'Model id';
+
+  @override
+  String get capDisplayName => 'Display name (optional)';
+
+  @override
+  String capModelRejected(Object model) {
+    return 'This connection cannot open model $model.';
+  }
+
+  @override
+  String get capOff => 'Off';
+
+  @override
+  String get capAll => 'All';
+
+  @override
+  String get inspectorTabBasic => 'Basics';
+
+  @override
+  String get inspectorTabVoice => 'Voice';
 }

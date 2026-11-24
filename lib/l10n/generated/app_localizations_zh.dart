@@ -3487,5 +3487,178 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chainNeedsSetup => '待配置';
 
   @override
-  String get chainNoStreaming => '变声需要整句音频，此角色将不再流式播放。';
+  String get chainNoStreaming =>
+      '变声逐句进行：首句转换完成即开始播放。网页端使用只返回文件的变声服务时，会整句转换后再播放。';
+
+  @override
+  String retireBadge(Object date) {
+    return '$date 停用';
+  }
+
+  @override
+  String retireHint(Object model, Object date, Object replacement) {
+    return '$model 将于 $date 停用，建议改用 $replacement。';
+  }
+
+  @override
+  String retireHintNoReplacement(Object model, Object date) {
+    return '$model 将于 $date 停用，请改用其他服务商的模型。';
+  }
+
+  @override
+  String retireBanner(Object count, Object date, Object days) {
+    return '$count 个角色使用的模型将于 $date 停用（还剩 $days 天）。';
+  }
+
+  @override
+  String get retireMigrate => '一键迁移';
+
+  @override
+  String get retireMigrateTitle => '将角色迁移到替代模型？';
+
+  @override
+  String get retireMigrateManual => '以下角色在当前平台没有可用的替代模型，请在角色检查器中改用其他服务商：';
+
+  @override
+  String retireMigrated(Object count) {
+    return '已迁移 $count 个角色。';
+  }
+
+  @override
+  String retireSwitchTo(Object model) {
+    return '改用 $model';
+  }
+
+  @override
+  String get retireLater => '稍后';
+
+  @override
+  String get chainTrim => '去静音';
+
+  @override
+  String get chainVerify => '回听校验（ASR）';
+
+  @override
+  String get chainTrimHint => '裁掉每句首尾的静音，并把超过 0.35 秒的停顿缩短。';
+
+  @override
+  String get chainVerifyHint => '用语音识别听一遍合成结果，与台词比对并列出漏读，不影响播放。';
+
+  @override
+  String get chainVerifyLanguage => '识别语言（可选）';
+
+  @override
+  String chainCheckMissing(Object score, Object missing) {
+    return '回听 $score% · 漏读：$missing';
+  }
+
+  @override
+  String chainCheckClean(Object score) {
+    return '回听 $score%，未发现漏读';
+  }
+
+  @override
+  String chainCheckFailed(Object error) {
+    return '回听失败：$error';
+  }
+
+  @override
+  String get chainCheckNone => '还没有回听结果，试听角色后显示。';
+
+  @override
+  String get settingsAiCapabilities => 'AI 能力';
+
+  @override
+  String get settingsAiCapabilitiesDescription => '默认模型、按能力的限额与自行添加的模型';
+
+  @override
+  String get capLlm => '大模型';
+
+  @override
+  String get capTts => '语音合成';
+
+  @override
+  String get capStt => '语音识别';
+
+  @override
+  String get capRealtime => '实时语音';
+
+  @override
+  String get capTranslate => '语音翻译';
+
+  @override
+  String get capVc => '变声';
+
+  @override
+  String get capVad => '人声检测';
+
+  @override
+  String get capMusic => '音乐';
+
+  @override
+  String get capDefaultModel => '默认模型';
+
+  @override
+  String get capAutomatic => '自动（第一个可用）';
+
+  @override
+  String get capConnections => '连接';
+
+  @override
+  String get capNoConnections => '还没有启用的连接提供这项能力。';
+
+  @override
+  String get capLimits => '限额';
+
+  @override
+  String capLimitsTitle(Object capability, Object connection) {
+    return '$capability限额 · $connection';
+  }
+
+  @override
+  String get capLimitsHint => '留空即沿用连接自身的限额。各能力分开排队，大模型调用不再占用语音合成名额。';
+
+  @override
+  String get capInherited => '沿用';
+
+  @override
+  String get capConcurrency => '并发请求';
+
+  @override
+  String get capRpm => '每分钟请求';
+
+  @override
+  String get capRpd => '每日请求';
+
+  @override
+  String get capTpm => '每分钟 Token';
+
+  @override
+  String get capTpd => '每日 Token';
+
+  @override
+  String get capAddModel => '添加模型';
+
+  @override
+  String get capModelId => '模型 ID';
+
+  @override
+  String get capDisplayName => '显示名称（可选）';
+
+  @override
+  String capModelRejected(Object model) {
+    return '该连接无法打开模型 $model。';
+  }
+
+  @override
+  String get capOff => '已关闭';
+
+  @override
+  String get capAll => '全部';
+
+  @override
+  String get inspectorTabBasic => '基本';
+
+  @override
+  String get inspectorTabVoice => '音色';
 }

@@ -4,13 +4,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:shelf/shelf.dart';
-import 'tracked_http_server.dart';
 import 'package:shelf_router/shelf_router.dart';
-
 import 'package:neiroha/data/database/app_database.dart';
-import 'speech_request_handler.dart';
 import 'package:neiroha/server/mcp/mcp_server.dart';
 import 'package:neiroha/server/mcp/neiroha_mcp_tools.dart';
+
+import 'jobs/speech_jobs.dart';
+import 'speech_request_handler.dart';
+import 'tracked_http_server.dart';
 
 /// Reported to MCP clients in `serverInfo.version`; keep in sync with the
 /// pubspec version.
@@ -198,7 +199,9 @@ class ApiServer {
   final StreamController<List<ApiLogEntry>> _logController =
       StreamController<List<ApiLogEntry>>.broadcast();
 
-  ApiServer({required this.db});
+  ApiServer({required this.db, Directory? jobsDir})
+    : _jobs = speechJobs(db, dir: jobsDir);
+  final JobsHandler _jobs;
 
   int get port => _config.port;
   String get bindHost => _config.bindHost;
@@ -237,6 +240,7 @@ class ApiServer {
       ..get('/speakers', _handleSpeakers)
       ..get('/health', _handleHealth)
       ..all('/mcp', _handleMcp);
+    _jobs.mount(router);
 
     final handler = const Pipeline()
         .addMiddleware(_bodyLimitMiddleware(_config.maxBodyBytes))
@@ -326,7 +330,7 @@ class ApiServer {
         if (maxBytes > 0) {
           final declared = request.contentLength;
           if (declared != null && declared > maxBytes) {
-            return _jsonError(
+            return jsonError(
               413,
               'Request body too large (limit ${maxBytes ~/ 1024} KiB)',
             );
@@ -354,7 +358,7 @@ class ApiServer {
           bucket.removeFirst();
         }
         if (bucket.length >= perMin) {
-          return _jsonError(429, 'Rate limit exceeded ($perMin req/min)');
+          return jsonError(429, 'Rate limit exceeded ($perMin req/min)');
         }
         bucket.addLast(now);
         return inner(request);
@@ -412,7 +416,7 @@ class ApiServer {
             ? auth.substring(7)
             : xkey;
         if (supplied != apiKey) {
-          return _jsonError(401, 'Missing or invalid API key');
+          return jsonError(401, 'Missing or invalid API key');
         }
         return inner(request);
       };
@@ -497,7 +501,7 @@ class ApiServer {
 
   Future<Response> _handleMcp(Request request) async {
     if (!_config.mcpEnabled) {
-      return _jsonError(404, 'MCP endpoint is disabled in Settings');
+      return jsonError(404, 'MCP endpoint is disabled in Settings');
     }
     final host = _config.bindHost;
     final loopback =
@@ -506,7 +510,7 @@ class ApiServer {
     if (!loopback && _config.apiKey == null) {
       // MCP can create providers, read local files and write outputs —
       // never expose it to the LAN without authentication.
-      return _jsonError(
+      return jsonError(
         403,
         'MCP on a non-loopback bind host requires an API key',
       );
@@ -530,16 +534,6 @@ class ApiServer {
         'port': _config.port,
         'authRequired': _config.apiKey != null,
       }),
-      headers: {'content-type': 'application/json'},
-    );
-  }
-
-  // ────────────── Helpers ──────────────
-
-  Response _jsonError(int status, String message) {
-    return Response(
-      status,
-      body: jsonEncode({'error': message}),
       headers: {'content-type': 'application/json'},
     );
   }

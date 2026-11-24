@@ -43,8 +43,12 @@ void main() async {
   // OS app-support dir otherwise).
   await PathService.instance.init();
 
-  if (Platform.isWindows) {
+  // Page headers drag the window through window_manager; on macOS it must
+  // be initialized too, or startDragging dereferences a nil window.
+  if (Platform.isWindows || Platform.isMacOS) {
     await windowManager.ensureInitialized();
+  }
+  if (Platform.isWindows) {
     const windowOptions = WindowOptions(
       title: 'Neiroha',
       titleBarStyle: TitleBarStyle.hidden,

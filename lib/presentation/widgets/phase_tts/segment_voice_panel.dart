@@ -15,6 +15,7 @@ import 'package:neiroha/providers/playback_provider.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 part 'segment_card.dart';
+part 'segment_card_parts.dart';
 part 'segment_dialogs.dart';
 part 'segment_panel_actions.dart';
 part 'segment_panel_bars.dart';

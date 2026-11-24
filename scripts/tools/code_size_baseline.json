@@ -8,7 +8,6 @@
   "lib/presentation/widgets/novel_reader/chapters.dart": 753,
   "lib/presentation/widgets/novel_reader/controls.dart": 883,
   "lib/presentation/widgets/novel_reader/reader_pane.dart": 620,
-  "lib/presentation/widgets/phase_tts/segment_card.dart": 637,
   "lib/presentation/widgets/resizable_split_pane.dart": 840,
   "lib/presentation/widgets/settings/api_settings.dart": 504,
   "lib/presentation/widgets/voice_asset/trim_dialog.dart": 592,

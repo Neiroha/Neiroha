@@ -193,6 +193,20 @@ class OpenAiTtsAdapter extends TtsAdapter {
     return kSpeechVoices;
   }
 
+  /// The voice to send: the character's preset voice, else
+  /// [TtsRequest.voice] when it names a voice, else the model's first voice.
+  ///
+  /// [TtsRequest.voice] is often the character's name (quick test, the
+  /// speech API), which OpenAI would reject as an unknown voice.
+  static String resolveVoice(TtsRequest request, String model) {
+    final preset = voiceIdFromLabel(request.presetVoiceName ?? '');
+    if (preset.isNotEmpty) return preset;
+    final asked = voiceIdFromLabel(request.voice);
+    final known = {...kSpeechVoices, ...kLegacyVoices, ...kRealtimeVoices};
+    if (asked.startsWith('voice_') || known.contains(asked)) return asked;
+    return voicesForModel(model).first;
+  }
+
   /// `voice` request value: a string for built-in voices, `{"id": …}` for
   /// custom voices.
   static Object voiceParam(String voice) =>
@@ -225,12 +239,7 @@ class OpenAiTtsAdapter extends TtsAdapter {
     }
 
     final model = _model;
-    final rawVoice = (request.presetVoiceName?.trim().isNotEmpty ?? false)
-        ? request.presetVoiceName!
-        : request.voice;
-    final voice = voiceIdFromLabel(rawVoice).isEmpty
-        ? voicesForModel(model).first
-        : voiceIdFromLabel(rawVoice);
+    final voice = resolveVoice(request, model);
     if (explicitRoute == null) _checkVoice(model, voice);
 
     if (serviceRoute == ServiceRoute.realtime) {
@@ -339,12 +348,7 @@ class OpenAiTtsAdapter extends TtsAdapter {
     if (request.text.trim().isEmpty) {
       throw ArgumentError('OpenAI TTS: text is empty.');
     }
-    final raw = request.presetVoiceName?.trim().isNotEmpty == true
-        ? request.presetVoiceName!
-        : request.voice;
-    final voice = voiceIdFromLabel(raw).isEmpty
-        ? voicesForModel(_model).first
-        : voiceIdFromLabel(raw);
+    final voice = resolveVoice(request, _model);
     if (explicitRoute == null) _checkVoice(_model, voice);
     if (serviceRoute == ServiceRoute.speech) {
       if (request.text.length > maxSpeechInputChars) {

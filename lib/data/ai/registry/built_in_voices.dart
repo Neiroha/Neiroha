@@ -38,3 +38,43 @@ List<String> mergeVoices(
   ...(stored.where((v) => !builtIn.contains(v) && !hide.contains(v)).toList()
     ..sort()),
 ];
+
+/// Every voice built into any of the adapter's known models.
+Set<String> allBuiltInVoices(AdapterType type) => switch (type) {
+  AdapterType.openaiTts => {
+    ...OpenAiTtsAdapter.kSpeechVoices,
+    ...OpenAiTtsAdapter.kLegacyVoices,
+    ...OpenAiTtsAdapter.kRealtimeVoices,
+  },
+  AdapterType.geminiTts => {...GeminiTtsAdapter.kPrebuiltVoices},
+  AdapterType.chatCompletionsTts => {
+    ...ChatCompletionsTtsAdapter.mimoV2BuiltInVoices,
+    ...ChatCompletionsTtsAdapter.mimoV25BuiltInVoices,
+  },
+  _ => const {},
+};
+
+/// The voices a character on [modelKey] can pick: the model's own, then
+/// the [stored] account voices, without voices only other models offer.
+List<String> voiceChoices(
+  AdapterType type,
+  String modelKey,
+  Iterable<String> stored,
+) {
+  final builtIn = builtInVoicesFor(type, modelKey);
+  return mergeVoices(
+    builtIn,
+    stored,
+    hide: builtIn.isEmpty ? const {} : allBuiltInVoices(type),
+  );
+}
+
+/// Whether [voice] is built into another model but not into [modelKey]
+/// (e.g. `fable` on a Realtime model), so requests would be rejected.
+bool voiceUnsupported(AdapterType type, String modelKey, String voice) {
+  final builtIn = builtInVoicesFor(type, modelKey);
+  final v = voice.trim();
+  return builtIn.isNotEmpty &&
+      !builtIn.contains(v) &&
+      allBuiltInVoices(type).contains(v);
+}

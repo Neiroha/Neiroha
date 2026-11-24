@@ -172,6 +172,21 @@ void main() {
     expect(builtInVoicesFor(AdapterType.azureTts, ''), isEmpty);
   });
 
+  test('a model is offered only voices it supports', () {
+    const t = AdapterType.openaiTts;
+    final stored = ['fable', 'marin', 'voice_custom'];
+    final realtime = voiceChoices(t, 'gpt-realtime-2.1', stored);
+    expect(realtime, isNot(contains('fable')));
+    expect(realtime, containsAll(['marin', 'voice_custom']));
+    expect(voiceChoices(t, 'tts-1', stored), contains('fable'));
+    // An unknown model keeps every stored voice.
+    expect(voiceChoices(t, 'my-proxy-tts', stored), stored);
+    expect(voiceUnsupported(t, 'gpt-realtime-2.1', 'fable'), isTrue);
+    expect(voiceUnsupported(t, 'gpt-realtime-2.1', 'marin'), isFalse);
+    expect(voiceUnsupported(t, 'gpt-realtime-2.1', 'voice_custom'), isFalse);
+    expect(voiceUnsupported(t, 'my-proxy-tts', 'fable'), isFalse);
+  });
+
   test('Azure SSML language follows the voice', () {
     expect(AzureTtsAdapter.localeOf('zh-CN-XiaoxiaoNeural'), 'zh-CN');
     expect(AzureTtsAdapter.localeOf('en-US-AvaMultilingualNeural'), 'en-US');

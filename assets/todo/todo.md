@@ -23,6 +23,8 @@
 - [ ] 后续（M2）：`provider_connections` / `provider_voices` 取代 `TtsProviders` / `ModelBindings`，钥匙串存储密钥。
 - [x] P2：服务商列表按能力分页（全部 / 各能力）并显示连接能力徽章（已关闭的变暗）；「设置 → AI 能力」路由页：每项能力的默认模型、各连接开关、按能力限额与自行添加模型；角色检查器分“基本 / 音色 / 处理链”三个标签。
 - [ ] P2 实机确认：AI 能力页、服务商分页与检查器标签的布局与交互。
+- [x] 服务商编辑页按能力分标签（概览 / 各能力 / 限额）：LLM 等非语音能力有独立标签，可设默认模型、开关能力、从账号发现；添加服务商改为卡片选择；列表显示最近一次能力检测结果。
+- [ ] 服务商新界面实机确认：各标签布局、能力检测、LLM 账号发现与卡片式添加。
 - [x] 本地 RVC 变声连接（`AdapterType.rvc`，仅 VC 能力）：实时读取模型 / 音色目录，`auto` 按音色选权重，`convert-stream` 流式 PCM；处理链与实时设置可选音色。离线假服务 + 可选实测（Tailnet 不通时自动跳过）。
 - [x] 逐句流式：LLM 流式 → 分句 → TTS → VC，处理链与陪伴模式共用 `SentenceSpeechPipeline`；编码音频经 FFmpeg 解码，Web 无解码器时回退整句。实测 Irodori 首音 ≈3.1 s（整句 ≈4.3 s），GPT-SoVITS ≈4.3 s（整句 ≈9.6 s）。
 - [x] LLM 目录数据化：models.dev（MIT，`assets/model_catalog/models_dev.snapshot.json` + LICENSE）优先、LiteLLM 兜底，运行时每日刷新缓存；读取 OpenRouter 推理档位 / 默认档位 / `expiration_date` / `endpoints`；插件只留推荐 LLM 与默认思考档位。

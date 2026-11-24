@@ -2,10 +2,12 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:neiroha/data/ai/core/provider_connection.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:uuid/uuid.dart';
 
 /// Whether [lane] sets any limit of its own.
 bool laneHasLimits(db.ConnectionCapability lane) =>
@@ -174,4 +176,39 @@ class _AddModelDialogState extends State<AddModelDialog> {
       ],
     );
   }
+}
+
+/// Asks for a model id and adds it under [cap] of [connection], unless the
+/// connection cannot serve that id.
+Future<void> addCapabilityModel(
+  BuildContext context,
+  WidgetRef ref,
+  ProviderConnection connection,
+  AiCapability cap,
+) async {
+  final l = AppLocalizations.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  final entry = await showDialog<(String, String)>(
+    context: context,
+    builder: (_) => const AddModelDialog(),
+  );
+  if (entry == null) return;
+  final (modelId, name) = entry;
+  if (connection.describe(cap, modelId) == null) {
+    messenger.showSnackBar(
+      SnackBar(content: Text(l.capModelRejected(modelId))),
+    );
+    return;
+  }
+  await ref
+      .read(databaseProvider)
+      .upsertProviderModel(
+        db.ProviderModelsCompanion.insert(
+          id: const Uuid().v4(),
+          connectionId: connection.id,
+          modelId: modelId,
+          capability: cap.name,
+          displayName: Value(name.isEmpty ? null : name),
+        ),
+      );
 }

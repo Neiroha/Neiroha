@@ -9,7 +9,6 @@ import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/app_providers.dart';
-import 'package:uuid/uuid.dart';
 
 import 'ai_capability_dialogs.dart';
 import 'settings_shared.dart';
@@ -225,7 +224,8 @@ class _ConnectionLane extends ConsumerWidget {
               IconButton(
                 tooltip: l.capAddModel,
                 icon: const Icon(Icons.add_rounded, size: 18),
-                onPressed: () => _addModel(context, ref),
+                onPressed: () =>
+                    addCapabilityModel(context, ref, connection, cap),
               ),
             ],
           ),
@@ -253,33 +253,5 @@ class _ConnectionLane extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  Future<void> _addModel(BuildContext context, WidgetRef ref) async {
-    final l = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final entry = await showDialog<(String, String)>(
-      context: context,
-      builder: (_) => const AddModelDialog(),
-    );
-    if (entry == null) return;
-    final (modelId, name) = entry;
-    if (connection.describe(cap, modelId) == null) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l.capModelRejected(modelId))),
-      );
-      return;
-    }
-    await ref
-        .read(databaseProvider)
-        .upsertProviderModel(
-          db.ProviderModelsCompanion.insert(
-            id: const Uuid().v4(),
-            connectionId: connection.id,
-            modelId: modelId,
-            capability: cap.name,
-            displayName: Value(name.isEmpty ? null : name),
-          ),
-        );
   }
 }

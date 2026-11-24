@@ -12,6 +12,7 @@ import 'package:neiroha/providers/app_providers.dart';
 import 'about_settings.dart';
 import 'api_settings.dart';
 import 'general_settings.dart';
+import 'nav_order_settings.dart';
 import 'media_settings.dart';
 import 'storage_settings.dart';
 import 'task_settings.dart';
@@ -213,6 +214,8 @@ class SettingsSectionContent extends ConsumerWidget {
         FontSettingsCard(),
         SizedBox(height: 8),
         StartupSettingsCard(),
+        SizedBox(height: 8),
+        NavOrderSettingsCard(),
         SizedBox(height: 8),
         TaskBehaviorSettingsCard(),
         SizedBox(height: 8),

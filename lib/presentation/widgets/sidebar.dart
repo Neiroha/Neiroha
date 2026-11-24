@@ -10,17 +10,7 @@ import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/layout/window_drag_area.dart';
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/providers/app_providers.dart';
-
-const _mainTabs = [
-  NavTab.novelReader,
-  NavTab.dialogTts,
-  NavTab.phaseTts,
-  NavTab.videoDub,
-  NavTab.subtitles,
-  NavTab.music,
-  NavTab.voiceAssets,
-  NavTab.voiceBank,
-];
+import 'package:neiroha/providers/nav_order_provider.dart';
 
 const _bottomTabs = [NavTab.providers, NavTab.settings];
 
@@ -158,7 +148,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
                   Expanded(
                     child: SingleChildScrollView(
                       child: Column(
-                        children: [for (final t in _mainTabs) button(t)],
+                        children: [for (final t in navMainTabs(ref)) button(t)],
                       ),
                     ),
                   ),
@@ -238,7 +228,7 @@ class _ResizeEdgeState extends State<_ResizeEdge> {
   );
 }
 
-class AppNavigationDrawer extends StatelessWidget {
+class AppNavigationDrawer extends ConsumerWidget {
   final NavTab selected;
   final ValueChanged<NavTab> onTabChanged;
 
@@ -249,7 +239,7 @@ class AppNavigationDrawer extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     return Drawer(
       backgroundColor: AppTheme.sidebarBg,
@@ -283,7 +273,7 @@ class AppNavigationDrawer extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
-                  for (final tab in _mainTabs)
+                  for (final tab in navMainTabs(ref))
                     _DrawerTabTile(
                       tab: tab,
                       selected: tab == selected,

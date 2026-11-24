@@ -33,7 +33,7 @@ dependencies:
 
   # Audio playback
   audioplayers: ^6.0.0
-  flutter_soloud: 5.3.0
+  flutter_soloud: 5.3.2
 
   # Native microphone backends; no federated Linux recording dependency
   record_platform_interface: ^2.2.0

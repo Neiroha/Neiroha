@@ -35,7 +35,7 @@
 - [x] 处理链扩展：去静音（首尾留 60 ms，超过 0.35 s 的停顿缩短，按 10 ms 能量判定）与 ASR 回听校验（转写后与台词逐字 / 逐词比对，列出漏读；与播放并行，不拖慢首音）。逐句与整句路径均生效，检查器显示最近的回听结果。
 - [ ] 回听校验用真实 STT 实测（中文 / 英文 / 日文漏读检出率）。
 - [x] 退出崩溃：并非 sqlite，而是 flutter_soloud 5.3 的 `applicationWillTerminate:` 调用两个动态查找、未绑定（为 0）的原生符号（`EXC_BAD_ACCESS` at 0）。`MainFlutterWindow` 注册插件后移除其退出观察者（该清理仅针对 VST3 宿主，本应用未使用）。修复前每次退出必现，修复后连续三次启动 / 退出无崩溃报告。
-- [ ] 升级 flutter_soloud 后复查退出路径，上游修复后可撤回该规避。
+- [x] flutter_soloud 升级到 5.3.2（上游 #618 修复同一崩溃），已撤回 `MainFlutterWindow` 中的规避；Release 连续三次启动 / 退出无崩溃报告。
 - [x] 本机 API `/v1/jobs` 异步任务：创建、列表、状态、取消 / 删除、重试（新 attempt）、SSE 进度、`GET /v1/jobs/:id/audio` 与 `GET /v1/audio/speech/:id`。任务落盘于数据目录 `api_jobs/`，重启后未完成的标记失败，保留最近 200 个已完成任务。
 
 ## v0.5.1（2026-11-22）

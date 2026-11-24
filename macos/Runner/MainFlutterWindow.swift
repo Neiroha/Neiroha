@@ -27,16 +27,6 @@ class MainFlutterWindow: NSWindow {
     self.setFrameAutosaveName("NeirohaMainWindow")
 
     RegisterGeneratedPlugins(registry: flutterViewController)
-    // flutter_soloud 5.3 cleans up on quit by calling two symbols of its
-    // native-asset library that are looked up dynamically; unbound, they are
-    // null and every quit crashed (EXC_BAD_ACCESS at 0). The cleanup only
-    // matters for hosted VST3 plugins, which Neiroha does not use.
-    if let soloud = flutterViewController.valuePublished(byPlugin: "FlutterSoloudPlugin")
-      as? NSObject
-    {
-      NotificationCenter.default.removeObserver(
-        soloud, name: NSApplication.willTerminateNotification, object: nil)
-    }
     mediaSession = MacMediaSession(messenger: flutterViewController.engine.binaryMessenger)
     self.isReleasedWhenClosed = false
     (NSApp.delegate as? AppDelegate)?.mainWindow = self

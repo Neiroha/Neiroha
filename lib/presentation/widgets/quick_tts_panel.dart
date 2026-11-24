@@ -116,6 +116,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                     : l10n.quickTtsFullPlayback)
               : null,
         ),
+        const Divider(height: 1),
         Expanded(
           child: QuickTtsHistoryList(
             historyAsync: filteredHistory,
@@ -183,8 +184,10 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
     required String? mode,
   }) {
     final hasHistory = (historyAsync.value ?? []).isNotEmpty;
+    // As tall as the voice bank's other column headers, so they line up.
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
+      height: 52,
+      padding: const EdgeInsets.fromLTRB(16, 0, 12, 0),
       child: Row(
         children: [
           Icon(Icons.graphic_eq_rounded, size: 16, color: AppTheme.accentColor),
@@ -192,10 +195,9 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
           Text(
             AppLocalizations.of(context).uiQUICKTEST,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
-              color: Colors.white.withValues(alpha: 0.5),
+              color: Colors.white.withValues(alpha: 0.7),
             ),
           ),
           SizedBox(width: 8),

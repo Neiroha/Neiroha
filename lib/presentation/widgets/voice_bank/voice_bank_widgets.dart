@@ -11,7 +11,9 @@ import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 part 'import_from_bank_dialog.dart';
 
-class VoiceBankCharacterTile extends StatelessWidget {
+/// One character in the cast: avatar, name, its model and voice, and its
+/// status. The remove button shows on hover or once selected.
+class VoiceBankCharacterTile extends StatefulWidget {
   final db.VoiceAsset asset;
   final bool isSelected;
   final bool? healthOk;
@@ -28,81 +30,104 @@ class VoiceBankCharacterTile extends StatelessWidget {
   });
 
   @override
+  State<VoiceBankCharacterTile> createState() => _VoiceBankCharacterTileState();
+}
+
+class _VoiceBankCharacterTileState extends State<VoiceBankCharacterTile> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Material(
-        color: isSelected
-            ? AppTheme.accentColor.withValues(alpha: 0.12)
-            : AppTheme.surfaceDim,
-        borderRadius: BorderRadius.circular(10),
-        child: InkWell(
+    final asset = widget.asset;
+    final isSelected = widget.isSelected;
+    final healthOk = widget.healthOk;
+    final detail = [
+      asset.modelName,
+      asset.presetVoiceName,
+    ].whereType<String>().where((s) => s.trim().isNotEmpty).join(' · ');
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Material(
+          color: isSelected
+              ? AppTheme.accentColor.withValues(alpha: 0.12)
+              : AppTheme.surfaceDim,
           borderRadius: BorderRadius.circular(10),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                VoiceCharacterAvatar(
-                  radius: 16,
-                  name: asset.name,
-                  avatarPath: asset.avatarPath,
-                  selected: isSelected,
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        asset.name,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        _modeLabel(asset.taskMode),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.white.withValues(alpha: 0.4),
-                        ),
-                      ),
-                    ],
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: widget.onTap,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+              child: Row(
+                children: [
+                  VoiceCharacterAvatar(
+                    radius: 16,
+                    name: asset.name,
+                    avatarPath: asset.avatarPath,
+                    selected: isSelected,
                   ),
-                ),
-                Tooltip(
-                  message: healthOk == false
-                      ? l10n.healthCheckFailedTooltip
-                      : asset.enabled
-                      ? l10n.uiEnabled
-                      : l10n.uiDisabled,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.only(right: 4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: healthOk == false
-                          ? Colors.redAccent
-                          : asset.enabled
-                          ? Colors.green
-                          : Colors.grey,
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          asset.name,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          detail.isEmpty ? _modeLabel(asset.taskMode) : detail,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                IconButton(
-                  tooltip: AppLocalizations.of(context).uiRemoveFromBank,
-                  icon: Icon(
-                    Icons.remove_circle_outline_rounded,
-                    size: 18,
-                    color: Colors.white.withValues(alpha: 0.4),
+                  Tooltip(
+                    message: healthOk == false
+                        ? l10n.healthCheckFailedTooltip
+                        : asset.enabled
+                        ? l10n.uiEnabled
+                        : l10n.uiDisabled,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      margin: const EdgeInsets.only(right: 4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: healthOk == false
+                            ? Colors.redAccent
+                            : asset.enabled
+                            ? Colors.green
+                            : Colors.grey,
+                      ),
+                    ),
                   ),
-                  onPressed: onRemove,
-                ),
-              ],
+                  // Keeps its room so rows do not shift on hover.
+                  Visibility.maintain(
+                    visible: _hovered || isSelected,
+                    child: IconButton(
+                      tooltip: l10n.uiRemoveFromBank,
+                      icon: Icon(
+                        Icons.remove_circle_outline_rounded,
+                        size: 18,
+                        color: Colors.white.withValues(alpha: 0.4),
+                      ),
+                      onPressed: widget.onRemove,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

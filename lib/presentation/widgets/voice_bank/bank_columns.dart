@@ -58,15 +58,15 @@ extension _BankColumns on _VoiceBankScreenState {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildBankSwitcher(bank, banks),
-        _buildCharacterColumnHeader(
+        _buildBankSwitcher(
           bank,
-          membersAsync,
-          assetsAsync,
-          providersAsync,
+          banks,
+          count: membersAsync.value?.length,
+          healthCheck: () =>
+              _healthCheckBank(bank, membersAsync, assetsAsync, providersAsync),
         ),
         const Divider(height: 1),
-        _buildCharacterSearchBar(),
+        _buildCastToolbar(bank),
         Expanded(
           child: membersAsync.when(
             loading: () => Center(child: CircularProgressIndicator()),
@@ -84,72 +84,36 @@ extension _BankColumns on _VoiceBankScreenState {
     );
   }
 
-  Widget _buildCharacterColumnHeader(
-    db.VoiceBank bank,
-    AsyncValue<List<db.VoiceBankMember>> membersAsync,
-    AsyncValue<List<db.VoiceAsset>> assetsAsync,
-    AsyncValue<List<db.TtsProvider>> providersAsync,
-  ) {
-    final count = membersAsync.value?.length;
+  /// Search the cast, beside the button that adds a character.
+  Widget _buildCastToolbar(db.VoiceBank bank) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 8, 0),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              count == null
-                  ? AppLocalizations.of(context).uiCHARACTERS
-                  : '${AppLocalizations.of(context).uiCHARACTERS} · $count',
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.2,
-                color: Colors.white.withValues(alpha: 0.4),
+            child: TextField(
+              controller: _searchCtrl,
+              decoration: InputDecoration(
+                hintText: l10n.uiSearchCharacters,
+                prefixIcon: const Icon(Icons.search_rounded, size: 18),
+                suffixIcon: _characterFilter.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 16),
+                        onPressed: () => _searchCtrl.clear(),
+                      ),
+                isDense: true,
               ),
             ),
           ),
-          IconButton(
-            tooltip: AppLocalizations.of(context).uiHealthCheck,
-            onPressed: () => _healthCheckBank(
-              bank,
-              membersAsync,
-              assetsAsync,
-              providersAsync,
-            ),
-            icon: const Icon(Icons.favorite_border_rounded, size: 18),
-          ),
-          IconButton(
-            tooltip: AppLocalizations.of(context).uiImportFromAnotherBank,
-            onPressed: () => _openImportDialog(bank),
-            icon: const Icon(Icons.download_rounded, size: 18),
-          ),
-          IconButton(
-            tooltip: AppLocalizations.of(context).uiNewCharacterAddedToThisBank,
+          const SizedBox(width: 8),
+          IconButton.filledTonal(
+            tooltip: l10n.uiNewCharacterAddedToThisBank,
             onPressed: () => _createCharacterForBank(bank),
             icon: const Icon(Icons.person_add_rounded, size: 18),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCharacterSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
-      child: TextField(
-        controller: _searchCtrl,
-        decoration: InputDecoration(
-          hintText: AppLocalizations.of(context).uiSearchCharacters,
-          prefixIcon: const Icon(Icons.search_rounded, size: 18),
-          suffixIcon: _characterFilter.isEmpty
-              ? null
-              : IconButton(
-                  icon: const Icon(Icons.clear_rounded, size: 16),
-                  onPressed: () => _searchCtrl.clear(),
-                ),
-          isDense: true,
-        ),
       ),
     );
   }

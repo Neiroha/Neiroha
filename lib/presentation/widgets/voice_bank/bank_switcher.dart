@@ -1,140 +1,185 @@
 part of '../../screens/voice_bank_screen.dart';
 
+/// Height shared by the three column headers so their lines align.
+const double _paneHeaderHeight = 52;
+
 /// The bank switcher heading the cast column, with the bank's own actions.
 extension _BankSwitcher on _VoiceBankScreenState {
   static const _newBank = '\u0000new';
 
-  Widget _buildBankSwitcher(db.VoiceBank bank, List<db.VoiceBank> banks) {
+  Widget _buildBankSwitcher(
+    db.VoiceBank bank,
+    List<db.VoiceBank> banks, {
+    required int? count,
+    required VoidCallback healthCheck,
+  }) {
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 4, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: PopupMenuButton<String>(
-              tooltip: l10n.uiBANKS,
-              position: PopupMenuPosition.under,
-              onSelected: (id) {
-                if (id == _newBank) {
-                  _createBank();
-                  return;
-                }
-                if (id == _selectedBankId) return;
-                _clearVoiceBankInspectorState();
-                _update(() => _selectedBankId = id);
-              },
-              itemBuilder: (_) => [
-                for (final b in banks)
+    final muted = Colors.white.withValues(alpha: 0.4);
+    return SizedBox(
+      height: _paneHeaderHeight,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(6, 0, 4, 0),
+        child: Row(
+          children: [
+            Expanded(
+              child: PopupMenuButton<String>(
+                tooltip: l10n.bankSwitch,
+                position: PopupMenuPosition.under,
+                constraints: const BoxConstraints(minWidth: 240),
+                borderRadius: BorderRadius.circular(8),
+                onSelected: (id) {
+                  if (id == _newBank) {
+                    _createBank();
+                    return;
+                  }
+                  if (id == _selectedBankId) return;
+                  _clearVoiceBankInspectorState();
+                  _update(() => _selectedBankId = id);
+                },
+                itemBuilder: (_) => [
+                  for (final b in banks)
+                    PopupMenuItem(
+                      value: b.id,
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 28,
+                            child: b.id == bank.id
+                                ? const Icon(Icons.check_rounded, size: 18)
+                                : null,
+                          ),
+                          Expanded(
+                            child: Text(
+                              b.name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (b.isActive) ...[
+                            const SizedBox(width: 12),
+                            _ActiveDot(tooltip: l10n.uiActive),
+                          ],
+                        ],
+                      ),
+                    ),
+                  const PopupMenuDivider(),
                   PopupMenuItem(
-                    value: b.id,
+                    value: _newBank,
                     child: Row(
                       children: [
-                        SizedBox(
-                          width: 24,
-                          child: b.id == bank.id
-                              ? const Icon(Icons.check_rounded, size: 16)
-                              : null,
+                        const SizedBox(
+                          width: 28,
+                          child: Icon(Icons.add_rounded, size: 18),
                         ),
-                        Expanded(
-                          child: Text(b.name, overflow: TextOverflow.ellipsis),
-                        ),
-                        if (b.isActive) _ActiveBadge(label: l10n.uiActive),
+                        Text(l10n.uiNewBank),
                       ],
                     ),
                   ),
-                const PopupMenuDivider(),
-                PopupMenuItem(
-                  value: _newBank,
+                ],
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   child: Row(
                     children: [
-                      const SizedBox(
-                        width: 24,
-                        child: Icon(Icons.add_rounded, size: 16),
+                      if (bank.isActive) ...[
+                        _ActiveDot(tooltip: l10n.uiActive),
+                        const SizedBox(width: 8),
+                      ],
+                      Flexible(
+                        child: Text(
+                          bank.name,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                      Text(l10n.uiNewBank),
+                      if (count != null) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          '$count',
+                          style: TextStyle(fontSize: 13, color: muted),
+                        ),
+                      ],
+                      const SizedBox(width: 2),
+                      Icon(Icons.expand_more_rounded, size: 20, color: muted),
                     ],
                   ),
                 ),
-              ],
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceBright,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.people_alt_rounded,
-                      size: 18,
-                      color: bank.isActive
-                          ? Colors.green
-                          : AppTheme.accentColor,
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        bank.name,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    if (bank.isActive) ...[
-                      const SizedBox(width: 8),
-                      _ActiveBadge(label: l10n.uiActive),
-                    ],
-                    const Spacer(),
-                    const Icon(Icons.unfold_more_rounded, size: 18),
-                  ],
-                ),
               ),
             ),
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert_rounded, size: 18),
-            onSelected: (v) {
-              switch (v) {
-                case 'activate':
-                  _toggleBankActive(bank);
-                case 'rename':
-                  _renameBank(bank, banks);
-                case 'duplicate':
-                  _duplicateBank(bank);
-                case 'delete':
-                  _deleteBank(bank);
-              }
-            },
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: 'activate',
-                child: Text(
+            PopupMenuButton<String>(
+              tooltip: l10n.bankActions,
+              icon: Icon(Icons.more_horiz_rounded, size: 20, color: muted),
+              position: PopupMenuPosition.under,
+              onSelected: (v) {
+                switch (v) {
+                  case 'health':
+                    healthCheck();
+                  case 'import':
+                    _openImportDialog(bank);
+                  case 'activate':
+                    _toggleBankActive(bank);
+                  case 'rename':
+                    _renameBank(bank, banks);
+                  case 'duplicate':
+                    _duplicateBank(bank);
+                  case 'delete':
+                    _deleteBank(bank);
+                }
+              },
+              itemBuilder: (_) => [
+                _menuItem(
+                  'health',
+                  Icons.favorite_border_rounded,
+                  l10n.uiHealthCheck,
+                ),
+                _menuItem(
+                  'import',
+                  Icons.download_rounded,
+                  l10n.uiImportFromAnotherBank,
+                ),
+                const PopupMenuDivider(),
+                _menuItem(
+                  'activate',
+                  bank.isActive
+                      ? Icons.radio_button_unchecked_rounded
+                      : Icons.check_circle_outline_rounded,
                   bank.isActive ? l10n.bankDeactivate : l10n.bankSetActive,
                 ),
-              ),
-              PopupMenuItem(
-                value: 'rename',
-                child: Text(l10n.bankSettingsMenu),
-              ),
-              PopupMenuItem(value: 'duplicate', child: Text(l10n.uiDuplicate)),
-              PopupMenuItem(
-                value: 'delete',
-                child: Text(
+                _menuItem('rename', Icons.tune_rounded, l10n.bankSettingsMenu),
+                _menuItem('duplicate', Icons.copy_rounded, l10n.uiDuplicate),
+                _menuItem(
+                  'delete',
+                  Icons.delete_outline_rounded,
                   l10n.uiDelete,
-                  style: const TextStyle(color: Colors.redAccent),
+                  color: Colors.redAccent,
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
+
+  PopupMenuItem<String> _menuItem(
+    String value,
+    IconData icon,
+    String label, {
+    Color? color,
+  }) => PopupMenuItem(
+    value: value,
+    child: Row(
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 12),
+        Text(label, style: TextStyle(color: color)),
+      ],
+    ),
+  );
 
   Future<void> _toggleBankActive(db.VoiceBank bank) async {
     final database = ref.read(databaseProvider);
@@ -167,21 +212,53 @@ extension _BankSwitcher on _VoiceBankScreenState {
   }
 }
 
-class _ActiveBadge extends StatelessWidget {
-  const _ActiveBadge({required this.label});
+/// The green dot of the active bank.
+class _ActiveDot extends StatelessWidget {
+  const _ActiveDot({required this.tooltip});
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: tooltip,
+    child: Container(
+      width: 8,
+      height: 8,
+      decoration: const BoxDecoration(
+        color: Colors.green,
+        shape: BoxShape.circle,
+      ),
+    ),
+  );
+}
+
+/// A column header: [_paneHeaderHeight] tall, so the columns line up.
+class _PaneHeader extends StatelessWidget {
+  const _PaneHeader({required this.icon, required this.label});
+  final IconData icon;
   final String label;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-    decoration: BoxDecoration(
-      color: Colors.green.withValues(alpha: 0.15),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-    ),
-    child: Text(
-      label,
-      style: const TextStyle(color: Colors.green, fontSize: 11),
+  Widget build(BuildContext context) => SizedBox(
+    height: _paneHeaderHeight,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: AppTheme.accentColor),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }

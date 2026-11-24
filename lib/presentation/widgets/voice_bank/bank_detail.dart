@@ -52,7 +52,17 @@ extension _BankDetail on _VoiceBankScreenState {
   Widget _buildQuickTestColumn() =>
       _forSelected((asset) => _quickTest(asset, roomy: true));
 
-  Widget _buildInspectorColumn() => _forSelected(_inspector);
+  Widget _buildInspectorColumn() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _PaneHeader(
+        icon: Icons.tune_rounded,
+        label: AppLocalizations.of(context).paneCharacterSettings,
+      ),
+      const Divider(height: 1),
+      Expanded(child: _forSelected(_inspector)),
+    ],
+  );
 
   /// Quick test over the inspector, for windows too narrow for both columns.
   Widget _buildStackedDetail() => _forSelected(

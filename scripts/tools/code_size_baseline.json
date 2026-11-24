@@ -1,8 +1,1 @@
-{
-  "lib/data/storage/ffmpeg_service.dart": 553,
-  "lib/presentation/screens/dialog_tts_screen.dart": 543,
-  "lib/presentation/widgets/settings/api_settings.dart": 504,
-  "lib/presentation/widgets/voice_bank/voice_bank_widgets.dart": 519,
-  "lib/server/api_server.dart": 540,
-  "scripts/tests/voice_database_boundaries_test.dart": 583
-}
+{}

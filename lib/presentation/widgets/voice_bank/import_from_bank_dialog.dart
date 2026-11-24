@@ -1,0 +1,286 @@
+part of 'voice_bank_widgets.dart';
+
+// ─────────────────── Import From Another Bank dialog ────────────────────
+
+class ImportFromBankDialog extends ConsumerStatefulWidget {
+  final db.VoiceBank targetBank;
+  const ImportFromBankDialog({super.key, required this.targetBank});
+
+  @override
+  ConsumerState<ImportFromBankDialog> createState() =>
+      _ImportFromBankDialogState();
+}
+
+class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
+  String? _sourceBankId;
+  final _searchCtrl = TextEditingController();
+  String _filter = '';
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl.addListener(() => setState(() => _filter = _searchCtrl.text));
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final banks = ref.watch(voiceBanksStreamProvider).value ?? const [];
+    final otherBanks = banks
+        .where((b) => b.id != widget.targetBank.id)
+        .toList();
+    final allAssets = ref.watch(voiceAssetsStreamProvider).value ?? const [];
+    final targetMembers =
+        ref.watch(bankMembersStreamProvider(widget.targetBank.id)).value ??
+        const [];
+    final targetAssetIds = targetMembers.map((m) => m.voiceAssetId).toSet();
+
+    return Dialog(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 460,
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+              child: Text(
+                'Import into "${widget.targetBank.name}"',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
+              child: Text(
+                AppLocalizations.of(
+                  context,
+                ).uiCharactersAreSharedImportingJustAddsThemAsMembersOfThisBank,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
+              child: DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).uiSourceBank,
+                  prefixIcon: Icon(Icons.account_tree_rounded, size: 18),
+                  isDense: true,
+                ),
+                initialValue: _sourceBankId,
+                isExpanded: true,
+                items: otherBanks
+                    .map(
+                      (b) => DropdownMenuItem(
+                        value: b.id,
+                        child: Text(b.name, overflow: TextOverflow.ellipsis),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) => setState(() => _sourceBankId = v),
+              ),
+            ),
+            if (_sourceBankId != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                child: TextField(
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context).uiSearchCharacters,
+                    prefixIcon: const Icon(Icons.search_rounded, size: 18),
+                    suffixIcon: _filter.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.clear_rounded, size: 16),
+                            onPressed: () => _searchCtrl.clear(),
+                          ),
+                    isDense: true,
+                  ),
+                ),
+              ),
+            Flexible(
+              child: _sourceBankId == null
+                  ? Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Text(
+                          otherBanks.isEmpty
+                              ? 'No other banks to import from'
+                              : 'Select a source bank above',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ),
+                    )
+                  : _buildAvailableList(allAssets, targetAssetIds),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: _sourceBankId == null || _busy
+                        ? null
+                        : () => _addAll(allAssets, targetAssetIds),
+                    child: Text(AppLocalizations.of(context).uiImportAll),
+                  ),
+                  TextButton(
+                    onPressed: _busy ? null : () => Navigator.pop(context),
+                    child: Text(AppLocalizations.of(context).uiDone),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvailableList(
+    List<db.VoiceAsset> allAssets,
+    Set<String> targetAssetIds,
+  ) {
+    final sourceMembersAsync = ref.watch(
+      bankMembersStreamProvider(_sourceBankId!),
+    );
+    return sourceMembersAsync.when(
+      loading: () => Center(child: CircularProgressIndicator()),
+      error: (e, _) =>
+          Center(child: Text(AppLocalizations.of(context).uiError2(e))),
+      data: (sourceMembers) {
+        final assetMap = {for (final a in allAssets) a.id: a};
+        final candidates = sourceMembers
+            .map((m) => assetMap[m.voiceAssetId])
+            .whereType<db.VoiceAsset>()
+            .where((a) => !targetAssetIds.contains(a.id))
+            .toList();
+        final q = _filter.trim().toLowerCase();
+        final filtered = q.isEmpty
+            ? candidates
+            : candidates
+                  .where((a) => a.name.toLowerCase().contains(q))
+                  .toList();
+
+        if (candidates.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: Text(
+                AppLocalizations.of(
+                  context,
+                ).uiAllCharactersFromThisBankAreAlreadyMembers,
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+              ),
+            ),
+          );
+        }
+        if (filtered.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: Text(
+                'No characters match "$_filter"',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+              ),
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          shrinkWrap: true,
+          itemCount: filtered.length,
+          itemBuilder: (ctx, i) {
+            final a = filtered[i];
+            return ListTile(
+              leading: VoiceCharacterAvatar(
+                radius: 16,
+                name: a.name,
+                avatarPath: a.avatarPath,
+                selected: false,
+              ),
+              title: Text(a.name, style: const TextStyle(fontSize: 14)),
+              subtitle: Text(
+                _modeLabel(a.taskMode),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.4),
+                ),
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
+                tooltip: AppLocalizations.of(context).uiImportThisCharacter,
+                onPressed: _busy ? null : () => _addOne(a),
+              ),
+              onTap: _busy ? null : () => _addOne(a),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _addOne(db.VoiceAsset asset) async {
+    setState(() => _busy = true);
+    await ref
+        .read(databaseProvider)
+        .addMemberToBank(
+          db.VoiceBankMembersCompanion(
+            id: Value(const Uuid().v4()),
+            bankId: Value(widget.targetBank.id),
+            voiceAssetId: Value(asset.id),
+          ),
+        );
+    if (mounted) setState(() => _busy = false);
+  }
+
+  Future<void> _addAll(
+    List<db.VoiceAsset> allAssets,
+    Set<String> targetAssetIds,
+  ) async {
+    final sourceMembers =
+        ref.read(bankMembersStreamProvider(_sourceBankId!)).value ?? const [];
+    final assetMap = {for (final a in allAssets) a.id: a};
+    final toAdd = sourceMembers
+        .map((m) => assetMap[m.voiceAssetId])
+        .whereType<db.VoiceAsset>()
+        .where((a) => !targetAssetIds.contains(a.id))
+        .toList();
+    if (toAdd.isEmpty) return;
+    setState(() => _busy = true);
+    final database = ref.read(databaseProvider);
+    for (final a in toAdd) {
+      await database.addMemberToBank(
+        db.VoiceBankMembersCompanion(
+          id: Value(const Uuid().v4()),
+          bankId: Value(widget.targetBank.id),
+          voiceAssetId: Value(a.id),
+        ),
+      );
+    }
+    if (mounted) {
+      setState(() => _busy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).uiImportedCharacterS(toAdd.length),
+          ),
+        ),
+      );
+    }
+  }
+}

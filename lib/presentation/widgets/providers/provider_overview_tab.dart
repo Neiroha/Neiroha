@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/ai/core/capability_health.dart';
@@ -8,6 +9,7 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/ai/capability_badges.dart';
 import 'package:neiroha/presentation/widgets/layout/form_pair.dart';
 import 'package:neiroha/presentation/widgets/settings/ai_capability_settings.dart';
@@ -15,7 +17,6 @@ import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
 import 'provider_draft.dart';
-import 'provider_models.dart';
 
 /// Account fields of one connection, what it can do and whether each
 /// capability answers.
@@ -79,24 +80,36 @@ class _ProviderOverviewTabState extends ConsumerState<ProviderOverviewTab> {
     final l = AppLocalizations.of(context);
     final platform = ref.watch(platformCapabilitiesProvider);
     final supported = platform.supportsTtsAdapter(_draft.adapterType);
-    final health = ref.watch(providerHealthProvider)[widget.provider.id];
+    final id = widget.provider.id;
+    final health = ref.watch(providerHealthProvider)[id];
     final lanes = ref.watch(connectionCapabilitiesProvider).value ?? const [];
+    final added = ref.watch(providerModelsProvider).value ?? const [];
+    // Capabilities whose app-wide default model is on this connection.
+    final defaultHere = {
+      for (final r in ref.watch(capabilityDefaultsProvider).value ?? const [])
+        if (r.purpose.isEmpty && r.connectionId == id) r.capability,
+    };
     final off = {
       for (final r in lanes)
-        if (r.connectionId == widget.provider.id && !r.enabled) r.capability,
+        if (r.connectionId == id && !r.enabled) r.capability,
     };
-    final caps = rowCapabilities(widget.provider);
+    final caps = [
+      for (final cap in AiCapability.values)
+        if (rowCapabilities(widget.provider).contains(cap)) cap,
+    ];
+    final catalog = connectionForProvider(widget.provider);
+    int modelCount(AiCapability cap) {
+      final own = {for (final m in catalog.models(cap)) m.id};
+      return own.length +
+          added
+              .where((m) => m.connectionId == id && m.capability == cap.name)
+              .where((m) => !own.contains(m.modelId))
+              .length;
+    }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+    final account = _Section(
+      title: l.provConnection,
       children: [
-        if (!supported) ...[
-          _Banner(l.uiAdapterUnavailableOnThisPlatform, Colors.redAccent),
-          const SizedBox(height: 14),
-        ] else if (!widget.provider.enabled) ...[
-          _Banner(l.provConnectionOff, Colors.amber),
-          const SizedBox(height: 14),
-        ],
         FormPair(
           first: TextField(
             controller: _draft.name,
@@ -105,6 +118,7 @@ class _ProviderOverviewTabState extends ConsumerState<ProviderOverviewTab> {
           second: DropdownButtonFormField<AdapterType>(
             decoration: InputDecoration(labelText: l.uiAdapterType),
             initialValue: _draft.adapterType,
+            isExpanded: true,
             items: [
               for (final t in platform.editableAdapterTypes(_draft.adapterType))
                 DropdownMenuItem(
@@ -115,6 +129,7 @@ class _ProviderOverviewTabState extends ConsumerState<ProviderOverviewTab> {
                         ? platform.displayNameForAdapter(t)
                         : '${platform.displayNameForAdapter(t)} '
                               '(${l.uiUnavailableOnThisPlatform})',
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
             ],
@@ -163,29 +178,7 @@ class _ProviderOverviewTabState extends ConsumerState<ProviderOverviewTab> {
             ),
           ),
         ],
-        SectionHeader(
-          l.provCapabilities,
-          actions: [
-            OutlinedButton.icon(
-              onPressed: !supported || _checking ? null : _check,
-              icon: _checking
-                  ? const SizedBox.square(
-                      dimension: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.favorite_rounded, size: 16),
-              label: Text(l.provCheckAll),
-            ),
-          ],
-        ),
-        for (final cap in AiCapability.values)
-          if (caps.contains(cap))
-            _CapabilityHealthRow(
-              cap: cap,
-              off: off.contains(cap.name),
-              health: health?[cap],
-            ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         Align(
           alignment: Alignment.centerLeft,
           child: FilledButton.icon(
@@ -196,21 +189,137 @@ class _ProviderOverviewTabState extends ConsumerState<ProviderOverviewTab> {
         ),
       ],
     );
+    final capabilities = _Section(
+      title: l.provCapabilities,
+      action: OutlinedButton.icon(
+        onPressed: !supported || _checking ? null : _check,
+        icon: _checking
+            ? const SizedBox.square(
+                dimension: 14,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.favorite_rounded, size: 16),
+        label: Text(l.provCheckAll),
+      ),
+      children: [
+        for (final (i, cap) in caps.indexed)
+          _CapabilityHealthRow(
+            cap: cap,
+            connectionId: id,
+            off: off.contains(cap.name),
+            health: health?[cap],
+            models: modelCount(cap),
+            isDefault: defaultHere.contains(cap.name),
+            onOpen: () => DefaultTabController.of(context).animateTo(i + 1),
+          ),
+      ],
+    );
+
+    return LayoutBuilder(
+      builder: (context, box) {
+        final wide = box.maxWidth >= 920;
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1180),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (!supported) ...[
+                      _Banner(
+                        l.uiAdapterUnavailableOnThisPlatform,
+                        Colors.redAccent,
+                      ),
+                      const SizedBox(height: 14),
+                    ] else if (!widget.provider.enabled) ...[
+                      _Banner(l.provConnectionOff, Colors.amber),
+                      const SizedBox(height: 14),
+                    ],
+                    if (wide)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 11, child: account),
+                          const SizedBox(width: 16),
+                          Expanded(flex: 9, child: capabilities),
+                        ],
+                      )
+                    else ...[
+                      account,
+                      const SizedBox(height: 16),
+                      capabilities,
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 
-class _CapabilityHealthRow extends StatelessWidget {
-  const _CapabilityHealthRow({
-    required this.cap,
-    required this.off,
-    required this.health,
-  });
-  final AiCapability cap;
-  final bool off;
-  final CapabilityHealth? health;
+/// A titled card of the overview.
+class _Section extends StatelessWidget {
+  const _Section({required this.title, required this.children, this.action});
+  final String title;
+  final List<Widget> children;
+  final Widget? action;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Card(
+    margin: EdgeInsets.zero,
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+              ?action,
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...children,
+        ],
+      ),
+    ),
+  );
+}
+
+/// One capability: on/off, whether it answered, how many models, and
+/// whether it is the app-wide default; tapping opens its tab.
+class _CapabilityHealthRow extends ConsumerWidget {
+  const _CapabilityHealthRow({
+    required this.cap,
+    required this.connectionId,
+    required this.off,
+    required this.health,
+    required this.models,
+    required this.isDefault,
+    required this.onOpen,
+  });
+  final AiCapability cap;
+  final String connectionId;
+  final bool off;
+  final CapabilityHealth? health;
+  final int models;
+  final bool isDefault;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final (text, color) = switch (health?.state) {
       null => (l.provHealthNotChecked, Colors.white38),
@@ -220,42 +329,106 @@ class _CapabilityHealthRow extends StatelessWidget {
       HealthState.unknown => (l.provHealthUnknown, Colors.white54),
     };
     final message = health?.message;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Icon(
-            capabilityIcon(cap),
-            size: 16,
-            color: off ? Colors.white24 : null,
-          ),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 120,
-            child: Text(
-              off
-                  ? '${capabilityLabel(l, cap)} · ${l.capOff}'
-                  : capabilityLabel(l, cap),
-              style: TextStyle(color: off ? Colors.white38 : null),
-            ),
-          ),
-          Icon(Icons.circle, size: 8, color: color),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Tooltip(
-              message: message ?? '',
-              child: Text(
-                message == null ? text : '$text · $message',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 12, color: color),
+    final dim = off ? Colors.white38 : null;
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: onOpen,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(6, 6, 0, 6),
+        child: Row(
+          children: [
+            Icon(capabilityIcon(cap), size: 18, color: dim),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          capabilityLabel(l, cap),
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: dim,
+                          ),
+                        ),
+                      ),
+                      if (isDefault && !off) ...[
+                        const SizedBox(width: 6),
+                        _Pill(l.provIsDefault),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Tooltip(
+                    message: message ?? '',
+                    child: Row(
+                      children: [
+                        Icon(Icons.circle, size: 7, color: off ? dim : color),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            [
+                              off ? l.capOff : text,
+                              if (!off && message != null) message,
+                              l.provModelCount(models),
+                            ].join(' · '),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: off ? dim : color,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            Switch(
+              value: !off,
+              onChanged: (v) => ref
+                  .read(databaseProvider)
+                  .upsertConnectionCapability(
+                    db.ConnectionCapabilitiesCompanion(
+                      connectionId: Value(connectionId),
+                      capability: Value(cap.name),
+                      enabled: Value(v),
+                    ),
+                  ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: Colors.white38,
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class _Pill extends StatelessWidget {
+  const _Pill(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+    decoration: BoxDecoration(
+      color: AppTheme.accentColor.withValues(alpha: 0.18),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Text(
+      text,
+      style: const TextStyle(fontSize: 10.5, color: AppTheme.accentColor),
+    ),
+  );
 }
 
 class _Banner extends StatelessWidget {

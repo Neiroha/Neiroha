@@ -12,6 +12,7 @@ import 'package:neiroha/providers/app_providers.dart';
 
 import 'provider_capability_tab.dart';
 import 'provider_draft.dart';
+import 'provider_hub.dart';
 import 'provider_limits_tab.dart';
 import 'provider_overview_tab.dart';
 import 'provider_speech_tab.dart';
@@ -136,8 +137,14 @@ class _ProviderEditorState extends ConsumerState<ProviderEditor> {
     final p = widget.provider;
     final defaultModel = _defaultModel;
 
+    // Opened from a capability elsewhere (the default-model page): start on
+    // its tab.
+    final focus = ref.watch(providerFocusCapabilityProvider);
+    final focusIndex = focus == null ? -1 : caps.indexOf(focus);
+
     return DefaultTabController(
-      key: ValueKey(caps.join()),
+      key: ValueKey('${caps.join()}:$focus'),
+      initialIndex: focusIndex + 1,
       length: caps.length + 2,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

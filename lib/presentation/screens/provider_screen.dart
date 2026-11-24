@@ -9,16 +9,20 @@ import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/ai/capability_badges.dart';
 import 'package:neiroha/presentation/widgets/layout/window_drag_area.dart';
 import 'package:neiroha/presentation/widgets/providers/add_provider_dialog.dart';
+import 'package:neiroha/presentation/widgets/providers/capability_defaults_view.dart';
+import 'package:neiroha/presentation/widgets/providers/provider_hub.dart';
 import 'package:neiroha/presentation/widgets/providers/provider_draft.dart';
 import 'package:neiroha/presentation/widgets/providers/provider_editor.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
-/// Two-pane provider configuration screen.
+/// The AI services page: everything about models in one place.
 ///
-/// Left:  ordered list of providers (drag to reorder), each with its
-///        capabilities, last health check and an activation toggle.
-/// Right: the selected provider's editor, one tab per capability.
+/// Left:  the default-model and role-AI pages, then the ordered provider
+///        list (drag to reorder) with capabilities, last health check and
+///        an activation toggle.
+/// Right: the chosen page, or the selected provider's editor with one tab
+///        per capability.
 class ProviderScreen extends ConsumerWidget {
   const ProviderScreen({super.key});
 
@@ -26,18 +30,16 @@ class ProviderScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final providersAsync = ref.watch(ttsProvidersStreamProvider);
     final selectedId = ref.watch(selectedProviderIdProvider);
+    final view = ref.watch(providerPageViewProvider);
 
     return providersAsync.when(
-      loading: () => Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) =>
           Center(child: Text(AppLocalizations.of(context).uiError2(e))),
       data: (providers) {
-        // Auto-select the first provider if nothing selected and list is not empty.
-        final effectiveSelectedId =
-            selectedId ?? (providers.isNotEmpty ? providers.first.id : null);
-        final selected = providers
-            .where((p) => p.id == effectiveSelectedId)
-            .firstOrNull;
+        final selected = view == ProviderPageView.provider
+            ? providers.where((p) => p.id == selectedId).firstOrNull
+            : null;
 
         return ResizableSplitPane(
           initialLeftFraction: 0.35,
@@ -45,38 +47,19 @@ class ProviderScreen extends ConsumerWidget {
           compactRightLabel: AppLocalizations.of(context).uiDetails,
           left: _ProviderListPane(
             providers: providers,
-            selectedId: effectiveSelectedId,
-            onSelect: (id) =>
-                ref.read(selectedProviderIdProvider.notifier).state = id,
+            selectedId: selected?.id,
+            onSelect: (id) => openProvider(ref, id),
           ),
-          rightBuilder: (_) => selected == null
-              ? _buildEmpty(context)
-              : ProviderEditor(key: ValueKey(selected.id), provider: selected),
+          rightBuilder: (_) => switch (view) {
+            ProviderPageView.roleAi => const RoleAiView(),
+            _ when selected != null => ProviderEditor(
+              key: ValueKey(selected.id),
+              provider: selected,
+            ),
+            _ => const CapabilityDefaultsView(),
+          },
         );
       },
-    );
-  }
-
-  Widget _buildEmpty(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.dns_outlined,
-            size: 64,
-            color: Colors.white.withValues(alpha: 0.1),
-          ),
-          SizedBox(height: 16),
-          Text(
-            AppLocalizations.of(context).uiSelectOrAddAProvider,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.4),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -126,6 +109,20 @@ class _ProviderListPane extends ConsumerWidget {
                     tooltip: AppLocalizations.of(context).uiAddProvider,
                   ),
                 ],
+              ),
+            ),
+          ),
+          const ProviderHubTiles(),
+          Container(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.fromLTRB(20, 4, 16, 2),
+            child: Text(
+              AppLocalizations.of(context).provHubConnections,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.4,
+                color: Colors.white.withValues(alpha: 0.45),
               ),
             ),
           ),
@@ -185,8 +182,7 @@ class _ProviderListPane extends ConsumerWidget {
         onAdd: (companion) async {
           final db_ = ref.read(databaseProvider);
           await db_.insertProvider(companion);
-          ref.read(selectedProviderIdProvider.notifier).state =
-              companion.id.value;
+          openProvider(ref, companion.id.value);
         },
       ),
     );

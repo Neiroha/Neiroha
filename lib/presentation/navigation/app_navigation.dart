@@ -10,7 +10,7 @@ enum NavTab {
   music(Icons.queue_music_rounded, 'Song Studio'),
   voiceAssets(Icons.library_music_rounded, 'Voice Assets'),
   voiceBank(Icons.people_alt_rounded, 'Voice Bank'),
-  providers(Icons.dns_rounded, 'Providers'),
+  providers(Icons.dns_rounded, 'AI Services'),
   settings(Icons.settings_rounded, 'Settings');
 
   final IconData icon;
@@ -39,16 +39,6 @@ enum NavTab {
 
 enum SettingsSection {
   general(Icons.tune_rounded, 'General', 'Startup and workspace behavior'),
-  aiCapabilities(
-    Icons.hub_rounded,
-    'AI capabilities',
-    'Default models, per-capability limits and added models',
-  ),
-  roleAi(
-    Icons.psychology_alt_rounded,
-    'Role assignment AI',
-    'Profiles, stage prompts and defaults',
-  ),
   tasks(
     Icons.task_alt_rounded,
     'Tasks',

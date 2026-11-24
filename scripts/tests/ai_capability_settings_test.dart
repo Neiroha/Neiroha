@@ -8,7 +8,7 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/widgets/ai/capability_badges.dart';
-import 'package:neiroha/presentation/widgets/settings/ai_capability_settings.dart';
+import 'package:neiroha/presentation/widgets/providers/capability_defaults_view.dart';
 import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
@@ -59,7 +59,7 @@ void main() {
   testWidgets('a capability switch writes a connection × capability row', (
     tester,
   ) async {
-    await pump(tester, const AiCapabilitySettingsCard());
+    await pump(tester, const CapabilityDefaultsList());
     expect(find.text('语音识别'), findsOneWidget);
     expect(find.text('语音合成'), findsOneWidget);
 

@@ -10,13 +10,11 @@ import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
 import 'about_settings.dart';
-import 'ai_capability_settings.dart';
 import 'api_settings.dart';
 import 'general_settings.dart';
 import 'media_settings.dart';
 import 'storage_settings.dart';
 import 'task_settings.dart';
-import 'role_skill_settings.dart';
 
 const double _settingsContentMaxWidth = 920;
 
@@ -52,18 +50,19 @@ class SettingsSectionRail extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: ListView.builder(
+            child: ListView(
               padding: EdgeInsets.zero,
-              itemCount: SettingsSection.values.length,
-              itemBuilder: (context, index) {
-                final section = SettingsSection.values[index];
-                return _SettingsSectionTile(
-                  section: section,
-                  selected: section == selected,
-                  label: section.localizedLabel(l10n),
-                  onTap: () => onSelected(section),
-                );
-              },
+              children: [
+                for (final section in SettingsSection.values)
+                  _SettingsSectionTile(
+                    section: section,
+                    selected: section == selected,
+                    label: section.localizedLabel(l10n),
+                    onTap: () => onSelected(section),
+                  ),
+                const Divider(height: 24, indent: 20, endIndent: 20),
+                const _AiServicesLink(),
+              ],
             ),
           ),
         ],
@@ -189,6 +188,7 @@ class SettingsCompactPicker extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                 ],
+                const _AiServicesLink(compact: true),
               ],
             ),
           ),
@@ -222,12 +222,8 @@ class SettingsSectionContent extends ConsumerWidget {
       SettingsSection.storage when kIsWeb => <Widget>[
         Text(l10n.webStorageDescription),
       ],
-      SettingsSection.api || SettingsSection.media || SettingsSection.roleAi
-          when kIsWeb =>
-        <Widget>[Text(l10n.webFeatureUnavailable)],
-      SettingsSection.roleAi => const <Widget>[RoleSkillSettingsCard()],
-      SettingsSection.aiCapabilities => const <Widget>[
-        AiCapabilitySettingsCard(),
+      SettingsSection.api || SettingsSection.media when kIsWeb => <Widget>[
+        Text(l10n.webFeatureUnavailable),
       ],
       SettingsSection.api => const <Widget>[ApiServerSettingsCard()],
       SettingsSection.storage => <Widget>[
@@ -289,6 +285,42 @@ class _SettingsPageHeader extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Models and providers live on the AI services page; settings point there
+/// instead of keeping a second copy.
+class _AiServicesLink extends ConsumerWidget {
+  const _AiServicesLink({this.compact = false});
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    void open() =>
+        ref.read(selectedTabProvider.notifier).state = NavTab.providers;
+    if (compact) {
+      return ActionChip(
+        avatar: const Icon(Icons.dns_rounded, size: 16),
+        label: Text(l10n.navProviders),
+        onPressed: open,
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: ListTile(
+        dense: true,
+        leading: const Icon(Icons.dns_rounded, size: 20),
+        title: Text(l10n.navProviders),
+        subtitle: Text(
+          l10n.settingsAiServicesHint,
+          style: const TextStyle(fontSize: 11),
+        ),
+        trailing: const Icon(Icons.arrow_outward_rounded, size: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        onTap: open,
       ),
     );
   }

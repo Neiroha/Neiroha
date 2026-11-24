@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:neiroha/data/ai/registry/plugin_registry.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:neiroha/data/services/novel/role_model_choice.dart';
+import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/domain/novel/novel_role_skill.dart';
 import 'package:neiroha/domain/novel/role_skill_profile.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/novel_role_providers.dart';
 import '../novel_roles/skill_stage_labels.dart';
+import '../ai/capability_model_picker.dart';
 import '../ai/llm_model_summary.dart';
-import '../novel_roles/model_discover_button.dart';
+import '../ai/role_tool_check.dart';
 
 class RoleSkillSettingsCard extends ConsumerStatefulWidget {
   const RoleSkillSettingsCard({super.key});
@@ -26,6 +29,9 @@ class _RoleSkillSettingsCardState extends ConsumerState<RoleSkillSettingsCard> {
   Object? _error;
   bool _busy = false, _dirty = false;
   int _revision = 0;
+
+  /// Bumped when the user picks a model: the new one is tested at once.
+  int _verifyRound = 0;
   @override
   void initState() {
     super.initState();
@@ -91,10 +97,10 @@ class _RoleSkillSettingsCardState extends ConsumerState<RoleSkillSettingsCard> {
           : const Center(child: CircularProgressIndicator());
     }
     final p = _draft!.active;
-    final providers = (ref.watch(ttsProvidersStreamProvider).value ?? [])
-        .where(providerOffersLlm)
-        .toList();
-    final selected = providers.where((v) => v.id == p.providerId).firstOrNull;
+    final rows = ref.watch(ttsProvidersStreamProvider).value ?? const [];
+    final router = ref.watch(aiCapabilityRouterProvider).value;
+    final follow = router?.resolve<CapabilityModel>(AiCapability.llm);
+    final effective = effectiveRoleProfile(p, router);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -179,69 +185,54 @@ class _RoleSkillSettingsCardState extends ConsumerState<RoleSkillSettingsCard> {
               onChanged: (v) =>
                   setState(() => _replace(_draft!.active.copyWith(name: v))),
             ),
-            DropdownButtonFormField<String>(
-              key: ValueKey('provider:${p.id}:${selected?.id}:$_revision'),
-              initialValue: selected?.id ?? '',
-              isExpanded: true,
-              decoration: InputDecoration(
-                labelText: l.roleAnalysisProvider,
-                helperText: l.llmProviderHint,
-              ),
-              items: [
-                DropdownMenuItem(
-                  value: '',
-                  child: Text(l.roleSkillUseEntryConnection),
-                ),
-                for (final provider in providers)
-                  DropdownMenuItem(
-                    value: provider.id,
-                    child: Text(
-                      provider.enabled
-                          ? provider.name
-                          : '${provider.name} ${l.llmProviderDisabled}',
+            if (router == null)
+              const LinearProgressIndicator()
+            else
+              CapabilityModelPicker(
+                cap: AiCapability.llm,
+                router: router,
+                value: p.providerId == null ? null : (p.providerId!, p.model),
+                label: l.roleAnalysisModelPick,
+                automaticLabel: follow == null
+                    ? l.capFollowDefaultNone
+                    : l.roleModelFollowDefault(routedLabel(follow)),
+                allowCustom: true,
+                enabled: !_busy,
+                badge: (_, m) => toolCallingBadge(context, m.llm?.tools),
+                onChanged: (v) => setState(() {
+                  final current = _draft!.active;
+                  _replace(
+                    RoleSkillProfile(
+                      id: current.id,
+                      name: current.name,
+                      model: v?.$2 ?? current.model,
+                      providerId: v?.$1,
+                      prompts: current.prompts,
                     ),
-                  ),
-              ],
-              onChanged: _busy
-                  ? null
-                  : (v) => setState(() {
-                      final current = _draft!.active;
-                      _replace(
-                        RoleSkillProfile(
-                          id: current.id,
-                          name: current.name,
-                          model: current.model,
-                          providerId: v == '' ? null : v,
-                          prompts: current.prompts,
-                        ),
-                      );
-                    }),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              key: ValueKey('model:${p.id}:$_revision'),
-              initialValue: p.model,
-              enabled: !_busy,
-              maxLength: 150,
-              decoration: InputDecoration(
-                labelText: l.roleAnalysisModel,
-                suffixIcon: RoleModelDiscoverButton(
-                  provider: selected ?? providers.firstOrNull,
-                  current: p.model,
-                  enabled: !_busy,
-                  onSelected: (model) => setState(() {
-                    _replace(_draft!.active.copyWith(model: model));
-                    _refresh();
-                  }),
-                ),
+                  );
+                  _verifyRound++;
+                }),
               ),
-              onChanged: (v) =>
-                  setState(() => _replace(_draft!.active.copyWith(model: v))),
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 12),
+              child: Text(
+                l.roleModelHint,
+                style: const TextStyle(fontSize: 12, color: Colors.white38),
+              ),
+            ),
+            RoleToolCheck(
+              key: ValueKey(
+                '${effective.providerId}/${effective.model}/$_verifyRound',
+              ),
+              provider: rows
+                  .where((r) => r.id == effective.providerId)
+                  .firstOrNull,
+              model: effective.model,
+              verifyNow: _verifyRound > 0,
             ),
             LlmModelSummary(
-              providerId: (selected ?? providers.firstOrNull)?.id,
-              modelId: p.model,
-              requireTools: true,
+              providerId: effective.providerId,
+              modelId: effective.model,
             ),
             const Divider(height: 24),
             DropdownButtonFormField<String>(

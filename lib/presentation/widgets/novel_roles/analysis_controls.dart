@@ -14,6 +14,8 @@ import 'package:neiroha/data/ai/registry/plugin_registry.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/data/services/novel/role_model_choice.dart';
+import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/novel_role_providers.dart';
 
 class NovelRoleAnalysisControls extends ConsumerStatefulWidget {
@@ -56,8 +58,10 @@ class _NovelRoleAnalysisControlsState
         .where(providerOffersLlm)
         .toList();
     final skillConfig = ref.watch(roleSkillConfigurationProvider);
-    final defaults =
-        (skillConfig.value ?? const RoleSkillConfiguration()).active;
+    final defaults = effectiveRoleProfile(
+      (skillConfig.value ?? const RoleSkillConfiguration()).active,
+      ref.watch(aiCapabilityRouterProvider).value,
+    );
     final saved = ref.watch(
       roleAnalysisCheckpointProvider((
         projectId: widget.projectId,
@@ -296,7 +300,11 @@ class _NovelRoleAnalysisControlsState
           ? await service.checkpoints.load(widget.projectId, widget.chapterId)
           : null;
       if (!mounted || token.isCancelled) return;
-      final defaults = ref.read(roleSkillConfigurationProvider).value?.active;
+      final active = ref.read(roleSkillConfigurationProvider).value?.active;
+      final router = await ref.read(aiCapabilityRouterProvider.future);
+      final defaults = active == null
+          ? null
+          : effectiveRoleProfile(active, router);
       final providerId =
           checkpoint?.providerId ?? _providerId ?? defaults?.providerId;
       final provider =

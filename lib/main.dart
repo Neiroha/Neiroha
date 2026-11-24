@@ -103,6 +103,11 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
         ref.read(roleReviewServiceProvider).dispose();
         await ref.read(playbackNotifierProvider.notifier).stop();
         await ref.read(apiServerProvider).stop();
+        // Close SQLite before the engine ends the process: left open, its
+        // finalizer can run while the process tears down and crash in
+        // sqlite3Close.
+        await _capabilityLimits.cancel();
+        await ref.read(databaseProvider).close();
         return AppExitResponse.exit;
       },
     );

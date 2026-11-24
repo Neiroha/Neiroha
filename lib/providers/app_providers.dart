@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:neiroha/data/services/synthesis/synthesis_service.dart';
 import 'package:neiroha/data/services/synthesis/quick_tts_service.dart';
 import 'package:neiroha/data/services/capabilities/capability_repository.dart';
@@ -6,6 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:neiroha/data/database/app_database.dart';
+import 'package:neiroha/domain/synthesis/voice_chain.dart';
 import 'package:neiroha/data/services/android_media_session_service.dart';
 import 'package:neiroha/data/services/audio_merge_service.dart';
 import 'package:neiroha/data/services/auto_loudness_service.dart';
@@ -255,6 +258,29 @@ final ttsProvidersStreamProvider = StreamProvider((ref) {
   final db = ref.watch(databaseProvider);
   return db.watchAllProviders();
 });
+
+/// Voice asset id → what its processing chain does (cache-key input);
+/// characters without an active chain are absent.
+final voiceChainSignaturesProvider = StreamProvider<Map<String, String>>(
+  (ref) => ref
+      .watch(databaseProvider)
+      .watchSettingsWithPrefix('voice.chain.')
+      .map(
+        (rows) => {
+          for (final MapEntry(:key, :value) in rows.entries)
+            if (_chainSignature(value) case final s when s.isNotEmpty)
+              key.substring('voice.chain.'.length): s,
+        },
+      ),
+);
+
+String _chainSignature(String raw) {
+  try {
+    return VoiceChain.fromJson(jsonDecode(raw)).signature;
+  } on FormatException {
+    return '';
+  }
+}
 
 /// Stream of all voice assets from the database.
 final voiceAssetsStreamProvider = StreamProvider((ref) {

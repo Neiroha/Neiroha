@@ -7,8 +7,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/data/ai/registry/capability_router.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/services/conversation/character_live_settings.dart';
+import 'package:neiroha/data/services/conversation/conversation_factory.dart';
 import 'package:neiroha/data/services/synthesis/voice_chain_runner.dart';
+import 'package:neiroha/data/services/voice_character_copy.dart';
 import 'package:neiroha/domain/ai/ai.dart';
+import 'package:neiroha/server/mcp/mcp_synthesis.dart';
 import 'package:neiroha/domain/llm/llm_contract.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
@@ -285,6 +289,94 @@ void main() {
     await done;
     expect(tts.requests.map((r) => r.text), ['こんにちは。', '今日はいい天気。']);
     expect(events.last, isA<TtsSynthesisCompleted>());
+  });
+
+  test('companion speech uses the character chain, not the live VC', () {
+    final factory = ConversationFactory(
+      CapabilityRouter(const []),
+      runner: _Runner(),
+    );
+    const settings = CharacterLiveSettings(
+      vcConnectionId: 'el',
+      vcVoice: 'live-voice',
+    );
+    final tts = _Tts();
+    // No chain: plain TTS; the live-settings VC applies (when routable).
+    expect(factory.voiceThroughChain(tts, VoiceChain.empty), same(tts));
+    // A chain that converts replaces the live VC.
+    const converting = VoiceChain([_translate, _convert]);
+    expect(factory.companionConversion(settings, converting), isNull);
+    final wrapped = factory.voiceThroughChain(tts, converting);
+    expect(wrapped, isA<ChainedTtsAdapter>());
+    expect((wrapped as ChainedTtsAdapter).chain, same(converting));
+  });
+
+  test('MCP and API requests name the character unless the chain is off', () {
+    const asset = db.VoiceAsset(
+      id: 'nagato',
+      name: 'Nagato',
+      providerId: 'p',
+      taskMode: 'presetVoice',
+      speed: 1,
+      enabled: true,
+      loudnessOffsetDb: 0,
+    );
+    const provider = db.TtsProvider(
+      id: 'p',
+      name: 'p',
+      adapterType: 'openaiTts',
+      baseUrl: '',
+      apiKey: '',
+      defaultModelName: '',
+      enabled: true,
+      position: 0,
+      maxConcurrency: 1,
+    );
+    expect(
+      characterSpeechRequest(asset, provider, 'hi').voiceAssetId,
+      'nagato',
+    );
+    expect(
+      characterSpeechRequest(
+        asset,
+        provider,
+        'hi',
+        applyChain: false,
+      ).voiceAssetId,
+      isNull,
+    );
+  });
+
+  test('duplicating a character copies its chain', () async {
+    final database = db.AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    await database.insertProvider(
+      db.TtsProvidersCompanion.insert(
+        id: 'p',
+        name: 'p',
+        adapterType: 'openaiTts',
+        baseUrl: '',
+      ),
+    );
+    await database.insertVoiceAsset(
+      db.VoiceAssetsCompanion.insert(
+        id: 'nagato',
+        name: 'Nagato',
+        providerId: 'p',
+        taskMode: 'presetVoice',
+      ),
+    );
+    await VoiceChainHook.save(
+      database,
+      'nagato',
+      const VoiceChain([_translate]),
+    );
+    final copy = await duplicateVoiceCharacter(
+      database,
+      (await database.getVoiceAssetById('nagato'))!,
+    );
+    expect(copy, isNot('nagato'));
+    expect((await VoiceChainHook.load(database, copy)).textSteps, hasLength(1));
   });
 
   test('hook wraps only characters with an active chain', () async {

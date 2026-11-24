@@ -9,6 +9,10 @@ import 'package:neiroha/domain/ai/models/voice_converter.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
 
+import 'clip_stages.dart';
+
+export 'clip_stages.dart';
+
 /// Unpacks an encoded clip (MP3, Ogg…) to 16-bit PCM, e.g. with FFmpeg.
 typedef AudioDecoder =
     Future<WavPcm> Function(Uint8List bytes, TtsAudioFormat format);
@@ -20,23 +24,15 @@ class UndecodableAudioException extends FormatException {
 
 /// Whether [stages] can run per sentence: each converter streams PCM, or
 /// encoded output can be decoded. Otherwise convert the whole reply once.
-bool canConvertPerSentence(
-  List<VoiceConversionStage> stages,
-  AudioDecoder? decode,
-) =>
+bool canConvertPerSentence(List<ClipStage> stages, AudioDecoder? decode) =>
     decode != null ||
-    stages.every((s) => s.converter is StreamingVoiceConverter);
+    stages.whereType<VoiceConversionStage>().every(
+      (s) => s.converter is StreamingVoiceConverter,
+    );
 
 /// Speaks one sentence with the character's own voice.
 typedef SentenceSpeaker =
     Stream<TtsEvent> Function(String sentence, TtsCancelToken cancellation);
-
-/// A voice-conversion pass applied to every sentence.
-class VoiceConversionStage {
-  const VoiceConversionStage(this.converter, this.targetVoice);
-  final VoiceConverter converter;
-  final String targetVoice;
-}
 
 /// Turns a stream of sentences into one continuous PCM stream:
 ///
@@ -65,7 +61,9 @@ class SentenceSpeechPipeline {
   });
 
   final SentenceSpeaker speak;
-  final List<VoiceConversionStage> conversions;
+
+  /// Audio stages for every sentence, in order (VC, trim, ASR check).
+  final List<ClipStage> conversions;
   final int lookahead;
   final int ttsConcurrency;
   final Duration minClip;
@@ -172,24 +170,36 @@ class SentenceSpeechPipeline {
     }
     for (var i = 0; i < conversions.length; i++) {
       cancellation.throwIfCancelled();
-      final stage = conversions[i];
-      final input = AudioInput(
-        _padded(clip),
-        fileName: 'sentence.wav',
-        contentType: 'audio/wav',
-      );
-      final converted = convertAsStream(
-        stage.converter,
-        input,
-        targetVoice: stage.targetVoice,
-        cancellation: cancellation,
-      );
-      if (i == conversions.length - 1) {
-        yield* _decode(converted);
-      } else {
-        clip = await _wholeClip(converted);
+      switch (conversions[i]) {
+        case SilenceTrimStage trim:
+          clip = _Pcm(
+            trim.apply(clip.bytes, clip.rate, clip.channels),
+            clip.rate,
+            clip.channels,
+          );
+        case SpeechCheckStage check:
+          // Beside playback: the sentence plays while it is transcribed. Not
+          // tied to the line's token, which is cancelled once playback ends.
+          unawaited(check.checkPcm(text, clip.bytes, clip.rate, clip.channels));
+        case VoiceConversionStage stage:
+          final converted = convertAsStream(
+            stage.converter,
+            AudioInput(
+              _padded(clip),
+              fileName: 'sentence.wav',
+              contentType: 'audio/wav',
+            ),
+            targetVoice: stage.targetVoice,
+            cancellation: cancellation,
+          );
+          if (i == conversions.length - 1) {
+            yield* _decode(converted);
+            return;
+          }
+          clip = await _wholeClip(converted);
       }
     }
+    yield clip;
   }
 
   Future<_Pcm> _wholeClip(Stream<TtsEvent> events) async {

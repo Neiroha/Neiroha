@@ -60,6 +60,9 @@ class SpeechRequestHandler {
         promptLang: asset.promptLang,
         voiceInstruction: asset.voiceInstruction,
         presetVoiceName: asset.presetVoiceName,
+        // Neiroha extension: the character's processing chain runs unless
+        // the caller sends `"apply_chain": false`.
+        voiceAssetId: json['apply_chain'] == false ? null : asset.id,
       );
 
       if (json['stream'] == true) {

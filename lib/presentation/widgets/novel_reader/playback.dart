@@ -183,9 +183,9 @@ extension _NovelReaderEditorCache on _NovelReaderEditorState {
       asset: binding.asset,
       provider: binding.provider,
       textFilterSignature: textFilterSignature,
-      protocolSignature: binding.profile == null
-          ? ''
-          : jsonEncode(binding.profile!.toJson()),
+      protocolSignature: binding.profileSignature,
+      chainSignature:
+          ref.read(voiceChainSignaturesProvider).value?[asset.id] ?? '',
       instruction: _resolvedVoice(project, segment).instruction,
     );
   }

@@ -1531,100 +1531,41 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
             _voiceNameCtrl.text.trim().isEmpty) ||
         voxcpmNeedsAudio ||
         chatCloneNeedsAudio;
-    if (needsRefAudio && refAudio == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            kIsWeb
-                ? AppLocalizations.of(context).webLocalAudioUnavailable
-                : _isCosyVoice && _cosyVoiceMode == 'cross_lingual'
-                ? 'Cross Lingual mode requires a Reference Audio or a Profile Name'
-                : _isVoxCpm2
-                ? 'VoxCPM2 ${_voxcpmMode == 'ultimate_clone' ? 'Ultra Clone' : 'Clone'} needs a Reference Audio or a Registered Voice'
-                : 'Reference audio is required',
-          ),
-        ),
-      );
-      return;
-    }
-    if (_isGptSovits &&
-        _gptSovitsMode == 'trained' &&
-        _voiceNameCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).uiSelectOrEnterAGPTSoVITSSpeaker,
-          ),
-        ),
-      );
-      return;
-    }
-    if (_isGptSovits &&
-        _gptSovitsMode == 'clone' &&
-        _promptTextCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).uiGPTSoVITSCloneModeNeedsPromptText,
-          ),
-        ),
-      );
-      return;
-    }
-    if (_isVoxCpm2 && _voxcpmMode == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).uiSelectAVoxCPM2Mode),
-        ),
-      );
-      return;
-    }
-    if (_isVoxCpm2 &&
-        _voxcpmMode == 'design' &&
-        _instructionCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).uiDesignModeRequiresAVoiceDescription,
-          ),
-        ),
-      );
-      return;
-    }
-    if (_isPresetVoiceProvider &&
-        _ttsModelType == 'design' &&
-        _instructionCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).uiVoiceDesignRequiresAVoiceDescription,
-          ),
-        ),
-      );
-      return;
-    }
-    if (_isVoxCpm2 &&
-        _voxcpmMode == 'ultimate_clone' &&
-        _promptTextCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).uiUltraCloneModeRequiresAPromptText,
-          ),
-        ),
-      );
-      return;
-    }
-
+    final l10n = AppLocalizations.of(context);
+    bool blank(TextEditingController c) => c.text.trim().isEmpty;
     final cloudClone = _isCloudCloneProvider && refAudio != null;
-    if (_isCloudCloneProvider &&
-        !cloudClone &&
-        _voiceNameCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).uiCloudVoiceCloneHint),
-        ),
-      );
+    // The first unmet requirement of the chosen engine and mode.
+    final problem = [
+      if (needsRefAudio && refAudio == null)
+        kIsWeb
+            ? l10n.webLocalAudioUnavailable
+            : _isCosyVoice && _cosyVoiceMode == 'cross_lingual'
+            ? 'Cross Lingual mode requires a Reference Audio or a Profile Name'
+            : _isVoxCpm2
+            ? 'VoxCPM2 ${_voxcpmMode == 'ultimate_clone' ? 'Ultra Clone' : 'Clone'} needs a Reference Audio or a Registered Voice'
+            : 'Reference audio is required',
+      if (_isGptSovits && _gptSovitsMode == 'trained' && blank(_voiceNameCtrl))
+        l10n.uiSelectOrEnterAGPTSoVITSSpeaker,
+      if (_isGptSovits && _gptSovitsMode == 'clone' && blank(_promptTextCtrl))
+        l10n.uiGPTSoVITSCloneModeNeedsPromptText,
+      if (_isVoxCpm2 && _voxcpmMode == null) l10n.uiSelectAVoxCPM2Mode,
+      if (_isVoxCpm2 && _voxcpmMode == 'design' && blank(_instructionCtrl))
+        l10n.uiDesignModeRequiresAVoiceDescription,
+      if (_isPresetVoiceProvider &&
+          _ttsModelType == 'design' &&
+          blank(_instructionCtrl))
+        l10n.uiVoiceDesignRequiresAVoiceDescription,
+      if (_isVoxCpm2 &&
+          _voxcpmMode == 'ultimate_clone' &&
+          blank(_promptTextCtrl))
+        l10n.uiUltraCloneModeRequiresAPromptText,
+      if (_isCloudCloneProvider && !cloudClone && blank(_voiceNameCtrl))
+        l10n.uiCloudVoiceCloneHint,
+    ].firstOrNull;
+    if (problem != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(problem)));
       return;
     }
 

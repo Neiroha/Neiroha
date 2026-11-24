@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:convert';
 
 import 'package:neiroha/data/ai/core/tts_adapter.dart';
@@ -10,7 +12,11 @@ import 'package:neiroha/domain/synthesis/tts_event.dart';
 import 'package:neiroha/domain/synthesis/sentence_chunker.dart';
 import 'package:neiroha/domain/synthesis/voice_chain.dart';
 
+import 'package:neiroha/data/ai/protocols/audio/wav_utils.dart';
+import 'package:neiroha/domain/synthesis/speech_check.dart';
+
 import 'sentence_speech_pipeline.dart';
+import 'speech_check_log.dart';
 
 /// Runs the steps of a [VoiceChain] with models from a [CapabilityRouter].
 class VoiceChainRunner {
@@ -43,6 +49,16 @@ class VoiceChainRunner {
 
   VoiceConverter converter(VoiceChainStep step) =>
       _resolve<VoiceConverter>(AiCapability.vc, step);
+
+  /// Speech recognizer for a read-back step; null when no STT is set up
+  /// (the check is skipped rather than failing the line).
+  Transcriber? transcriber(VoiceChainStep step) {
+    try {
+      return _resolve<Transcriber>(AiCapability.stt, step);
+    } on CapabilityUnavailableException {
+      return null;
+    }
+  }
 
   /// The line after every text step, in order.
   Future<String> prepareText(
@@ -107,34 +123,73 @@ class VoiceChainRunner {
     LlmChatMessage(role: 'user', content: line),
   ];
 
-  /// Every conversion step as a pipeline stage.
-  List<VoiceConversionStage> conversionStages(VoiceChain chain) => [
-    for (final step in chain.audioSteps)
-      VoiceConversionStage(converter(step), step.targetVoice.trim()),
-  ];
+  /// Every audio step as a pipeline stage, in order. Read-back results go
+  /// to [report]; without a recognizer (or [report]) that step is skipped.
+  List<ClipStage> clipStages(
+    VoiceChain chain, {
+    void Function(SpeechCheck check)? report,
+  }) => [for (final step in chain.audioSteps) ?_stage(step, report)];
 
-  /// The audio after every conversion step, in order.
+  ClipStage? _stage(VoiceChainStep step, void Function(SpeechCheck)? report) =>
+      switch (step.kind) {
+        VoiceChainStepKind.convert => VoiceConversionStage(
+          converter(step),
+          step.targetVoice.trim(),
+        ),
+        VoiceChainStepKind.trim => const SilenceTrimStage(),
+        VoiceChainStepKind.verify => switch ((transcriber(step), report)) {
+          (final stt?, final report?) => SpeechCheckStage(
+            stt,
+            report: report,
+            language: step.targetLanguage,
+          ),
+          _ => null,
+        },
+        VoiceChainStepKind.translate || VoiceChainStepKind.rewrite => null,
+      };
+
+  /// The audio after every audio step, in order, on a whole file. [text] is
+  /// what was spoken, for the read-back check (which then runs in line).
   Future<TtsResult> convertAudio(
     TtsResult audio,
     VoiceChain chain, {
     TtsCancelToken? cancellation,
+    String text = '',
+    void Function(SpeechCheck check)? report,
   }) async {
     var current = audio;
-    for (final step in chain.audioSteps) {
-      final vc = converter(step);
+    for (final stage in clipStages(chain, report: report)) {
       final format = TtsAudioFormat.fromFileBytes(
         current.audioBytes,
         current.contentType,
       );
-      current = await vc.convert(
-        AudioInput(
-          current.audioBytes,
-          fileName: 'speech${format.extension}',
-          contentType: format.contentType,
-        ),
-        targetVoice: step.targetVoice.trim(),
-        cancellation: cancellation,
+      final input = AudioInput(
+        current.audioBytes,
+        fileName: 'speech${format.extension}',
+        contentType: format.contentType,
       );
+      switch (stage) {
+        case VoiceConversionStage(:final converter, :final targetVoice):
+          current = await converter.convert(
+            input,
+            targetVoice: targetVoice,
+            cancellation: cancellation,
+          );
+        case SilenceTrimStage trim when format.encoding == AudioEncoding.wav:
+          final wav = parsePcmWav(current.audioBytes);
+          current = TtsResult(
+            audioBytes: wrapPcmAsWav(
+              trim.apply(wav.pcm, wav.sampleRate, wav.channels),
+              sampleRate: wav.sampleRate,
+              channels: wav.channels,
+            ),
+            contentType: 'audio/wav',
+          );
+        case SilenceTrimStage():
+          break; // Encoded files are left untrimmed.
+        case SpeechCheckStage check:
+          unawaited(check.check(text, input)); // beside playback
+      }
     }
     return current;
   }
@@ -154,12 +209,16 @@ class ChainedTtsAdapter extends TtsAdapter {
     this.runner, {
     this.lookahead = 1,
     this.decode,
+    this.onCheck,
   });
   final TtsAdapter inner;
   final VoiceChain chain;
   final VoiceChainRunner runner;
   final int lookahead;
   final AudioDecoder? decode;
+
+  /// Receives ASR read-back results of a `verify` step.
+  final void Function(SpeechCheck check)? onCheck;
 
   bool get _pipelined => chain.isActive;
 
@@ -181,8 +240,14 @@ class ChainedTtsAdapter extends TtsAdapter {
 
   @override
   Future<TtsResult> synthesize(TtsRequest request) async {
-    final spoken = await inner.synthesize(await _prepared(request, null));
-    return runner.convertAudio(spoken, chain);
+    final prepared = await _prepared(request, null);
+    final spoken = await inner.synthesize(prepared);
+    return runner.convertAudio(
+      spoken,
+      chain,
+      text: prepared.text,
+      report: onCheck,
+    );
   }
 
   /// One sentence from the inner adapter: streamed PCM when it streams,
@@ -208,7 +273,7 @@ class ChainedTtsAdapter extends TtsAdapter {
       yield* inner.synthesizeStream(request, cancellation: cancellation);
       return;
     }
-    final stages = runner.conversionStages(chain);
+    final stages = runner.clipStages(chain, report: onCheck);
     if (!canConvertPerSentence(stages, decode)) {
       yield* _wholeLine(request, cancellation);
       return;
@@ -249,6 +314,8 @@ class ChainedTtsAdapter extends TtsAdapter {
       spoken,
       chain,
       cancellation: cancellation,
+      text: prepared.text,
+      report: onCheck,
     );
     cancellation.throwIfCancelled();
     yield TtsAudioStarted(
@@ -310,6 +377,7 @@ class VoiceChainHook {
       chain,
       VoiceChainRunner(router),
       decode: decode,
+      onCheck: (c) => SpeechCheckLog.instance.add(c.forAsset(id)),
     );
   }
 }

@@ -8,7 +8,6 @@ import 'package:neiroha/providers/novel_role_providers.dart';
 import 'package:neiroha/data/services/novel/novel_voice_resolution.dart';
 import 'package:neiroha/data/services/novel/novel_audio_fingerprint.dart';
 import 'dart:async';
-import 'dart:convert';
 import 'package:neiroha/domain/capabilities/task_profile.dart';
 import 'package:neiroha/data/services/novel/novel_synthesis_binding.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';

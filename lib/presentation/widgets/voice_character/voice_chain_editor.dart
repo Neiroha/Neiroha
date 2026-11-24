@@ -15,6 +15,7 @@ import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
 import 'components.dart';
+import 'speech_check_view.dart';
 
 /// Inspector section for a character's processing chain, drawn as a row of
 /// composed functions: line → text steps → TTS → voice conversion → audio.
@@ -138,9 +139,11 @@ class _VoiceChainEditorState extends ConsumerState<VoiceChainEditor> {
           const SizedBox(height: 8),
           Text(
             l.chainNoStreaming,
-            style: const TextStyle(fontSize: 11.5, color: Colors.orangeAccent),
+            style: const TextStyle(fontSize: 11.5, color: Colors.white54),
           ),
         ],
+        if (_chain.audioSteps.any((s) => s.kind == VoiceChainStepKind.verify))
+          SpeechCheckView(voiceAssetId: widget.asset.id),
       ],
     );
   }
@@ -150,6 +153,17 @@ IconData _icon(VoiceChainStepKind kind) => switch (kind) {
   VoiceChainStepKind.translate => Icons.translate_rounded,
   VoiceChainStepKind.rewrite => Icons.edit_note_rounded,
   VoiceChainStepKind.convert => Icons.transform_rounded,
+  VoiceChainStepKind.trim => Icons.content_cut_rounded,
+  VoiceChainStepKind.verify => Icons.hearing_rounded,
+};
+
+/// The capability serving a step; null for steps that need no model.
+AiCapability? _capability(VoiceChainStepKind kind) => switch (kind) {
+  VoiceChainStepKind.translate ||
+  VoiceChainStepKind.rewrite => AiCapability.llm,
+  VoiceChainStepKind.convert => AiCapability.vc,
+  VoiceChainStepKind.verify => AiCapability.stt,
+  VoiceChainStepKind.trim => null,
 };
 
 String _kindLabel(AppLocalizations l, VoiceChainStepKind kind) =>
@@ -157,6 +171,8 @@ String _kindLabel(AppLocalizations l, VoiceChainStepKind kind) =>
       VoiceChainStepKind.translate => l.chainTranslate,
       VoiceChainStepKind.rewrite => l.chainRewrite,
       VoiceChainStepKind.convert => l.chainConvert,
+      VoiceChainStepKind.trim => l.chainTrim,
+      VoiceChainStepKind.verify => l.chainVerify,
     };
 
 String _stepLabel(AppLocalizations l, VoiceChainStep s) {
@@ -165,6 +181,8 @@ String _stepLabel(AppLocalizations l, VoiceChainStep s) {
     VoiceChainStepKind.translate => l.chainTranslateTo(s.targetLanguage),
     VoiceChainStepKind.rewrite => l.chainRewrite,
     VoiceChainStepKind.convert => l.chainConvertTo(s.targetVoice),
+    VoiceChainStepKind.trim => l.chainTrim,
+    VoiceChainStepKind.verify => l.chainVerify,
   };
 }
 
@@ -269,7 +287,8 @@ class _StepDialogState extends State<_StepDialog> {
   @override
   void initState() {
     super.initState();
-    final cap = widget.step.kind.isText ? AiCapability.llm : AiCapability.vc;
+    final cap = _capability(widget.step.kind);
+    if (cap == null) return;
     for (final c in widget.router.serving(cap)) {
       if (c is! LiveModelDiscovery) continue;
       unawaited(
@@ -292,16 +311,17 @@ class _StepDialogState extends State<_StepDialog> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final kind = widget.step.kind;
-    final cap = kind.isText ? AiCapability.llm : AiCapability.vc;
+    final cap = _capability(kind);
     final models = [
-      for (final c in widget.router.serving(cap))
-        for (final m in _live[c.id] ?? c.models(cap)) (c, m),
+      if (cap != null)
+        for (final c in widget.router.serving(cap))
+          for (final m in _live[c.id] ?? c.models(cap)) (c, m),
     ];
     final picked = models.any((e) => (e.$1.id, e.$2.id) == _model)
         ? _model
         : null;
     // Voice conversion has no default model to fall back on.
-    final needsModel = !kind.isText;
+    final needsModel = kind == VoiceChainStepKind.convert;
     return AlertDialog(
       title: Row(
         children: [
@@ -316,7 +336,9 @@ class _StepDialogState extends State<_StepDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (models.isEmpty)
+            if (cap == null)
+              const SizedBox.shrink()
+            else if (models.isEmpty)
               Text(
                 l.chainNoModels,
                 style: const TextStyle(color: Colors.orangeAccent),
@@ -368,6 +390,24 @@ class _StepDialogState extends State<_StepDialog> {
                     .where((c) => c.id == picked?.$1)
                     .firstOrNull,
                 modelId: picked?.$2,
+              ),
+              VoiceChainStepKind.trim => Text(l.chainTrimHint),
+              VoiceChainStepKind.verify => Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: _language,
+                    decoration: InputDecoration(
+                      labelText: l.chainVerifyLanguage,
+                      hintText: l.chainTargetLanguageHint,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l.chainVerifyHint,
+                    style: const TextStyle(fontSize: 12, color: Colors.white54),
+                  ),
+                ],
               ),
             },
             SwitchListTile(

@@ -24,6 +24,7 @@ import 'package:neiroha/domain/enums/task_mode.dart';
 import 'package:neiroha/domain/platform/platform_capabilities.dart';
 import 'package:neiroha/presentation/widgets/video_dub/tracks.dart';
 import 'package:neiroha/server/mcp/mcp_server.dart';
+import 'package:neiroha/server/mcp/mcp_synthesis.dart';
 
 /// The Neiroha tool surface for AI agents: providers, voice banks, the
 /// reference-audio library, voice characters, speech synthesis and
@@ -632,6 +633,10 @@ class NeirohaMcpTools {
           'instruction': _str('Override the style / emotion text.'),
           'return_audio': _bool(
             'Also return the audio inline as base64 (default false).',
+          ),
+          'apply_chain': _bool(
+            'Run the character\'s processing chain (translate / rewrite / '
+            'voice conversion) around the TTS (default true).',
           ),
         },
         required: ['character_id', 'text'],
@@ -1267,13 +1272,16 @@ class NeirohaMcpTools {
         '',
       );
     }
-    final result = await _synthesizeToFile(
+    final result = await synthesizeCharacterToFile(
+      db,
       asset,
       text,
       outPath,
       source: 'MCP',
+      probe: _probeDuration,
       speed: _num0(args, 'speed'),
       instruction: _raw(args, 'instruction'),
+      applyChain: _bool0(args, 'apply_chain') ?? true,
     );
     await db.insertQuickTtsHistory(
       QuickTtsHistoriesCompanion(
@@ -1508,10 +1516,12 @@ class NeirohaMcpTools {
               'cue_${cue.orderIndex}_${PathService.formatTimestamp()}_'
               '${cue.id.substring(0, 6)}',
             );
-            final r = await _synthesizeToFile(
+            final r = await synthesizeCharacterToFile(
+              db,
               asset,
               cue.cueText,
               base,
+              probe: _probeDuration,
               source: 'MCP Video Dub',
               label: 'Cue ${cue.orderIndex + 1}: ${cue.cueText}',
             );
@@ -1707,58 +1717,6 @@ class NeirohaMcpTools {
 
   // ───────────────────────── Internals ─────────────────────────
 
-  Future<_SynthResult> _synthesizeToFile(
-    VoiceAsset asset,
-    String text,
-    String outPathOrBase, {
-    required String source,
-    String? label,
-    double? speed,
-    String? instruction,
-  }) async {
-    if (!asset.enabled) {
-      throw McpToolError('Character "${asset.name}" is disabled');
-    }
-    final provider = (await db.getAllProviders())
-        .where((pr) => pr.id == asset.providerId)
-        .firstOrNull;
-    if (provider == null) {
-      throw McpToolError('Provider of "${asset.name}" not found');
-    }
-    if (!provider.enabled) {
-      throw McpToolError(
-        'Provider "${provider.name}" is disabled — enable it with '
-        'update_provider.',
-      );
-    }
-    final result = await TtsQueueService.instance.synthesize(
-      provider: provider,
-      modelName: asset.modelName,
-      source: source,
-      label: label ?? '${asset.name}: $text',
-      request: TtsRequest(
-        text: text,
-        voice: asset.presetVoiceName ?? asset.name,
-        speed: speed ?? asset.speed,
-        textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
-        presetVoiceName: asset.presetVoiceName,
-        voiceInstruction: instruction ?? asset.voiceInstruction,
-        refAudioPath: asset.refAudioPath,
-        promptText: asset.promptText,
-        promptLang: asset.promptLang,
-      ),
-    );
-    final ext = _extForContentType(result.contentType);
-    var path = outPathOrBase;
-    if (p.extension(path).isEmpty) path = '$path$ext';
-    await File(path).writeAsBytes(result.audioBytes);
-    return _SynthResult(
-      path: path,
-      contentType: result.contentType,
-      durationSec: await _probeDuration(path, bytes: result.audioBytes),
-    );
-  }
-
   Future<void> _attachVideo(
     String projectId,
     String videoPath, {
@@ -1847,33 +1805,10 @@ class NeirohaMcpTools {
     final viaFfprobe = await _ffmpeg.probeDurationSeconds(path);
     if (viaFfprobe != null && viaFfprobe > 0) return viaFfprobe;
     try {
-      return _wavDuration(bytes ?? await File(path).readAsBytes());
+      return wavDurationSeconds(bytes ?? await File(path).readAsBytes());
     } catch (_) {
       return null;
     }
-  }
-
-  /// Duration of a PCM RIFF/WAVE buffer, or null for other formats.
-  static double? _wavDuration(Uint8List b) {
-    if (b.length < 44 || String.fromCharCodes(b.sublist(0, 4)) != 'RIFF') {
-      return null;
-    }
-    final bd = ByteData.sublistView(b);
-    var offset = 12;
-    int? byteRate;
-    while (offset + 8 <= b.length) {
-      final id = String.fromCharCodes(b.sublist(offset, offset + 4));
-      final size = bd.getUint32(offset + 4, Endian.little);
-      if (id == 'fmt ') byteRate = bd.getUint32(offset + 16, Endian.little);
-      if (id == 'data' && byteRate != null && byteRate > 0) {
-        final dataLen = size == 0xFFFFFFFF || offset + 8 + size > b.length
-            ? b.length - offset - 8
-            : size;
-        return dataLen / byteRate;
-      }
-      offset += 8 + size + (size.isOdd ? 1 : 0);
-    }
-    return null;
   }
 
   Future<void> _touch(VideoDubProject project) async {
@@ -2178,15 +2113,6 @@ class NeirohaMcpTools {
     '.opus',
   };
 
-  static String _extForContentType(String ct) {
-    final c = ct.toLowerCase();
-    if (c.contains('wav')) return '.wav';
-    if (c.contains('flac')) return '.flac';
-    if (c.contains('ogg') || c.contains('opus')) return '.ogg';
-    if (c.contains('aac') || c.contains('mp4')) return '.m4a';
-    return '.mp3';
-  }
-
   static String _codecForExt(String ext) => switch (ext) {
     '.mp3' => 'libmp3lame',
     '.flac' => 'flac',
@@ -2278,15 +2204,4 @@ class NeirohaMcpTools {
     if (v is String && v.trim().isNotEmpty) return [v.trim()];
     return const [];
   }
-}
-
-class _SynthResult {
-  final String path;
-  final String contentType;
-  final double? durationSec;
-  const _SynthResult({
-    required this.path,
-    required this.contentType,
-    required this.durationSec,
-  });
 }

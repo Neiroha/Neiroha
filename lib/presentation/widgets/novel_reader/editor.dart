@@ -59,6 +59,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
   @override
   Widget build(BuildContext context) {
     final projectsAsync = ref.watch(novelProjectsStreamProvider);
+    ref.watch(voiceChainSignaturesProvider); // loaded before cache lookups
     final project = projectsAsync.value
         ?.where((p) => p.id == widget.projectId)
         .firstOrNull;

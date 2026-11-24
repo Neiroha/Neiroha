@@ -1,8 +1,12 @@
+import 'dart:convert';
+
 /// A voice character's processing chain, run around its TTS like composed
 /// functions: text steps rewrite the line before synthesis, audio steps
 /// transform the spoken result.
 ///
-///   text ─▶ [translate] ─▶ [rewrite] ─▶ TTS ─▶ [convert] ─▶ audio
+///   text ─▶ [translate] ─▶ [rewrite] ─▶ TTS ─▶ [trim] [verify] [convert] ─▶ audio
+///
+/// Audio steps run in the order they are listed.
 enum VoiceChainStepKind {
   /// LLM: translate the line into [VoiceChainStep.targetLanguage].
   translate,
@@ -11,9 +15,17 @@ enum VoiceChainStepKind {
   rewrite,
 
   /// Voice conversion: re-voice the audio as [VoiceChainStep.targetVoice].
-  convert;
+  convert,
 
-  bool get isText => this != convert;
+  /// Silence trim: cut leading / trailing silence and shorten long pauses.
+  trim,
+
+  /// ASR read-back: transcribe the spoken audio and report words the TTS
+  /// skipped. Audio passes through unchanged; [VoiceChainStep.targetLanguage]
+  /// is an optional recognition hint.
+  verify;
+
+  bool get isText => this == translate || this == rewrite;
 }
 
 class VoiceChainStep {
@@ -43,6 +55,7 @@ class VoiceChainStep {
     VoiceChainStepKind.rewrite => instruction.trim().isNotEmpty,
     VoiceChainStepKind.convert =>
       connectionId != null && targetVoice.trim().isNotEmpty,
+    VoiceChainStepKind.trim || VoiceChainStepKind.verify => true,
   };
 
   VoiceChainStep copyWith({
@@ -121,6 +134,12 @@ class VoiceChain {
   ]);
 
   static String key(String voiceAssetId) => 'voice.chain.$voiceAssetId';
+
+  /// What the chain does to the audio, for cache keys: empty when it does
+  /// nothing, so characters without a chain keep their cached audio.
+  String get signature => isActive
+      ? jsonEncode([for (final s in normalized()._active) s.toJson()])
+      : '';
 
   List<Object?> toJson() => [for (final s in steps) s.toJson()];
 

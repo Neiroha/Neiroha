@@ -102,14 +102,25 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
         ref.read(roleAnalysisServiceProvider).dispose();
         ref.read(roleReviewServiceProvider).dispose();
         // Each step is bounded: a step that fails or hangs must not keep
-        // the app from quitting.
-        await _exitStep(ref.read(playbackNotifierProvider.notifier).stop);
-        await _exitStep(ref.read(apiServerProvider).stop);
+        // the app from quitting. Timings go to logs/last_exit.log.
+        final log = <String>[];
+        await _exitStep(
+          'playback',
+          ref.read(playbackNotifierProvider.notifier).stop,
+          log,
+        );
+        await _exitStep('api server', ref.read(apiServerProvider).stop, log);
+        await _exitStep('capability limits', _capabilityLimits.cancel, log);
         // Close SQLite before the engine ends the process: left open, its
         // finalizer can run while the process tears down and crash in
         // sqlite3Close.
-        await _exitStep(_capabilityLimits.cancel);
-        await _exitStep(ref.read(databaseProvider).close);
+        await _exitStep(
+          'database',
+          ref.read(databaseProvider).closeConnection,
+          log,
+          timeout: const Duration(seconds: 5),
+        );
+        _writeExitLog(log);
         return AppExitResponse.exit;
       },
     );
@@ -121,11 +132,36 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
     }
   }
 
-  static Future<void> _exitStep(Future<void> Function() step) async {
+  static Future<void> _exitStep(
+    String name,
+    Future<void> Function() step,
+    List<String> log, {
+    Duration timeout = const Duration(seconds: 2),
+  }) async {
+    final watch = Stopwatch()..start();
+    var outcome = 'ok';
     try {
-      await step().timeout(const Duration(seconds: 2));
+      await step().timeout(timeout);
+    } on TimeoutException {
+      outcome = 'timed out';
     } catch (error) {
-      debugPrint('Exit step skipped: $error');
+      outcome = 'failed: $error';
+    }
+    log.add('$name: ${watch.elapsedMilliseconds} ms, $outcome');
+  }
+
+  /// Records how the last quit went, to trace a step that hangs.
+  static void _writeExitLog(List<String> log) {
+    try {
+      final file = File(
+        '${PathService.instance.dataRoot.path}/logs/last_exit.log',
+      );
+      file.parent.createSync(recursive: true);
+      file.writeAsStringSync(
+        '${DateTime.now().toIso8601String()}\n${log.join('\n')}\n',
+      );
+    } catch (_) {
+      // Logging must never block quitting.
     }
   }
 

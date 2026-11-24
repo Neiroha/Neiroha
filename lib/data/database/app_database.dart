@@ -61,4 +61,11 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => databaseMigrationStrategy(this);
+
+  /// Closes the SQLite connection without waiting for stream queries to
+  /// finish. [close] waits until every watcher has seen its stream end,
+  /// and Riverpod pauses the watchers of providers nobody is looking at,
+  /// so on quit it could wait forever and leave SQLite to be closed by its
+  /// finalizer while the process exits, which crashes.
+  Future<void> closeConnection() => executor.close();
 }

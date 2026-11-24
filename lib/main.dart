@@ -101,13 +101,15 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
         if (kIsWeb) return AppExitResponse.exit;
         ref.read(roleAnalysisServiceProvider).dispose();
         ref.read(roleReviewServiceProvider).dispose();
-        await ref.read(playbackNotifierProvider.notifier).stop();
-        await ref.read(apiServerProvider).stop();
+        // Each step is bounded: a step that fails or hangs must not keep
+        // the app from quitting.
+        await _exitStep(ref.read(playbackNotifierProvider.notifier).stop);
+        await _exitStep(ref.read(apiServerProvider).stop);
         // Close SQLite before the engine ends the process: left open, its
         // finalizer can run while the process tears down and crash in
         // sqlite3Close.
-        await _capabilityLimits.cancel();
-        await ref.read(databaseProvider).close();
+        await _exitStep(_capabilityLimits.cancel);
+        await _exitStep(ref.read(databaseProvider).close);
         return AppExitResponse.exit;
       },
     );
@@ -116,6 +118,14 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
     } else {
       Future.microtask(_loadAppSettings);
       Future.microtask(_autoStartApiServer);
+    }
+  }
+
+  static Future<void> _exitStep(Future<void> Function() step) async {
+    try {
+      await step().timeout(const Duration(seconds: 2));
+    } catch (error) {
+      debugPrint('Exit step skipped: $error');
     }
   }
 

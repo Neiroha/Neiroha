@@ -2,15 +2,18 @@ import 'dart:async';
 
 import 'package:neiroha/data/ai/protocols/openai/llm_chat_adapter.dart';
 import 'package:neiroha/data/ai/protocols/openai/openai_text_stream.dart';
+import 'package:neiroha/data/ai/protocols/openai/openai_tool_chat.dart';
 import 'package:neiroha/data/ai/protocols/openai/responses_llm_transport.dart';
 import 'package:neiroha/data/ai/providers/openai/openai_endpoint.dart';
 import 'package:neiroha/domain/ai/capability.dart';
 import 'package:neiroha/domain/ai/model_descriptor.dart';
 import 'package:neiroha/domain/ai/models/language_model.dart';
 import 'package:neiroha/domain/capabilities/model_capability.dart';
+import 'package:neiroha/domain/llm/tool_chat.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 
-class OpenAiLanguageModel implements StreamingLanguageModel {
+class OpenAiLanguageModel
+    implements StreamingLanguageModel, ToolCallingLanguageModel {
   OpenAiLanguageModel(this.descriptor, this.endpoint);
   @override
   final ModelDescriptor descriptor;
@@ -77,4 +80,28 @@ class OpenAiLanguageModel implements StreamingLanguageModel {
     cancellation: cancellation ?? TtsCancelToken(),
     maxOutputTokens: maxOutputTokens,
   );
+
+  @override
+  Future<ToolChatTurn> chatWithTools(
+    List<ToolChatMessage> messages, {
+    List<LlmTool> tools = const [],
+    String? schemaName,
+    Map<String, Object?>? replySchema,
+    TtsCancelToken? cancellation,
+    int maxOutputTokens = 1024,
+  }) =>
+      OpenAiToolChat(
+        baseUrl: endpoint.baseUrl,
+        apiKey: endpoint.apiKey,
+        model: descriptor.id,
+        apiKeyHeader: endpoint.apiKeyHeader,
+        responses: _responses,
+      ).send(
+        messages,
+        tools: tools,
+        schemaName: schemaName,
+        replySchema: replySchema,
+        cancellation: cancellation,
+        maxOutputTokens: maxOutputTokens,
+      );
 }

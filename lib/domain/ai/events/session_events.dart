@@ -21,11 +21,27 @@ class TranscriptFinal extends AiSessionEvent {
   final List<String> languages;
 }
 
-/// PCM16 mono audio produced by the model.
+/// PCM16 mono audio produced by the model. [itemId] names the reply it
+/// belongs to (to truncate it on barge-in).
 class AudioDelta extends AiSessionEvent {
-  const AudioDelta(this.pcm, {required this.sampleRate});
+  const AudioDelta(this.pcm, {required this.sampleRate, this.itemId});
   final Uint8List pcm;
   final int sampleRate;
+  final String? itemId;
+}
+
+/// The model wants a function run; answer with its result.
+class FunctionCallRequested extends AiSessionEvent {
+  const FunctionCallRequested({
+    required this.callId,
+    required this.name,
+    required this.arguments,
+  });
+  final String callId;
+  final String name;
+
+  /// Raw JSON text.
+  final String arguments;
 }
 
 class SpeechStarted extends AiSessionEvent {

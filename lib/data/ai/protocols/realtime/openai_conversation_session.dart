@@ -9,7 +9,7 @@ import 'package:neiroha/domain/ai/models/realtime_model.dart';
 
 /// `wss://…/realtime?model=…`: voice conversation with manual turns.
 class OpenAiConversationSession extends JsonSocketSession
-    implements RealtimeSession {
+    implements ToolCallingRealtimeSession {
   OpenAiConversationSession._(super.socket);
 
   static Future<OpenAiConversationSession> connect({
@@ -48,6 +48,18 @@ class OpenAiConversationSession extends JsonSocketSession
             if (config.voice?.isNotEmpty == true) 'voice': config.voice,
           },
         },
+        if (config.tools.isNotEmpty) ...{
+          'tools': [
+            for (final t in config.tools)
+              {
+                'type': 'function',
+                'name': t.name,
+                'description': t.description,
+                'parameters': t.parameters,
+              },
+          ],
+          'tool_choice': 'auto',
+        },
       },
     });
     return session;
@@ -82,6 +94,13 @@ class OpenAiConversationSession extends JsonSocketSession
         yield AudioDelta(
           Uint8List.fromList(base64DecodeSafe(delta)),
           sampleRate: openAiRealtimeRate,
+          itemId: event['item_id'] as String?,
+        );
+      case 'response.function_call_arguments.done':
+        yield FunctionCallRequested(
+          callId: '${event['call_id']}',
+          name: '${event['name']}',
+          arguments: '${event['arguments'] ?? '{}'}',
         );
       case 'response.output_audio_transcript.delta' ||
           'response.output_text.delta':
@@ -148,4 +167,25 @@ class OpenAiConversationSession extends JsonSocketSession
 
   @override
   void cancelResponse() => send({'type': 'response.cancel'});
+
+  @override
+  void sendToolResult(String callId, String output) {
+    send({
+      'type': 'conversation.item.create',
+      'item': {
+        'type': 'function_call_output',
+        'call_id': callId,
+        'output': output,
+      },
+    });
+    send({'type': 'response.create'});
+  }
+
+  @override
+  void truncate(String itemId, int audioEndMs) => send({
+    'type': 'conversation.item.truncate',
+    'item_id': itemId,
+    'content_index': 0,
+    'audio_end_ms': audioEndMs,
+  });
 }

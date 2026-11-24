@@ -3,7 +3,6 @@
   "lib/presentation/screens/dialog_tts_screen.dart": 543,
   "lib/presentation/screens/voice_asset_screen.dart": 782,
   "lib/presentation/widgets/loudness_normalize_dialog.dart": 802,
-  "lib/presentation/widgets/resizable_split_pane.dart": 840,
   "lib/presentation/widgets/settings/api_settings.dart": 504,
   "lib/presentation/widgets/voice_asset/trim_dialog.dart": 592,
   "lib/presentation/widgets/voice_bank/voice_bank_widgets.dart": 519,

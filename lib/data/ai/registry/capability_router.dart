@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:neiroha/data/ai/core/provider_connection.dart';
 import 'package:neiroha/data/ai/providers/on_device/on_device_plugin.dart';
 import 'package:neiroha/data/ai/registry/plugin_registry.dart';
@@ -15,8 +17,8 @@ class RoutedModel<T extends CapabilityModel> {
 }
 
 /// Picks a model for a capability: explicit choice → configured default
-/// (for the purpose, then for the capability) → first enabled connection's
-/// recommended model.
+/// (for the purpose, then for the capability) → the capability's automatic
+/// order: connections by priority, each one's first model.
 class CapabilityRouter {
   CapabilityRouter(
     this.connections, {
@@ -24,6 +26,8 @@ class CapabilityRouter {
     this.purposeDefaults = const {},
     this.disabled = const {},
     this.extraModels = const {},
+    this.priority = const {},
+    this.modelOrder = const {},
   });
 
   final List<ProviderConnection> connections;
@@ -39,6 +43,12 @@ class CapabilityRouter {
 
   /// Connection id → models added beyond its catalog.
   final Map<String, List<ModelDescriptor>> extraModels;
+
+  /// Capability → connection id → place in its automatic order.
+  final Map<AiCapability, Map<String, int>> priority;
+
+  /// `<connection id>/<capability>` → model ids, most preferred first.
+  final Map<String, List<String>> modelOrder;
 
   /// Enabled rows plus the on-device connection (added once, unless a
   /// system-TTS row already provides it), with the v34 capability tables.
@@ -61,9 +71,17 @@ class CapabilityRouter {
     final byId = {for (final c in connections) c.id: c};
     AiCapability? cap(String name) => AiCapability.values.asNameMap()[name];
     final disabled = <String, Set<AiCapability>>{};
+    final priority = <AiCapability, Map<String, int>>{};
+    final modelOrder = <String, List<String>>{};
     for (final r in capabilityRows) {
-      if (cap(r.capability) case final c? when !r.enabled) {
-        disabled.putIfAbsent(r.connectionId, () => {}).add(c);
+      final c = cap(r.capability);
+      if (c == null) continue;
+      if (!r.enabled) disabled.putIfAbsent(r.connectionId, () => {}).add(c);
+      if (r.position case final p?) {
+        priority.putIfAbsent(c, () => {})[r.connectionId] = p;
+      }
+      if (_decodeOrder(r.modelOrder) case final ids?) {
+        modelOrder['${r.connectionId}/${c.name}'] = ids;
       }
     }
     final extra = <String, List<ModelDescriptor>>{};
@@ -98,7 +116,19 @@ class CapabilityRouter {
       },
       disabled: disabled,
       extraModels: extra,
+      priority: priority,
+      modelOrder: modelOrder,
     );
+  }
+
+  static List<String>? _decodeOrder(String? json) {
+    if (json == null || json.isEmpty) return null;
+    try {
+      final list = jsonDecode(json);
+      return list is List ? list.whereType<String>().toList() : null;
+    } on FormatException {
+      return null;
+    }
   }
 
   /// The router over the database's current rows.
@@ -114,22 +144,51 @@ class CapabilityRouter {
   bool offers(ProviderConnection c, AiCapability cap) =>
       c.capabilities.contains(cap) && !(disabled[c.id]?.contains(cap) ?? false);
 
-  /// [c]'s models for [cap]: its catalog, then the ones added to it.
+  /// [c]'s models for [cap] in their set order: its catalog, then the ones
+  /// added to it.
   List<ModelDescriptor> modelsOf(ProviderConnection c, AiCapability cap) {
     if (!offers(c, cap)) return const [];
     final own = c.models(cap);
-    return [
+    final all = [
       ...own,
       for (final m in extraModels[c.id] ?? const <ModelDescriptor>[])
         if (m.capability == cap && !own.any((o) => o.id == m.id)) m,
     ];
+    final order = modelOrder['${c.id}/${cap.name}'];
+    if (order == null || order.isEmpty) return all;
+    int rank(ModelDescriptor m) {
+      final i = order.indexOf(m.id);
+      return i < 0 ? order.length : i;
+    }
+
+    return _stableSort(all, rank);
   }
 
-  /// Connections that can serve [cap], in list order.
+  /// Connections offering [cap] in its automatic order: by set priority,
+  /// then list order. Includes those with the capability switched off.
+  List<ProviderConnection> ordered(AiCapability cap) {
+    final places = priority[cap] ?? const <String, int>{};
+    final offering = [
+      for (final c in connections)
+        if (c.capabilities.contains(cap)) c,
+    ];
+    return _stableSort(offering, (c) => places[c.id] ?? 1 << 30);
+  }
+
+  /// Connections that can serve [cap], in its automatic order.
   List<ProviderConnection> serving(AiCapability cap) => [
-    for (final c in connections)
+    for (final c in ordered(cap))
       if (modelsOf(c, cap).isNotEmpty) c,
   ];
+
+  static List<E> _stableSort<E>(List<E> items, int Function(E) key) {
+    final indexed = [for (var i = 0; i < items.length; i++) (i, items[i])];
+    indexed.sort((a, b) {
+      final byKey = key(a.$2).compareTo(key(b.$2));
+      return byKey != 0 ? byKey : a.$1.compareTo(b.$1);
+    });
+    return [for (final (_, e) in indexed) e];
+  }
 
   RoutedModel<T>? resolve<T extends CapabilityModel>(
     AiCapability cap, {
@@ -149,8 +208,18 @@ class CapabilityRouter {
       }
       return null;
     }
+    return automatic<T>(cap);
+  }
+
+  /// What [cap] runs on with no default set: the first connection in its
+  /// automatic order, with that connection's first model.
+  RoutedModel<T>? automatic<T extends CapabilityModel>(AiCapability cap) {
     for (final c in serving(cap)) {
-      final model = c.typed<T>(cap);
+      // A set model order puts its first model ahead of the recommended one.
+      final first = modelOrder['${c.id}/${cap.name}'] == null
+          ? null
+          : modelsOf(c, cap).first.id;
+      final model = c.typed<T>(cap, first);
       if (model != null) return RoutedModel(c, model);
     }
     return null;

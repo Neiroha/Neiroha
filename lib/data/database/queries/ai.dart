@@ -70,6 +70,35 @@ extension AppDatabaseAiQueries on AppDatabase {
           ))
           .go();
 
+  /// Sets [cap]'s automatic order to [connectionIds], first preferred.
+  Future<void> reorderCapabilityConnections(
+    String cap,
+    List<String> connectionIds,
+  ) => transaction(() async {
+    for (var i = 0; i < connectionIds.length; i++) {
+      await upsertConnectionCapability(
+        ConnectionCapabilitiesCompanion(
+          connectionId: Value(connectionIds[i]),
+          capability: Value(cap),
+          position: Value(i),
+        ),
+      );
+    }
+  });
+
+  /// Sets the order of [connectionId]'s models for [cap], first preferred.
+  Future<void> setCapabilityModelOrder(
+    String connectionId,
+    String cap,
+    List<String> modelIds,
+  ) => upsertConnectionCapability(
+    ConnectionCapabilitiesCompanion(
+      connectionId: Value(connectionId),
+      capability: Value(cap),
+      modelOrder: Value(jsonEncode(modelIds)),
+    ),
+  );
+
   // --- Extra models ---
 
   Future<List<ProviderModel>> getProviderModels() =>

@@ -14050,6 +14050,28 @@ class $ConnectionCapabilitiesTable extends ConnectionCapabilities
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _modelOrderMeta = const VerificationMeta(
+    'modelOrder',
+  );
+  @override
+  late final GeneratedColumn<String> modelOrder = GeneratedColumn<String>(
+    'model_order',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     connectionId,
@@ -14061,6 +14083,8 @@ class $ConnectionCapabilitiesTable extends ConnectionCapabilities
     tokensPerMinute,
     tokensPerDay,
     serviceOverride,
+    position,
+    modelOrder,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -14153,6 +14177,18 @@ class $ConnectionCapabilitiesTable extends ConnectionCapabilities
         ),
       );
     }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    }
+    if (data.containsKey('model_order')) {
+      context.handle(
+        _modelOrderMeta,
+        modelOrder.isAcceptableOrUnknown(data['model_order']!, _modelOrderMeta),
+      );
+    }
     return context;
   }
 
@@ -14198,6 +14234,14 @@ class $ConnectionCapabilitiesTable extends ConnectionCapabilities
         DriftSqlType.string,
         data['${effectivePrefix}service_override'],
       ),
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      ),
+      modelOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model_order'],
+      ),
     );
   }
 
@@ -14220,6 +14264,12 @@ class ConnectionCapability extends DataClass
 
   /// Base URL for this capability when it differs from the connection's.
   final String? serviceOverride;
+
+  /// Place in the capability's automatic order; null follows the list.
+  final int? position;
+
+  /// JSON list of model ids, most preferred first; unlisted models follow.
+  final String? modelOrder;
   const ConnectionCapability({
     required this.connectionId,
     required this.capability,
@@ -14230,6 +14280,8 @@ class ConnectionCapability extends DataClass
     this.tokensPerMinute,
     this.tokensPerDay,
     this.serviceOverride,
+    this.position,
+    this.modelOrder,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -14254,6 +14306,12 @@ class ConnectionCapability extends DataClass
     }
     if (!nullToAbsent || serviceOverride != null) {
       map['service_override'] = Variable<String>(serviceOverride);
+    }
+    if (!nullToAbsent || position != null) {
+      map['position'] = Variable<int>(position);
+    }
+    if (!nullToAbsent || modelOrder != null) {
+      map['model_order'] = Variable<String>(modelOrder);
     }
     return map;
   }
@@ -14281,6 +14339,12 @@ class ConnectionCapability extends DataClass
       serviceOverride: serviceOverride == null && nullToAbsent
           ? const Value.absent()
           : Value(serviceOverride),
+      position: position == null && nullToAbsent
+          ? const Value.absent()
+          : Value(position),
+      modelOrder: modelOrder == null && nullToAbsent
+          ? const Value.absent()
+          : Value(modelOrder),
     );
   }
 
@@ -14299,6 +14363,8 @@ class ConnectionCapability extends DataClass
       tokensPerMinute: serializer.fromJson<int?>(json['tokensPerMinute']),
       tokensPerDay: serializer.fromJson<int?>(json['tokensPerDay']),
       serviceOverride: serializer.fromJson<String?>(json['serviceOverride']),
+      position: serializer.fromJson<int?>(json['position']),
+      modelOrder: serializer.fromJson<String?>(json['modelOrder']),
     );
   }
   @override
@@ -14314,6 +14380,8 @@ class ConnectionCapability extends DataClass
       'tokensPerMinute': serializer.toJson<int?>(tokensPerMinute),
       'tokensPerDay': serializer.toJson<int?>(tokensPerDay),
       'serviceOverride': serializer.toJson<String?>(serviceOverride),
+      'position': serializer.toJson<int?>(position),
+      'modelOrder': serializer.toJson<String?>(modelOrder),
     };
   }
 
@@ -14327,6 +14395,8 @@ class ConnectionCapability extends DataClass
     Value<int?> tokensPerMinute = const Value.absent(),
     Value<int?> tokensPerDay = const Value.absent(),
     Value<String?> serviceOverride = const Value.absent(),
+    Value<int?> position = const Value.absent(),
+    Value<String?> modelOrder = const Value.absent(),
   }) => ConnectionCapability(
     connectionId: connectionId ?? this.connectionId,
     capability: capability ?? this.capability,
@@ -14347,6 +14417,8 @@ class ConnectionCapability extends DataClass
     serviceOverride: serviceOverride.present
         ? serviceOverride.value
         : this.serviceOverride,
+    position: position.present ? position.value : this.position,
+    modelOrder: modelOrder.present ? modelOrder.value : this.modelOrder,
   );
   ConnectionCapability copyWithCompanion(ConnectionCapabilitiesCompanion data) {
     return ConnectionCapability(
@@ -14375,6 +14447,10 @@ class ConnectionCapability extends DataClass
       serviceOverride: data.serviceOverride.present
           ? data.serviceOverride.value
           : this.serviceOverride,
+      position: data.position.present ? data.position.value : this.position,
+      modelOrder: data.modelOrder.present
+          ? data.modelOrder.value
+          : this.modelOrder,
     );
   }
 
@@ -14389,7 +14465,9 @@ class ConnectionCapability extends DataClass
           ..write('requestsPerDay: $requestsPerDay, ')
           ..write('tokensPerMinute: $tokensPerMinute, ')
           ..write('tokensPerDay: $tokensPerDay, ')
-          ..write('serviceOverride: $serviceOverride')
+          ..write('serviceOverride: $serviceOverride, ')
+          ..write('position: $position, ')
+          ..write('modelOrder: $modelOrder')
           ..write(')'))
         .toString();
   }
@@ -14405,6 +14483,8 @@ class ConnectionCapability extends DataClass
     tokensPerMinute,
     tokensPerDay,
     serviceOverride,
+    position,
+    modelOrder,
   );
   @override
   bool operator ==(Object other) =>
@@ -14418,7 +14498,9 @@ class ConnectionCapability extends DataClass
           other.requestsPerDay == this.requestsPerDay &&
           other.tokensPerMinute == this.tokensPerMinute &&
           other.tokensPerDay == this.tokensPerDay &&
-          other.serviceOverride == this.serviceOverride);
+          other.serviceOverride == this.serviceOverride &&
+          other.position == this.position &&
+          other.modelOrder == this.modelOrder);
 }
 
 class ConnectionCapabilitiesCompanion
@@ -14432,6 +14514,8 @@ class ConnectionCapabilitiesCompanion
   final Value<int?> tokensPerMinute;
   final Value<int?> tokensPerDay;
   final Value<String?> serviceOverride;
+  final Value<int?> position;
+  final Value<String?> modelOrder;
   final Value<int> rowid;
   const ConnectionCapabilitiesCompanion({
     this.connectionId = const Value.absent(),
@@ -14443,6 +14527,8 @@ class ConnectionCapabilitiesCompanion
     this.tokensPerMinute = const Value.absent(),
     this.tokensPerDay = const Value.absent(),
     this.serviceOverride = const Value.absent(),
+    this.position = const Value.absent(),
+    this.modelOrder = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ConnectionCapabilitiesCompanion.insert({
@@ -14455,6 +14541,8 @@ class ConnectionCapabilitiesCompanion
     this.tokensPerMinute = const Value.absent(),
     this.tokensPerDay = const Value.absent(),
     this.serviceOverride = const Value.absent(),
+    this.position = const Value.absent(),
+    this.modelOrder = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : connectionId = Value(connectionId),
        capability = Value(capability);
@@ -14468,6 +14556,8 @@ class ConnectionCapabilitiesCompanion
     Expression<int>? tokensPerMinute,
     Expression<int>? tokensPerDay,
     Expression<String>? serviceOverride,
+    Expression<int>? position,
+    Expression<String>? modelOrder,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -14480,6 +14570,8 @@ class ConnectionCapabilitiesCompanion
       if (tokensPerMinute != null) 'tokens_per_minute': tokensPerMinute,
       if (tokensPerDay != null) 'tokens_per_day': tokensPerDay,
       if (serviceOverride != null) 'service_override': serviceOverride,
+      if (position != null) 'position': position,
+      if (modelOrder != null) 'model_order': modelOrder,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -14494,6 +14586,8 @@ class ConnectionCapabilitiesCompanion
     Value<int?>? tokensPerMinute,
     Value<int?>? tokensPerDay,
     Value<String?>? serviceOverride,
+    Value<int?>? position,
+    Value<String?>? modelOrder,
     Value<int>? rowid,
   }) {
     return ConnectionCapabilitiesCompanion(
@@ -14506,6 +14600,8 @@ class ConnectionCapabilitiesCompanion
       tokensPerMinute: tokensPerMinute ?? this.tokensPerMinute,
       tokensPerDay: tokensPerDay ?? this.tokensPerDay,
       serviceOverride: serviceOverride ?? this.serviceOverride,
+      position: position ?? this.position,
+      modelOrder: modelOrder ?? this.modelOrder,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -14540,6 +14636,12 @@ class ConnectionCapabilitiesCompanion
     if (serviceOverride.present) {
       map['service_override'] = Variable<String>(serviceOverride.value);
     }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (modelOrder.present) {
+      map['model_order'] = Variable<String>(modelOrder.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -14558,6 +14660,8 @@ class ConnectionCapabilitiesCompanion
           ..write('tokensPerMinute: $tokensPerMinute, ')
           ..write('tokensPerDay: $tokensPerDay, ')
           ..write('serviceOverride: $serviceOverride, ')
+          ..write('position: $position, ')
+          ..write('modelOrder: $modelOrder, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -28036,6 +28140,8 @@ typedef $$ConnectionCapabilitiesTableCreateCompanionBuilder =
       Value<int?> tokensPerMinute,
       Value<int?> tokensPerDay,
       Value<String?> serviceOverride,
+      Value<int?> position,
+      Value<String?> modelOrder,
       Value<int> rowid,
     });
 typedef $$ConnectionCapabilitiesTableUpdateCompanionBuilder =
@@ -28049,6 +28155,8 @@ typedef $$ConnectionCapabilitiesTableUpdateCompanionBuilder =
       Value<int?> tokensPerMinute,
       Value<int?> tokensPerDay,
       Value<String?> serviceOverride,
+      Value<int?> position,
+      Value<String?> modelOrder,
       Value<int> rowid,
     });
 
@@ -28133,6 +28241,16 @@ class $$ConnectionCapabilitiesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modelOrder => $composableBuilder(
+    column: $table.modelOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$TtsProvidersTableFilterComposer get connectionId {
     final $$TtsProvidersTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -28206,6 +28324,16 @@ class $$ConnectionCapabilitiesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modelOrder => $composableBuilder(
+    column: $table.modelOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TtsProvidersTableOrderingComposer get connectionId {
     final $$TtsProvidersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -28274,6 +28402,14 @@ class $$ConnectionCapabilitiesTableAnnotationComposer
 
   GeneratedColumn<String> get serviceOverride => $composableBuilder(
     column: $table.serviceOverride,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
+  GeneratedColumn<String> get modelOrder => $composableBuilder(
+    column: $table.modelOrder,
     builder: (column) => column,
   );
 
@@ -28349,6 +28485,8 @@ class $$ConnectionCapabilitiesTableTableManager
                 Value<int?> tokensPerMinute = const Value.absent(),
                 Value<int?> tokensPerDay = const Value.absent(),
                 Value<String?> serviceOverride = const Value.absent(),
+                Value<int?> position = const Value.absent(),
+                Value<String?> modelOrder = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConnectionCapabilitiesCompanion(
                 connectionId: connectionId,
@@ -28360,6 +28498,8 @@ class $$ConnectionCapabilitiesTableTableManager
                 tokensPerMinute: tokensPerMinute,
                 tokensPerDay: tokensPerDay,
                 serviceOverride: serviceOverride,
+                position: position,
+                modelOrder: modelOrder,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -28373,6 +28513,8 @@ class $$ConnectionCapabilitiesTableTableManager
                 Value<int?> tokensPerMinute = const Value.absent(),
                 Value<int?> tokensPerDay = const Value.absent(),
                 Value<String?> serviceOverride = const Value.absent(),
+                Value<int?> position = const Value.absent(),
+                Value<String?> modelOrder = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConnectionCapabilitiesCompanion.insert(
                 connectionId: connectionId,
@@ -28384,6 +28526,8 @@ class $$ConnectionCapabilitiesTableTableManager
                 tokensPerMinute: tokensPerMinute,
                 tokensPerDay: tokensPerDay,
                 serviceOverride: serviceOverride,
+                position: position,
+                modelOrder: modelOrder,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

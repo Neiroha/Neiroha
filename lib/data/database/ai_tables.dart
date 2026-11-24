@@ -29,6 +29,12 @@ class ConnectionCapabilities extends Table {
 
   /// Base URL for this capability when it differs from the connection's.
   TextColumn get serviceOverride => text().nullable()();
+
+  /// Place in the capability's automatic order; null follows the list.
+  IntColumn get position => integer().nullable()();
+
+  /// JSON list of model ids, most preferred first; unlisted models follow.
+  TextColumn get modelOrder => text().nullable()();
   @override
   Set<Column> get primaryKey => {connectionId, capability};
 }

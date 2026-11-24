@@ -51,6 +51,8 @@ part '../widgets/novel_reader/book_export.dart';
 part '../widgets/novel_reader/chapters.dart';
 part '../widgets/novel_reader/reader_pane.dart';
 part '../widgets/novel_reader/controls.dart';
+part '../widgets/novel_reader/controls_widgets.dart';
+part '../widgets/novel_reader/chapter_picker.dart';
 part '../widgets/novel_reader/settings_panel.dart';
 part '../widgets/novel_reader/settings_controls.dart';
 part '../widgets/novel_reader/dialogue_rules_dialog.dart';

@@ -4,7 +4,6 @@
   "lib/presentation/screens/voice_asset_screen.dart": 782,
   "lib/presentation/widgets/loudness_normalize_dialog.dart": 802,
   "lib/presentation/widgets/novel_reader/chapters.dart": 753,
-  "lib/presentation/widgets/novel_reader/controls.dart": 883,
   "lib/presentation/widgets/novel_reader/reader_pane.dart": 620,
   "lib/presentation/widgets/resizable_split_pane.dart": 840,
   "lib/presentation/widgets/settings/api_settings.dart": 504,

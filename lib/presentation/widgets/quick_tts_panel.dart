@@ -1,4 +1,5 @@
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
+import 'quick_tts/generate_bar.dart';
 import 'quick_tts/history_list.dart';
 import 'dart:io';
 
@@ -30,7 +31,10 @@ import 'package:neiroha/l10n/generated/app_localizations.dart';
 /// user can test the voice being edited with a single click.
 class QuickTtsPanel extends ConsumerStatefulWidget {
   final db.VoiceAsset? asset;
-  const QuickTtsPanel({super.key, required this.asset});
+
+  /// A larger text box, for when the panel has a column of its own.
+  final bool roomy;
+  const QuickTtsPanel({super.key, required this.asset, this.roomy = false});
 
   @override
   ConsumerState<QuickTtsPanel> createState() => _QuickTtsPanelState();
@@ -134,7 +138,18 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
-        _buildGenerateBar(canGenerate ? () => _generate(asset, stream) : null),
+        QuickTtsGenerateBar(
+          controller: _textController,
+          generating: _generating,
+          roomy: widget.roomy,
+          onGenerate: canGenerate ? () => _generate(asset, stream) : null,
+          onStop: () {
+            _cancellation?.cancel();
+            ref
+                .read(playbackNotifierProvider.notifier)
+                .stopIfSourceTag(voiceBankQuickTestPlaybackSource);
+          },
+        ),
       ],
     );
   }
@@ -329,68 +344,6 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
         );
       }
     }
-  }
-
-  Widget _buildGenerateBar(VoidCallback? generate) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceBright,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _textController,
-              maxLines: 2,
-              minLines: 1,
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                hintText: AppLocalizations.of(context).uiTypeSomethingToTest,
-                hintStyle: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  fontSize: 13,
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-              ),
-            ),
-          ),
-          if (_generating)
-            IconButton(
-              tooltip: AppLocalizations.of(context).uiStopSynthesis,
-              icon: const Icon(Icons.stop_circle_outlined),
-              onPressed: () {
-                _cancellation?.cancel();
-                ref
-                    .read(playbackNotifierProvider.notifier)
-                    .stopIfSourceTag(voiceBankQuickTestPlaybackSource);
-              },
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.only(right: 6),
-              child: IconButton.filled(
-                tooltip: AppLocalizations.of(context).uiGenerate,
-                onPressed: _textController.text.isEmpty ? null : generate,
-                style: IconButton.styleFrom(
-                  backgroundColor: AppTheme.accentColor,
-                  disabledBackgroundColor: AppTheme.accentColor.withValues(
-                    alpha: 0.3,
-                  ),
-                  minimumSize: const Size(32, 32),
-                ),
-                icon: const Icon(Icons.auto_awesome_rounded, size: 16),
-              ),
-            ),
-        ],
-      ),
-    );
   }
 
   Future<void> _generate(db.VoiceAsset asset, bool stream) async {

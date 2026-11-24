@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:neiroha/presentation/widgets/layout/page_header.dart';
+import 'package:neiroha/presentation/widgets/layout/side_panes.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:uuid/uuid.dart';
@@ -21,17 +22,28 @@ import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 part '../widgets/voice_bank/bank_actions.dart';
 part '../widgets/voice_bank/bank_columns.dart';
+part '../widgets/voice_bank/bank_detail.dart';
+part '../widgets/voice_bank/bank_switcher.dart';
 
 /// Merged Voice Bank + Voice Characters screen.
 ///
-/// Three columns:
-///   • Left   — Bank list (select / create / rename / duplicate / activate)
-///   • Middle — Characters in the selected bank (search, new, import-from-other-bank)
-///   • Right  — Character inspector (inline editor, from voice_character_screen.dart)
+/// Wide windows show three columns:
+///   • Left   — the bank switcher (with the bank's actions) over its cast
+///   • Middle — Quick test for the selected character
+///   • Right  — Character inspector (inline editor)
+/// The side columns drag to resize. Narrower windows put the quick test
+/// over the inspector beside the cast, one pane at a time when compact.
 ///
 /// "Import from other bank" just adds an existing [db.VoiceAsset] as a
 /// [db.VoiceBankMember] of the current bank — characters are shared across
 /// banks, never deep-copied.
+/// From this width the quick test gets its own column.
+const double _threePaneMinWidth = 1080;
+
+/// Side column widths, kept while the app runs; null is the default.
+final _castWidthProvider = StateProvider<double?>((ref) => null);
+final _inspectorWidthProvider = StateProvider<double?>((ref) => null);
+
 class VoiceBankScreen extends ConsumerStatefulWidget {
   const VoiceBankScreen({super.key});
 
@@ -43,7 +55,6 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
   String? _selectedBankId;
   String _characterFilter = '';
   late final TextEditingController _searchCtrl;
-  final _bankSplitKey = GlobalKey<ResizableSplitPaneState>();
   final _characterSplitKey = GlobalKey<ResizableSplitPaneState>();
 
   // Cached notifier references captured while the widget is still mounted.
@@ -97,29 +108,55 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _keepBankSelected(ref.watch(voiceBanksStreamProvider).value);
     return Column(
       children: [
         _buildHeader(context),
         const Divider(height: 1),
         Expanded(
-          child: ResizableSplitPane(
-            key: _bankSplitKey,
-            initialLeftFraction: 0.22,
-            compactRightIcon: Icons.people_alt_rounded,
-            compactRightLabel: AppLocalizations.of(context).uiCharacters,
-            left: _buildBankList(),
-            rightBuilder: (_) => ResizableSplitPane(
-              key: _characterSplitKey,
-              initialLeftFraction: 0.45,
-              compactRightIcon: Icons.tune_rounded,
-              compactRightLabel: AppLocalizations.of(context).uiDetails,
-              left: _buildCharacterColumn(),
-              rightBuilder: (_) => _buildInspectorColumn(),
-            ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Wide: the cast, the quick test in the middle (the pane used
+              // most), and the character's settings on the right.
+              if (constraints.maxWidth >= _threePaneMinWidth) {
+                return SidePaneRow(
+                  left: _buildCharacterColumn(),
+                  leftWidth: _castWidthProvider,
+                  leftDefault: 280,
+                  center: _buildQuickTestColumn(),
+                  right: _buildInspectorColumn(),
+                  rightWidth: _inspectorWidthProvider,
+                  rightDefault: 420,
+                  minSide: 240,
+                  minCenter: 360,
+                );
+              }
+              return ResizableSplitPane(
+                key: _characterSplitKey,
+                initialLeftFraction: 0.4,
+                compactRightIcon: Icons.tune_rounded,
+                compactRightLabel: AppLocalizations.of(context).uiDetails,
+                left: _buildCharacterColumn(),
+                rightBuilder: (_) => _buildStackedDetail(),
+              );
+            },
           ),
         ),
       ],
     );
+  }
+
+  /// Keeps a bank chosen: the active one first, so the cast shows at once
+  /// and after the chosen bank is deleted.
+  void _keepBankSelected(List<db.VoiceBank>? banks) {
+    if (banks == null || banks.isEmpty) return;
+    if (banks.any((b) => b.id == _selectedBankId)) return;
+    final pick = (banks.where((b) => b.isActive).firstOrNull ?? banks.first).id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _selectedBankId == pick) return;
+      _clearVoiceBankInspectorState();
+      setState(() => _selectedBankId = pick);
+    });
   }
 
   // ───────────────── Header ─────────────────
@@ -148,100 +185,6 @@ class _VoiceBankScreenState extends ConsumerState<VoiceBankScreen> {
             ),
         ],
       ),
-    );
-  }
-
-  // ───────────────── Left column: Bank list ─────────────────
-
-  Widget _buildBankList() {
-    final banksAsync = ref.watch(voiceBanksStreamProvider);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Text(
-            AppLocalizations.of(context).uiBANKS,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
-              color: Colors.white.withValues(alpha: 0.4),
-            ),
-          ),
-        ),
-        Expanded(
-          child: banksAsync.when(
-            loading: () => Center(child: CircularProgressIndicator()),
-            error: (e, _) =>
-                Center(child: Text(AppLocalizations.of(context).uiError2(e))),
-            data: (banks) {
-              if (banks.isEmpty) {
-                return Center(
-                  child: Text(
-                    AppLocalizations.of(context).uiNoBanksYet,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.3),
-                      fontSize: 13,
-                    ),
-                  ),
-                );
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: banks.length,
-                itemBuilder: (ctx, i) {
-                  final bank = banks[i];
-                  final selected = _selectedBankId == bank.id;
-                  return VoiceBankTile(
-                    bank: bank,
-                    isSelected: selected,
-                    onTap: () {
-                      _clearVoiceBankInspectorState();
-                      setState(() => _selectedBankId = bank.id);
-                      _showBankCharactersPane();
-                    },
-                    onDelete: () async {
-                      try {
-                        await ref.read(databaseProvider).deleteBank(bank.id);
-                        if (_selectedBankId == bank.id) {
-                          _clearVoiceBankInspectorState();
-                          setState(() => _selectedBankId = null);
-                          _bankSplitKey.currentState?.showLeftPane(
-                            onlyWhenCompact: true,
-                          );
-                        }
-                      } catch (e) {
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(_databaseErrorMessage(e))),
-                        );
-                      }
-                    },
-                    onDuplicate: () async {
-                      final newBank = await ref
-                          .read(databaseProvider)
-                          .duplicateBank(bank.id, '${bank.name} (copy)');
-                      _clearVoiceBankInspectorState();
-                      setState(() => _selectedBankId = newBank.id);
-                      _showBankCharactersPane();
-                    },
-                    onToggleActive: () async {
-                      final database = ref.read(databaseProvider);
-                      if (bank.isActive) {
-                        await database.deactivateAllBanks();
-                      } else {
-                        await database.setActiveBank(bank.id);
-                      }
-                    },
-                    onRename: () => _renameBank(bank, banks),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 

@@ -32,6 +32,12 @@ extension _BankColumns on _VoiceBankScreenState {
                 fontSize: 13,
               ),
             ),
+            SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: _createBank,
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: Text(AppLocalizations.of(context).uiNewBank),
+            ),
           ],
         ),
       );
@@ -43,7 +49,8 @@ extension _BankColumns on _VoiceBankScreenState {
     final assetsAsync = ref.watch(voiceAssetsStreamProvider);
     final providersAsync = ref.watch(ttsProvidersStreamProvider);
 
-    final bank = banksAsync.value?.where((b) => b.id == bankId).firstOrNull;
+    final banks = banksAsync.value ?? const <db.VoiceBank>[];
+    final bank = banks.where((b) => b.id == bankId).firstOrNull;
     if (bank == null) {
       return Center(child: CircularProgressIndicator());
     }
@@ -51,6 +58,7 @@ extension _BankColumns on _VoiceBankScreenState {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildBankSwitcher(bank, banks),
         _buildCharacterColumnHeader(
           bank,
           membersAsync,
@@ -82,63 +90,23 @@ extension _BankColumns on _VoiceBankScreenState {
     AsyncValue<List<db.VoiceAsset>> assetsAsync,
     AsyncValue<List<db.TtsProvider>> providersAsync,
   ) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+    final count = membersAsync.value?.length;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 8, 0),
       child: Row(
         children: [
-          Icon(
-            Icons.people_alt_rounded,
-            color: bank.isActive ? Colors.green : AppTheme.accentColor,
-            size: 20,
-          ),
-          SizedBox(width: 8),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        bank.name,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    if (bank.isActive) ...[
-                      SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.green.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Text(
-                          AppLocalizations.of(context).uiActive,
-                          style: TextStyle(color: Colors.green, fontSize: 11),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                Text(
-                  AppLocalizations.of(context).uiCHARACTERS,
-                  style: TextStyle(
-                    fontSize: 10,
-                    letterSpacing: 1.2,
-                    color: Colors.white.withValues(alpha: 0.35),
-                  ),
-                ),
-              ],
+            child: Text(
+              count == null
+                  ? AppLocalizations.of(context).uiCHARACTERS
+                  : '${AppLocalizations.of(context).uiCHARACTERS} · $count',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.2,
+                color: Colors.white.withValues(alpha: 0.4),
+              ),
             ),
           ),
           IconButton(
@@ -280,87 +248,6 @@ extension _BankColumns on _VoiceBankScreenState {
               _clearVoiceBankInspectorState();
             }
           },
-        );
-      },
-    );
-  }
-
-  // ───────────────── Right column: Inspector ─────────────────
-
-  Widget _buildInspectorColumn() {
-    if (_selectedBankId == null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.tune_rounded,
-              size: 48,
-              color: Colors.white.withValues(alpha: 0.1),
-            ),
-            SizedBox(height: 12),
-            Text(
-              AppLocalizations.of(context).uiSelectABankAndCharacterToEdit,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.4),
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final selectedId = ref.watch(selectedCharacterIdProvider);
-    if (selectedId == null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.person_search_rounded,
-              size: 48,
-              color: Colors.white.withValues(alpha: 0.1),
-            ),
-            SizedBox(height: 12),
-            Text(
-              AppLocalizations.of(context).uiSelectACharacterToEdit,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.4),
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    final assetsAsync = ref.watch(voiceAssetsStreamProvider);
-    return assetsAsync.when(
-      loading: () => Center(child: CircularProgressIndicator()),
-      error: (e, _) =>
-          Center(child: Text(AppLocalizations.of(context).uiError2(e))),
-      data: (assets) {
-        final asset = assets.where((a) => a.id == selectedId).firstOrNull;
-        if (asset == null) {
-          return Center(
-            child: Text(
-              AppLocalizations.of(context).uiCharacterNotFound,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
-            ),
-          );
-        }
-        // Quick Test sits on top so the user can audition the voice while
-        // editing; inspector sits below. `ValueKey(asset.id)` forces fresh
-        // state on both panes when switching characters.
-        return VerticalResizableSplitPane(
-          initialTopFraction: 0.5,
-          minPaneHeight: 140,
-          top: QuickTtsPanel(key: ValueKey('qtts_${asset.id}'), asset: asset),
-          bottom: CharacterInspector(
-            key: ValueKey(asset.id),
-            asset: asset,
-            bankId: _selectedBankId,
-          ),
         );
       },
     );

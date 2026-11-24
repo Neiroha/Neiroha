@@ -53,7 +53,6 @@ extension _BankActions on _VoiceBankScreenState {
           );
       _clearVoiceBankInspectorState();
       _update(() => _selectedBankId = id);
-      _showBankCharactersPane();
     }
   }
 
@@ -146,13 +145,6 @@ extension _BankActions on _VoiceBankScreenState {
         _showCharacterInspectorPane();
       },
     );
-  }
-
-  void _showBankCharactersPane() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _bankSplitKey.currentState?.showRightPane(onlyWhenCompact: true);
-    });
   }
 
   void _showCharacterInspectorPane() {

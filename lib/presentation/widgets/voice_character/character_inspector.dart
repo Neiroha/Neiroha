@@ -25,7 +25,10 @@ import 'package:neiroha/presentation/widgets/loudness_fields.dart';
 import 'package:neiroha/presentation/widgets/voice_character/components.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/domain/platform/platform_capabilities.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+
+part 'character_voice_tab.dart';
 
 // ─────────────────────────── Inspector Panel (inline editor) ────────────────
 
@@ -58,6 +61,9 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
 
   List<String> _speakers = [];
   bool _loadingSpeakers = false;
+
+  /// [setState] for the part-file extensions, which may not call it.
+  void _update(VoidCallback fn) => setState(fn);
 
   @override
   void initState() {
@@ -284,327 +290,15 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         ],
 
         // ── Voice: provider, speed, mode-specific fields ─────────────────────
-        if (_tab == InspectorTab.voice) ...[
-          VoiceCharacterSectionLabel(
-            AppLocalizations.of(context).sectionProvider,
+        if (_tab == InspectorTab.voice)
+          ..._voiceTab(
+            a: a,
+            allProviders: allProviders,
+            enabledProviders: enabledProviders,
+            selected: selected,
+            voices: voices,
+            capabilities: capabilities,
           ),
-          SizedBox(height: 8),
-          if (enabledProviders.isEmpty)
-            Text(
-              AppLocalizations.of(context).uiNoProvidersAvailable,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
-            )
-          else
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).uiProvider,
-              ),
-              initialValue:
-                  enabledProviders.any((p) => p.id == _selectedProviderId)
-                  ? _selectedProviderId
-                  : null,
-              items: enabledProviders
-                  .map(
-                    (p) => DropdownMenuItem(
-                      value: p.id,
-                      child: Row(
-                        children: [
-                          Text(p.name),
-                          SizedBox(width: 8),
-                          Text(
-                            '(${AdapterType.values.where((t) => t.name == p.adapterType).firstOrNull?.displayName ?? p.adapterType})',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.4),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) {
-                if (v != null) {
-                  setState(() {
-                    _selectedProviderId = v;
-                    _speakers = [];
-                    _selectedSpeaker = null;
-                  });
-                  _fetchSpeakers();
-                }
-              },
-            ),
-          SizedBox(height: 16),
-
-          // ── Speed ────────────────────────────────────────────────────────────
-          TextField(
-            controller: _speedCtrl,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: AppLocalizations.of(context).uiSpeed10Normal,
-            ),
-          ),
-          SizedBox(height: 12),
-          CharacterLoudnessOffsetField(
-            value: _loudnessOffsetDb,
-            onChanged: (v) => setState(() => _loudnessOffsetDb = v),
-          ),
-          SizedBox(height: 20),
-
-          // ── Mode-specific fields ─────────────────────────────────────────────
-          if (a.taskMode == 'presetVoice') ...[
-            VoiceCharacterSectionLabel(
-              AppLocalizations.of(context).sectionVoice,
-            ),
-            SizedBox(height: 8),
-            if (_loadingSpeakers)
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    SizedBox(width: 10),
-                    Text(AppLocalizations.of(context).uiLoadingVoices),
-                  ],
-                ),
-              )
-            else if (voices.isNotEmpty) ...[
-              VoiceCharacterVoiceSearchPicker(
-                label: AppLocalizations.of(context).uiSelectVoice,
-                voices: voices,
-                selected: voices.contains(_selectedSpeaker)
-                    ? _selectedSpeaker
-                    : null,
-                onSelected: (v) => setState(() {
-                  _selectedSpeaker = v;
-                  _voiceNameCtrl.text = v;
-                }),
-              ),
-              SizedBox(height: 8),
-            ],
-            TextField(
-              controller: _voiceNameCtrl,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).uiVoiceName,
-                helperText: AppLocalizations.of(
-                  context,
-                ).uiFilledAutomaticallyWhenYouPickAboveOrTypeManually,
-              ),
-            ),
-            if (_hasModelField) ...[
-              SizedBox(height: 12),
-              CharacterModelField(
-                controller: _modelNameCtrl,
-                provider: selected,
-                isWeb: capabilities.isWeb,
-                onChanged: () => setState(() {}),
-              ),
-            ],
-            if (_isGptSovits) ...[
-              SizedBox(height: 12),
-              TextField(
-                controller: _textLangCtrl,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(
-                    context,
-                  ).uiTextLanguageOptional,
-                  hintText: AppLocalizations.of(context).uiZhEnJaKo,
-                ),
-              ),
-            ],
-            if (const {
-              'openaiTts',
-              'geminiTts',
-              'elevenLabs',
-              'minimaxTts',
-            }.contains(_selectedProvider?.adapterType)) ...[
-              SizedBox(height: 12),
-              TextField(
-                controller: _instructionCtrl,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(
-                    context,
-                  ).uiStyleInstructionOptional,
-                  hintText: AppLocalizations.of(
-                    context,
-                  ).uiEGSpeakSoftlyAndSlowlyPrependedToTheText,
-                ),
-              ),
-            ],
-          ],
-
-          if (a.taskMode == 'cloneWithPrompt') ...[
-            VoiceCharacterSectionLabel(
-              AppLocalizations.of(context).sectionVoiceClone,
-            ),
-            SizedBox(height: 8),
-            if (_isIrodori) ...[
-              CharacterModelField(
-                controller: _modelNameCtrl,
-                provider: selected,
-                isWeb: capabilities.isWeb,
-                onChanged: () => setState(() {}),
-              ),
-              SizedBox(height: 12),
-            ],
-            if (!kIsWeb && a.refAudioPath != null) ...[
-              Text(
-                AppLocalizations.of(context).uiREFERENCEAUDIO,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.4),
-                ),
-              ),
-              SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceDim,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Consumer(
-                      builder: (context, ref, _) {
-                        final playback = ref.watch(
-                          playbackNotifierProvider.select(
-                            (state) => (
-                              audioPath: state.audioPath,
-                              isPlaying: state.isPlaying,
-                            ),
-                          ),
-                        );
-                        final isPlaying =
-                            playback.audioPath == a.refAudioPath &&
-                            playback.isPlaying;
-                        return IconButton.filled(
-                          onPressed: () async {
-                            final n = ref.read(
-                              playbackNotifierProvider.notifier,
-                            );
-                            if (isPlaying) {
-                              await n.stop();
-                            } else {
-                              await n.load(
-                                a.refAudioPath!,
-                                '${a.name} (ref)',
-                                subtitle: a.name,
-                              );
-                            }
-                          },
-                          style: IconButton.styleFrom(
-                            backgroundColor: AppTheme.accentColor,
-                            minimumSize: const Size(36, 36),
-                          ),
-                          icon: Icon(
-                            isPlaying
-                                ? Icons.stop_rounded
-                                : Icons.play_arrow_rounded,
-                            size: 18,
-                          ),
-                        );
-                      },
-                    ),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            a.refAudioPath!.split(Platform.pathSeparator).last,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (a.refAudioTrimStart != null ||
-                              a.refAudioTrimEnd != null)
-                            Text(
-                              '${a.refAudioTrimStart?.toStringAsFixed(1) ?? '0.0'}s'
-                              ' → ${a.refAudioTrimEnd?.toStringAsFixed(1) ?? 'end'}s',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.white.withValues(alpha: 0.4),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 12),
-            ],
-            if (!_isIrodori) ...[
-              TextField(
-                controller: _promptTextCtrl,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context).uiReferenceTranscript,
-                ),
-              ),
-              SizedBox(height: 10),
-              TextField(
-                controller: _promptLangCtrl,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context).uiLanguageCode,
-                ),
-              ),
-            ],
-            if (_usesTextLang) ...[
-              SizedBox(height: 10),
-              TextField(
-                controller: _textLangCtrl,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(
-                    context,
-                  ).uiTextLanguageSynthesisOutput,
-                  hintText: AppLocalizations.of(context).uiZhEnJaKo,
-                ),
-              ),
-            ],
-            SizedBox(height: 10),
-            TextField(
-              controller: _instructionCtrl,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(
-                  context,
-                ).uiStyleInstructionOptional,
-              ),
-            ),
-          ],
-
-          if (a.taskMode == 'voiceDesign') ...[
-            VoiceCharacterSectionLabel(
-              AppLocalizations.of(context).sectionVoiceDesign,
-            ),
-            SizedBox(height: 8),
-            TextField(
-              controller: _instructionCtrl,
-              maxLines: 4,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).uiVoiceInstruction,
-              ),
-            ),
-          ],
-
-          if (supportsQuickTtsStreaming(
-            allProviders.where((p) => p.id == a.providerId).firstOrNull,
-            a,
-            capabilities,
-          )) ...[
-            const SizedBox(height: 8),
-            QuickTtsPlaybackSetting(voiceId: a.id),
-          ],
-        ],
         if (_tab == InspectorTab.chain) VoiceChainEditor(asset: a),
         SizedBox(height: 16),
         const Divider(),

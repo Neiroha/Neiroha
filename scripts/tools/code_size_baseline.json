@@ -3,8 +3,6 @@
   "lib/presentation/screens/dialog_tts_screen.dart": 543,
   "lib/presentation/widgets/settings/api_settings.dart": 504,
   "lib/presentation/widgets/voice_bank/voice_bank_widgets.dart": 519,
-  "lib/presentation/widgets/voice_character/character_inspector.dart": 717,
-  "lib/presentation/widgets/voice_character/components.dart": 672,
   "lib/server/api_server.dart": 540,
   "scripts/tests/voice_database_boundaries_test.dart": 583
 }

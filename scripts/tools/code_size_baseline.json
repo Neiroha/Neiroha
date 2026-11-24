@@ -2,7 +2,6 @@
   "lib/data/storage/ffmpeg_service.dart": 553,
   "lib/presentation/screens/dialog_tts_screen.dart": 543,
   "lib/presentation/widgets/settings/api_settings.dart": 504,
-  "lib/presentation/widgets/voice_asset/trim_dialog.dart": 592,
   "lib/presentation/widgets/voice_bank/voice_bank_widgets.dart": 519,
   "lib/presentation/widgets/voice_character/character_inspector.dart": 717,
   "lib/presentation/widgets/voice_character/components.dart": 672,

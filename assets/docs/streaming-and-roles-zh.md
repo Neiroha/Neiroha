@@ -168,6 +168,19 @@ NEIROHA_EVAL_BUDGET_FILE=.dart_tool/role-quality-2026-11-17/budget.json dart scr
 
 `routes` 使用 `chatCompletions`、`responses`、`speech`、`realtime`、`native`。能力字段支持 `text`、`speech`、`streaming`、`structuredOutput`、`audioInput`、`audioOutput`、`instructions`。这套客户端协议不要求接入 CosyVoice 后端。
 
+版本 2 向下兼容，额外描述自建 TTS 的音色、语言、流式格式、接口路径与认证头（解析见 `lib/data/services/capabilities/capability_declaration.dart`）：
+
+```json
+{"version":2,"name":"Local Irodori","auth":{"header":"Authorization","scheme":"Bearer"},
+ "models":[{"id":"azurlane","name":"碧蓝航线音色","languages":["ja","zh"],
+   "voices":[{"id":"al-ship-30505-ja","name":"Nagato","languages":["ja"]},"al-ship-10001-ja"],
+   "streaming":{"formats":["pcm"]},
+   "paths":{"speech":"audio/speech","voices":"voices"},
+   "routes":{"speech":{"speech":true,"instructions":null}}}]}
+```
+
+`voices` 可为字符串或对象；声明的音色以 `名称 [id]` 形式并入服务商音色列表（只增不删）。`streaming.formats` 非空且未显式给出 `streaming` 时视为支持流式。`paths` 必须是连接内的相对路径，`auth.header` 不得为 `Cookie`、`Host` 等保留头；任一项不合法则整份文档被拒绝。
+
 ## 本地 API 增量 PCM
 
 向 `/v1/audio/speech` 提交 `stream: true` 和 `response_format: "pcm"`。支持增量音频的模型可以在生成完成前接收音频，其余模型返回 400。除桌面 OpenAI Realtime 外，也支持 [Web 流式兼容表](web-preview-zh.md) 中使用增量音频的 HTTP 模型。响应为 `audio/pcm`，通过 `x-audio-encoding`、`x-audio-sample-rate`、`x-audio-channels` 声明真实格式。Speech 网关可通过相同格式头声明 PCM 参数。客户端须持续消费响应，断连会取消当前上游请求。正常完成才写出 HTTP chunked 终止标记，失败时截断连接。关闭本地 API 也会取消音频连接。

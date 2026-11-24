@@ -20,8 +20,12 @@
 - [ ] **P0（2027-01-06 前）**：OpenAI Speech 模型停用提示与一键迁移。
 - [ ] P1：schema v34，迁移角色实时设置、处理链与能力默认值，限额下沉到“连接 × 能力”。
 - [ ] P2：Provider 按能力分页与连接徽章、「设置 → AI 能力」路由页、角色检查器分标签。
-- [ ] LLM 目录数据化：接入 models.dev（先核实许可证）与 OpenRouter 完整字段，删除插件中的手写 LLM 条目。
-- [ ] 本地 TTS 自述：扩展 `.well-known/neiroha-capabilities`，包含音色、语言、流式与接口路径。
+- [x] 本地 RVC 变声连接（`AdapterType.rvc`，仅 VC 能力）：实时读取模型 / 音色目录，`auto` 按音色选权重，`convert-stream` 流式 PCM；处理链与实时设置可选音色。离线假服务 + 可选实测（Tailnet 不通时自动跳过）。
+- [x] 逐句流式：LLM 流式 → 分句 → TTS → VC，处理链与陪伴模式共用 `SentenceSpeechPipeline`；编码音频经 FFmpeg 解码，Web 无解码器时回退整句。实测 Irodori 首音 ≈3.1 s（整句 ≈4.3 s），GPT-SoVITS ≈4.3 s（整句 ≈9.6 s）。
+- [x] LLM 目录数据化：models.dev（MIT，`assets/model_catalog/models_dev.snapshot.json` + LICENSE）优先、LiteLLM 兜底，运行时每日刷新缓存；读取 OpenRouter 推理档位 / 默认档位 / `expiration_date` / `endpoints`；插件只留推荐 LLM 与默认思考档位。
+- [x] 本地 TTS 自述：`.well-known/neiroha-capabilities` v2（音色、语言、流式格式、接口路径、认证头），兼容 v1；声明的音色并入服务商音色列表。
+- [ ] 让 Irodori / GPT-SoVITS / RVC 服务端实际提供 v2 声明（当前均 404）。
+- [ ] 实时对话模式的 VC 仍整段转换；陪伴模式尚未应用角色自己的处理链（使用实时设置中的 VC）。
 - [ ] 处理链扩展：ASR 回听校验、VAD 去静音、缓存键含处理链哈希、API / MCP 开关。
 - [ ] 退出时偶发崩溃：isolate 关闭阶段 sqlite finalizer 段错误（`~/Library/Logs/DiagnosticReports/Neiroha-*.ips`），待排查。
 

@@ -379,6 +379,13 @@ M1–M3 是 v0.6.0 的必需范围；M4 建议同版发布至少 STT 一项，�
 
 不再在应用内维护本地模型列表。扩展现有 `.well-known/neiroha-capabilities` 网关声明：模型、音色、语言、是否流式、接口路径与认证方式。Neiroha 启动器和自建服务按该格式自述，应用按声明挂载；未声明的服务回退为手动填写。
 
+### 11.4 进度（2026-11-23）
+
+- **本地 RVC**：`AdapterType.rvc` 为仅 VC 的连接，`/api/rvc/catalog` 实时列出模型与音色，`auto` 按音色选权重；`/api/rvc/convert-stream` 流式 PCM，首音 ≈155 ms。角色 TTS 选择器排除仅 VC 的连接。
+- **逐句流式**：`SentenceChunker` + `SentenceSpeechPipeline`（TTS 单并发、前瞻一句、VC 片段补足 250 ms、统一 PCM），处理链与陪伴模式共用；OpenAI / Gemini LLM 实现 `StreamingLanguageModel`。
+- **LLM 目录**：models.dev 已核实为 MIT，规范化快照 248 个官方模型（55 KB）随应用打包；`LlmTraitsCatalog` 叠加顺序为每日下载 > 内置 models.dev > 内置 LiteLLM。离线模型列表 = 插件推荐模型 + 目录中该厂商未弃用的聊天模型；联网后只显示账号实际列出的。OpenAI、Gemini、MiniMax 的手写 LLM 条目已删减为推荐默认，Gemini 默认思考档位改为 `reasoningDefaults` 补充（公开目录只列档位、不给默认）。OpenRouter 列表的 `reasoning`、`expiration_date`（→ `shutdownAt`）、`endpoints`（过滤协议不符的模型）已读取。
+- **本地自述**：`.well-known/neiroha-capabilities` v2 已在客户端落地，服务端（Irodori、GPT-SoVITS、RVC）尚未提供，目前仍走适配器自带的模型 / 音色接口。
+
 ## 参考
 
 - [OpenAI：新一代实时语音模型发布](https://openai.com/index/advancing-voice-intelligence-with-new-models-in-the-api/) · [Realtime 翻译指南](https://developers.openai.com/api/docs/guides/realtime-translation) · [TTS 指南与停用说明](https://developers.openai.com/api/docs/guides/text-to-speech) · [MarkTechPost 发布报道](https://www.marktechpost.com/2026/05/08/openai-releases-three-realtime-audio-models-gpt-realtime-2-gpt-realtime-translate-and-gpt-realtime-whisper-in-the-realtime-api/)

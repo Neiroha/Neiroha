@@ -1,14 +1,14 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 
-/// The quick test's text box and its generate / stop button.
+/// The quick test's text box and its generate / stop button, like a chat
+/// composer: one line to start, growing with the text up to a few lines,
+/// then scrolling. Enter generates; Shift+Enter adds a line.
 ///
-/// [roomy] gives the box several lines, for when the quick test has a
-/// column of its own. ⌘/Ctrl+Enter generates; Enter adds a line.
-class QuickTtsGenerateBar extends StatelessWidget {
+/// [roomy] lets it grow taller, for when the quick test has its own column.
+class QuickTtsGenerateBar extends StatefulWidget {
   const QuickTtsGenerateBar({
     super.key,
     required this.controller,
@@ -26,53 +26,51 @@ class QuickTtsGenerateBar extends StatelessWidget {
   final VoidCallback onStop;
   final bool roomy;
 
-  static String get _sendKeys =>
-      defaultTargetPlatform == TargetPlatform.macOS ||
-          defaultTargetPlatform == TargetPlatform.iOS
-      ? '⌘ Enter'
-      : 'Ctrl+Enter';
+  @override
+  State<QuickTtsGenerateBar> createState() => _QuickTtsGenerateBarState();
+}
+
+class _QuickTtsGenerateBarState extends State<QuickTtsGenerateBar> {
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  bool get _canSend =>
+      !widget.generating && widget.controller.text.trim().isNotEmpty;
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent ||
+        (event.logicalKey != LogicalKeyboardKey.enter &&
+            event.logicalKey != LogicalKeyboardKey.numpadEnter)) {
+      return KeyEventResult.ignored;
+    }
+    // Shift+Enter is a new line; Enter while an input method is composing
+    // confirms the composition.
+    if (HardwareKeyboard.instance.isShiftPressed ||
+        widget.controller.value.composing.isValid) {
+      return KeyEventResult.ignored;
+    }
+    if (_canSend) widget.onGenerate?.call();
+    return KeyEventResult.handled;
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final canSend = !generating && controller.text.trim().isNotEmpty;
-    void send() {
-      if (canSend) onGenerate?.call();
-    }
-
-    final field = CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.enter, meta: true): send,
-        const SingleActivator(LogicalKeyboardKey.enter, control: true): send,
-      },
-      child: TextField(
-        controller: controller,
-        minLines: roomy ? 4 : 1,
-        maxLines: roomy ? 12 : 2,
-        style: TextStyle(fontSize: roomy ? 14 : 13, height: 1.5),
-        decoration: InputDecoration(
-          hintText: l10n.uiTypeSomethingToTest,
-          hintStyle: TextStyle(
-            color: Colors.white.withValues(alpha: 0.3),
-            fontSize: roomy ? 14 : 13,
-          ),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: roomy ? 12 : 10,
-          ),
-        ),
-      ),
-    );
-    final button = generating
+    final fontSize = widget.roomy ? 14.0 : 13.0;
+    final button = widget.generating
         ? IconButton(
             tooltip: l10n.uiStopSynthesis,
             icon: const Icon(Icons.stop_circle_outlined),
-            onPressed: onStop,
+            onPressed: widget.onStop,
           )
         : IconButton.filled(
-            tooltip: '${l10n.uiGenerate} ($_sendKeys)',
-            onPressed: canSend ? onGenerate : null,
+            tooltip: '${l10n.uiGenerate} · ${l10n.quickTtsSendHint}',
+            onPressed: _canSend ? widget.onGenerate : null,
             style: IconButton.styleFrom(
               backgroundColor: AppTheme.accentColor,
               disabledBackgroundColor: AppTheme.accentColor.withValues(
@@ -90,39 +88,42 @@ class QuickTtsGenerateBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
-      child: roomy
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                field,
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 0, 6, 6),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          l10n.quickTtsSendHint(_sendKeys),
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.35),
-                          ),
-                        ),
-                      ),
-                      button,
-                    ],
+      child: Row(
+        // The button stays on the last line as the box grows.
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: Focus(
+              onKeyEvent: _onKey,
+              child: Scrollbar(
+                controller: _scroll,
+                child: TextField(
+                  controller: widget.controller,
+                  scrollController: _scroll,
+                  minLines: 1,
+                  maxLines: widget.roomy ? 10 : 4,
+                  keyboardType: TextInputType.multiline,
+                  style: TextStyle(fontSize: fontSize, height: 1.4),
+                  decoration: InputDecoration(
+                    hintText: l10n.uiTypeSomethingToTest,
+                    hintStyle: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      fontSize: fontSize,
+                    ),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
                   ),
                 ),
-              ],
-            )
-          : Row(
-              children: [
-                Expanded(child: field),
-                Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: button,
-                ),
-              ],
+              ),
             ),
+          ),
+          Padding(padding: const EdgeInsets.all(6), child: button),
+        ],
+      ),
     );
   }
 }

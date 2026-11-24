@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:neiroha/presentation/widgets/layout/page_header.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/ai/registry/capability_router.dart';
+import 'package:neiroha/data/database/app_database.dart' hide SubtitleCue;
 import 'package:neiroha/data/services/subtitles/subtitle_cue.dart';
 import 'package:neiroha/data/services/subtitles/subtitle_pipeline.dart';
 import 'package:neiroha/data/services/subtitles/subtitle_writer.dart';
@@ -14,8 +15,9 @@ import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/actions/file_dialogs.dart';
-import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/ai/capability_model_picker.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
+import 'package:neiroha/presentation/widgets/settings/ai_capability_settings.dart';
 import 'package:neiroha/presentation/widgets/subtitles/subtitle_cue_list.dart';
 import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/app_providers.dart';
@@ -97,6 +99,7 @@ class _SubtitleStudioScreenState extends ConsumerState<SubtitleStudioScreen> {
         router,
         MediaPcmDecoder(ref.read(ffmpegServiceProvider)),
         translate: _target != null,
+        purpose: subtitlePurpose,
       );
       final source = _sourceLang.text.trim();
       final cues = await pipeline.run(
@@ -194,52 +197,46 @@ class _SubtitleStudioScreenState extends ConsumerState<SubtitleStudioScreen> {
   }
 
   Widget _controls(AppLocalizations l, CapabilityRouter? router) {
-    String? using(AiCapability cap) {
-      final routed = switch (cap) {
-        AiCapability.stt => router?.resolve<Transcriber>(cap),
-        AiCapability.llm => router?.resolve<LanguageModel>(cap),
-        _ => router?.resolve<VoiceActivityDetector>(cap),
+    /// What runs for [cap]: this page's choice, else the default; [own]
+    /// false skips this page's choice (the default it would fall back to).
+    RoutedModel<CapabilityModel>? routed(AiCapability cap, {bool own = true}) {
+      final purpose = own ? subtitlePurpose : null;
+      return switch (cap) {
+        AiCapability.stt => router?.resolve<Transcriber>(cap, purpose: purpose),
+        AiCapability.llm => router?.resolve<LanguageModel>(
+          cap,
+          purpose: purpose,
+        ),
+        _ => router?.resolve<VoiceActivityDetector>(cap, purpose: purpose),
       };
-      if (routed == null) return null;
-      final name = routed.connection.config.name;
-      return '${name.isEmpty ? routed.connection.plugin.displayName : name}'
-          ' · ${routed.model.descriptor.id}';
     }
 
-    final stt = using(AiCapability.stt);
-    final llm = using(AiCapability.llm);
     final ready =
         router != null &&
         _mediaPath != null &&
-        stt != null &&
-        (_target == null || llm != null);
-    Widget status(String label, String? value, {bool optional = false}) =>
-        Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Row(
-            children: [
-              Icon(
-                value != null
-                    ? Icons.check_circle_rounded
-                    : Icons.error_outline_rounded,
-                size: 16,
-                color: value != null
-                    ? Colors.greenAccent
-                    : optional
-                    ? Colors.white38
-                    : Colors.orangeAccent,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  '$label: ${value ?? l.subtitleMissingCapability}',
-                  style: const TextStyle(fontSize: 12),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        );
+        routed(AiCapability.vad) != null &&
+        routed(AiCapability.stt) != null &&
+        (_target == null || routed(AiCapability.llm) != null);
+    Widget picker(AiCapability cap, String label) {
+      final fallback = routed(cap, own: false);
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: CapabilityModelPicker(
+          cap: cap,
+          router: router!,
+          value: router.purposeDefaults['${cap.name}/$subtitlePurpose'],
+          label: label,
+          automaticLabel: fallback == null
+              ? l.capFollowDefaultNone
+              : l.capFollowDefault(routedLabel(fallback)),
+          errorText: routed(cap) == null ? l.subtitleMissingCapability : null,
+          enabled: !_running,
+          onChanged: (v) => ref
+              .read(databaseProvider)
+              .setCapabilityDefault(cap.name, v, purpose: subtitlePurpose),
+        ),
+      );
+    }
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -317,22 +314,17 @@ class _SubtitleStudioScreenState extends ConsumerState<SubtitleStudioScreen> {
           ),
         ],
         const SizedBox(height: 20),
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceBright,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              status('VAD', using(AiCapability.vad)),
-              status('ASR', stt),
-              status('LLM', llm, optional: _target == null),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
+        Text(l.subtitleModels, style: Theme.of(context).textTheme.labelLarge),
+        const SizedBox(height: 10),
+        if (router == null)
+          const LinearProgressIndicator()
+        else ...[
+          picker(AiCapability.stt, capabilityLabel(l, AiCapability.stt)),
+          if (_target != null)
+            picker(AiCapability.llm, l.subtitleTranslateModel),
+          picker(AiCapability.vad, capabilityLabel(l, AiCapability.vad)),
+        ],
+        const SizedBox(height: 4),
         if (_running)
           OutlinedButton.icon(
             onPressed: () => _cancel?.cancel(),

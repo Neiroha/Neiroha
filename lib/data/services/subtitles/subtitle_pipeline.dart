@@ -39,6 +39,9 @@ class SubtitleJob {
   final String context;
 }
 
+/// `capability_defaults.purpose` of the models the subtitle page picks.
+const subtitlePurpose = 'subtitles';
+
 /// Media → VAD chunks → STT per chunk → optional LLM translation → cues.
 /// Works with any providers that offer `vad`, `stt` and (for translation)
 /// `llm`; timings come from VAD, so STT models without timestamps suffice.
@@ -52,13 +55,16 @@ class SubtitlePipeline {
     this.concurrency = 3,
   });
 
+  /// Models chosen for [purpose] (see [subtitlePurpose]) win over the
+  /// capability defaults.
   factory SubtitlePipeline.fromRouter(
     CapabilityRouter router,
     MediaPcmDecoder decoder, {
     bool translate = false,
+    String? purpose,
   }) {
     T need<T extends CapabilityModel>(AiCapability cap) =>
-        router.resolve<T>(cap)?.model ??
+        router.resolve<T>(cap, purpose: purpose)?.model ??
         (throw CapabilityUnavailableException(cap.name));
     return SubtitlePipeline(
       decode: (path, rate) => decoder.decode(path, sampleRate: rate),

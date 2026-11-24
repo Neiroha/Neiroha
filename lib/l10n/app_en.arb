@@ -1744,5 +1744,7 @@
   "featImagePrompt": "Image prompt",
   "featLosslessOutput": "Lossless output",
   "featZeroShot": "Zero-shot",
-  "featLocal": "Local"
+  "featLocal": "Local",
+  "sidebarExpand": "Expand sidebar",
+  "sidebarCollapse": "Collapse sidebar"
 }

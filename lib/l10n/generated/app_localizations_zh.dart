@@ -3808,4 +3808,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get featLocal => '本地';
+
+  @override
+  String get sidebarExpand => '展开侧栏';
+
+  @override
+  String get sidebarCollapse => '收起侧栏';
 }

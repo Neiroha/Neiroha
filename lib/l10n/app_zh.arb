@@ -1213,5 +1213,7 @@
   "featImagePrompt": "图片提示",
   "featLosslessOutput": "无损输出",
   "featZeroShot": "零样本",
-  "featLocal": "本地"
+  "featLocal": "本地",
+  "sidebarExpand": "展开侧栏",
+  "sidebarCollapse": "收起侧栏"
 }

@@ -3944,4 +3944,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get featLocal => 'Local';
+
+  @override
+  String get sidebarExpand => 'Expand sidebar';
+
+  @override
+  String get sidebarCollapse => 'Collapse sidebar';
 }

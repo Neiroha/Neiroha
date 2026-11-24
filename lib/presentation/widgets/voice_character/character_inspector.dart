@@ -173,9 +173,14 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
         ? await database.getVoiceEntriesForProvider(_selectedProviderId)
         : await database.getBindingsForProvider(_selectedProviderId);
     // The model's own voices first; fetched rows are account voices.
+    // Voices only other models offer are left out.
     final builtIn = builtInVoicesFor(adapterType, _modelNameCtrl.text);
     if (cached.isNotEmpty || builtIn.isNotEmpty) {
-      final voices = mergeVoices(builtIn, cached.map((b) => b.modelKey));
+      final voices = voiceChoices(
+        adapterType,
+        _modelNameCtrl.text,
+        cached.map((b) => b.modelKey),
+      );
       if (mounted) {
         setState(() {
           _speakers = voices;
@@ -206,6 +211,10 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
   @override
   Widget build(BuildContext context) {
     final a = widget.asset;
+    // Voices need the provider; load them once the provider list arrives.
+    ref.listen(ttsProvidersStreamProvider, (previous, next) {
+      if (previous?.value == null && next.value != null) _fetchSpeakers();
+    });
     final allProviders =
         ref.watch(ttsProvidersStreamProvider).value ?? const <db.TtsProvider>[];
     final capabilities = ref.watch(platformCapabilitiesProvider);
@@ -347,6 +356,15 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context).uiNameIsRequired)),
       );
+      return;
+    }
+    final voiceProblem = widget.asset.taskMode == 'presetVoice'
+        ? _voiceProblem(_speakers)
+        : null;
+    if (voiceProblem != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(voiceProblem)));
       return;
     }
     setState(() => _saving = true);

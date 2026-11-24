@@ -50,14 +50,11 @@ extension _CreateCharacterLoading on _CreateCharacterDialogState {
       final cachedVoices = await widget.database.getVoiceEntriesForProvider(
         provider.id,
       );
-      final elsewhere = type == null
-          ? const <String>{}
-          : builtInVoicesAcross(type, _models);
-      voiceList = mergeVoices(
-        builtIn,
-        cachedVoices.map((b) => b.modelKey),
-        hide: elsewhere,
-      );
+      final stored = cachedVoices.map((b) => b.modelKey);
+      // Voices only other models offer would be rejected by this one.
+      voiceList = type == null
+          ? mergeVoices(builtIn, stored)
+          : voiceChoices(type, modelKey, stored);
     }
     if (kIsWeb && provider.adapterType == 'openaiTts') {
       voiceList = browserOpenAiVoiceOptions(modelKey, voiceList);
@@ -65,10 +62,20 @@ extension _CreateCharacterLoading on _CreateCharacterDialogState {
     if (mounted &&
         _selectedProviderId == provider.id &&
         _selectedModel == modelKey) {
+      // A character always has a voice: start on the model's first one.
+      final pickFirst =
+          voiceList.isNotEmpty &&
+          _voiceNameCtrl.text.trim().isEmpty &&
+          (_ttsModelType == null || _ttsModelType == 'preset');
       _update(() {
         _speakers = voiceList;
         _loadingSpeakers = false;
+        if (pickFirst) {
+          _selectedSpeaker = voiceList.first;
+          _voiceNameCtrl.text = voiceList.first;
+        }
       });
+      if (pickFirst) _autoFillName();
     }
   }
 

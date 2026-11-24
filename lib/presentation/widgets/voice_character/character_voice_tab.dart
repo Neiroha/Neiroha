@@ -97,20 +97,26 @@ extension _CharacterVoiceTab on _CharacterInspectorState {
           label: AppLocalizations.of(context).uiSelectVoice,
           voices: voices,
           selected: voices.contains(_selectedSpeaker) ? _selectedSpeaker : null,
-          onSelected: (v) => _update(() {
-            _selectedSpeaker = v;
-            _voiceNameCtrl.text = v;
-          }),
+          onSelected: (v) {
+            _update(() {
+              _selectedSpeaker = v;
+              _voiceNameCtrl.text = v;
+            });
+            _persistVoice(v);
+          },
         ),
         SizedBox(height: 8),
       ],
       TextField(
         controller: _voiceNameCtrl,
+        onChanged: (_) => _update(() {}),
         decoration: InputDecoration(
           labelText: AppLocalizations.of(context).uiVoiceName,
           helperText: AppLocalizations.of(
             context,
           ).uiFilledAutomaticallyWhenYouPickAboveOrTypeManually,
+          errorText: _voiceProblem(voices),
+          errorMaxLines: 3,
         ),
       ),
       if (_hasModelField) ...[
@@ -119,7 +125,11 @@ extension _CharacterVoiceTab on _CharacterInspectorState {
           controller: _modelNameCtrl,
           provider: selected,
           isWeb: capabilities.isWeb,
-          onChanged: () => _update(() {}),
+          onChanged: () {
+            _update(() {});
+            // Voices depend on the model.
+            _fetchSpeakers();
+          },
         ),
       ],
       if (_isGptSovits) ...[
@@ -162,7 +172,11 @@ extension _CharacterVoiceTab on _CharacterInspectorState {
           controller: _modelNameCtrl,
           provider: selected,
           isWeb: capabilities.isWeb,
-          onChanged: () => _update(() {}),
+          onChanged: () {
+            _update(() {});
+            // Voices depend on the model.
+            _fetchSpeakers();
+          },
         ),
         SizedBox(height: 12),
       ],
@@ -313,4 +327,36 @@ extension _CharacterVoiceTab on _CharacterInspectorState {
       QuickTtsPlaybackSetting(voiceId: a.id),
     ],
   ];
+
+  /// Why the voice cannot be used with the chosen model, if it cannot.
+  String? _voiceProblem(List<String> voices) {
+    final l10n = AppLocalizations.of(context);
+    final voice = _voiceNameCtrl.text.trim();
+    final model = _modelNameCtrl.text.trim();
+    final type = AdapterType.values.asNameMap()[_selectedProvider?.adapterType];
+    if (voice.isEmpty) {
+      // Reference audio stands in for a voice on clone-capable engines.
+      final cloned = widget.asset.refAudioPath?.isNotEmpty ?? false;
+      return voices.isEmpty || cloned ? null : l10n.voiceRequired;
+    }
+    if (type != null && voiceUnsupported(type, model, voice)) {
+      return l10n.voiceNotForModel(voice, model);
+    }
+    return null;
+  }
+
+  /// A picked voice takes effect at once, since the quick test reads the
+  /// saved character; only while the provider and model are the saved ones.
+  Future<void> _persistVoice(String voice) async {
+    final a = widget.asset;
+    final model = _modelNameCtrl.text.trim();
+    if (_selectedProviderId != a.providerId ||
+        model != (a.modelName ?? '').trim() ||
+        voice == a.presetVoiceName) {
+      return;
+    }
+    await ref
+        .read(databaseProvider)
+        .updateVoiceAsset(a.copyWith(presetVoiceName: Value(voice)));
+  }
 }

@@ -77,6 +77,20 @@ extension _CreateCharacterSave on _CreateCharacterDialogState {
         l10n.uiUltraCloneModeRequiresAPromptText,
       if (_isCloudCloneProvider && !cloudClone && blank(_voiceNameCtrl))
         l10n.uiCloudVoiceCloneHint,
+      if (_usesModelThenVoice && blank(_modelNameCtrl)) l10n.uiSelectModel,
+      // A preset voice character needs a voice the model offers.
+      if (_isPresetVoiceProvider &&
+          _speakers.isNotEmpty &&
+          (_ttsModelType == null || _ttsModelType == 'preset') &&
+          refAudio == null &&
+          blank(_voiceNameCtrl))
+        l10n.voiceRequired,
+      if (AdapterType.values.asNameMap()[_adapterType] case final type?
+          when voiceUnsupported(type, _modelNameCtrl.text, _voiceNameCtrl.text))
+        l10n.voiceNotForModel(
+          _voiceNameCtrl.text.trim(),
+          _modelNameCtrl.text.trim(),
+        ),
     ].firstOrNull;
     if (problem != null) {
       ScaffoldMessenger.of(

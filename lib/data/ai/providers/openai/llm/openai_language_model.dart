@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:neiroha/data/ai/protocols/openai/llm_chat_adapter.dart';
+import 'package:neiroha/data/ai/protocols/openai/openai_text_stream.dart';
 import 'package:neiroha/data/ai/protocols/openai/responses_llm_transport.dart';
 import 'package:neiroha/data/ai/providers/openai/openai_endpoint.dart';
 import 'package:neiroha/domain/ai/capability.dart';
@@ -9,7 +10,7 @@ import 'package:neiroha/domain/ai/models/language_model.dart';
 import 'package:neiroha/domain/capabilities/model_capability.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 
-class OpenAiLanguageModel implements LanguageModel {
+class OpenAiLanguageModel implements StreamingLanguageModel {
   OpenAiLanguageModel(this.descriptor, this.endpoint);
   @override
   final ModelDescriptor descriptor;
@@ -45,6 +46,22 @@ class OpenAiLanguageModel implements LanguageModel {
         );
     return result.content;
   }
+
+  @override
+  Stream<String> streamText(
+    List<LlmChatMessage> messages, {
+    required TtsCancelToken cancellation,
+    int maxOutputTokens = 4096,
+  }) => streamOpenAiText(
+    baseUrl: endpoint.baseUrl,
+    apiKey: endpoint.apiKey,
+    apiKeyHeader: endpoint.apiKeyHeader,
+    model: descriptor.id,
+    messages: messages,
+    cancellation: cancellation,
+    responses: _responses,
+    maxOutputTokens: maxOutputTokens,
+  );
 
   @override
   Future<LlmStructuredResult> structured(

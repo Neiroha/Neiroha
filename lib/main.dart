@@ -18,6 +18,7 @@ import 'l10n/generated/app_localizations.dart';
 import 'presentation/screens/app_shell.dart';
 import 'presentation/theme/app_font.dart';
 import 'presentation/theme/app_theme.dart';
+import 'data/services/transcription/media_pcm_decoder.dart';
 import 'providers/app_providers.dart';
 import 'server/api_server.dart';
 
@@ -68,8 +69,16 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
   void initState() {
     super.initState();
     // Every app synthesis path runs the character's processing chain.
+    // Desktop decodes encoded engines with FFmpeg so they stream by sentence.
+    final decoder = kIsWeb
+        ? null
+        : MediaPcmDecoder(ref.read(ffmpegServiceProvider));
     ref.read(ttsQueueServiceProvider).voiceChains = VoiceChainHook(
       ref.read(databaseProvider),
+      decode: decoder == null
+          ? null
+          : (bytes, format) =>
+                decodeSpeechBytes(decoder, bytes, format.extension),
     ).wrap;
     _lifecycle = AppLifecycleListener(
       onExitRequested: () async {

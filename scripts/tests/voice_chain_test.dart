@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:drift/native.dart';
@@ -71,6 +72,23 @@ class _Runner extends VoiceChainRunner {
   LanguageModel languageModel(VoiceChainStep step) => llm;
   @override
   VoiceConverter converter(VoiceChainStep step) => vc;
+}
+
+class _StreamingLlm extends _Llm implements StreamingLanguageModel {
+  final deltas = StreamController<String>();
+  @override
+  Stream<String> streamText(
+    List<LlmChatMessage> messages, {
+    required TtsCancelToken cancellation,
+    int maxOutputTokens = 4096,
+  }) => deltas.stream;
+}
+
+class _StreamingRunner extends VoiceChainRunner {
+  _StreamingRunner() : super(CapabilityRouter(const []));
+  final llm = _StreamingLlm();
+  @override
+  LanguageModel languageModel(VoiceChainStep step) => llm;
 }
 
 class _Tts extends TtsAdapter {
@@ -158,11 +176,13 @@ void main() {
       ]),
       runner,
     );
+    // The pipeline streams, but never claims the engine itself does.
+    expect(chained.supportsStreaming, isTrue);
     expect(
       chained.streamsAudioFor(
         const TtsRequest(text: '', voice: 'v', responseFormat: 'pcm'),
       ),
-      isTrue,
+      isFalse,
     );
     final events = await chained
         .synthesizeStream(
@@ -183,27 +203,88 @@ void main() {
     expect(runner.llm.prompts.last.first.content, startsWith('calm'));
   });
 
-  test('voice conversion takes a whole file and ends the stream', () async {
+  test(
+    'encoded VC output without a decoder falls back to the whole line',
+    () async {
+      final runner = _Runner();
+      final tts = _Tts();
+      final chained = ChainedTtsAdapter(
+        tts,
+        const VoiceChain([_convert]),
+        runner,
+      );
+      const request = TtsRequest(text: 'hi', voice: 'v', responseFormat: 'pcm');
+      expect(chained.streamsAudioFor(request), isFalse);
+      final events = await chained
+          .synthesizeStream(request, cancellation: TtsCancelToken())
+          .toList();
+      // A file-only converter without a decoder skips sentence streaming.
+      expect(tts.requests.map((r) => r.responseFormat), [null]);
+      expect(runner.vc.calls.last, ('nagato', 'audio/wav', _wav.length));
+      expect(
+        (events.first as TtsAudioStarted).format.encoding,
+        AudioEncoding.mp3,
+      );
+      expect(events.last, isA<TtsSynthesisCompleted>());
+      expect(runner.llm.prompts, isEmpty);
+    },
+  );
+
+  test('with a decoder, VC streams sentence by sentence', () async {
     final runner = _Runner();
     final tts = _Tts();
+    final decoded = <int>[];
     final chained = ChainedTtsAdapter(
       tts,
       const VoiceChain([_convert]),
       runner,
+      decode: (bytes, format) async {
+        decoded.add(bytes.length);
+        return (pcm: Uint8List(960), sampleRate: 48000, channels: 1);
+      },
     );
-    const request = TtsRequest(text: 'hi', voice: 'v', responseFormat: 'pcm');
-    expect(chained.streamsAudioFor(request), isFalse);
     final events = await chained
-        .synthesizeStream(request, cancellation: TtsCancelToken())
+        .synthesizeStream(
+          const TtsRequest(text: '第一句。第二句。', voice: 'v', responseFormat: 'pcm'),
+          cancellation: TtsCancelToken(),
+        )
         .toList();
-    expect(tts.requests.single.responseFormat, isNull);
-    expect(runner.vc.calls.single, ('nagato', 'audio/wav', _wav.length));
-    expect(
-      (events.first as TtsAudioStarted).format.encoding,
-      AudioEncoding.mp3,
+    expect(tts.requests.map((r) => r.text), ['第一句。', '第二句。']);
+    expect(runner.vc.calls, hasLength(2));
+    expect(decoded, hasLength(2));
+    final started = events.first as TtsAudioStarted;
+    expect(started.format.encoding, AudioEncoding.pcmS16le);
+    expect(started.format.sampleRate, 48000);
+    expect(events.whereType<TtsAudioChunk>(), hasLength(2));
+  });
+
+  test('a streamed LLM answer is spoken as each sentence completes', () async {
+    final runner = _StreamingRunner();
+    final tts = _Tts();
+    final chained = ChainedTtsAdapter(
+      tts,
+      const VoiceChain([_translate]),
+      runner,
     );
+    final events = <TtsEvent>[];
+    final done = chained
+        .synthesizeStream(
+          const TtsRequest(text: 'hello', voice: 'v', responseFormat: 'pcm'),
+          cancellation: TtsCancelToken(),
+        )
+        .listen(events.add)
+        .asFuture<void>();
+    runner.llm.deltas.add('こんにちは。');
+    runner.llm.deltas.add('今日は');
+    await pumpEventQueue();
+    // First sentence is already audio while the LLM is still talking.
+    expect(tts.requests.map((r) => r.text), ['こんにちは。']);
+    expect(events.whereType<TtsAudioChunk>(), hasLength(1));
+    runner.llm.deltas.add('いい天気。');
+    await runner.llm.deltas.close();
+    await done;
+    expect(tts.requests.map((r) => r.text), ['こんにちは。', '今日はいい天気。']);
     expect(events.last, isA<TtsSynthesisCompleted>());
-    expect(runner.llm.prompts, isEmpty);
   });
 
   test('hook wraps only characters with an active chain', () async {

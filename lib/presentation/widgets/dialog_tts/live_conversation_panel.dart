@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
@@ -7,6 +8,7 @@ import 'package:neiroha/data/services/conversation/character_live_settings.dart'
 import 'package:neiroha/data/services/conversation/conversation_engine.dart';
 import 'package:neiroha/data/services/conversation/conversation_factory.dart';
 import 'package:neiroha/data/services/conversation/platform_conversation_audio.dart';
+import 'package:neiroha/data/services/transcription/media_pcm_decoder.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/ai_capability_providers.dart';
@@ -93,15 +95,25 @@ class _LiveConversationPanelState extends ConsumerState<LiveConversationPanel> {
     try {
       final providers = await ref.read(databaseProvider).getAllProviders();
       final io = _io ??= PlatformConversationAudio();
-      final engine = ConversationFactory(router).create(
-        mode: widget.mode,
-        character: character,
-        characterProvider: providers
-            .where((p) => p.id == character.providerId)
-            .firstOrNull,
-        settings: _settings,
-        io: io,
-      );
+      final ffmpeg = kIsWeb
+          ? null
+          : MediaPcmDecoder(ref.read(ffmpegServiceProvider));
+      final engine =
+          ConversationFactory(
+            router,
+            decode: ffmpeg == null
+                ? null
+                : (bytes, format) =>
+                      decodeSpeechBytes(ffmpeg, bytes, format.extension),
+          ).create(
+            mode: widget.mode,
+            character: character,
+            characterProvider: providers
+                .where((p) => p.id == character.providerId)
+                .firstOrNull,
+            settings: _settings,
+            io: io,
+          );
       _engine = engine;
       _sub = engine.events.listen(_onEvent);
       await engine.start();

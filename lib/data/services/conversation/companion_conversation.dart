@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:neiroha/data/ai/protocols/audio/pcm_resample.dart';
+import 'package:neiroha/data/services/synthesis/sentence_speech_pipeline.dart';
 import 'package:neiroha/data/services/transcription/audio_file_transcriber.dart';
 import 'package:neiroha/data/services/transcription/media_pcm_decoder.dart';
 import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/domain/llm/llm_contract.dart';
+import 'package:neiroha/domain/synthesis/sentence_chunker.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
 
@@ -20,6 +22,10 @@ typedef SpeakText =
 /// transcribes it, the LLM answers in character, and the character's own TTS
 /// voice (optionally followed by VC) speaks the reply. Half duplex: the
 /// microphone is ignored while the character thinks or speaks.
+///
+/// The reply is streamed end to end: each sentence the LLM finishes goes to
+/// TTS (and VC) at once and starts playing while the LLM is still writing
+/// the next one.
 class CompanionConversation implements ConversationEngine {
   CompanionConversation({
     required this.vad,
@@ -29,9 +35,20 @@ class CompanionConversation implements ConversationEngine {
     required this.io,
     required this.systemPrompt,
     this.conversion,
+    this.decode,
     this.languages = const [],
     this.maxHistory = 20,
-  }) : _player = ReplyPlayer(io, conversion: conversion);
+  }) : _perSentenceVc =
+           conversion == null || canConvertPerSentence([conversion], decode),
+       _player = ReplyPlayer(
+         io,
+         // A converter that only returns encoded files (and no decoder):
+         // collect the whole reply and convert it once, as before.
+         conversion:
+             conversion == null || canConvertPerSentence([conversion], decode)
+             ? null
+             : conversion,
+       );
 
   static const sttRate = 16000;
   static const _style =
@@ -45,9 +62,13 @@ class CompanionConversation implements ConversationEngine {
   final ConversationAudioIo io;
   final String systemPrompt;
   final VoiceConversionStage? conversion;
+
+  /// Lets sentence streaming read engines that only return encoded audio.
+  final AudioDecoder? decode;
   final List<String> languages;
   final int maxHistory;
   final ReplyPlayer _player;
+  final bool _perSentenceVc;
 
   final _events = StreamController<ConversationEvent>.broadcast();
   final _history = <LlmChatMessage>[];
@@ -122,22 +143,47 @@ class CompanionConversation implements ConversationEngine {
       if (said.isEmpty || _stopped) return;
       _emit(UserTurn(said));
       _history.add(LlmChatMessage(role: 'user', content: said));
-      final reply = (await llm.complete([
-        LlmChatMessage(role: 'system', content: '$systemPrompt\n\n$_style'),
-        ..._history,
-      ], cancellation: _turn)).trim();
-      _history.add(LlmChatMessage(role: 'assistant', content: reply));
-      if (_history.length > maxHistory) {
-        _history.removeRange(0, _history.length - maxHistory);
+      final reply = StringBuffer();
+      final deltas =
+          streamCompletion(llm, [
+            LlmChatMessage(role: 'system', content: '$systemPrompt\n\n$_style'),
+            ..._history,
+          ], cancellation: _turn).map((delta) {
+            reply.write(delta);
+            _emit(CharacterTurn(delta));
+            return delta;
+          });
+      final pipeline = SentenceSpeechPipeline(
+        speak: speak,
+        conversions: [if (_perSentenceVc) ?conversion],
+        decode: decode,
+      );
+      try {
+        await for (final e in pipeline.run(
+          chunkSentences(deltas),
+          cancellation: _turn,
+        )) {
+          if (_stopped) break;
+          if (e is TtsAudioStarted) {
+            _state(ConversationState.speaking);
+            await _player.begin(e.format);
+          }
+          if (e is TtsAudioChunk) await _player.add(e.bytes);
+        }
+        await _player.end();
+      } on FormatException {
+        // An empty answer has nothing to speak; anything else is an error.
+        if (reply.toString().trim().isNotEmpty) rethrow;
+      } finally {
+        final text = reply.toString().trim();
+        if (text.isNotEmpty) {
+          _history.add(LlmChatMessage(role: 'assistant', content: text));
+          if (_history.length > maxHistory) {
+            _history.removeRange(0, _history.length - maxHistory);
+          }
+        }
+        _emit(CharacterTurn(text, done: true));
       }
-      _emit(CharacterTurn(reply, done: true));
-      if (reply.isEmpty || _stopped) return;
-      _state(ConversationState.speaking);
-      await for (final e in speak(reply, _turn)) {
-        if (e is TtsAudioStarted) await _player.begin(e.format);
-        if (e is TtsAudioChunk) await _player.add(e.bytes);
-      }
-      await _player.end();
     } on TtsCancelledException {
       // Stopped mid-turn.
     } catch (error) {

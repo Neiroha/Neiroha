@@ -7,7 +7,10 @@ import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/domain/llm/llm_contract.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
+import 'package:neiroha/domain/synthesis/sentence_chunker.dart';
 import 'package:neiroha/domain/synthesis/voice_chain.dart';
+
+import 'sentence_speech_pipeline.dart';
 
 /// Runs the steps of a [VoiceChain] with models from a [CapabilityRouter].
 class VoiceChainRunner {
@@ -49,18 +52,66 @@ class VoiceChainRunner {
   }) async {
     var line = text;
     for (final step in chain.textSteps) {
-      final model = languageModel(step);
-      final system = step.kind == VoiceChainStepKind.translate
-          ? translatePrompt(step.targetLanguage.trim())
-          : rewritePrompt(step.instruction.trim());
-      final out = await model.complete([
-        LlmChatMessage(role: 'system', content: system),
-        LlmChatMessage(role: 'user', content: line),
-      ], cancellation: cancellation);
+      final out = await languageModel(
+        step,
+      ).complete(_messages(step, line), cancellation: cancellation);
       if (out.trim().isNotEmpty) line = out.trim();
     }
     return line;
   }
+
+  /// The line after every text step as streamed deltas: earlier steps run
+  /// whole (each needs the previous result), the last one streams. An empty
+  /// answer keeps the original line, as [prepareText] does.
+  Stream<String> streamText(
+    String text,
+    VoiceChain chain, {
+    required TtsCancelToken cancellation,
+  }) async* {
+    final steps = chain.textSteps;
+    if (steps.isEmpty) {
+      yield text;
+      return;
+    }
+    final head = await prepareText(
+      text,
+      VoiceChain(steps.sublist(0, steps.length - 1)),
+      cancellation: cancellation,
+    );
+    final last = steps.last;
+    final deltas = streamCompletion(
+      languageModel(last),
+      _messages(last, head),
+      cancellation: cancellation,
+    );
+    var said = false;
+    var leading = true;
+    await for (final delta in deltas) {
+      // Drop leading whitespace so "  Hello" does not count as speech.
+      final piece = leading ? delta.trimLeft() : delta;
+      if (piece.isEmpty) continue;
+      leading = false;
+      said = true;
+      yield piece;
+    }
+    if (!said) yield head;
+  }
+
+  List<LlmChatMessage> _messages(VoiceChainStep step, String line) => [
+    LlmChatMessage(
+      role: 'system',
+      content: step.kind == VoiceChainStepKind.translate
+          ? translatePrompt(step.targetLanguage.trim())
+          : rewritePrompt(step.instruction.trim()),
+    ),
+    LlmChatMessage(role: 'user', content: line),
+  ];
+
+  /// Every conversion step as a pipeline stage.
+  List<VoiceConversionStage> conversionStages(VoiceChain chain) => [
+    for (final step in chain.audioSteps)
+      VoiceConversionStage(converter(step), step.targetVoice.trim()),
+  ];
 
   /// The audio after every conversion step, in order.
   Future<TtsResult> convertAudio(
@@ -89,24 +140,41 @@ class VoiceChainRunner {
   }
 }
 
-/// A TTS adapter wrapped by a chain. Without audio steps the inner adapter
-/// still streams; with them the line is synthesized whole, converted, then
-/// delivered as one chunk.
+/// A TTS adapter wrapped by a chain.
+///
+/// With any active step the line is spoken sentence by sentence through a
+/// [SentenceSpeechPipeline]: the last LLM step streams its answer, each
+/// finished sentence goes to TTS, each spoken sentence through VC, and the
+/// first sentence plays while the rest are still being generated. Without
+/// steps the inner adapter is used untouched.
 class ChainedTtsAdapter extends TtsAdapter {
-  ChainedTtsAdapter(this.inner, this.chain, this.runner);
+  ChainedTtsAdapter(
+    this.inner,
+    this.chain,
+    this.runner, {
+    this.lookahead = 1,
+    this.decode,
+  });
   final TtsAdapter inner;
   final VoiceChain chain;
   final VoiceChainRunner runner;
+  final int lookahead;
+  final AudioDecoder? decode;
 
-  bool get _converts => chain.audioSteps.isNotEmpty;
+  bool get _pipelined => chain.isActive;
 
   @override
   get serviceRoute => inner.serviceRoute;
+
+  /// The pipeline always delivers PCM before the line is complete.
   @override
-  bool get supportsStreaming => !_converts && inner.supportsStreaming;
+  bool get supportsStreaming => _pipelined || inner.supportsStreaming;
+
+  /// Upstream streaming capability only (recorded per TTS model), so a
+  /// pipelined line never marks a file-only engine as streaming.
   @override
   bool streamsAudioFor(TtsRequest request) =>
-      !_converts && inner.streamsAudioFor(request);
+      !_pipelined && inner.streamsAudioFor(request);
 
   Future<TtsRequest> _prepared(TtsRequest r, TtsCancelToken? c) async =>
       r.withText(await runner.prepareText(r.text, chain, cancellation: c));
@@ -117,18 +185,64 @@ class ChainedTtsAdapter extends TtsAdapter {
     return runner.convertAudio(spoken, chain);
   }
 
+  /// One sentence from the inner adapter: streamed PCM when it streams,
+  /// otherwise a whole WAV file the pipeline unpacks.
+  Stream<TtsEvent> _speak(
+    TtsRequest request,
+    String sentence,
+    TtsCancelToken cancellation,
+  ) {
+    final pcm = request.withText(sentence).withFormat('pcm');
+    return inner.synthesizeStream(
+      inner.streamsAudioFor(pcm) ? pcm : pcm.withFormat('wav'),
+      cancellation: cancellation,
+    );
+  }
+
   @override
   Stream<TtsEvent> synthesizeStream(
     TtsRequest request, {
     required TtsCancelToken cancellation,
   }) async* {
-    final prepared = await _prepared(request, cancellation);
-    cancellation.throwIfCancelled();
-    if (!_converts) {
-      yield* inner.synthesizeStream(prepared, cancellation: cancellation);
+    if (!_pipelined) {
+      yield* inner.synthesizeStream(request, cancellation: cancellation);
       return;
     }
-    // Conversion needs a whole file: never ask the inner adapter for PCM.
+    final stages = runner.conversionStages(chain);
+    if (!canConvertPerSentence(stages, decode)) {
+      yield* _wholeLine(request, cancellation);
+      return;
+    }
+    final sentences = chain.textSteps.isEmpty
+        ? Stream.fromIterable(splitSentences(request.text))
+        : chunkSentences(
+            runner.streamText(request.text, chain, cancellation: cancellation),
+          );
+    var emitted = false;
+    try {
+      await for (final event in SentenceSpeechPipeline(
+        speak: (sentence, c) => _speak(request, sentence, c),
+        conversions: stages,
+        lookahead: lookahead,
+        decode: decode,
+      ).run(sentences, cancellation: cancellation)) {
+        emitted = true;
+        yield event;
+      }
+    } on UndecodableAudioException {
+      // Encoded-only engine without a decoder (web, no FFmpeg): speak the
+      // whole line as before, one file, still correct, just later.
+      if (emitted) rethrow;
+      yield* _wholeLine(request, cancellation);
+    }
+  }
+
+  Stream<TtsEvent> _wholeLine(
+    TtsRequest request,
+    TtsCancelToken cancellation,
+  ) async* {
+    final prepared = await _prepared(request, cancellation);
+    cancellation.throwIfCancelled();
     final spoken = await inner.synthesize(prepared.asWholeFile());
     cancellation.throwIfCancelled();
     final result = await runner.convertAudio(
@@ -155,8 +269,11 @@ class ChainedTtsAdapter extends TtsAdapter {
 /// Loads a character's chain from app settings and wraps its adapter.
 /// Installed on the TTS queue so every app synthesis path honours it.
 class VoiceChainHook {
-  VoiceChainHook(this.database);
+  VoiceChainHook(this.database, {this.decode});
   final db.AppDatabase database;
+
+  /// Lets sentence streaming read encoded engines (FFmpeg on desktop).
+  final AudioDecoder? decode;
 
   static Future<VoiceChain> load(
     db.AppDatabase database,
@@ -188,6 +305,11 @@ class VoiceChainHook {
     final router = CapabilityRouter.fromProviders(
       await database.getAllProviders(),
     );
-    return ChainedTtsAdapter(adapter, chain, VoiceChainRunner(router));
+    return ChainedTtsAdapter(
+      adapter,
+      chain,
+      VoiceChainRunner(router),
+      decode: decode,
+    );
   }
 }

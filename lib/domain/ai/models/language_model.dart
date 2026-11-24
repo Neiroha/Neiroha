@@ -20,3 +20,37 @@ abstract interface class LanguageModel implements CapabilityModel {
     int maxOutputTokens,
   });
 }
+
+/// A language model that hands out its answer as it is generated, so speech
+/// can start on the first sentence instead of the last token.
+abstract interface class StreamingLanguageModel implements LanguageModel {
+  /// Text deltas of the answer, in order; thoughts are never included.
+  Stream<String> streamText(
+    List<LlmChatMessage> messages, {
+    required TtsCancelToken cancellation,
+    int maxOutputTokens,
+  });
+}
+
+/// [model]'s answer as deltas: streamed when the model supports it, else the
+/// whole completion as one delta.
+Stream<String> streamCompletion(
+  LanguageModel model,
+  List<LlmChatMessage> messages, {
+  required TtsCancelToken cancellation,
+  int maxOutputTokens = 4096,
+}) async* {
+  if (model is StreamingLanguageModel) {
+    yield* model.streamText(
+      messages,
+      cancellation: cancellation,
+      maxOutputTokens: maxOutputTokens,
+    );
+    return;
+  }
+  yield await model.complete(
+    messages,
+    cancellation: cancellation,
+    maxOutputTokens: maxOutputTokens,
+  );
+}

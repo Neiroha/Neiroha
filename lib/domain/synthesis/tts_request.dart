@@ -49,6 +49,9 @@ class TtsRequest {
   /// Same request with [text] replaced (after a chain's text steps).
   TtsRequest withText(String text) => _copy(text, responseFormat);
 
+  /// Same request asking for [format] (`pcm`, `wav`, …).
+  TtsRequest withFormat(String format) => _copy(text, format);
+
   /// Same request asking for a whole file instead of streamed raw PCM.
   TtsRequest asWholeFile() =>
       responseFormat == 'pcm' ? _copy(text, null) : this;

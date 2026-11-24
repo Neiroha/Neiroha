@@ -2,19 +2,22 @@ import 'package:neiroha/data/ai/registry/capability_router.dart';
 import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/synthesis/quick_tts_service.dart';
+import 'package:neiroha/data/services/synthesis/sentence_speech_pipeline.dart';
 import 'package:neiroha/domain/ai/ai.dart';
 
 import 'character_live_settings.dart';
 import 'companion_conversation.dart';
 import 'conversation_engine.dart';
 import 'realtime_conversation.dart';
-import 'reply_player.dart';
 
 /// Builds a live dialog engine for one character from whatever capabilities
 /// the enabled providers offer.
 class ConversationFactory {
-  const ConversationFactory(this.router);
+  const ConversationFactory(this.router, {this.decode});
   final CapabilityRouter router;
+
+  /// Decoder for encoded TTS / VC output in the companion's sentence stream.
+  final AudioDecoder? decode;
 
   T _need<T extends CapabilityModel>(AiCapability cap) =>
       router.resolve<T>(cap)?.model ??
@@ -94,6 +97,7 @@ class ConversationFactory {
       io: io,
       systemPrompt: personaFor(character, settings),
       conversion: conversionFor(settings),
+      decode: decode,
       speak: (text, cancellation) {
         final provider =
             characterProvider ??

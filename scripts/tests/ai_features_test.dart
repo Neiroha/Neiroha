@@ -114,6 +114,33 @@ class _Vc implements VoiceConverter {
   }
 }
 
+class _StreamLlm extends _Llm implements StreamingLanguageModel {
+  final deltas = StreamController<String>();
+  @override
+  Stream<String> streamText(
+    List<LlmChatMessage> messages, {
+    required TtsCancelToken cancellation,
+    int maxOutputTokens = 4096,
+  }) => deltas.stream;
+}
+
+class _StreamVc extends _Vc implements StreamingVoiceConverter {
+  var calls = 0;
+  @override
+  Stream<TtsEvent> convertStream(
+    AudioInput audio, {
+    required String targetVoice,
+    required TtsCancelToken cancellation,
+  }) async* {
+    calls++;
+    yield const TtsAudioStarted(
+      TtsAudioFormat(AudioEncoding.pcmS16le, sampleRate: 40000, channels: 1),
+    );
+    yield TtsAudioChunk(Uint8List(8000));
+    yield const TtsSynthesisCompleted();
+  }
+}
+
 Stream<TtsEvent> _speech(String text, TtsCancelToken _) async* {
   yield const TtsAudioStarted(
     TtsAudioFormat(AudioEncoding.pcmS16le, sampleRate: 24000, channels: 1),
@@ -260,10 +287,14 @@ void main() {
       engine.onAudioForTest(_pcm([(300, 0), (800, 0.3), (600, 0)]));
       await pumpEventQueue();
       expect(events.whereType<UserTurn>().single.text, 'hi there');
+      // Streamed deltas, then the final text.
+      final turns = events.whereType<CharacterTurn>().toList();
       expect(
-        events.whereType<CharacterTurn>().single.text,
+        turns.where((t) => !t.done).map((t) => t.text).join(),
         'Hello, commander.',
       );
+      expect(turns.last.done, isTrue);
+      expect(turns.last.text, 'Hello, commander.');
       expect(llm.prompts.single.first.content, startsWith('You are Nagato.'));
       expect(io.sinks.single.bytes.length, 4800);
       expect(
@@ -280,7 +311,7 @@ void main() {
       await engine.stop();
     });
 
-    test('VC converts the whole reply before playing it', () async {
+    test('a file-only VC without a decoder converts the whole reply', () async {
       final io = FakeConversationAudio();
       final vc = _Vc();
       final engine = CompanionConversation(
@@ -298,6 +329,57 @@ void main() {
       expect(vc.got!.contentType, 'audio/wav');
       expect(vc.got!.bytes.length, 4800 + 44);
       expect(io.sinks.single.format!.encoding, AudioEncoding.mp3);
+      await engine.stop();
+    });
+  });
+
+  group('companion streaming', () {
+    test('each sentence is spoken while the LLM is still writing', () async {
+      final io = FakeConversationAudio();
+      final llm = _StreamLlm();
+      final spoken = <String>[];
+      final engine = CompanionConversation(
+        vad: OnDevicePlugin.builtIn().vad()!,
+        transcriber: _Stt((_) => ''),
+        llm: llm,
+        speak: (text, c) {
+          spoken.add(text);
+          return _speech(text, c);
+        },
+        io: io,
+        systemPrompt: 'x',
+      );
+      await engine.start();
+      final turn = engine.sendText('hi');
+      llm.deltas.add('指挥官，');
+      llm.deltas.add('欢迎回来。今天');
+      await pumpEventQueue();
+      expect(spoken, ['指挥官，欢迎回来。']);
+      expect(io.sinks.single.bytes.length, 4800);
+      llm.deltas.add('也辛苦了。');
+      await llm.deltas.close();
+      await turn;
+      expect(spoken, ['指挥官，欢迎回来。', '今天也辛苦了。']);
+      expect(io.sinks.single.bytes.length, 9600);
+      await engine.stop();
+    });
+
+    test('a streaming VC converts sentence by sentence', () async {
+      final io = FakeConversationAudio();
+      final vc = _StreamVc();
+      final engine = CompanionConversation(
+        vad: OnDevicePlugin.builtIn().vad()!,
+        transcriber: _Stt((_) => ''),
+        llm: _Llm(text: '第一句。第二句。'),
+        speak: _speech,
+        io: io,
+        systemPrompt: 'x',
+        conversion: VoiceConversionStage(vc, 'kikiV1'),
+      );
+      await engine.start();
+      await engine.sendText('hi');
+      expect(vc.calls, 2);
+      expect(io.sinks.single.format!.sampleRate, 40000);
       await engine.stop();
     });
   });

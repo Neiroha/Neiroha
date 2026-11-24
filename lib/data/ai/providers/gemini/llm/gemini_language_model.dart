@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:neiroha/data/ai/protocols/http/streaming_post.dart';
 import 'package:neiroha/data/ai/protocols/openai/openai_dio.dart';
 import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/domain/llm/llm_contract.dart';
@@ -10,7 +11,7 @@ import '../gemini_endpoint.dart';
 /// Gemini text models over the native `models/{id}:generateContent` API.
 /// [thinkingLevel] maps onto `thinkingConfig.thinkingLevel` when the model
 /// supports thinking (Gemini 3 and newer).
-class GeminiLanguageModel implements LanguageModel {
+class GeminiLanguageModel implements StreamingLanguageModel {
   GeminiLanguageModel(this.descriptor, this.endpoint, {this.thinkingLevel});
   @override
   final ModelDescriptor descriptor;
@@ -117,6 +118,49 @@ class GeminiLanguageModel implements LanguageModel {
       );
     }
     return text;
+  }
+
+  /// `streamGenerateContent?alt=sse`: each event is a partial response.
+  @override
+  Stream<String> streamText(
+    List<LlmChatMessage> messages, {
+    required TtsCancelToken cancellation,
+    int maxOutputTokens = 4096,
+  }) async* {
+    var any = false;
+    var reason = 'STOP';
+    await for (final data in sseData(
+      streamingPost(
+        endpoint.dio(),
+        'models/${descriptor.id}:streamGenerateContent',
+        queryParameters: {'alt': 'sse'},
+        data: body(
+          messages,
+          maxOutputTokens: maxOutputTokens,
+          thinkingLevel: thinkingLevel,
+        ),
+        cancellation: cancellation,
+        apiKey: endpoint.apiKey,
+      ),
+    )) {
+      final event = jsonDecode(data);
+      // Trailing usage-only events carry no candidates.
+      if (event is! Map || event['candidates'] is! List) {
+        if (event is Map && event['promptFeedback'] is Map) parse(event);
+        continue;
+      }
+      final (text, finish, _) = parse(event);
+      reason = finish;
+      if (text.isEmpty) continue;
+      any = true;
+      yield text;
+    }
+    if (!any && reason == 'MAX_TOKENS') {
+      throw const AiProviderException(
+        'Gemini used the whole output budget on thinking; raise '
+        'maxOutputTokens or lower the thinking level.',
+      );
+    }
   }
 
   @override

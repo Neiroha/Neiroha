@@ -6,18 +6,16 @@ import 'package:neiroha/domain/synthesis/streaming_audio_sink.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
 
+import 'package:neiroha/data/services/synthesis/sentence_speech_pipeline.dart';
+
 import 'conversation_engine.dart';
 
-/// Optional second stage: the model speaks with feeling, a VC model restores
-/// the character's timbre. No per-character training needed.
-class VoiceConversionStage {
-  const VoiceConversionStage(this.converter, this.targetVoice);
-  final VoiceConverter converter;
-  final String targetVoice;
-}
+export 'package:neiroha/data/services/synthesis/sentence_speech_pipeline.dart'
+    show VoiceConversionStage;
 
 /// Plays one reply. Without VC audio streams straight to the speakers; with
-/// VC the reply is collected, converted, then played (adds latency).
+/// VC the reply is collected, then converted audio plays as it streams back
+/// (Realtime replies; the companion converts per sentence in its pipeline).
 class ReplyPlayer {
   ReplyPlayer(this.io, {this.conversion});
   final ConversationAudioIo io;
@@ -57,26 +55,31 @@ class ReplyPlayer {
     if (vc != null) {
       final raw = _collected.takeBytes();
       if (raw.isEmpty) return _reset();
-      final converted = await vc.converter.convert(
-        AudioInput(
-          format.encoding == AudioEncoding.pcmS16le
-              ? wrapPcmAsWav(raw, sampleRate: format.sampleRate!)
-              : raw,
-          contentType: format.contentType,
-          fileName: 'reply${format.extension}',
-        ),
+      final input = AudioInput(
+        format.encoding == AudioEncoding.pcmS16le
+            ? wrapPcmAsWav(raw, sampleRate: format.sampleRate!)
+            : raw,
+        contentType: format.contentType,
+        fileName: 'reply${format.extension}',
+      );
+      await for (final event in convertAsStream(
+        vc.converter,
+        input,
         targetVoice: vc.targetVoice,
         cancellation: _cancel,
-      );
+      )) {
+        if (_cancel.isCancelled) return;
+        switch (event) {
+          case TtsAudioStarted(:final format):
+            _sink = io.newSink();
+            await _sink!.open(format);
+          case TtsAudioChunk(:final bytes):
+            await _sink?.add(bytes);
+          case TtsSynthesisCompleted():
+            break;
+        }
+      }
       if (_cancel.isCancelled) return;
-      _sink = io.newSink();
-      await _sink!.open(
-        TtsAudioFormat.fromFileBytes(
-          converted.audioBytes,
-          converted.contentType,
-        ),
-      );
-      await _sink!.add(converted.audioBytes);
     }
     final sink = _sink;
     _format = null;

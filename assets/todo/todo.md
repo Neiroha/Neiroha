@@ -17,17 +17,24 @@
 - [x] macOS 全量测试 426 项通过、60 项跳过；带凭据的厂商实测脚本通过（MiMo ASR 因账号余额为 402 跳过）。
 - [ ] Codex 实机复测：窗口拖动、各页紧凑布局、处理链编辑与试听。
 - [ ] MiMo 账号充值后实测 `mimo-v2.5-asr`。
-- [ ] **P0（2027-01-06 前）**：OpenAI Speech 模型停用提示与一键迁移。
-- [ ] P1：schema v34，迁移角色实时设置、处理链与能力默认值，限额下沉到“连接 × 能力”。
-- [ ] P2：Provider 按能力分页与连接徽章、「设置 → AI 能力」路由页、角色检查器分标签。
+- [x] **P0（2027-01-06 前）**：OpenAI Speech 模型停用提示与一键迁移。服务商模型行显示红色停用日期；全局横幅统计受影响角色并一键迁移到 `gpt-realtime-2.1-mini`（Realtime 没有的音色改为 `marin`，服务商默认模型一并迁移）；角色模型栏提示停用并可一键改用。网页端 Realtime 不可用，列出角色由用户改用其他服务商。
+- [ ] P0 实机确认：横幅、迁移对话框与角色模型栏提示的布局；迁移后试听。
+- [x] P1：schema v34。新表 `voice_asset_settings`（角色处理链与实时设置，自 `AppSettings` 迁入，已删角色的旧行丢弃）、`connection_capabilities`（按能力开关与限额）、`provider_models`（目录外自行添加的模型）、`capability_defaults`（能力 / 用途默认模型）。TTS 队列按“连接 × 能力”分道，小说角色分析等 LLM 调用不再占用同连接的 TTS 名额。历史快照、跨版本升级与数据迁移测试已补。
+- [ ] 后续（M2）：`provider_connections` / `provider_voices` 取代 `TtsProviders` / `ModelBindings`，钥匙串存储密钥。
+- [x] P2：服务商列表按能力分页（全部 / 各能力）并显示连接能力徽章（已关闭的变暗）；「设置 → AI 能力」路由页：每项能力的默认模型、各连接开关、按能力限额与自行添加模型；角色检查器分“基本 / 音色 / 处理链”三个标签。
+- [ ] P2 实机确认：AI 能力页、服务商分页与检查器标签的布局与交互。
 - [x] 本地 RVC 变声连接（`AdapterType.rvc`，仅 VC 能力）：实时读取模型 / 音色目录，`auto` 按音色选权重，`convert-stream` 流式 PCM；处理链与实时设置可选音色。离线假服务 + 可选实测（Tailnet 不通时自动跳过）。
 - [x] 逐句流式：LLM 流式 → 分句 → TTS → VC，处理链与陪伴模式共用 `SentenceSpeechPipeline`；编码音频经 FFmpeg 解码，Web 无解码器时回退整句。实测 Irodori 首音 ≈3.1 s（整句 ≈4.3 s），GPT-SoVITS ≈4.3 s（整句 ≈9.6 s）。
 - [x] LLM 目录数据化：models.dev（MIT，`assets/model_catalog/models_dev.snapshot.json` + LICENSE）优先、LiteLLM 兜底，运行时每日刷新缓存；读取 OpenRouter 推理档位 / 默认档位 / `expiration_date` / `endpoints`；插件只留推荐 LLM 与默认思考档位。
 - [x] 本地 TTS 自述：`.well-known/neiroha-capabilities` v2（音色、语言、流式格式、接口路径、认证头），兼容 v1；声明的音色并入服务商音色列表。
 - [ ] 让 Irodori / GPT-SoVITS / RVC 服务端实际提供 v2 声明（当前均 404）。
-- [ ] 实时对话模式的 VC 仍整段转换；陪伴模式尚未应用角色自己的处理链（使用实时设置中的 VC）。
-- [ ] 处理链扩展：ASR 回听校验、VAD 去静音、缓存键含处理链哈希、API / MCP 开关。
-- [ ] 退出时偶发崩溃：isolate 关闭阶段 sqlite finalizer 段错误（`~/Library/Logs/DiagnosticReports/Neiroha-*.ips`），待排查。
+- [x] 实时对话的 VC 按停顿分段（约 1.2–4 s）逐段转换，首段转换完即播放（RVC 实测首音 1.9 s / 回复 5.1 s）；陪伴模式应用角色自己的处理链，链中有变声时不再叠加实时设置的 VC。
+- [x] 小说缓存键包含处理链（未启用处理链的角色缓存不变）；本机 API `apply_chain` 与 MCP `synthesize_speech.apply_chain` 开关，默认运行处理链（此前 API / MCP 不运行处理链）；复制角色时一并复制处理链。
+- [x] 处理链扩展：去静音（首尾留 60 ms，超过 0.35 s 的停顿缩短，按 10 ms 能量判定）与 ASR 回听校验（转写后与台词逐字 / 逐词比对，列出漏读；与播放并行，不拖慢首音）。逐句与整句路径均生效，检查器显示最近的回听结果。
+- [ ] 回听校验用真实 STT 实测（中文 / 英文 / 日文漏读检出率）。
+- [x] 退出崩溃：并非 sqlite，而是 flutter_soloud 5.3 的 `applicationWillTerminate:` 调用两个动态查找、未绑定（为 0）的原生符号（`EXC_BAD_ACCESS` at 0）。`MainFlutterWindow` 注册插件后移除其退出观察者（该清理仅针对 VST3 宿主，本应用未使用）。修复前每次退出必现，修复后连续三次启动 / 退出无崩溃报告。
+- [ ] 升级 flutter_soloud 后复查退出路径，上游修复后可撤回该规避。
+- [x] 本机 API `/v1/jobs` 异步任务：创建、列表、状态、取消 / 删除、重试（新 attempt）、SSE 进度、`GET /v1/jobs/:id/audio` 与 `GET /v1/audio/speech/:id`。任务落盘于数据目录 `api_jobs/`，重启后未完成的标记失败，保留最近 200 个已完成任务。
 
 ## v0.5.1（2026-11-22）
 

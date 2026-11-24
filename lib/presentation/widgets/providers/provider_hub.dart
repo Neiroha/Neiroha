@@ -17,16 +17,16 @@ import 'provider_list.dart';
 /// The AI services page: a root level (the pages beside the navigation)
 /// and the provider level (one provider's settings beside the list).
 enum ProviderPageView {
+  providers,
   defaults,
   roleAi,
-  providers,
 
   /// The selected provider's settings.
   provider,
 }
 
 final providerPageViewProvider = StateProvider<ProviderPageView>(
-  (ref) => ProviderPageView.defaults,
+  (ref) => ProviderPageView.providers,
 );
 
 /// Tab the provider editor opens on; null opens the overview.
@@ -85,6 +85,19 @@ class ProviderNavPane extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: 4),
               children: [
                 _HubTile(
+                  icon: Icons.dns_rounded,
+                  title: l.provHubConnections,
+                  subtitle: l.provHubConnectionsShort(
+                    providers.length,
+                    enabled,
+                  ),
+                  selected:
+                      view == ProviderPageView.providers ||
+                      view == ProviderPageView.provider,
+                  onTap: () =>
+                      showProviderPage(ref, ProviderPageView.providers),
+                ),
+                _HubTile(
                   icon: Icons.hub_rounded,
                   title: l.provHubDefaults,
                   subtitle: l.provHubDefaultsShort,
@@ -100,19 +113,6 @@ class ProviderNavPane extends ConsumerWidget {
                     selected: view == ProviderPageView.roleAi,
                     onTap: () => showProviderPage(ref, ProviderPageView.roleAi),
                   ),
-                _HubTile(
-                  icon: Icons.dns_rounded,
-                  title: l.provHubConnections,
-                  subtitle: l.provHubConnectionsShort(
-                    providers.length,
-                    enabled,
-                  ),
-                  selected:
-                      view == ProviderPageView.providers ||
-                      view == ProviderPageView.provider,
-                  onTap: () =>
-                      showProviderPage(ref, ProviderPageView.providers),
-                ),
               ],
             ),
           ),

@@ -76,11 +76,11 @@ void main() {
     tester,
   ) async {
     await pump(tester, const Size(1400, 900));
-    // Root: navigation beside the default-model page.
-    expect(find.text('默认模型'), findsWidgets);
+    // Root: the providers page opens first, beside the navigation.
     expect(find.text('2 个连接 · 2 个已启用'), findsOneWidget);
+    expect(find.byType(ProvidersPage), findsOneWidget);
+    await tapText(tester, '默认模型');
     expect(find.byType(ProvidersPage), findsNothing);
-
     await tapText(tester, '服务商');
     expect(find.byType(ProvidersPage), findsOneWidget);
     expect(find.text('Alpha AI'), findsOneWidget);
@@ -97,6 +97,28 @@ void main() {
     expect(find.byType(ProviderEditor), findsNothing);
     expect(find.byType(ProvidersPage), findsOneWidget);
     expect(find.text('默认模型'), findsWidgets);
+  });
+
+  testWidgets('the divider drags to resize and double-clicks back', (
+    tester,
+  ) async {
+    await pump(tester, const Size(1400, 900));
+    double nav() => tester.getSize(find.byType(ProviderNavPane)).width;
+    final divider = find.byWidgetPredicate(
+      (w) => w is MouseRegion && w.cursor == SystemMouseCursors.resizeColumn,
+    );
+    expect(nav(), 248);
+    await tester.drag(divider, const Offset(120, 0));
+    await tester.pump();
+    expect(nav(), greaterThan(330));
+    await tester.drag(divider, const Offset(-900, 0));
+    await tester.pump();
+    expect(nav(), 200);
+    await tester.tap(divider);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(divider);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(nav(), 248);
   });
 
   testWidgets('narrow: one pane at a time with back buttons', (tester) async {

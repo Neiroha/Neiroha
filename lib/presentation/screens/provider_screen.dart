@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
@@ -75,7 +76,8 @@ class _ProviderLayout extends ConsumerWidget {
       );
       if (!twoPane) return editor;
       return _TwoPane(
-        leftWidth: 320,
+        width: _listWidthProvider,
+        defaultWidth: 320,
         left: _ProviderLevelList(
           providers: providers,
           selectedId: selected.id,
@@ -90,33 +92,105 @@ class _ProviderLayout extends ConsumerWidget {
           : ProviderNavPane(providers: providers);
     }
     return _TwoPane(
-      leftWidth: 248,
+      width: _navWidthProvider,
+      defaultWidth: 248,
       left: ProviderNavPane(providers: providers),
       right: page(),
     );
   }
 }
 
-/// A fixed-width side pane beside the content.
-class _TwoPane extends StatelessWidget {
+/// Side pane widths, kept while the app runs; null is the default.
+final _navWidthProvider = StateProvider<double?>((ref) => null);
+final _listWidthProvider = StateProvider<double?>((ref) => null);
+
+const double _minSideWidth = 200;
+
+/// A side pane beside the content, split by a divider that drags to
+/// resize and double-clicks back to [defaultWidth].
+class _TwoPane extends ConsumerWidget {
   const _TwoPane({
-    required this.leftWidth,
+    required this.width,
+    required this.defaultWidth,
     required this.left,
     required this.right,
   });
-  final double leftWidth;
+  final StateProvider<double?> width;
+  final double defaultWidth;
   final Widget left;
   final Widget right;
 
   @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      SizedBox(width: leftWidth, child: left),
-      const VerticalDivider(width: 1),
-      Expanded(child: right),
-    ],
+  Widget build(BuildContext context, WidgetRef ref) => LayoutBuilder(
+    builder: (context, constraints) {
+      final max = (constraints.maxWidth / 2).clamp(
+        _minSideWidth,
+        double.infinity,
+      );
+      final current = (ref.watch(width) ?? defaultWidth).clamp(
+        _minSideWidth,
+        max,
+      );
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(width: current, child: left),
+          _PaneDivider(
+            onDrag: (dx) => ref.read(width.notifier).state =
+                ((ref.read(width) ?? defaultWidth) + dx).clamp(
+                  _minSideWidth,
+                  max,
+                ),
+            onReset: () => ref.read(width.notifier).state = null,
+          ),
+          Expanded(child: right),
+        ],
+      );
+    },
   );
+}
+
+class _PaneDivider extends StatefulWidget {
+  const _PaneDivider({required this.onDrag, required this.onReset});
+  final ValueChanged<double> onDrag;
+  final VoidCallback onReset;
+
+  @override
+  State<_PaneDivider> createState() => _PaneDividerState();
+}
+
+class _PaneDividerState extends State<_PaneDivider> {
+  bool _hot = false;
+  bool _dragging = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = _hot || _dragging;
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      onEnter: (_) => setState(() => _hot = true),
+      onExit: (_) => setState(() => _hot = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onHorizontalDragStart: (_) => setState(() => _dragging = true),
+        onHorizontalDragUpdate: (d) => widget.onDrag(d.delta.dx),
+        onHorizontalDragEnd: (_) => setState(() => _dragging = false),
+        onDoubleTap: widget.onReset,
+        child: SizedBox(
+          width: 9,
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              width: active ? 3 : 1,
+              color: active
+                  ? AppTheme.accentColor.withValues(alpha: 0.7)
+                  : Theme.of(context).dividerColor,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// The provider list beside a provider's settings, headed by a way back to

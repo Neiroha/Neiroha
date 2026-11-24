@@ -3661,4 +3661,151 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get inspectorTabVoice => '音色';
+
+  @override
+  String get provTabOverview => '概览';
+
+  @override
+  String get provCapabilities => '能力';
+
+  @override
+  String provCapUse(Object capability) {
+    return '在此连接使用$capability';
+  }
+
+  @override
+  String provCapOffHint(Object capability) {
+    return '此连接已关闭$capability，功能不会路由到这里。';
+  }
+
+  @override
+  String get provConnectionOff => '此连接未启用。在左侧列表开启后，各功能才会使用它的模型。';
+
+  @override
+  String get provSetDefault => '设为默认';
+
+  @override
+  String get provIsDefault => '默认';
+
+  @override
+  String get provSourceAdded => '手动添加';
+
+  @override
+  String get provSourceFetched => '已从账号获取';
+
+  @override
+  String get provDiscoverLlm => '从账号发现';
+
+  @override
+  String get provOtherModels => '其他已获取模型';
+
+  @override
+  String get provCheckAll => '检测各能力';
+
+  @override
+  String get provHealthOk => '可用';
+
+  @override
+  String get provHealthFailed => '失败';
+
+  @override
+  String get provHealthUnavailable => '不可用';
+
+  @override
+  String get provHealthUnknown => '未知';
+
+  @override
+  String get provHealthNotChecked => '尚未检测';
+
+  @override
+  String provHealthSome(Object list) {
+    return '部分能力不可用：$list';
+  }
+
+  @override
+  String get provLimitsConnection => '连接限额';
+
+  @override
+  String get provLimitsPerCapability => '按能力';
+
+  @override
+  String get provAddPick => '选择服务商';
+
+  @override
+  String get provAddHint => '创建后在概览中填写地址与密钥，再检测各能力。';
+
+  @override
+  String get featPresetVoices => '预设音色';
+
+  @override
+  String get featInstructions => '情感指令';
+
+  @override
+  String get featStreamingOutput => '流式输出';
+
+  @override
+  String get featCloudClone => '云端克隆';
+
+  @override
+  String get featZeroShotClone => '零样本克隆';
+
+  @override
+  String get featFileTranscription => '文件转写';
+
+  @override
+  String get featStreamingTranscription => '流式转写';
+
+  @override
+  String get featWordTimestamps => '字级时间戳';
+
+  @override
+  String get featDiarization => '说话人区分';
+
+  @override
+  String get featLanguageDetection => '语种识别';
+
+  @override
+  String get featKeywords => '热词';
+
+  @override
+  String get featAudioOutput => '音频输出';
+
+  @override
+  String get featTextOutput => '文本输出';
+
+  @override
+  String get featToolCalls => '工具调用';
+
+  @override
+  String get featServerVad => '服务端断句';
+
+  @override
+  String get featInputTranscription => '输入转写';
+
+  @override
+  String get featSourceTranscript => '原文转写';
+
+  @override
+  String get featStructuredOutput => '结构化输出';
+
+  @override
+  String get featReasoning => '推理';
+
+  @override
+  String get featVocals => '人声';
+
+  @override
+  String get featTimedLyrics => '时间轴歌词';
+
+  @override
+  String get featImagePrompt => '图片提示';
+
+  @override
+  String get featLosslessOutput => '无损输出';
+
+  @override
+  String get featZeroShot => '零样本';
+
+  @override
+  String get featLocal => '本地';
 }

@@ -6805,6 +6805,288 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Voice'**
   String get inspectorTabVoice;
+
+  /// No description provided for @provTabOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get provTabOverview;
+
+  /// No description provided for @provCapabilities.
+  ///
+  /// In en, this message translates to:
+  /// **'Capabilities'**
+  String get provCapabilities;
+
+  /// No description provided for @provCapUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {capability} on this connection'**
+  String provCapUse(Object capability);
+
+  /// No description provided for @provCapOffHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{capability} is off here; features will not route to this connection.'**
+  String provCapOffHint(Object capability);
+
+  /// No description provided for @provConnectionOff.
+  ///
+  /// In en, this message translates to:
+  /// **'This connection is turned off. Switch it on in the list before features use its models.'**
+  String get provConnectionOff;
+
+  /// No description provided for @provSetDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as default'**
+  String get provSetDefault;
+
+  /// No description provided for @provIsDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get provIsDefault;
+
+  /// No description provided for @provSourceAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added by you'**
+  String get provSourceAdded;
+
+  /// No description provided for @provSourceFetched.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetched from the account'**
+  String get provSourceFetched;
+
+  /// No description provided for @provDiscoverLlm.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover from account'**
+  String get provDiscoverLlm;
+
+  /// No description provided for @provOtherModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Other fetched models'**
+  String get provOtherModels;
+
+  /// No description provided for @provCheckAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Check capabilities'**
+  String get provCheckAll;
+
+  /// No description provided for @provHealthOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get provHealthOk;
+
+  /// No description provided for @provHealthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get provHealthFailed;
+
+  /// No description provided for @provHealthUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get provHealthUnavailable;
+
+  /// No description provided for @provHealthUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get provHealthUnknown;
+
+  /// No description provided for @provHealthNotChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Not checked yet'**
+  String get provHealthNotChecked;
+
+  /// No description provided for @provHealthSome.
+  ///
+  /// In en, this message translates to:
+  /// **'Some capabilities failed: {list}'**
+  String provHealthSome(Object list);
+
+  /// No description provided for @provLimitsConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection limits'**
+  String get provLimitsConnection;
+
+  /// No description provided for @provLimitsPerCapability.
+  ///
+  /// In en, this message translates to:
+  /// **'Per capability'**
+  String get provLimitsPerCapability;
+
+  /// No description provided for @provAddPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a provider'**
+  String get provAddPick;
+
+  /// No description provided for @provAddHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill in the address and key on the Overview tab after creating it, then check its capabilities.'**
+  String get provAddHint;
+
+  /// No description provided for @featPresetVoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset voices'**
+  String get featPresetVoices;
+
+  /// No description provided for @featInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Style instructions'**
+  String get featInstructions;
+
+  /// No description provided for @featStreamingOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Streaming'**
+  String get featStreamingOutput;
+
+  /// No description provided for @featCloudClone.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud cloning'**
+  String get featCloudClone;
+
+  /// No description provided for @featZeroShotClone.
+  ///
+  /// In en, this message translates to:
+  /// **'Zero-shot cloning'**
+  String get featZeroShotClone;
+
+  /// No description provided for @featFileTranscription.
+  ///
+  /// In en, this message translates to:
+  /// **'File transcription'**
+  String get featFileTranscription;
+
+  /// No description provided for @featStreamingTranscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Streaming transcription'**
+  String get featStreamingTranscription;
+
+  /// No description provided for @featWordTimestamps.
+  ///
+  /// In en, this message translates to:
+  /// **'Word timestamps'**
+  String get featWordTimestamps;
+
+  /// No description provided for @featDiarization.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaker labels'**
+  String get featDiarization;
+
+  /// No description provided for @featLanguageDetection.
+  ///
+  /// In en, this message translates to:
+  /// **'Language detection'**
+  String get featLanguageDetection;
+
+  /// No description provided for @featKeywords.
+  ///
+  /// In en, this message translates to:
+  /// **'Keywords'**
+  String get featKeywords;
+
+  /// No description provided for @featAudioOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio output'**
+  String get featAudioOutput;
+
+  /// No description provided for @featTextOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Text output'**
+  String get featTextOutput;
+
+  /// No description provided for @featToolCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool calls'**
+  String get featToolCalls;
+
+  /// No description provided for @featServerVad.
+  ///
+  /// In en, this message translates to:
+  /// **'Server VAD'**
+  String get featServerVad;
+
+  /// No description provided for @featInputTranscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Input transcript'**
+  String get featInputTranscription;
+
+  /// No description provided for @featSourceTranscript.
+  ///
+  /// In en, this message translates to:
+  /// **'Source transcript'**
+  String get featSourceTranscript;
+
+  /// No description provided for @featStructuredOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Structured output'**
+  String get featStructuredOutput;
+
+  /// No description provided for @featReasoning.
+  ///
+  /// In en, this message translates to:
+  /// **'Reasoning'**
+  String get featReasoning;
+
+  /// No description provided for @featVocals.
+  ///
+  /// In en, this message translates to:
+  /// **'Vocals'**
+  String get featVocals;
+
+  /// No description provided for @featTimedLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Timed lyrics'**
+  String get featTimedLyrics;
+
+  /// No description provided for @featImagePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Image prompt'**
+  String get featImagePrompt;
+
+  /// No description provided for @featLosslessOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Lossless output'**
+  String get featLosslessOutput;
+
+  /// No description provided for @featZeroShot.
+  ///
+  /// In en, this message translates to:
+  /// **'Zero-shot'**
+  String get featZeroShot;
+
+  /// No description provided for @featLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get featLocal;
 }
 
 class _AppLocalizationsDelegate

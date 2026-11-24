@@ -3795,4 +3795,153 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inspectorTabVoice => 'Voice';
+
+  @override
+  String get provTabOverview => 'Overview';
+
+  @override
+  String get provCapabilities => 'Capabilities';
+
+  @override
+  String provCapUse(Object capability) {
+    return 'Use $capability on this connection';
+  }
+
+  @override
+  String provCapOffHint(Object capability) {
+    return '$capability is off here; features will not route to this connection.';
+  }
+
+  @override
+  String get provConnectionOff =>
+      'This connection is turned off. Switch it on in the list before features use its models.';
+
+  @override
+  String get provSetDefault => 'Set as default';
+
+  @override
+  String get provIsDefault => 'Default';
+
+  @override
+  String get provSourceAdded => 'Added by you';
+
+  @override
+  String get provSourceFetched => 'Fetched from the account';
+
+  @override
+  String get provDiscoverLlm => 'Discover from account';
+
+  @override
+  String get provOtherModels => 'Other fetched models';
+
+  @override
+  String get provCheckAll => 'Check capabilities';
+
+  @override
+  String get provHealthOk => 'Available';
+
+  @override
+  String get provHealthFailed => 'Failed';
+
+  @override
+  String get provHealthUnavailable => 'Unavailable';
+
+  @override
+  String get provHealthUnknown => 'Unknown';
+
+  @override
+  String get provHealthNotChecked => 'Not checked yet';
+
+  @override
+  String provHealthSome(Object list) {
+    return 'Some capabilities failed: $list';
+  }
+
+  @override
+  String get provLimitsConnection => 'Connection limits';
+
+  @override
+  String get provLimitsPerCapability => 'Per capability';
+
+  @override
+  String get provAddPick => 'Choose a provider';
+
+  @override
+  String get provAddHint =>
+      'Fill in the address and key on the Overview tab after creating it, then check its capabilities.';
+
+  @override
+  String get featPresetVoices => 'Preset voices';
+
+  @override
+  String get featInstructions => 'Style instructions';
+
+  @override
+  String get featStreamingOutput => 'Streaming';
+
+  @override
+  String get featCloudClone => 'Cloud cloning';
+
+  @override
+  String get featZeroShotClone => 'Zero-shot cloning';
+
+  @override
+  String get featFileTranscription => 'File transcription';
+
+  @override
+  String get featStreamingTranscription => 'Streaming transcription';
+
+  @override
+  String get featWordTimestamps => 'Word timestamps';
+
+  @override
+  String get featDiarization => 'Speaker labels';
+
+  @override
+  String get featLanguageDetection => 'Language detection';
+
+  @override
+  String get featKeywords => 'Keywords';
+
+  @override
+  String get featAudioOutput => 'Audio output';
+
+  @override
+  String get featTextOutput => 'Text output';
+
+  @override
+  String get featToolCalls => 'Tool calls';
+
+  @override
+  String get featServerVad => 'Server VAD';
+
+  @override
+  String get featInputTranscription => 'Input transcript';
+
+  @override
+  String get featSourceTranscript => 'Source transcript';
+
+  @override
+  String get featStructuredOutput => 'Structured output';
+
+  @override
+  String get featReasoning => 'Reasoning';
+
+  @override
+  String get featVocals => 'Vocals';
+
+  @override
+  String get featTimedLyrics => 'Timed lyrics';
+
+  @override
+  String get featImagePrompt => 'Image prompt';
+
+  @override
+  String get featLosslessOutput => 'Lossless output';
+
+  @override
+  String get featZeroShot => 'Zero-shot';
+
+  @override
+  String get featLocal => 'Local';
 }

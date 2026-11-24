@@ -104,7 +104,9 @@ void main() {
     await pump(tester, database, const Size(1600, 900));
     await settle(tester);
     // The active bank is chosen without a click; its cast shows at once.
-    expect(find.text('Fleet'), findsOneWidget);
+    // The switcher shows the bank's name and cast size in one line.
+    final fleet = find.textContaining('Fleet', findRichText: true);
+    expect(fleet, findsOneWidget);
     expect(find.text('Nagato'), findsOneWidget);
     await tester.tap(find.text('Nagato'));
     await settle(tester);
@@ -116,7 +118,7 @@ void main() {
     expect(inspector.width, 420);
 
     // The switcher lists every bank and switches to another.
-    await tester.tap(find.text('Fleet'));
+    await tester.tap(fleet);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Archive').last);
     await settle(tester);

@@ -86,9 +86,24 @@ extension _BankSwitcher on _VoiceBankScreenState {
                         _ActiveDot(tooltip: l10n.uiActive),
                         const SizedBox(width: 8),
                       ],
-                      Flexible(
-                        child: Text(
-                          bank.name,
+                      // Name and cast size fill the row; the arrow sits
+                      // at its right end, next to the bank menu.
+                      Expanded(
+                        child: Text.rich(
+                          TextSpan(
+                            text: bank.name,
+                            children: [
+                              if (count != null)
+                                TextSpan(
+                                  text: '  $count',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w400,
+                                    color: muted,
+                                  ),
+                                ),
+                            ],
+                          ),
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 15,
@@ -96,14 +111,7 @@ extension _BankSwitcher on _VoiceBankScreenState {
                           ),
                         ),
                       ),
-                      if (count != null) ...[
-                        const SizedBox(width: 6),
-                        Text(
-                          '$count',
-                          style: TextStyle(fontSize: 13, color: muted),
-                        ),
-                      ],
-                      const SizedBox(width: 2),
+                      const SizedBox(width: 8),
                       Icon(Icons.expand_more_rounded, size: 20, color: muted),
                     ],
                   ),

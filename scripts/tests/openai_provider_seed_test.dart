@@ -1,6 +1,7 @@
 import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neiroha/data/ai/providers/openai/tts/openai_tts_adapter.dart';
@@ -26,6 +27,23 @@ void main() {
     expect(row.defaultModelName, OpenAiTtsAdapter.defaultModel);
     expect(row.enabled, isFalse);
     expect(createAdapter(row), isA<OpenAiTtsAdapter>());
+  });
+
+  test('new databases put OpenAI first and start the cast on it', () async {
+    final database = db.AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    final rows = await (database.select(
+      database.ttsProviders,
+    )..orderBy([(t) => OrderingTerm.asc(t.position)])).get();
+    expect(rows.first.id, _id);
+    expect(rows.map((r) => r.position).toSet(), hasLength(rows.length));
+    final starter = await database.getVoiceAssetById('default-character');
+    expect(starter!.providerId, _id);
+    expect(starter.modelName, OpenAiTtsAdapter.defaultModel);
+    expect(
+      OpenAiTtsAdapter.voicesForModel(starter.modelName!),
+      contains(starter.presetVoiceName),
+    );
   });
 
   test(

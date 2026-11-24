@@ -10,7 +10,6 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
 import 'package:neiroha/domain/voice_capabilities.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
-import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
@@ -587,7 +586,6 @@ class _SegmentVoicePanelState extends ConsumerState<SegmentVoicePanel> {
                         _buildCard(ordered, visible[i], playingPath),
                   ),
           ),
-          const PersistentAudioBar(onlyForSourceTag: phaseTtsPlaybackSource),
         ],
       ),
     );

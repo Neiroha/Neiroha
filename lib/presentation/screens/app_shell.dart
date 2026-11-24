@@ -90,12 +90,11 @@ class _AppShellState extends ConsumerState<AppShell> {
     final playbackSourceTag = ref.watch(
       playbackNotifierProvider.select((state) => state.sourceTag),
     );
-    // Dialog/Phase render their own inline players, so the global bottom bar
-    // is suppressed there to avoid a double UI. Voice Bank quick tests play
-    // through this bar too.
+    // Dialog TTS keeps its player above the chat input, so the global bottom
+    // bar is suppressed there to avoid a double UI. Phase TTS previews and
+    // Voice Bank quick tests play through this bar.
     final showGlobalPlayer =
         selectedTab != NavTab.dialogTts &&
-        selectedTab != NavTab.phaseTts &&
         selectedTab != NavTab.novelReader &&
         (continueTtsAcrossScreens ||
             !isNovelReaderPlaybackSource(playbackSourceTag));

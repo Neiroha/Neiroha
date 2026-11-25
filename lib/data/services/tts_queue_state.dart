@@ -12,6 +12,16 @@ class _ProviderQueueState {
   int _dayTokens = 0;
   DateTime _dayStart = _today(DateTime.now());
   Timer? timer;
+  Completer<void> _limitsChanged = Completer<void>();
+
+  /// Completes when the lane's limits are edited.
+  Future<void> get limitsChanged => _limitsChanged.future;
+
+  void wakeWaiters() {
+    final changed = _limitsChanged;
+    _limitsChanged = Completer<void>();
+    changed.complete();
+  }
 
   Duration waitBeforeStart(QueueLimits provider, int tokens) {
     final now = DateTime.now();

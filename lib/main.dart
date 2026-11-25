@@ -82,14 +82,17 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
     // Desktop decodes encoded engines with FFmpeg so they stream by sentence.
     final ffmpeg = ref.read(ffmpegServiceProvider);
     final decoder = kIsWeb ? null : MediaPcmDecoder(ffmpeg);
-    ref.read(ttsQueueServiceProvider).voiceChains = VoiceChainHook(
+    final chains = VoiceChainHook(
       ref.read(databaseProvider),
       decode: decoder == null
           ? null
           : (bytes, format) =>
                 decodeSpeechBytes(decoder, bytes, format.extension),
       decodeAvailable: ffmpeg.isAvailable,
-    ).wrap;
+    );
+    ref.read(ttsQueueServiceProvider)
+      ..voiceChains = chains.wrap
+      ..hasVoiceChain = chains.applies;
     // Queue lanes follow the per-capability limits as they are edited.
     _capabilityLimits = ref
         .read(databaseProvider)

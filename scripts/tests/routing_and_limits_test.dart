@@ -163,7 +163,12 @@ void main() {
             VoiceChainRunner(CapabilityRouter(const [])),
             beforeRequest: beforeRequest,
           );
-      addTearDown(() => queue.voiceChains = null);
+      queue.hasVoiceChain = (_) async => true;
+      addTearDown(
+        () => queue
+          ..voiceChains = null
+          ..hasVoiceChain = null,
+      );
       // One request a minute: counting the lease too would make the chain's
       // only request wait for the next minute.
       final provider = _row(
@@ -185,6 +190,78 @@ void main() {
       expect(result.audioBytes, isNotEmpty);
     },
   );
+
+  test('a chain decision is asked only once the task is accepted', () async {
+    var asked = false;
+    await expectLater(
+      TtsQueueService.instance.enqueue(
+        provider: _row('asked', AdapterType.openaiTts),
+        cancelToken: TtsCancelToken()..cancel(),
+        selfAccounting: () async {
+          asked = true;
+          throw StateError('database closed');
+        },
+        task: () async {},
+      ),
+      throwsA(isA<TtsCancelledException>()),
+    );
+    expect(asked, isFalse);
+  });
+
+  test('a chain without room yet lets interactive work through', () async {
+    final queue = TtsQueueService.instance;
+    final provider = _row(
+      'tpm-ten',
+      AdapterType.openaiTts,
+    ).copyWith(tokensPerMinute: const Value(10));
+    await queue.enqueue(
+      provider: provider,
+      estimatedTokens: 8,
+      task: () async {},
+    );
+    final order = <String>[];
+    final background = queue.enqueue(
+      provider: provider,
+      estimatedTokens: 5,
+      selfAccounting: () async => true,
+      task: () async => order.add('chain'),
+    );
+    await pumpEventQueue();
+    await queue.enqueue(
+      provider: provider,
+      interactive: true,
+      task: () async => order.add('preview'),
+    );
+    expect(order, ['preview']);
+    background.ignore();
+  });
+
+  test('raising a limit wakes a request waiting inside a task', () async {
+    final queue = TtsQueueService.instance;
+    addTearDown(() => queue.setCapabilityLimits(const []));
+    final provider = _row(
+      'rpm-raise',
+      AdapterType.openaiTts,
+    ).copyWith(requestsPerMinute: const Value(1));
+    final sent = queue.enqueue(
+      provider: provider,
+      task: () => queue.accountContinuation(
+        provider,
+        const TtsRequest(text: 'next', voice: 'v'),
+        TtsCancelToken(),
+      ),
+    );
+    await pumpEventQueue();
+    queue.setCapabilityLimits([
+      const db.ConnectionCapability(
+        connectionId: 'rpm-raise',
+        capability: 'tts',
+        enabled: true,
+        requestsPerMinute: 5,
+      ),
+    ]);
+    await sent.timeout(const Duration(seconds: 5));
+  });
 
   test('the whole-line fallback is accounted too', () async {
     final tts = _Tts();

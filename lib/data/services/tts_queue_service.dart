@@ -93,6 +93,10 @@ class TtsQueueService {
   })?
   voiceChains;
 
+  /// Whether [voiceChains] will wrap this request (its character has an
+  /// active chain); a cheap read used when the queue admits a task.
+  Future<bool> Function(TtsRequest request)? hasVoiceChain;
+
   static const Duration _minuteWindow = Duration(minutes: 1);
 
   final Map<String, _ProviderQueueState> _states = {};
@@ -102,6 +106,10 @@ class TtsQueueService {
   /// use the connection's own limits.
   void setCapabilityLimits(Iterable<db.ConnectionCapability> rows) {
     _laneRows = {for (final r in rows) _laneOf(r): r};
+    // Requests waiting inside running tasks re-check the new limits too.
+    for (final state in _states.values) {
+      state.wakeWaiters();
+    }
     _states.keys.toList().forEach(_drain);
   }
 
@@ -171,7 +179,7 @@ class TtsQueueService {
     TtsCancelToken? cancelToken,
     bool interactive = false,
     AiCapability capability = AiCapability.tts,
-    FutureOr<bool> accountsUsage = true,
+    Future<bool> Function()? selfAccounting,
   }) {
     if (cancelToken?.isCancelled ?? false) {
       return Future<T>.error(const TtsCancelledException());
@@ -194,15 +202,16 @@ class TtsQueueService {
       source: source,
       label: label,
       estimatedTokens: math.max(1, estimatedTokens),
-      accountsUsage: accountsUsage is bool ? accountsUsage : null,
+      accountsUsage: selfAccounting == null ? true : null,
       run: task,
     );
-    // Decided shortly (whether a chain applies): the task keeps its place
-    // and the lane waits for the answer; an error accounts as usual.
-    if (accountsUsage is Future<bool>) {
-      accountsUsage
+    // Asked only now that the task is accepted (whether its chain counts
+    // its requests): the task keeps its place and the lane waits for the
+    // answer; an error accounts as usual.
+    if (selfAccounting != null) {
+      Future.sync(selfAccounting)
           .then(
-            (v) => queuedTask.accountsUsage = v,
+            (chained) => queuedTask.accountsUsage = !chained,
             onError: (_) => queuedTask.accountsUsage = true,
           )
           .whenComplete(() => _drain(lane));
@@ -253,7 +262,11 @@ class TtsQueueService {
         final delay = Completer<void>();
         final timer = Timer(wait, delay.complete);
         try {
-          await Future.any([delay.future, cancelled.future]);
+          await Future.any([
+            delay.future,
+            cancelled.future,
+            state.limitsChanged,
+          ]);
         } finally {
           timer.cancel();
         }
@@ -298,13 +311,12 @@ class TtsQueueService {
       final limits = _limits(next.provider, next.capability);
       if (state.activeTasks.length >= limits.maxConcurrency) return;
 
-      // A task that accounts its own requests as it sends them (a chain)
-      // only takes a concurrency slot here.
       final accounts = next.accountsUsage;
       if (accounts == null) return; // drained again once decided
-      final wait = accounts
-          ? state.waitBeforeStart(limits, next.estimatedTokens)
-          : Duration.zero;
+      // A task that counts its own requests (a chain) is not recorded here,
+      // but still waits for room for its first one, so it never holds a
+      // slot waiting while interactive work could run.
+      final wait = state.waitBeforeStart(limits, next.estimatedTokens);
       if (wait > Duration.zero) {
         state.timer = Timer(wait, () => _drain(providerId));
         return;

@@ -323,6 +323,7 @@ class ChainedTtsAdapter extends TtsAdapter {
     final prepared = await _prepared(request, cancellation);
     cancellation.throwIfCancelled();
     await beforeRequest?.call(prepared, cancellation);
+    cancellation.throwIfCancelled(); // cancelled while waiting: send nothing
     final spoken = await inner.synthesize(prepared.asWholeFile());
     cancellation.throwIfCancelled();
     final result = await runner.convertAudio(
@@ -386,6 +387,13 @@ class VoiceChainHook {
     db.CharacterSettingSlot.chain,
     jsonEncode(chain.normalized().toJson()),
   );
+
+  /// Whether [wrap] will chain [request]: its character has an active
+  /// chain. Reads only the setting.
+  Future<bool> applies(TtsRequest request) async {
+    final id = request.voiceAssetId;
+    return id != null && (await load(database, id)).isActive;
+  }
 
   Future<TtsAdapter> wrap(
     TtsAdapter adapter,

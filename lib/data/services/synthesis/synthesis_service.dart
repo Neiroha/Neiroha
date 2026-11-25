@@ -37,25 +37,35 @@ class SynthesisService {
 
   static const sessionAudioLimit = 32 * 1024 * 1024;
 
-  /// The character's processing chain around [adapter], when it has one,
-  /// decided before queueing. A chained task takes only a concurrency slot;
-  /// every request the chain sends (each sentence, or the whole line) is
-  /// counted in full right when it goes out, with the text actually sent.
-  /// Waits end with the chain's own cancellation.
-  Future<({TtsAdapter adapter, bool chained})> _transport(
+  /// The character's processing chain around [adapter], read when the
+  /// task starts (current settings and capabilities).
+  ///
+  /// Whether a chain applies is decided once the queue admits the task: a
+  /// chained task's lease takes only a concurrency slot, and every request
+  /// the chain sends (each sentence, or the whole line) is counted in full
+  /// right when it goes out, with the text actually sent. Waits end with
+  /// the chain's own cancellation.
+  Future<TtsAdapter> _chained(
     TtsAdapter adapter,
     TtsRequest request,
     db.TtsProvider provider,
+    TtsCancelToken cancellation,
+    _ChainDecision decision,
   ) async {
-    final wrapped = await queue.voiceChains?.call(
-      adapter,
-      request,
-      beforeRequest: (next, token) =>
-          queue.accountContinuation(provider, next, token),
-    );
-    return wrapped == null || identical(wrapped, adapter)
-        ? (adapter: adapter, chained: false)
-        : (adapter: wrapped, chained: true);
+    final wrapped =
+        await queue.voiceChains?.call(
+          adapter,
+          request,
+          beforeRequest: (next, token) =>
+              queue.accountContinuation(provider, next, token),
+        ) ??
+        adapter;
+    // The chain was switched off after queueing: its one request still
+    // counts. (One switched on counts every request itself.)
+    if (identical(wrapped, adapter) && !await decision.leaseCounted) {
+      await queue.accountContinuation(provider, request, cancellation);
+    }
+    return wrapped;
   }
 
   Future<TtsResult> collectInMemory({
@@ -66,11 +76,7 @@ class SynthesisService {
     TtsAdapter? adapter,
     StreamingAudioSink? sink,
   }) {
-    final routed = _transport(
-      adapter ?? synthesisAdapter(provider, modelName, null),
-      request,
-      provider,
-    );
+    final decision = _ChainDecision(queue, request);
     return queue.enqueue(
       provider: provider,
       source: 'Quick TTS',
@@ -78,9 +84,15 @@ class SynthesisService {
       estimatedTokens: queue.estimateTokens(request),
       cancelToken: cancellation,
       interactive: true,
-      accountsUsage: routed.then((t) => !t.chained),
+      selfAccounting: decision.decide,
       task: () async {
-        final transport = (await routed).adapter;
+        final transport = await _chained(
+          adapter ?? synthesisAdapter(provider, modelName, null),
+          request,
+          provider,
+          cancellation,
+          decision,
+        );
         final buffer = BytesBuilder(copy: false);
         try {
           final audio = await _readAudio(
@@ -164,11 +176,7 @@ class SynthesisService {
     TaskProfile? profile,
     void Function()? onFirstAudio,
   }) {
-    final routed = _transport(
-      adapter ?? synthesisAdapter(provider, modelName, profile),
-      request,
-      provider,
-    );
+    final decision = _ChainDecision(queue, request);
     return queue.enqueue(
       provider: provider,
       source: source,
@@ -176,9 +184,15 @@ class SynthesisService {
       estimatedTokens: queue.estimateTokens(request),
       cancelToken: cancellation,
       interactive: interactive,
-      accountsUsage: routed.then((t) => !t.chained),
+      selfAccounting: decision.decide,
       task: () async {
-        final transport = (await routed).adapter;
+        final transport = await _chained(
+          adapter ?? synthesisAdapter(provider, modelName, profile),
+          request,
+          provider,
+          cancellation,
+          decision,
+        );
         final receipt = await _consume(
           transport,
           request,
@@ -319,5 +333,26 @@ class SynthesisService {
       firstAudio: firstAudio,
       completion: completed,
     );
+  }
+}
+
+/// Whether a task's requests are counted by its processing chain, asked by
+/// the queue only after it accepts the task.
+class _ChainDecision {
+  _ChainDecision(this.queue, this.request);
+  final TtsQueueService queue;
+  final TtsRequest request;
+  Future<bool>? _chained;
+
+  Future<bool> decide() =>
+      _chained = queue.hasVoiceChain?.call(request) ?? Future.value(false);
+
+  /// True when the lease counted the task's request (no chain, or unknown).
+  Future<bool> get leaseCounted async {
+    try {
+      return !await (_chained ?? Future.value(false));
+    } catch (_) {
+      return true;
+    }
   }
 }

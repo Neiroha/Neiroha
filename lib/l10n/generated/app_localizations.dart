@@ -5756,23 +5756,11 @@ abstract class AppLocalizations {
   /// **'Speaking'**
   String get liveStateSpeaking;
 
-  /// No description provided for @liveVcActive.
-  ///
-  /// In en, this message translates to:
-  /// **'Replies are converted to the character timbre'**
-  String get liveVcActive;
-
   /// No description provided for @liveSettings.
   ///
   /// In en, this message translates to:
   /// **'Character live settings'**
   String get liveSettings;
-
-  /// No description provided for @liveSettingsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Chat settings · {name}'**
-  String liveSettingsTitle(String name);
 
   /// No description provided for @livePersona.
   ///
@@ -5809,42 +5797,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Keeps the microphone open while the character speaks. Without headphones it would hear itself.'**
   String get liveAllowInterruptHint;
-
-  /// No description provided for @liveVcTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Voice conversion'**
-  String get liveVcTitle;
-
-  /// No description provided for @liveVcHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Convert each reply to the character timbre with a voice-conversion model: emotion from the dialog model, timbre from the character, no training. Adds latency.'**
-  String get liveVcHint;
-
-  /// No description provided for @liveVcProvider.
-  ///
-  /// In en, this message translates to:
-  /// **'Conversion provider'**
-  String get liveVcProvider;
-
-  /// No description provided for @liveVcOff.
-  ///
-  /// In en, this message translates to:
-  /// **'Off'**
-  String get liveVcOff;
-
-  /// No description provided for @liveVcVoice.
-  ///
-  /// In en, this message translates to:
-  /// **'Target voice ID'**
-  String get liveVcVoice;
-
-  /// No description provided for @liveVcVoiceHint.
-  ///
-  /// In en, this message translates to:
-  /// **'The provider voice to convert into, e.g. an ElevenLabs voice ID'**
-  String get liveVcVoiceHint;
 
   /// No description provided for @subtitlePickMedia.
   ///
@@ -7759,6 +7711,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{emotion, select, happy{happy} sad{sad} angry{angry} surprised{surprised} shy{shy} serious{serious} playful{playful} other{calm}}'**
   String chatEmotion(String emotion);
+
+  /// No description provided for @chatReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play again'**
+  String get chatReplay;
+
+  /// No description provided for @chatStopReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get chatStopReplay;
+
+  /// No description provided for @chatPanelPersona.
+  ///
+  /// In en, this message translates to:
+  /// **'Persona'**
+  String get chatPanelPersona;
+
+  /// No description provided for @chatPersonaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Who the character is: personality, way of speaking, relationship with you. Empty uses the default below.'**
+  String get chatPersonaHint;
+
+  /// No description provided for @chatPersonaDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default persona'**
+  String get chatPersonaDefault;
+
+  /// No description provided for @chatPanelModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get chatPanelModel;
+
+  /// No description provided for @chatPanelVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get chatPanelVoice;
+
+  /// No description provided for @chatModelFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Capabilities'**
+  String get chatModelFeatures;
+
+  /// No description provided for @chatFeatureTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools'**
+  String get chatFeatureTools;
+
+  /// No description provided for @chatFeatureStructured.
+  ///
+  /// In en, this message translates to:
+  /// **'Structured reply'**
+  String get chatFeatureStructured;
+
+  /// No description provided for @chatFeatureTranscribe.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribes you'**
+  String get chatFeatureTranscribe;
+
+  /// No description provided for @chatFeatureVad.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn detection'**
+  String get chatFeatureVad;
+
+  /// No description provided for @chatFeatureUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Capabilities unknown; tools are tried and dropped if refused'**
+  String get chatFeatureUnknown;
+
+  /// No description provided for @chatToolsUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This model has no tools; the character just talks.'**
+  String get chatToolsUnsupported;
+
+  /// No description provided for @chatVoiceChain.
+  ///
+  /// In en, this message translates to:
+  /// **'Chain: {steps}'**
+  String chatVoiceChain(String steps);
+
+  /// No description provided for @chatVoiceNoChain.
+  ///
+  /// In en, this message translates to:
+  /// **'No processing chain'**
+  String get chatVoiceNoChain;
+
+  /// No description provided for @chatVoiceChainHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation, rewriting and voice conversion are set in the character\'\'s processing chain in the Voice Bank.'**
+  String get chatVoiceChainHint;
+
+  /// No description provided for @chatVoiceRealtimeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A call speaks with the Realtime voice; the chain\'\'s voice conversion is applied to it.'**
+  String get chatVoiceRealtimeHint;
+
+  /// No description provided for @chatAppliesNextCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes apply the next time you start a call.'**
+  String get chatAppliesNextCall;
+
+  /// No description provided for @chatChainConverts.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice conversion from the processing chain'**
+  String get chatChainConverts;
 }
 
 class _AppLocalizationsDelegate

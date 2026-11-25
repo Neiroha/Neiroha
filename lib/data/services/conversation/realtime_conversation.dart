@@ -67,28 +67,30 @@ class RealtimeConversation implements ConversationEngine {
 
   void _state(ConversationState s) => _emit(ConversationStateChanged(s));
 
+  /// The catalog says the model calls functions, or says nothing about it
+  /// (a model added by hand): then the tools are tried.
+  bool get _modelCallsTools {
+    final features = model.descriptor.features;
+    return features.isEmpty || features.contains(AiFeature.toolCalls);
+  }
+
+  bool _toolsOffered = false;
+
+  /// The session has answered, so it accepted its setup.
+  bool _answered = false;
+
+  /// Whether the character's tools are on for this call.
+  bool get toolsActive => _toolsOffered;
+
   @override
   Future<void> start() async {
     _state(ConversationState.connecting);
-    final session = await model.connect(
-      RealtimeConfig(
-        instructions: instructions,
-        voice: voice,
-        serverVad: true,
-        transcribeInput: true,
-        tools: [for (final t in tools) t.spec],
-      ),
-    );
-    _session = session;
-    // Handle events strictly in order: audio must not overtake begin().
-    _sessionSub = session.events.listen(
-      (e) => _queue = _queue.then((_) => _onEvent(e)).catchError(_fail),
-      onError: _fail,
-    );
+    await _connect(withTools: tools.isNotEmpty && _modelCallsTools);
     try {
       final mic = await io.startMicrophone();
       _micSub = mic.listen((pcm) {
-        if (_replying && !allowInterruptions) return;
+        final session = _session;
+        if (session == null || (_replying && !allowInterruptions)) return;
         session.sendPcm(
           resamplePcm16(pcm, io.microphoneRate, session.inputSampleRate),
         );
@@ -100,7 +102,60 @@ class RealtimeConversation implements ConversationEngine {
     _state(ConversationState.listening);
   }
 
+  Future<void> _connect({required bool withTools}) async {
+    _toolsOffered = withTools;
+    final RealtimeSession session;
+    try {
+      session = await model.connect(
+        RealtimeConfig(
+          instructions: instructions,
+          voice: voice,
+          serverVad: true,
+          transcribeInput: true,
+          tools: withTools ? [for (final t in tools) t.spec] : const [],
+        ),
+      );
+    } catch (_) {
+      // A setup with tools refused outright: connect without them.
+      if (!withTools) rethrow;
+      return _connect(withTools: false);
+    }
+    _session = session;
+    // Handle events strictly in order: audio must not overtake begin().
+    _sessionSub = session.events.listen(
+      (e) => _queue = _queue.then((_) => _onEvent(e)).catchError(_fail),
+      onError: (Object e) => _queue = _queue.then((_) => _onSessionError(e)),
+    );
+  }
+
+  /// A server that rejects the tools fails before its first answer; the
+  /// call then goes on without them.
+  Future<void> _onSessionError(Object error) async {
+    final old = _session;
+    if (!_toolsOffered || _answered || old == null) return _fail(error);
+    _session = null;
+    await _sessionSub?.cancel();
+    await old.close().catchError((_) {});
+    try {
+      await _connect(withTools: false);
+    } catch (e) {
+      _fail(e);
+    }
+  }
+
+  void _emitRecording() {
+    final heard = _player.takeRecording();
+    if (heard != null) _emit(ReplyAudio(heard.format, heard.bytes));
+  }
+
   Future<void> _onEvent(AiSessionEvent event) async {
+    if (event
+        case AudioDelta() ||
+            TranscriptDelta() ||
+            ResponseDone() ||
+            FunctionCallRequested()) {
+      _answered = true;
+    }
     switch (event) {
       case SpeechStarted():
         if (_replying) await _interrupt();
@@ -149,6 +204,7 @@ class RealtimeConversation implements ConversationEngine {
             })
             .whenComplete(() {
               _replying = false;
+              _emitRecording();
               _state(ConversationState.listening);
             });
       default:
@@ -160,7 +216,7 @@ class RealtimeConversation implements ConversationEngine {
     // Tell the model where the user cut in, so it does not assume they
     // heard the rest of the reply.
     final item = _replyItem, started = _replyStarted;
-    if (_session case final ToolCallingRealtimeSession s?
+    if (_session case final TruncatableRealtimeSession s?
         when item != null && started != null) {
       final played = DateTime.now().difference(started).inMilliseconds;
       s.truncate(item, played.clamp(0, _replyReceivedMs));
@@ -169,6 +225,7 @@ class RealtimeConversation implements ConversationEngine {
     _replyStarted = null;
     await _player.stop();
     _replying = false;
+    _emitRecording();
   }
 
   void _fail(Object error) => _emit(ConversationFailed(error));

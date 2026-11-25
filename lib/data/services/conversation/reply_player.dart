@@ -43,7 +43,43 @@ class ReplyPlayer {
   Object? _failure;
   StackTrace? _failureTrace;
 
+  // What reached the speakers, kept so the reply can be saved.
+  final _heard = BytesBuilder(copy: false);
+  TtsAudioFormat? _heardFormat;
+
   bool get active => _format != null;
+
+  /// The audio played since the last call (null when nothing played), as it
+  /// reached the speakers: after VC, cut short by a barge-in.
+  ({TtsAudioFormat format, Uint8List bytes})? takeRecording() {
+    final format = _heardFormat;
+    final bytes = _heard.takeBytes();
+    _heardFormat = null;
+    return format == null || bytes.isEmpty
+        ? null
+        : (format: format, bytes: bytes);
+  }
+
+  Future<void> _open(TtsAudioFormat format) async {
+    // A new format starts a new recording; the same one appends sentences.
+    if (_heardFormat != null && !_sameFormat(_heardFormat!, format)) {
+      _heard.clear();
+    }
+    _heardFormat = format;
+    _sink = io.newSink();
+    await _sink!.open(format);
+  }
+
+  static bool _sameFormat(TtsAudioFormat a, TtsAudioFormat b) =>
+      a.encoding == b.encoding &&
+      a.sampleRate == b.sampleRate &&
+      a.channels == b.channels;
+
+  Future<void> _write(Uint8List bytes) async {
+    if (_sink == null) return;
+    _heard.add(bytes);
+    await _sink!.add(bytes);
+  }
 
   /// True when [end] still has to convert the whole collected reply.
   bool get convertsWholeReply => conversion != null && _segmenter == null;
@@ -54,8 +90,7 @@ class ReplyPlayer {
     _format = format;
     final vc = conversion;
     if (vc == null) {
-      _sink = io.newSink();
-      await _sink!.open(format);
+      await _open(format);
     } else if (format.encoding == AudioEncoding.pcmS16le &&
         format.sampleRate != null &&
         canConvertPerSentence([vc], decode)) {
@@ -103,10 +138,9 @@ class ReplyPlayer {
   Future<void> _play(TtsEvent event) async {
     switch (event) {
       case TtsAudioStarted(:final format):
-        _sink = io.newSink();
-        await _sink!.open(format);
+        await _open(format);
       case TtsAudioChunk(:final bytes):
-        await _sink?.add(bytes);
+        await _write(bytes);
       case TtsSynthesisCompleted():
         break;
     }
@@ -120,7 +154,7 @@ class ReplyPlayer {
     } else if (conversion != null) {
       _collected.add(bytes);
     } else {
-      await _sink?.add(bytes);
+      await _write(bytes);
     }
   }
 

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:neiroha/data/ai/registry/capability_router.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/conversation/character_live_settings.dart';
 import 'package:neiroha/data/services/conversation/character_tools.dart';
@@ -13,26 +14,29 @@ import 'package:neiroha/data/services/conversation/platform_conversation_audio.d
 import 'package:neiroha/data/services/synthesis/voice_chain_runner.dart';
 import 'package:neiroha/data/services/transcription/media_pcm_decoder.dart';
 import 'package:neiroha/domain/llm/llm_contract.dart';
+import 'package:neiroha/domain/synthesis/voice_chain.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/presentation/widgets/quick_tts/generate_bar.dart';
-import 'package:neiroha/presentation/widgets/voice_character/components.dart';
 import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/chat_providers.dart';
+import 'package:neiroha/providers/playback_provider.dart';
 
 import 'chat_bubbles.dart';
 import 'chat_memory_dialog.dart';
-import 'chat_session_list.dart' show chatHeaderHeight;
-import 'chat_settings_dialog.dart';
-import 'new_chat_dialog.dart';
+import 'chat_header.dart';
+import 'chat_recorder.dart';
+import 'chat_settings_panel.dart';
 
 /// One chat with a character. Every line is saved as it happens, so a chat
 /// can be left and picked up again: the model gets the recent history and
 /// what the character remembered.
 ///
 /// AI companion: typing sends a turn; the microphone button opens spoken
-/// turns. Live call: the call button connects the Realtime model.
+/// turns. Live call: the call button connects the Realtime model. Replies
+/// keep their audio and can be played again. The settings panel sits at the
+/// right on a wide window, in a dialog otherwise.
 class ChatView extends ConsumerStatefulWidget {
   const ChatView({
     super.key,
@@ -62,7 +66,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
   bool _starting = false;
   String _pending = '';
   String? _error;
-  Future<void> _writes = Future.value();
+  late final ChatRecorder _recorder;
+  VoiceChain _chain = VoiceChain.empty;
+  bool _panelOpen = true;
+
+  /// Settings changed while a call or the microphone runs.
+  bool _changedWhileLive = false;
 
   ChatEngine get _kind => ChatEngine.fromName(widget.session.engine);
   db.AppDatabase get _db => ref.read(databaseProvider);
@@ -74,6 +83,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       unawaited(_db.saveChatMemory(widget.session.id, facts));
       if (mounted) setState(() {});
     });
+    _recorder = ChatRecorder(_db, widget.session.id);
     _input.addListener(() => setState(() {}));
     unawaited(_loadSettings());
   }
@@ -89,7 +99,29 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   Future<void> _loadSettings() async {
     final s = await CharacterLiveSettings.load(_db, widget.character.id);
-    if (mounted) setState(() => _settings = s);
+    final chain = await VoiceChainHook.load(_db, widget.character.id);
+    if (mounted) {
+      setState(() {
+        _settings = s;
+        _chain = chain;
+      });
+    }
+  }
+
+  bool get _live =>
+      _engine != null && (_kind == ChatEngine.realtime || _engineListens);
+
+  Future<void> _applySettings(CharacterLiveSettings updated) async {
+    if (!mounted) return;
+    setState(() => _settings = updated);
+    await updated.save(_db, widget.character.id);
+    if (!mounted) return;
+    // A typed chat restarts on its next turn; a live one keeps going.
+    if (_live) {
+      setState(() => _changedWhileLive = true);
+    } else {
+      await _stopEngine();
+    }
   }
 
   @override
@@ -147,13 +179,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
             .firstOrNull,
         settings: _settings,
         io: _io ??= PlatformConversationAudio(),
-        chain: await VoiceChainHook.load(_db, widget.character.id),
+        chain: _chain = await VoiceChainHook.load(_db, widget.character.id),
         memory: _memory,
         history: await _history(),
         listen: listen,
       );
       _engine = engine;
       _engineListens = listen;
+      _changedWhileLive = false;
       _sub = engine.events.listen(_onEvent);
       await engine.start();
       return engine;
@@ -177,20 +210,6 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (mounted) setState(() => _state = ConversationState.idle);
   }
 
-  void _save(String role, String content, [Map<String, Object?>? meta]) {
-    if (content.trim().isEmpty) return;
-    _writes = _writes.then(
-      (_) => _db
-          .addChatMessage(
-            widget.session.id,
-            role: role,
-            content: content.trim(),
-            meta: meta,
-          )
-          .catchError((_) {}),
-    );
-  }
-
   void _onEvent(ConversationEvent event) {
     if (!mounted) return;
     setState(() {
@@ -198,23 +217,32 @@ class _ChatViewState extends ConsumerState<ChatView> {
         case ConversationStateChanged(:final state):
           _state = state;
         case UserTurn(:final text):
-          _save('user', text);
+          _recorder.user(text);
         case CharacterTurn(:final text, done: false):
           _pending += text;
         case CharacterTurn(:final text, :final emotion, :final style):
           final said = text.trim().isEmpty ? _pending : text;
           _pending = '';
-          _save('character', said, {
-            'emotion': ?emotion,
-            if (style != null && style.trim().isNotEmpty) 'style': style,
-          });
+          _recorder.reply(said, emotion: emotion, style: style);
         case ToolUsed(:final name, :final arguments, :final result):
-          _save('tool', result, {'name': name, 'arguments': arguments});
+          _recorder.tool(name, arguments, result);
+        case ReplyAudio(:final format, :final bytes):
+          _recorder.audio(format, bytes);
         case ConversationFailed(:final error):
           _error = '$error';
       }
     });
     _scrollToEnd();
+  }
+
+  Future<void> _replay(String path, String text) async {
+    final playback = ref.read(playbackNotifierProvider);
+    final player = ref.read(playbackNotifierProvider.notifier);
+    if (playback.audioPath == path && playback.isPlaying) {
+      await player.stop();
+    } else {
+      await player.load(path, text, subtitle: widget.character.name);
+    }
   }
 
   void _scrollToEnd() => WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -251,105 +279,186 @@ class _ChatViewState extends ConsumerState<ChatView> {
   Future<void> _toggleCall() async =>
       _engine == null ? _ensureEngine(listen: true) : _stopEngine();
 
-  Future<void> _editSettings() async {
-    final router = ref.read(aiCapabilityRouterProvider).value;
-    if (router == null) return;
-    final updated = await showChatSettingsDialog(
-      context: context,
-      character: widget.character,
-      settings: _settings,
+  ChatSettingsPanel _panel(
+    CapabilityRouter router, {
+    VoidCallback? onClose,
+    CharacterLiveSettings? settings,
+    ValueChanged<CharacterLiveSettings>? onChanged,
+  }) {
+    final c = widget.character;
+    final providers =
+        ref.read(ttsProvidersStreamProvider).value ?? const <db.TtsProvider>[];
+    final provider = providers.where((p) => p.id == c.providerId).firstOrNull;
+    return ChatSettingsPanel(
+      key: ValueKey(('panel', c.id)),
+      character: c,
+      settings: settings ?? _settings,
       router: router,
       engine: _kind,
+      chain: _chain,
+      voiceLabel: [
+        ?provider?.name,
+        ?c.modelName,
+        ?c.presetVoiceName,
+      ].where((s) => s.trim().isNotEmpty).join(' · '),
+      defaultPersona: defaultPersona(
+        name: c.name,
+        description: c.description,
+        voiceInstruction: c.voiceInstruction,
+      ),
+      appliesLater: _changedWhileLive && _live,
+      onChanged: onChanged ?? _applySettings,
+      onClose: onClose,
     );
-    if (updated == null || !mounted) return;
-    await updated.save(_db, widget.character.id);
-    await _stopEngine();
-    setState(() => _settings = updated);
+  }
+
+  /// A narrow window shows the panel in a dialog.
+  Future<void> _settingsDialog(CapabilityRouter router) {
+    final current = ValueNotifier(_settings);
+    return showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        clipBehavior: Clip.antiAlias,
+        child: SizedBox(
+          width: 440,
+          height: 640,
+          child: ValueListenableBuilder(
+            valueListenable: current,
+            builder: (_, settings, _) => _panel(
+              router,
+              settings: settings,
+              onChanged: (s) {
+                current.value = s;
+                unawaited(_applySettings(s));
+              },
+              onClose: () => Navigator.pop(ctx),
+            ),
+          ),
+        ),
+      ),
+    ).whenComplete(current.dispose);
   }
 
   Future<void> _showMemory() => showChatMemoryDialog(context, _memory);
 
-  String _stateLabel(AppLocalizations l) => switch (_state) {
-    ConversationState.idle => l.liveStateIdle,
-    ConversationState.connecting => l.liveStateConnecting,
-    ConversationState.listening => l.liveStateListening,
-    ConversationState.thinking => l.liveStateThinking,
-    ConversationState.speaking => l.liveStateSpeaking,
-  };
-
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    ref.watch(aiCapabilityRouterProvider);
+    final router = ref.watch(aiCapabilityRouterProvider).value;
     final messages =
         ref.watch(chatMessagesStreamProvider(widget.session.id)).value ??
         const <db.ChatMessage>[];
+    final playback = ref.watch(playbackNotifierProvider);
+    final playing = playback.isPlaying ? playback.audioPath : null;
     final name = widget.character.name;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _header(l),
-        const Divider(height: 1),
-        if (_error != null)
-          Material(
-            color: Colors.redAccent.withValues(alpha: 0.12),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: SelectableText(
-                      _error!,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 16),
-                    onPressed: () => setState(() => _error = null),
-                  ),
-                ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 880;
+        final chat = Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ChatHeader(
+              session: widget.session,
+              character: widget.character,
+              engine: _kind,
+              state: _state,
+              running: _engine != null,
+              starting: _starting,
+              converts: _chain.audioSteps.any(
+                (s) => s.kind == VoiceChainStepKind.convert,
               ),
+              memoryCount: _memory.facts.length,
+              settingsOpen: wide && _panelOpen,
+              onMemory: _showMemory,
+              onSettings: () {
+                unawaited(_loadSettings());
+                if (wide) {
+                  setState(() => _panelOpen = !_panelOpen);
+                } else if (router != null) {
+                  unawaited(_settingsDialog(router));
+                }
+              },
+              onCall: () => unawaited(_toggleCall()),
+              onBack: widget.onBack,
             ),
-          ),
-        Expanded(
-          child: messages.isEmpty && _pending.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Text(
-                      _kind == ChatEngine.realtime
-                          ? l.chatEmptyRealtime(name)
-                          : l.chatEmptyCompanion(name),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.45),
+            const Divider(height: 1),
+            if (_error != null) _errorBar(),
+            Expanded(
+              child: messages.isEmpty && _pending.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Text(
+                          _kind == ChatEngine.realtime
+                              ? l.chatEmptyRealtime(name)
+                              : l.chatEmptyCompanion(name),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.45),
+                          ),
+                        ),
                       ),
+                    )
+                  : ListView.builder(
+                      controller: _scroll,
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                      itemCount: messages.length + (_pending.isEmpty ? 0 : 1),
+                      itemBuilder: (_, i) => i < messages.length
+                          ? ChatBubble.message(
+                              messages[i],
+                              characterName: name,
+                              playingPath: playing,
+                              onPlay: _replay,
+                            )
+                          : ChatBubble.pending(_pending, characterName: name),
                     ),
-                  ),
-                )
-              : ListView.builder(
-                  controller: _scroll,
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                  itemCount: messages.length + (_pending.isEmpty ? 0 : 1),
-                  itemBuilder: (_, i) => i < messages.length
-                      ? ChatBubble.message(messages[i], characterName: name)
-                      : ChatBubble.pending(_pending, characterName: name),
-                ),
-        ),
-        QuickTtsGenerateBar(
-          controller: _input,
-          generating: false,
-          roomy: true,
-          hintText: l.chatComposerHint(name),
-          sendIcon: Icons.arrow_upward_rounded,
-          sendTooltip: l.quickTtsSendHint,
-          onGenerate: _busy ? null : _send,
-          onStop: () {},
-          leading: _kind == ChatEngine.companion ? _micButton(l) : null,
-        ),
-      ],
+            ),
+            QuickTtsGenerateBar(
+              controller: _input,
+              generating: false,
+              roomy: true,
+              hintText: l.chatComposerHint(name),
+              sendIcon: Icons.arrow_upward_rounded,
+              sendTooltip: l.quickTtsSendHint,
+              onGenerate: _busy ? null : _send,
+              onStop: () {},
+              leading: _kind == ChatEngine.companion ? _micButton(l) : null,
+            ),
+          ],
+        );
+        if (!wide || !_panelOpen || router == null) return chat;
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(child: chat),
+            const VerticalDivider(width: 1),
+            SizedBox(width: 340, child: _panel(router)),
+          ],
+        );
+      },
     );
   }
+
+  Widget _errorBar() => Material(
+    color: Colors.redAccent.withValues(alpha: 0.12),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: SelectableText(
+              _error!,
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close_rounded, size: 16),
+            onPressed: () => setState(() => _error = null),
+          ),
+        ],
+      ),
+    ),
+  );
 
   Widget _micButton(AppLocalizations l) {
     final canListen = _factory()?.companionCanListen ?? false;
@@ -361,105 +470,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
           ? l.chatMicStop
           : l.chatMicStart,
       isSelected: on,
-      style: IconButton.styleFrom(minimumSize: const Size(32, 32)),
       color: on ? AppTheme.accentColor : null,
       onPressed: !canListen || _starting ? null : _toggleMic,
       icon: Icon(on ? Icons.mic_rounded : Icons.mic_none_rounded, size: 20),
-    );
-  }
-
-  Widget _header(AppLocalizations l) {
-    final c = widget.character;
-    final running = _engine != null;
-    final muted = Colors.white.withValues(alpha: 0.45);
-    return SizedBox(
-      height: chatHeaderHeight,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
-        child: Row(
-          children: [
-            if (widget.onBack != null)
-              IconButton(
-                icon: const Icon(Icons.arrow_back_rounded),
-                onPressed: widget.onBack,
-              ),
-            const SizedBox(width: 4),
-            VoiceCharacterAvatar(
-              radius: 16,
-              name: c.name,
-              avatarPath: c.avatarPath,
-              selected: running,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.session.title,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    running
-                        ? _stateLabel(l)
-                        : '${c.name} · ${chatEngineLabel(l, _kind)}',
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: running ? AppTheme.accentColor : muted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (_settings.usesVoiceConversion)
-              Tooltip(
-                message: l.liveVcActive,
-                child: Icon(
-                  Icons.auto_fix_high_rounded,
-                  size: 18,
-                  color: muted,
-                ),
-              ),
-            IconButton(
-              tooltip: l.chatMemory,
-              onPressed: _showMemory,
-              icon: Badge.count(
-                count: _memory.facts.length,
-                isLabelVisible: _memory.facts.isNotEmpty,
-                child: const Icon(Icons.psychology_alt_outlined, size: 20),
-              ),
-            ),
-            IconButton(
-              tooltip: l.liveSettings,
-              onPressed: _starting ? null : _editSettings,
-              icon: const Icon(Icons.tune_rounded, size: 20),
-            ),
-            if (_kind == ChatEngine.realtime) ...[
-              const SizedBox(width: 4),
-              running
-                  ? FilledButton.tonalIcon(
-                      style: FilledButton.styleFrom(
-                        foregroundColor: Colors.redAccent,
-                      ),
-                      onPressed: _toggleCall,
-                      icon: const Icon(Icons.call_end_rounded, size: 18),
-                      label: Text(l.chatCallEnd),
-                    )
-                  : FilledButton.icon(
-                      onPressed: _starting ? null : _toggleCall,
-                      icon: const Icon(Icons.call_rounded, size: 18),
-                      label: Text(l.chatCallStart),
-                    ),
-            ],
-          ],
-        ),
-      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:neiroha/domain/synthesis/streaming_audio_sink.dart';
+import 'package:neiroha/domain/synthesis/tts_event.dart';
 
 /// How a character chat runs: an AI companion (an LLM answers, with tools
 /// and a structured reply, and the character's own voice speaks it; the
@@ -38,6 +39,14 @@ class CharacterTurn extends ConversationEvent {
   final bool done;
   final String? emotion;
   final String? style;
+}
+
+/// The audio of the character's last reply, as it was heard; sent after
+/// that reply's [CharacterTurn] with `done`, or just before it.
+class ReplyAudio extends ConversationEvent {
+  const ReplyAudio(this.format, this.bytes);
+  final TtsAudioFormat format;
+  final Uint8List bytes;
 }
 
 /// The character called a tool while answering.

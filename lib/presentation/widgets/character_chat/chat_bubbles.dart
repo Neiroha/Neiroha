@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:neiroha/data/ai/protocols/openai/openai_tool_chat.dart'
@@ -24,6 +25,8 @@ class ChatBubble extends StatelessWidget {
     db.ChatMessage this.message, {
     super.key,
     required this.characterName,
+    this.playingPath,
+    this.onPlay,
   }) : pendingText = null;
 
   /// The character's reply while it is still being written.
@@ -31,11 +34,19 @@ class ChatBubble extends StatelessWidget {
     String this.pendingText, {
     super.key,
     required this.characterName,
-  }) : message = null;
+  }) : message = null,
+       playingPath = null,
+       onPlay = null;
 
   final db.ChatMessage? message;
   final String? pendingText;
   final String characterName;
+
+  /// The audio file playing now, to show this reply's stop button.
+  final String? playingPath;
+
+  /// Plays a reply's saved audio (path, text), or stops it.
+  final void Function(String path, String text)? onPlay;
 
   @override
   Widget build(BuildContext context) {
@@ -96,6 +107,10 @@ class ChatBubble extends StatelessWidget {
   ) {
     final l = AppLocalizations.of(context);
     final emotion = meta['emotion'] as String?;
+    final audio = meta['audio'] as String?;
+    final canPlay =
+        !user && audio != null && onPlay != null && File(audio).existsSync();
+    final playing = canPlay && audio == playingPath;
     final style = '${meta['style'] ?? ''}'.trim();
     final muted = Colors.white.withValues(alpha: 0.45);
     return Align(
@@ -135,6 +150,23 @@ class ChatBubble extends StatelessWidget {
                     Text(
                       l.chatEmotion(emotion),
                       style: TextStyle(fontSize: 11, color: muted),
+                    ),
+                  ],
+                  if (canPlay) ...[
+                    const SizedBox(width: 6),
+                    Tooltip(
+                      message: playing ? l.chatStopReplay : l.chatReplay,
+                      child: InkResponse(
+                        radius: 14,
+                        onTap: () => onPlay!(audio, text),
+                        child: Icon(
+                          playing
+                              ? Icons.stop_circle_rounded
+                              : Icons.play_circle_outline_rounded,
+                          size: 16,
+                          color: playing ? AppTheme.accentColor : muted,
+                        ),
+                      ),
                     ),
                   ],
                 ],

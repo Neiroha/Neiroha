@@ -3191,15 +3191,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get liveStateSpeaking => 'Speaking';
 
   @override
-  String get liveVcActive => 'Replies are converted to the character timbre';
-
-  @override
   String get liveSettings => 'Character live settings';
-
-  @override
-  String liveSettingsTitle(String name) {
-    return 'Chat settings · $name';
-  }
 
   @override
   String get livePersona => 'Persona';
@@ -3220,26 +3212,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get liveAllowInterruptHint =>
       'Keeps the microphone open while the character speaks. Without headphones it would hear itself.';
-
-  @override
-  String get liveVcTitle => 'Voice conversion';
-
-  @override
-  String get liveVcHint =>
-      'Convert each reply to the character timbre with a voice-conversion model: emotion from the dialog model, timbre from the character, no training. Adds latency.';
-
-  @override
-  String get liveVcProvider => 'Conversion provider';
-
-  @override
-  String get liveVcOff => 'Off';
-
-  @override
-  String get liveVcVoice => 'Target voice ID';
-
-  @override
-  String get liveVcVoiceHint =>
-      'The provider voice to convert into, e.g. an ElevenLabs voice ID';
 
   @override
   String get subtitlePickMedia => 'Choose a video or audio file';
@@ -4355,4 +4327,72 @@ class AppLocalizationsEn extends AppLocalizations {
     });
     return '$_temp0';
   }
+
+  @override
+  String get chatReplay => 'Play again';
+
+  @override
+  String get chatStopReplay => 'Stop';
+
+  @override
+  String get chatPanelPersona => 'Persona';
+
+  @override
+  String get chatPersonaHint =>
+      'Who the character is: personality, way of speaking, relationship with you. Empty uses the default below.';
+
+  @override
+  String get chatPersonaDefault => 'Default persona';
+
+  @override
+  String get chatPanelModel => 'Model';
+
+  @override
+  String get chatPanelVoice => 'Voice';
+
+  @override
+  String get chatModelFeatures => 'Capabilities';
+
+  @override
+  String get chatFeatureTools => 'Tools';
+
+  @override
+  String get chatFeatureStructured => 'Structured reply';
+
+  @override
+  String get chatFeatureTranscribe => 'Transcribes you';
+
+  @override
+  String get chatFeatureVad => 'Turn detection';
+
+  @override
+  String get chatFeatureUnknown =>
+      'Capabilities unknown; tools are tried and dropped if refused';
+
+  @override
+  String get chatToolsUnsupported =>
+      'This model has no tools; the character just talks.';
+
+  @override
+  String chatVoiceChain(String steps) {
+    return 'Chain: $steps';
+  }
+
+  @override
+  String get chatVoiceNoChain => 'No processing chain';
+
+  @override
+  String get chatVoiceChainHint =>
+      'Translation, rewriting and voice conversion are set in the character\'s processing chain in the Voice Bank.';
+
+  @override
+  String get chatVoiceRealtimeHint =>
+      'A call speaks with the Realtime voice; the chain\'s voice conversion is applied to it.';
+
+  @override
+  String get chatAppliesNextCall =>
+      'Changes apply the next time you start a call.';
+
+  @override
+  String get chatChainConverts => 'Voice conversion from the processing chain';
 }

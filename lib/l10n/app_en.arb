@@ -1391,28 +1391,13 @@
   "liveStateListening": "Listening",
   "liveStateThinking": "Thinking",
   "liveStateSpeaking": "Speaking",
-  "liveVcActive": "Replies are converted to the character timbre",
   "liveSettings": "Character live settings",
-  "liveSettingsTitle": "Chat settings · {name}",
-  "@liveSettingsTitle": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "livePersona": "Persona",
   "livePersonaHint": "How the character thinks and talks. Empty uses the voice name, description and instruction.",
   "liveRealtimeVoice": "Realtime voice",
   "liveDefault": "Default",
   "liveAllowInterrupt": "Allow interrupting (headphones)",
   "liveAllowInterruptHint": "Keeps the microphone open while the character speaks. Without headphones it would hear itself.",
-  "liveVcTitle": "Voice conversion",
-  "liveVcHint": "Convert each reply to the character timbre with a voice-conversion model: emotion from the dialog model, timbre from the character, no training. Adds latency.",
-  "liveVcProvider": "Conversion provider",
-  "liveVcOff": "Off",
-  "liveVcVoice": "Target voice ID",
-  "liveVcVoiceHint": "The provider voice to convert into, e.g. an ElevenLabs voice ID",
   "subtitlePickMedia": "Choose a video or audio file",
   "subtitleSourceLanguage": "Spoken language",
   "subtitleSourceLanguageHint": "Optional, e.g. ja. Empty = detect",
@@ -2061,5 +2046,32 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatReplay": "Play again",
+  "chatStopReplay": "Stop",
+  "chatPanelPersona": "Persona",
+  "chatPersonaHint": "Who the character is: personality, way of speaking, relationship with you. Empty uses the default below.",
+  "chatPersonaDefault": "Default persona",
+  "chatPanelModel": "Model",
+  "chatPanelVoice": "Voice",
+  "chatModelFeatures": "Capabilities",
+  "chatFeatureTools": "Tools",
+  "chatFeatureStructured": "Structured reply",
+  "chatFeatureTranscribe": "Transcribes you",
+  "chatFeatureVad": "Turn detection",
+  "chatFeatureUnknown": "Capabilities unknown; tools are tried and dropped if refused",
+  "chatToolsUnsupported": "This model has no tools; the character just talks.",
+  "chatVoiceChain": "Chain: {steps}",
+  "@chatVoiceChain": {
+    "placeholders": {
+      "steps": {
+        "type": "String"
+      }
+    }
+  },
+  "chatVoiceNoChain": "No processing chain",
+  "chatVoiceChainHint": "Translation, rewriting and voice conversion are set in the character''s processing chain in the Voice Bank.",
+  "chatVoiceRealtimeHint": "A call speaks with the Realtime voice; the chain''s voice conversion is applied to it.",
+  "chatAppliesNextCall": "Changes apply the next time you start a call.",
+  "chatChainConverts": "Voice conversion from the processing chain"
 }

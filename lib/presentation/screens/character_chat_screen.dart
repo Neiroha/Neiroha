@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/ai/registry/capability_router.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/conversation/conversation_factory.dart';
+import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/widgets/character_chat/chat_session_list.dart';
@@ -106,6 +107,11 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
     if (ok != true) return;
     if (_selectedId == s.id) setState(() => _selectedId = null);
     await _db.deleteChatSession(s.id);
+    // The recorded replies go too.
+    try {
+      final dir = await PathService.instance.chatAudioDir(s.id);
+      await dir.delete(recursive: true);
+    } catch (_) {}
   }
 
   @override

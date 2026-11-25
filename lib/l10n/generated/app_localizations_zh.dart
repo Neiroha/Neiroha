@@ -3082,15 +3082,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get liveStateSpeaking => '说话中';
 
   @override
-  String get liveVcActive => '回复会转换为角色音色';
-
-  @override
   String get liveSettings => '角色对话设置';
-
-  @override
-  String liveSettingsTitle(String name) {
-    return '聊天设置 · $name';
-  }
 
   @override
   String get livePersona => '人设';
@@ -3109,24 +3101,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get liveAllowInterruptHint => '角色说话时也保持麦克风开启；不戴耳机会把自己的声音录进去。';
-
-  @override
-  String get liveVcTitle => '音色转换';
-
-  @override
-  String get liveVcHint => '用音色转换模型把每句回复换成角色音色：情感来自对话模型，音色来自角色，无需训练。会增加延迟。';
-
-  @override
-  String get liveVcProvider => '转换服务商';
-
-  @override
-  String get liveVcOff => '关闭';
-
-  @override
-  String get liveVcVoice => '目标音色 ID';
-
-  @override
-  String get liveVcVoiceHint => '要转换成的服务商音色，例如 ElevenLabs 的 voice ID';
 
   @override
   String get subtitlePickMedia => '选择视频或音频文件';
@@ -4201,4 +4175,66 @@ class AppLocalizationsZh extends AppLocalizations {
     });
     return '$_temp0';
   }
+
+  @override
+  String get chatReplay => '重新播放';
+
+  @override
+  String get chatStopReplay => '停止';
+
+  @override
+  String get chatPanelPersona => '人设';
+
+  @override
+  String get chatPersonaHint => '角色是谁、性格、说话方式、和你的关系。留空则使用下方默认人设。';
+
+  @override
+  String get chatPersonaDefault => '默认人设';
+
+  @override
+  String get chatPanelModel => '模型';
+
+  @override
+  String get chatPanelVoice => '声音';
+
+  @override
+  String get chatModelFeatures => '模型能力';
+
+  @override
+  String get chatFeatureTools => '工具调用';
+
+  @override
+  String get chatFeatureStructured => '结构化回复';
+
+  @override
+  String get chatFeatureTranscribe => '语音转写';
+
+  @override
+  String get chatFeatureVad => '自动断句';
+
+  @override
+  String get chatFeatureUnknown => '能力未知：会先尝试工具调用，被拒绝时自动关闭';
+
+  @override
+  String get chatToolsUnsupported => '该模型不支持工具调用，角色将直接对话。';
+
+  @override
+  String chatVoiceChain(String steps) {
+    return '处理链：$steps';
+  }
+
+  @override
+  String get chatVoiceNoChain => '未设置处理链';
+
+  @override
+  String get chatVoiceChainHint => '翻译、改写、音色转换等在语音库的角色处理链中设置。';
+
+  @override
+  String get chatVoiceRealtimeHint => '通话使用实时模型的音色；处理链里的音色转换会套用到回复上。';
+
+  @override
+  String get chatAppliesNextCall => '修改将在下次开始通话时生效。';
+
+  @override
+  String get chatChainConverts => '回复会经过处理链的音色转换';
 }

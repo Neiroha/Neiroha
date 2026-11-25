@@ -47,6 +47,30 @@ Map<String, Object?> geminiLiveSetup({
             'customVocabulary': transcribe.keywords,
         },
       if (audioOut) 'outputAudioTranscription': <String, Object?>{},
+      if (talk && config.tools.isNotEmpty)
+        'tools': [
+          {
+            'functionDeclarations': [
+              for (final t in config.tools)
+                {
+                  'name': t.name,
+                  'description': t.description,
+                  'parameters': geminiSchema(t.parameters),
+                },
+            ],
+          },
+        ],
     },
   };
 }
+
+/// A JSON Schema as Gemini's OpenAPI subset, which rejects
+/// `additionalProperties`.
+Object? geminiSchema(Object? schema) => switch (schema) {
+  final Map<dynamic, dynamic> m => {
+    for (final e in m.entries)
+      if (e.key != 'additionalProperties') '${e.key}': geminiSchema(e.value),
+  },
+  final List<dynamic> l => [for (final v in l) geminiSchema(v)],
+  _ => schema,
+};

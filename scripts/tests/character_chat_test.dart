@@ -88,7 +88,8 @@ Stream<TtsEvent> _speech(String text, TtsCancelToken _) async* {
   yield const TtsSynthesisCompleted();
 }
 
-class _Session implements ToolCallingRealtimeSession {
+class _Session
+    implements ToolCallingRealtimeSession, TruncatableRealtimeSession {
   final _events = StreamController<AiSessionEvent>();
   RealtimeConfig? config;
   final results = <(String, String)>[];

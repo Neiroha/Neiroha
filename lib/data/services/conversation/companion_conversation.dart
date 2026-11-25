@@ -168,13 +168,16 @@ class CompanionConversation implements ConversationEngine {
   Future<void> _runTurn(Future<String> Function() userText) async {
     _busy = true;
     _turn = TtsCancelToken();
+    _player.takeRecording(); // nothing left over from a stopped turn
     _state(ConversationState.thinking);
     try {
       final said = await userText();
       if (said.isEmpty || _stopped) return;
       _emit(UserTurn(said));
       _history.add(LlmChatMessage(role: 'user', content: said));
-      if (llm case final ToolCallingLanguageModel model when !_plainOnly) {
+      // A model the catalog says has no tools streams plain replies.
+      if (llm case final ToolCallingLanguageModel model
+          when !_plainOnly && model.descriptor.llm?.tools != false) {
         try {
           await _answerWithTools(model);
           return;
@@ -246,6 +249,8 @@ class CompanionConversation implements ConversationEngine {
       if (e is TtsAudioChunk) await _player.add(e.bytes);
     }
     await _player.end();
+    final heard = _player.takeRecording();
+    if (heard != null) _emit(ReplyAudio(heard.format, heard.bytes));
   }
 
   Future<void> _answerWithTools(ToolCallingLanguageModel model) async {

@@ -7,7 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/data/ai/registry/capability_router.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
-import 'package:neiroha/data/services/conversation/character_live_settings.dart';
 import 'package:neiroha/data/services/conversation/conversation_factory.dart';
 import 'package:neiroha/data/services/synthesis/voice_chain_runner.dart';
 import 'package:neiroha/data/services/voice_character_copy.dart';
@@ -291,24 +290,25 @@ void main() {
     expect(events.last, isA<TtsSynthesisCompleted>());
   });
 
-  test('companion speech uses the character chain, not the live VC', () {
+  test('chat voices come from the character chain', () {
+    final runner = _Runner();
     final factory = ConversationFactory(
       CapabilityRouter(const []),
-      runner: _Runner(),
-    );
-    const settings = CharacterLiveSettings(
-      vcConnectionId: 'el',
-      vcVoice: 'live-voice',
+      runner: runner,
     );
     final tts = _Tts();
-    // No chain: plain TTS; the live-settings VC applies (when routable).
+    // No chain: plain TTS and no conversion for a call.
     expect(factory.voiceThroughChain(tts, VoiceChain.empty), same(tts));
-    // A chain that converts replaces the live VC.
+    expect(factory.chainConversion(VoiceChain.empty), isNull);
+    // The companion speaks through the chain; a call borrows its VC.
     const converting = VoiceChain([_translate, _convert]);
-    expect(factory.companionConversion(settings, converting), isNull);
     final wrapped = factory.voiceThroughChain(tts, converting);
     expect(wrapped, isA<ChainedTtsAdapter>());
     expect((wrapped as ChainedTtsAdapter).chain, same(converting));
+    final stage = factory.chainConversion(converting)!;
+    expect(stage.converter, same(runner.vc));
+    expect(stage.targetVoice, 'nagato');
+    expect(factory.chainConversion(const VoiceChain([_translate])), isNull);
   });
 
   test('MCP and API requests name the character unless the chain is off', () {

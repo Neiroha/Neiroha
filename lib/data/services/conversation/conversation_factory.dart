@@ -64,16 +64,22 @@ class ConversationFactory {
             )) ??
       router.resolve<RealtimeModel>(AiCapability.realtime);
 
-  VoiceConversionStage? conversionFor(CharacterLiveSettings settings) {
-    if (!settings.usesVoiceConversion) return null;
-    final routed = router.resolve<VoiceConverter>(
-      AiCapability.vc,
-      connectionId: settings.vcConnectionId,
-      modelId: settings.vcModelId,
-    );
-    return routed == null
-        ? null
-        : VoiceConversionStage(routed.model, settings.vcVoice!.trim());
+  /// The first voice conversion of the character's chain, for a Realtime
+  /// call: the model speaks in its own voice and VC turns it into the
+  /// character's. Null when the chain converts nothing or VC is gone.
+  VoiceConversionStage? chainConversion(VoiceChain chain) {
+    for (final step in chain.audioSteps) {
+      if (step.kind != VoiceChainStepKind.convert || !step.ready) continue;
+      try {
+        return VoiceConversionStage(
+          runner.converter(step),
+          step.targetVoice.trim(),
+        );
+      } on CapabilityUnavailableException {
+        return null;
+      }
+    }
+    return null;
   }
 
   String personaFor(db.VoiceAsset character, CharacterLiveSettings settings) =>
@@ -85,12 +91,6 @@ class ConversationFactory {
           voiceInstruction: character.voiceInstruction,
         );
 
-  /// The live-settings VC, unless the character's chain converts already.
-  VoiceConversionStage? companionConversion(
-    CharacterLiveSettings settings,
-    VoiceChain chain,
-  ) => chain.audioSteps.isEmpty ? conversionFor(settings) : null;
-
   /// The character's TTS wrapped by its chain when the chain has steps.
   TtsAdapter voiceThroughChain(TtsAdapter adapter, VoiceChain chain) =>
       chain.isActive
@@ -98,9 +98,8 @@ class ConversationFactory {
       : adapter;
 
   /// Companion replies go through the character's own processing chain
-  /// ([chain]: translate / rewrite, then its VC). The live-settings VC is
-  /// used only when the chain converts nothing, so speech is never
-  /// converted twice.
+  /// ([chain]: translate / rewrite, then its VC). A Realtime call takes the
+  /// chain's VC for the model's voice.
   ///
   /// [memory] gives the character its tools and what it remembers;
   /// [history] continues a saved chat; [listen] opens the microphone.
@@ -137,7 +136,7 @@ class ConversationFactory {
           voice: model.voices.contains(settings.realtimeVoice)
               ? settings.realtimeVoice
               : null,
-          conversion: conversionFor(settings),
+          conversion: chainConversion(chain),
           decode: decode,
           allowInterruptions: settings.allowInterruptions,
           tools: tools,
@@ -174,7 +173,6 @@ class ConversationFactory {
               (throw CapabilityUnavailableException(AiCapability.llm.name)),
           io: io,
           systemPrompt: persona,
-          conversion: companionConversion(settings, chain),
           decode: decode,
           speak: voice(''),
           speakWith: voice,

@@ -22,7 +22,8 @@ export 'gemini_live_setup.dart';
 /// * translation — a continuous stream without turns: translated speech
 ///   (paced in real time) plus incremental source (`inputTranscription`)
 ///   and target (`outputTranscription`) text.
-class GeminiLiveSession extends JsonSocketSession implements RealtimeSession {
+class GeminiLiveSession extends JsonSocketSession
+    implements ToolCallingRealtimeSession {
   GeminiLiveSession._(super.socket, this.mode, {required this.manualTurns});
 
   static const inputRate = 16000;
@@ -40,6 +41,9 @@ class GeminiLiveSession extends JsonSocketSession implements RealtimeSession {
   String _lastReply = '';
   String _interim = '';
   DateTime _lastEvent = DateTime.now();
+
+  /// Names of the function calls awaiting a result, by call id.
+  final _calls = <String, String>{};
 
   static Future<GeminiLiveSession> connect({
     required Uri uri,
@@ -93,6 +97,18 @@ class GeminiLiveSession extends JsonSocketSession implements RealtimeSession {
   Iterable<AiSessionEvent> decode(Map<String, dynamic> event) sync* {
     final content = _content(event);
     if (mode != GeminiLiveMode.translation) _lastEvent = DateTime.now();
+    final calls = (event['toolCall'] as Map?)?['functionCalls'];
+    if (calls is List) {
+      for (final c in calls.whereType<Map>()) {
+        final id = '${c['id'] ?? c['name']}';
+        _calls[id] = '${c['name']}';
+        yield FunctionCallRequested(
+          callId: id,
+          name: '${c['name']}',
+          arguments: jsonEncode(c['args'] ?? const <String, Object?>{}),
+        );
+      }
+    }
     if (content == null) return;
     if (mode == GeminiLiveMode.transcription) {
       yield* _decodeTranscription(event, content);
@@ -270,4 +286,18 @@ class GeminiLiveSession extends JsonSocketSession implements RealtimeSession {
   /// The service interrupts on user speech; there is no cancel message.
   @override
   void cancelResponse() {}
+
+  /// Gemini goes on with the turn once it has the result.
+  @override
+  void sendToolResult(String callId, String output) => send({
+    'toolResponse': {
+      'functionResponses': [
+        {
+          'id': callId,
+          'name': _calls.remove(callId) ?? callId,
+          'response': {'result': output},
+        },
+      ],
+    },
+  });
 }

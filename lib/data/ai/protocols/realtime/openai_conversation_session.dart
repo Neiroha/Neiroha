@@ -9,7 +9,7 @@ import 'package:neiroha/domain/ai/models/realtime_model.dart';
 
 /// `wss://…/realtime?model=…`: voice conversation with manual turns.
 class OpenAiConversationSession extends JsonSocketSession
-    implements ToolCallingRealtimeSession {
+    implements ToolCallingRealtimeSession, TruncatableRealtimeSession {
   OpenAiConversationSession._(super.socket);
 
   static Future<OpenAiConversationSession> connect({

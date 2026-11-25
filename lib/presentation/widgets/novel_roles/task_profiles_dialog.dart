@@ -145,7 +145,7 @@ class _TaskProfilesDialogState extends ConsumerState<TaskProfilesDialog> {
                 decoration: InputDecoration(
                   labelText: l.roleAnalysisModel,
                   suffixIcon: IconButton(
-                    icon: const Icon(Icons.manage_search),
+                    icon: const Icon(Icons.manage_search_rounded),
                     onPressed: _busy || selected == null
                         ? null
                         : () async {

@@ -104,7 +104,7 @@ class _NovelRoleAnalysisControlsState
         ref.read(roleReviewServiceProvider).isRunning(widget.projectId);
     return ExpansionTile(
       tilePadding: EdgeInsets.zero,
-      leading: const Icon(Icons.psychology_alt_outlined),
+      leading: const Icon(Icons.psychology_alt_rounded),
       title: Text(l.roleAnalysisPanelTitle),
       subtitle: checkpoint == null
           ? null
@@ -216,7 +216,7 @@ class _NovelRoleAnalysisControlsState
           title: Text(l.phaseRoleConnectionSettings),
           children: [
             TextButton.icon(
-              icon: const Icon(Icons.settings_suggest),
+              icon: const Icon(Icons.settings_suggest_rounded),
               label: Text(l.taskProfiles),
               onPressed: running
                   ? null

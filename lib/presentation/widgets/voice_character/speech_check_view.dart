@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:neiroha/data/services/synthesis/speech_check_log.dart';
 import 'package:neiroha/domain/synthesis/speech_check.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// The character's latest ASR read-back results, newest first.
 class SpeechCheckView extends StatelessWidget {
@@ -26,7 +27,10 @@ class SpeechCheckView extends StatelessWidget {
               if (checks.isEmpty)
                 Text(
                   l.chainCheckNone,
-                  style: const TextStyle(fontSize: 11.5, color: Colors.white38),
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: context.fg.withValues(alpha: 0.38),
+                  ),
                 ),
               for (final c in checks) _CheckLine(c),
             ],

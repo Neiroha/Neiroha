@@ -33,14 +33,14 @@ class QuickTtsHistoryList extends ConsumerWidget {
                 Icon(
                   Icons.history_rounded,
                   size: 36,
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: context.fg.withValues(alpha: 0.1),
                 ),
                 SizedBox(height: 8),
                 Text(
                   AppLocalizations.of(context).uiTypeBelowToTestThisVoice,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.3),
+                    color: context.fg.withValues(alpha: 0.3),
                   ),
                 ),
               ],
@@ -80,7 +80,7 @@ class QuickTtsHistoryList extends ConsumerWidget {
                             entry.inputText,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.8),
+                              color: context.fg.withValues(alpha: 0.8),
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -124,7 +124,7 @@ class QuickTtsHistoryList extends ConsumerWidget {
                           icon: Icon(
                             Icons.close_rounded,
                             size: 12,
-                            color: Colors.white.withValues(alpha: 0.3),
+                            color: context.fg.withValues(alpha: 0.3),
                           ),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(
@@ -204,7 +204,7 @@ class QuickTtsHistoryList extends ConsumerWidget {
             fontSize: 11,
             color: isPlaying
                 ? AppTheme.accentColor
-                : Colors.white.withValues(alpha: 0.4),
+                : context.fg.withValues(alpha: 0.4),
           ),
         ),
         const Spacer(),
@@ -215,7 +215,7 @@ class QuickTtsHistoryList extends ConsumerWidget {
             fontFamily: 'monospace',
             color: isPlaying
                 ? AppTheme.accentColor
-                : Colors.white.withValues(alpha: 0.4),
+                : context.fg.withValues(alpha: 0.4),
           ),
         ),
       ],
@@ -236,7 +236,7 @@ class QuickTtsHistoryList extends ConsumerWidget {
             TextButton.icon(
               onPressed: () => _download(context, ref, entry),
               style: TextButton.styleFrom(
-                foregroundColor: Colors.white70,
+                foregroundColor: context.fg.withValues(alpha: 0.70),
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 minimumSize: const Size(0, 24),
                 textStyle: const TextStyle(fontSize: 11),

@@ -20,6 +20,7 @@ import 'package:neiroha/presentation/widgets/music/style_presets.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 import 'package:path/path.dart' as p;
 
 /// Song Studio: style prompt + lyrics (+ reference images) → a finished
@@ -278,7 +279,10 @@ class _SongStudioScreenState extends ConsumerState<SongStudioScreen> {
         _Section(icon: Icons.palette_rounded, title: l.musicStyle),
         Text(
           l.musicStyleHint,
-          style: const TextStyle(fontSize: 11, color: Colors.white38),
+          style: TextStyle(
+            fontSize: 11,
+            color: context.fg.withValues(alpha: 0.38),
+          ),
         ),
         const SizedBox(height: 8),
         StylePresetPicker(
@@ -352,7 +356,10 @@ class _SongStudioScreenState extends ConsumerState<SongStudioScreen> {
                       (_lyrics.text.trim().isEmpty ? 0 : 1),
                   _lyrics.text.replaceAll(RegExp(r'\s'), '').length,
                 ),
-                style: const TextStyle(fontSize: 11, color: Colors.white38),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: context.fg.withValues(alpha: 0.38),
+                ),
               ),
             ],
           ),
@@ -417,7 +424,10 @@ class _SongStudioScreenState extends ConsumerState<SongStudioScreen> {
         const SizedBox(height: 12),
         Text(
           l.musicWatermark,
-          style: const TextStyle(fontSize: 11, color: Colors.white38),
+          style: TextStyle(
+            fontSize: 11,
+            color: context.fg.withValues(alpha: 0.38),
+          ),
         ),
       ],
     );
@@ -436,7 +446,7 @@ class _Section extends StatelessWidget {
     padding: const EdgeInsets.only(top: 16, bottom: 8),
     child: Row(
       children: [
-        Icon(icon, size: 16, color: Colors.white54),
+        Icon(icon, size: 16, color: context.fg.withValues(alpha: 0.54)),
         const SizedBox(width: 8),
         Expanded(
           child: Text(

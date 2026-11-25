@@ -111,7 +111,7 @@ class _VoiceChainEditorState extends ConsumerState<VoiceChainEditor> {
           l.chainHint,
           style: TextStyle(
             fontSize: 11.5,
-            color: Colors.white.withValues(alpha: 0.45),
+            color: context.fg.withValues(alpha: 0.45),
           ),
         ),
         const SizedBox(height: 10),
@@ -139,7 +139,10 @@ class _VoiceChainEditorState extends ConsumerState<VoiceChainEditor> {
           const SizedBox(height: 8),
           Text(
             l.chainNoStreaming,
-            style: const TextStyle(fontSize: 11.5, color: Colors.white54),
+            style: TextStyle(
+              fontSize: 11.5,
+              color: context.fg.withValues(alpha: 0.54),
+            ),
           ),
         ],
         if (_chain.audioSteps.any((s) => s.kind == VoiceChainStepKind.verify))
@@ -198,13 +201,13 @@ class _Terminal extends StatelessWidget {
     decoration: BoxDecoration(
       color: accent
           ? AppTheme.accentColor.withValues(alpha: 0.18)
-          : AppTheme.surfaceBright,
+          : context.colors.raised,
       borderRadius: BorderRadius.circular(8),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: Colors.white70),
+        Icon(icon, size: 14, color: context.fg.withValues(alpha: 0.70)),
         const SizedBox(width: 5),
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 160),
@@ -405,7 +408,10 @@ class _StepDialogState extends State<_StepDialog> {
                   const SizedBox(height: 8),
                   Text(
                     l.chainVerifyHint,
-                    style: const TextStyle(fontSize: 12, color: Colors.white54),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.fg.withValues(alpha: 0.54),
+                    ),
                   ),
                 ],
               ),

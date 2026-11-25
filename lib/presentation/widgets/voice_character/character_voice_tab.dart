@@ -15,7 +15,7 @@ extension _CharacterVoiceTab on _CharacterInspectorState {
     if (enabledProviders.isEmpty)
       Text(
         AppLocalizations.of(context).uiNoProvidersAvailable,
-        style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+        style: TextStyle(color: context.fg.withValues(alpha: 0.4)),
       )
     else
       DropdownButtonFormField<String>(
@@ -37,7 +37,7 @@ extension _CharacterVoiceTab on _CharacterInspectorState {
                       '(${AdapterType.values.where((t) => t.name == p.adapterType).firstOrNull?.displayName ?? p.adapterType})',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: context.fg.withValues(alpha: 0.4),
                       ),
                     ),
                   ],
@@ -187,14 +187,14 @@ extension _CharacterVoiceTab on _CharacterInspectorState {
             fontSize: 11,
             fontWeight: FontWeight.w600,
             letterSpacing: 1.2,
-            color: Colors.white.withValues(alpha: 0.4),
+            color: context.fg.withValues(alpha: 0.4),
           ),
         ),
         SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppTheme.surfaceDim,
+            color: context.colors.panel,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
@@ -256,7 +256,7 @@ extension _CharacterVoiceTab on _CharacterInspectorState {
                         ' → ${a.refAudioTrimEnd?.toStringAsFixed(1) ?? 'end'}s',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white.withValues(alpha: 0.4),
+                          color: context.fg.withValues(alpha: 0.4),
                         ),
                       ),
                   ],

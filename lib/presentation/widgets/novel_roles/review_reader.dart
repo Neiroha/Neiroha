@@ -75,7 +75,7 @@ class NovelRoleReviewReader extends StatelessWidget {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Icon(
-                        Icons.circle,
+                        Icons.circle_rounded,
                         size: 8,
                         color: Color(character?.color ?? 0xFF9E9E9E),
                       ),
@@ -90,7 +90,7 @@ class NovelRoleReviewReader extends StatelessWidget {
                         style: Theme.of(context).textTheme.labelSmall,
                       ),
                       if (annotation?.locked ?? false)
-                        const Icon(Icons.lock_outline, size: 14),
+                        const Icon(Icons.lock_outline_rounded, size: 14),
                       Text(
                         roleReviewLabel(l, status),
                         style: Theme.of(context).textTheme.labelSmall,
@@ -103,10 +103,10 @@ class NovelRoleReviewReader extends StatelessWidget {
                             : l.roleNoCache,
                         child: Icon(
                           cache == 'current'
-                              ? Icons.cloud_done_outlined
+                              ? Icons.cloud_done_rounded
                               : cache == 'stale'
-                              ? Icons.refresh
-                              : Icons.cloud_off_outlined,
+                              ? Icons.refresh_rounded
+                              : Icons.cloud_off_rounded,
                           size: 16,
                         ),
                       ),

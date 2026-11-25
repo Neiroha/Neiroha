@@ -21,7 +21,7 @@ class RoleModelDiscoverButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final connection = provider;
     return IconButton(
-      icon: const Icon(Icons.manage_search),
+      icon: const Icon(Icons.manage_search_rounded),
       tooltip: AppLocalizations.of(context).modelDiscover,
       onPressed: !enabled || connection == null
           ? null

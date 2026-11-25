@@ -66,14 +66,14 @@ class EditorProjectBar extends StatelessWidget {
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceDim,
+                      color: context.colors.panel,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       AppLocalizations.of(context).uiVoiceCount(voiceCount),
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: context.fg.withValues(alpha: 0.5),
                       ),
                     ),
                   ),

@@ -11,6 +11,7 @@ import 'package:neiroha/providers/app_providers.dart';
 
 import 'settings_shared.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 // ───────────────────────────── FFmpeg card ─────────────────────────────
 
@@ -150,7 +151,7 @@ class _FfmpegSettingsCardState extends ConsumerState<FfmpegSettingsCard> {
                               context,
                             ).uiLeaveBlankToAutoDetectEGCFfmpegBinFfmpegExe,
                       hintStyle: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.3),
+                        color: context.fg.withValues(alpha: 0.3),
                         fontSize: 12,
                       ),
                       suffixIcon: IconButton(

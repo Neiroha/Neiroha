@@ -8,6 +8,7 @@ import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:uuid/uuid.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// Whether [lane] sets any limit of its own.
 bool laneHasLimits(db.ConnectionCapability lane) =>
@@ -91,7 +92,10 @@ class _CapabilityLimitsDialogState
           children: [
             Text(
               l.capLimitsHint,
-              style: const TextStyle(fontSize: 12, color: Colors.white54),
+              style: TextStyle(
+                fontSize: 12,
+                color: context.fg.withValues(alpha: 0.54),
+              ),
             ),
             const SizedBox(height: 8),
             for (final (i, label) in labels.indexed)

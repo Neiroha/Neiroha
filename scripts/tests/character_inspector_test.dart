@@ -80,7 +80,7 @@ void main() {
       }
 
       await settle();
-      await tester.tap(find.byIcon(Icons.record_voice_over_outlined));
+      await tester.tap(find.byIcon(Icons.record_voice_over_rounded));
       await settle();
       expect(find.byType(DropdownButtonFormField<String>), findsWidgets);
       await tester.pumpWidget(const SizedBox());
@@ -148,7 +148,7 @@ void main() {
     }
 
     await settle();
-    await tester.tap(find.byIcon(Icons.record_voice_over_outlined));
+    await tester.tap(find.byIcon(Icons.record_voice_over_rounded));
     await settle();
     expect(find.text('gpt-realtime-2.1 不支持音色 fable，请重新选择'), findsOneWidget);
 

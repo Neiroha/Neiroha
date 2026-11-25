@@ -69,7 +69,7 @@ class ChatBubble extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceBright,
+                      color: context.colors.raised,
                       borderRadius: const BorderRadius.only(
                         topRight: Radius.circular(14),
                         bottomLeft: Radius.circular(14),
@@ -110,7 +110,7 @@ class ChatBubble extends StatelessWidget {
                     : Icons.auto_awesome_rounded,
                 size: 16,
                 color: onGenerate == null
-                    ? Colors.white.withValues(alpha: 0.15)
+                    ? context.fg.withValues(alpha: 0.15)
                     : AppTheme.accentColor,
               ),
               padding: EdgeInsets.zero,
@@ -135,7 +135,7 @@ class ChatBubble extends StatelessWidget {
               icon: Icon(
                 Icons.playlist_play_rounded,
                 size: 18,
-                color: Colors.white.withValues(alpha: 0.4),
+                color: context.fg.withValues(alpha: 0.4),
               ),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -147,7 +147,7 @@ class ChatBubble extends StatelessWidget {
             icon: Icon(
               Icons.close_rounded,
               size: 14,
-              color: Colors.white.withValues(alpha: 0.2),
+              color: context.fg.withValues(alpha: 0.2),
             ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -170,7 +170,7 @@ class ChatBubble extends StatelessWidget {
       backgroundColor: AppTheme.accentColor.withValues(alpha: 0.2),
       child: Text(
         name.isNotEmpty ? name[0].toUpperCase() : '?',
-        style: const TextStyle(color: Colors.white, fontSize: 14),
+        style: const TextStyle(color: AppTheme.accentColor, fontSize: 14),
       ),
     );
   }
@@ -267,7 +267,7 @@ class ChatBubble extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isPlayedBar
                           ? AppTheme.accentColor
-                          : Colors.white.withValues(alpha: 0.2),
+                          : context.fg.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(1.5),
                     ),
                   ),
@@ -284,7 +284,7 @@ class ChatBubble extends StatelessWidget {
             fontFamily: 'monospace',
             color: isPlaying
                 ? AppTheme.accentColor
-                : Colors.white.withValues(alpha: 0.4),
+                : context.fg.withValues(alpha: 0.4),
           ),
         ),
       ],

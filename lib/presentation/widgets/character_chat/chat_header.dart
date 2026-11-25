@@ -55,7 +55,7 @@ class ChatHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final muted = Colors.white.withValues(alpha: 0.45);
+    final muted = context.fg.withValues(alpha: 0.45);
     return SizedBox(
       height: chatHeaderHeight,
       child: Padding(
@@ -117,7 +117,7 @@ class ChatHeader extends StatelessWidget {
               icon: Badge.count(
                 count: memoryCount,
                 isLabelVisible: memoryCount > 0,
-                child: const Icon(Icons.psychology_alt_outlined, size: 20),
+                child: const Icon(Icons.psychology_alt_rounded, size: 20),
               ),
             ),
             IconButton(

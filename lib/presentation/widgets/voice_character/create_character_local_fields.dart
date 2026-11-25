@@ -36,7 +36,7 @@ extension _LocalEngineFields on _CreateCharacterDialogState {
         ).uiAProfileRegisteredOnTheCosyVoiceServerLeaveAsNoneToSynthesise,
         style: TextStyle(
           fontSize: 12,
-          color: Colors.white.withValues(alpha: 0.4),
+          color: context.fg.withValues(alpha: 0.4),
         ),
       ),
       SizedBox(height: 8),
@@ -127,7 +127,7 @@ extension _LocalEngineFields on _CreateCharacterDialogState {
           ).uiUploadAVoiceSampleTheModelWillCloneItsToneAndSpeak,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withValues(alpha: 0.4),
+            color: context.fg.withValues(alpha: 0.4),
           ),
         ),
         SizedBox(height: 8),
@@ -157,7 +157,7 @@ extension _LocalEngineFields on _CreateCharacterDialogState {
           ).uiUploadAVoiceSampleToUseAsTheBaseVoiceInsteadOf,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withValues(alpha: 0.4),
+            color: context.fg.withValues(alpha: 0.4),
           ),
         ),
         SizedBox(height: 8),
@@ -199,7 +199,7 @@ extension _LocalEngineFields on _CreateCharacterDialogState {
           ).uiAVoiceProfileRegisteredOnTheServerLeaveAsNoneToSynthesise,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withValues(alpha: 0.4),
+            color: context.fg.withValues(alpha: 0.4),
           ),
         ),
         SizedBox(height: 8),
@@ -266,7 +266,7 @@ extension _LocalEngineFields on _CreateCharacterDialogState {
           ).uiNaturalLanguageVoiceDescriptionAtSynthesisTimePrependItToTheText,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withValues(alpha: 0.4),
+            color: context.fg.withValues(alpha: 0.4),
           ),
         ),
         SizedBox(height: 8),

@@ -140,10 +140,10 @@ class _AppShellState extends ConsumerState<AppShell> {
                 if (compact && windows)
                   WindowsCaptionBar(
                     title: AppLocalizations.of(context).appTitle,
-                    color: AppTheme.sidebarBg,
+                    color: context.colors.sidebar,
                   ),
                 if (compact && macInset > 0)
-                  Container(height: macInset, color: AppTheme.sidebarBg),
+                  Container(height: macInset, color: context.colors.sidebar),
                 if (compact)
                   _MobileTopBar(
                     selectedTab: selectedTab,
@@ -309,7 +309,7 @@ class _MobileTopBar extends StatelessWidget {
       bottom: false,
       child: Container(
         height: 52,
-        color: AppTheme.sidebarBg,
+        color: context.colors.sidebar,
         child: Row(
           children: [
             IconButton(

@@ -228,7 +228,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                             ? Icon(
                                 Icons.person_rounded,
                                 size: 36,
-                                color: Colors.white.withValues(alpha: 0.3),
+                                color: context.fg.withValues(alpha: 0.3),
                               )
                             : null,
                       ),
@@ -300,7 +300,7 @@ class _CreateCharacterDialogState extends State<CreateCharacterDialog> {
                                   '(${AdapterType.values.where((t) => t.name == p.adapterType).firstOrNull?.displayName ?? p.adapterType})',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.white.withValues(alpha: 0.4),
+                                    color: context.fg.withValues(alpha: 0.4),
                                   ),
                                 ),
                               ],

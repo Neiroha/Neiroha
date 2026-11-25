@@ -67,10 +67,10 @@ class _SegmentCard extends StatelessWidget {
     final settings = this.settings;
     final hasSettings = settings != null && !settings.isEmpty;
     final statusColor = switch (status) {
-      _SegmentStatus.pending => Colors.white.withValues(alpha: 0.12),
+      _SegmentStatus.pending => context.fg.withValues(alpha: 0.12),
       _SegmentStatus.generating => AppTheme.accentColor,
-      _SegmentStatus.done => _doneColor,
-      _SegmentStatus.failed => _failedColor,
+      _SegmentStatus.done => context.colors.success,
+      _SegmentStatus.failed => context.colors.danger,
     };
     final highlighted = focused || selected;
 
@@ -81,12 +81,12 @@ class _SegmentCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isPlaying || selected
               ? AppTheme.accentColor.withValues(alpha: 0.10)
-              : AppTheme.surfaceDim,
+              : context.colors.panel,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: highlighted || isPlaying
                 ? AppTheme.accentColor.withValues(alpha: focused ? 0.85 : 0.5)
-                : Colors.white.withValues(alpha: 0.04),
+                : context.fg.withValues(alpha: 0.04),
           ),
         ),
         clipBehavior: Clip.antiAlias,
@@ -157,7 +157,9 @@ class _SegmentCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: _failedColor.withValues(alpha: 0.9),
+                                  color: context.colors.danger.withValues(
+                                    alpha: 0.9,
+                                  ),
                                 ),
                               ),
                             ),
@@ -200,7 +202,7 @@ class _SegmentCard extends StatelessWidget {
               _formatShort(segment.audioDuration!),
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: context.fg.withValues(alpha: 0.45),
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
@@ -231,7 +233,7 @@ class _SegmentCard extends StatelessWidget {
           icon: Icon(
             Icons.more_vert_rounded,
             size: 18,
-            color: Colors.white.withValues(alpha: 0.55),
+            color: context.fg.withValues(alpha: 0.55),
           ),
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minWidth: 190),
@@ -250,25 +252,34 @@ class _SegmentCard extends StatelessWidget {
           },
           itemBuilder: (context) => [
             _menuItem(
+              context,
               'style',
               Icons.tune_rounded,
               l10n.uiVoiceSettings,
               highlight: hasSettings,
             ),
-            _menuItem('edit', Icons.edit_note_rounded, l10n.phaseEditText),
+            _menuItem(
+              context,
+              'edit',
+              Icons.edit_note_rounded,
+              l10n.phaseEditText,
+            ),
             const PopupMenuDivider(),
             _menuItem(
+              context,
               'insert',
               Icons.playlist_add_rounded,
               l10n.phaseInsertBelow,
             ),
             _menuItem(
+              context,
               'split',
               Icons.call_split_rounded,
               l10n.phaseSplit,
               enabled: segment.segmentText.trim().length > 1,
             ),
             _menuItem(
+              context,
               'merge',
               Icons.merge_rounded,
               l10n.phaseMergeNext,
@@ -276,6 +287,7 @@ class _SegmentCard extends StatelessWidget {
             ),
             const PopupMenuDivider(),
             _menuItem(
+              context,
               'delete',
               Icons.delete_outline_rounded,
               l10n.uiDeleteSegment,
@@ -296,7 +308,7 @@ class _SegmentCard extends StatelessWidget {
                   child: Icon(
                     Icons.drag_indicator_rounded,
                     size: 18,
-                    color: Colors.white.withValues(alpha: 0.35),
+                    color: context.fg.withValues(alpha: 0.35),
                   ),
                 ),
               ),
@@ -307,6 +319,7 @@ class _SegmentCard extends StatelessWidget {
   }
 
   PopupMenuItem<String> _menuItem(
+    BuildContext context,
     String value,
     IconData icon,
     String label, {
@@ -315,7 +328,7 @@ class _SegmentCard extends StatelessWidget {
     bool enabled = true,
   }) {
     final color = destructive
-        ? _failedColor
+        ? context.colors.danger
         : highlight
         ? AppTheme.accentColor
         : null;

@@ -238,7 +238,7 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
     final isPlayingThis =
         playback.audioPath == widget.track.audioPath && playback.isPlaying;
     return Container(
-      color: AppTheme.surfaceDim,
+      color: context.colors.panel,
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -262,7 +262,7 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
                         color: AppTheme.accentColor,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: AppTheme.surfaceDim,
+                          color: context.colors.panel,
                           width: 2,
                         ),
                       ),
@@ -282,7 +282,7 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: AppTheme.surfaceBright,
+              color: context.colors.raised,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -315,7 +315,7 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
                         _formatDuration(widget.track.durationSec),
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white.withValues(alpha: 0.4),
+                          color: context.fg.withValues(alpha: 0.4),
                         ),
                       ),
                     ],
@@ -410,7 +410,7 @@ class _Avatar extends StatelessWidget {
         shape: BoxShape.circle,
         color: selected
             ? AppTheme.accentColor.withValues(alpha: 0.2)
-            : AppTheme.surfaceBright,
+            : context.colors.raised,
         border: Border.all(
           color: selected
               ? AppTheme.accentColor.withValues(alpha: 0.5)
@@ -434,7 +434,7 @@ class _Avatar extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   color: selected
                       ? AppTheme.accentColor
-                      : Colors.white.withValues(alpha: 0.6),
+                      : context.fg.withValues(alpha: 0.6),
                 ),
               ),
             ),

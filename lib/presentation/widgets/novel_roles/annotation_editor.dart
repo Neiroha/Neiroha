@@ -154,7 +154,7 @@ class _NovelAnnotationEditorState extends ConsumerState<NovelAnnotationEditor> {
         ),
         TextButton.icon(
           onPressed: _busy ? null : widget.onPreview,
-          icon: const Icon(Icons.play_arrow),
+          icon: const Icon(Icons.play_arrow_rounded),
           label: Text(l.rolePreview),
         ),
       ],

@@ -14,6 +14,7 @@ import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
 import 'capability_lanes.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// 「AI 服务 → 默认模型」: what each capability runs on, which connections
 /// serve it, and the models features picked for themselves.
@@ -131,7 +132,10 @@ class _PurposeOverrides extends ConsumerWidget {
               const SizedBox(height: 2),
               Text(
                 l.provHubFeatureModelsHint,
-                style: const TextStyle(fontSize: 12, color: Colors.white54),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: context.fg.withValues(alpha: 0.54),
+                ),
               ),
               const SizedBox(height: 6),
               for (final r in rows)
@@ -148,7 +152,9 @@ class _PurposeOverrides extends ConsumerWidget {
                         '${_connectionLabel(router, r.connectionId)} · '
                         '${r.modelId}',
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white70),
+                        style: TextStyle(
+                          color: context.fg.withValues(alpha: 0.70),
+                        ),
                       ),
                     ),
                     IconButton(
@@ -230,7 +236,10 @@ class _CapabilityCard extends ConsumerWidget {
               padding: const EdgeInsets.only(left: 4, bottom: 2),
               child: Text(
                 l.capAutoOrderHint,
-                style: const TextStyle(fontSize: 12, color: Colors.white38),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: context.fg.withValues(alpha: 0.38),
+                ),
               ),
             ),
             if (router.ordered(cap).isEmpty)
@@ -238,7 +247,7 @@ class _CapabilityCard extends ConsumerWidget {
                 padding: const EdgeInsets.all(8),
                 child: Text(
                   l.capNoConnections,
-                  style: const TextStyle(color: Colors.white54),
+                  style: TextStyle(color: context.fg.withValues(alpha: 0.54)),
                 ),
               )
             else

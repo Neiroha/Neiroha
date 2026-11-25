@@ -5,6 +5,7 @@ import 'package:neiroha/data/services/capabilities/role_ai_model.dart';
 import 'package:neiroha/domain/capabilities/model_capability.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/providers/model_capability_providers.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// Tool-calling mark for a model in a picker: role analysis corrects
 /// itself through function calls, so models without them are flagged.
@@ -21,7 +22,11 @@ Widget? toolCallingBadge(BuildContext context, bool? tools) {
     ),
     false => Tooltip(
       message: l.roleToolUnsupported,
-      child: const Icon(Icons.block_rounded, size: 16, color: Colors.white38),
+      child: Icon(
+        Icons.block_rounded,
+        size: 16,
+        color: context.fg.withValues(alpha: 0.38),
+      ),
     ),
     null => null,
   };
@@ -137,7 +142,11 @@ class _RoleToolCheckState extends ConsumerState<RoleToolCheck> {
         Colors.orangeAccent,
         l.roleToolFailed(_error),
       ),
-      _ => (Icons.help_outline_rounded, Colors.white54, l.roleToolUnknown),
+      _ => (
+        Icons.help_outline_rounded,
+        context.fg.withValues(alpha: 0.54),
+        l.roleToolUnknown,
+      ),
     };
     return Padding(
       padding: const EdgeInsets.only(top: 6, bottom: 4),
@@ -155,7 +164,10 @@ class _RoleToolCheckState extends ConsumerState<RoleToolCheck> {
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: 12, color: color ?? Colors.white70),
+              style: TextStyle(
+                fontSize: 12,
+                color: color ?? context.fg.withValues(alpha: 0.70),
+              ),
             ),
           ),
           if (_state != _State.checking)

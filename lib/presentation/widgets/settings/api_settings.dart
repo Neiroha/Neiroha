@@ -230,7 +230,9 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
                 isDense: true,
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _showKey ? Icons.visibility_off : Icons.visibility,
+                    _showKey
+                        ? Icons.visibility_off_rounded
+                        : Icons.visibility_rounded,
                     size: 18,
                   ),
                   onPressed: () => setState(() => _showKey = !_showKey),
@@ -314,7 +316,7 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
             ),
             const Divider(),
             SettingsRow(
-              icon: Icons.smart_toy_outlined,
+              icon: Icons.smart_toy_rounded,
               title: AppLocalizations.of(context).uiMcpEndpoint,
               subtitle: AppLocalizations.of(context).uiMcpEndpointDescription(
                 'http://${_mcpDisplayHost()}:${_portCtrl.text.trim()}/mcp',

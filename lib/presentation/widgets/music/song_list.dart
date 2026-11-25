@@ -52,10 +52,13 @@ class _SongListState extends State<SongList> {
             Icon(
               Icons.library_music_rounded,
               size: 56,
-              color: Colors.white.withValues(alpha: 0.12),
+              color: context.fg.withValues(alpha: 0.12),
             ),
             const SizedBox(height: 12),
-            Text(l.musicEmpty, style: const TextStyle(color: Colors.white38)),
+            Text(
+              l.musicEmpty,
+              style: TextStyle(color: context.fg.withValues(alpha: 0.38)),
+            ),
           ],
         ),
       );
@@ -84,7 +87,10 @@ class _SongListState extends State<SongList> {
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
           child: Text(
             l.musicCount(songs.length),
-            style: const TextStyle(fontSize: 11, color: Colors.white38),
+            style: TextStyle(
+              fontSize: 11,
+              color: context.fg.withValues(alpha: 0.38),
+            ),
           ),
         ),
         Expanded(
@@ -92,7 +98,7 @@ class _SongListState extends State<SongList> {
               ? Center(
                   child: Text(
                     l.musicNoMatch,
-                    style: const TextStyle(color: Colors.white38),
+                    style: TextStyle(color: context.fg.withValues(alpha: 0.38)),
                   ),
                 )
               : ListView.builder(
@@ -189,9 +195,9 @@ class _SongTile extends StatelessWidget {
                         '${when.formatTimeOfDay(TimeOfDay.fromDateTime(song.created))}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white38,
+                          color: context.fg.withValues(alpha: 0.38),
                         ),
                       ),
                     ],

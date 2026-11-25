@@ -322,14 +322,17 @@ class _CapabilityHealthRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final (text, color) = switch (health?.state) {
-      null => (l.provHealthNotChecked, Colors.white38),
+      null => (l.provHealthNotChecked, context.fg.withValues(alpha: 0.38)),
       HealthState.ok => (l.provHealthOk, Colors.greenAccent),
       HealthState.failed => (l.provHealthFailed, Colors.redAccent),
       HealthState.unavailable => (l.provHealthUnavailable, Colors.amber),
-      HealthState.unknown => (l.provHealthUnknown, Colors.white54),
+      HealthState.unknown => (
+        l.provHealthUnknown,
+        context.fg.withValues(alpha: 0.54),
+      ),
     };
     final message = health?.message;
-    final dim = off ? Colors.white38 : null;
+    final dim = off ? context.fg.withValues(alpha: 0.38) : null;
     return InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: onOpen,
@@ -366,7 +369,11 @@ class _CapabilityHealthRow extends ConsumerWidget {
                     message: message ?? '',
                     child: Row(
                       children: [
-                        Icon(Icons.circle, size: 7, color: off ? dim : color),
+                        Icon(
+                          Icons.circle_rounded,
+                          size: 7,
+                          color: off ? dim : color,
+                        ),
                         const SizedBox(width: 5),
                         Flexible(
                           child: Text(
@@ -401,10 +408,10 @@ class _CapabilityHealthRow extends ConsumerWidget {
                     ),
                   ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
               size: 18,
-              color: Colors.white38,
+              color: context.fg.withValues(alpha: 0.38),
             ),
           ],
         ),

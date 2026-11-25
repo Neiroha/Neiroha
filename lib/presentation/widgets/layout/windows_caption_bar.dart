@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// The Windows title strip of a frameless window: a drag area (double-click
 /// maximizes, right-click opens the system menu) and the three caption
@@ -94,7 +95,7 @@ class _WindowsCaptionBarState extends State<WindowsCaptionBar>
                           title,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white.withValues(
+                            color: context.fg.withValues(
                               alpha: _focused ? 0.6 : 0.35,
                             ),
                           ),
@@ -164,10 +165,10 @@ class _CaptionButtonState extends State<_CaptionButton> {
         ? Colors.transparent
         : close
         ? _closeRed.withValues(alpha: _down ? 0.85 : 1)
-        : Colors.white.withValues(alpha: _down ? 0.05 : 0.08);
+        : context.fg.withValues(alpha: _down ? 0.05 : 0.08);
     final foreground = close && _hover
         ? Colors.white
-        : Colors.white.withValues(alpha: widget.focused ? 0.85 : 0.4);
+        : context.fg.withValues(alpha: widget.focused ? 0.85 : 0.4);
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() {

@@ -60,7 +60,7 @@ class _VoicePickerState extends State<VoicePicker> {
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.4),
+                  color: context.fg.withValues(alpha: 0.4),
                 ),
               ),
               SizedBox(width: 6),
@@ -68,7 +68,7 @@ class _VoicePickerState extends State<VoicePicker> {
                 '${widget.assets.length}',
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: context.fg.withValues(alpha: 0.3),
                 ),
               ),
             ],
@@ -86,13 +86,13 @@ class _VoicePickerState extends State<VoicePicker> {
                 decoration: InputDecoration(
                   hintText: AppLocalizations.of(context).uiSearchVoices,
                   hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.3),
+                    color: context.fg.withValues(alpha: 0.3),
                     fontSize: 12,
                   ),
                   prefixIcon: Icon(
                     Icons.search_rounded,
                     size: 14,
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: context.fg.withValues(alpha: 0.4),
                   ),
                   prefixIconConstraints: const BoxConstraints(
                     minWidth: 28,
@@ -133,7 +133,7 @@ class _VoicePickerState extends State<VoicePicker> {
                       context,
                     ).uiNoVoicesInThisBankAddVoicesInVoiceBank,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: context.fg.withValues(alpha: 0.4),
                       fontSize: 12,
                     ),
                   ),
@@ -144,7 +144,7 @@ class _VoicePickerState extends State<VoicePicker> {
                   child: Text(
                     AppLocalizations.of(context).uiNoMatches,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.3),
+                      color: context.fg.withValues(alpha: 0.3),
                       fontSize: 12,
                     ),
                   ),
@@ -215,7 +215,7 @@ class _VoiceTile extends StatelessWidget {
                               : '?',
                           style: const TextStyle(
                             fontSize: 11,
-                            color: Colors.white,
+                            color: AppTheme.accentColor,
                           ),
                         ),
                 ),
@@ -229,7 +229,7 @@ class _VoiceTile extends StatelessWidget {
                       fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                       color: selected
                           ? AppTheme.accentColor
-                          : Colors.white.withValues(alpha: 0.85),
+                          : context.fg.withValues(alpha: 0.85),
                     ),
                   ),
                 ),
@@ -240,14 +240,14 @@ class _VoiceTile extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceDim,
+                      color: context.colors.panel,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       '$lineCount',
                       style: TextStyle(
                         fontSize: 10,
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: context.fg.withValues(alpha: 0.6),
                       ),
                     ),
                   ),

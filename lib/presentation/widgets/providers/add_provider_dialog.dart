@@ -105,7 +105,10 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
             const SizedBox(height: 6),
             Text(
               l.provAddHint,
-              style: const TextStyle(fontSize: 12, color: Colors.white38),
+              style: TextStyle(
+                fontSize: 12,
+                color: context.fg.withValues(alpha: 0.38),
+              ),
             ),
           ],
         ),
@@ -142,7 +145,7 @@ class _VendorCard extends StatelessWidget {
     return Material(
       color: selected
           ? AppTheme.accentColor.withValues(alpha: 0.18)
-          : AppTheme.surfaceBright,
+          : context.colors.raised,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
         side: BorderSide(

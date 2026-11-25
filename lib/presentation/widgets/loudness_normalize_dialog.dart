@@ -328,7 +328,7 @@ class _LoudnessDialogState extends ConsumerState<_LoudnessDialog> {
                 style: TextStyle(
                   fontSize: 12.5,
                   height: 1.45,
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: context.fg.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(height: 16),
@@ -349,7 +349,7 @@ class _LoudnessDialogState extends ConsumerState<_LoudnessDialog> {
                     l10n.loudnessUseOffsetsHint,
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: context.fg.withValues(alpha: 0.45),
                     ),
                   ),
                 ),
@@ -365,7 +365,7 @@ class _LoudnessDialogState extends ConsumerState<_LoudnessDialog> {
                   l10n.loudnessKeepBackupHint,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.45),
+                    color: context.fg.withValues(alpha: 0.45),
                   ),
                 ),
               ),

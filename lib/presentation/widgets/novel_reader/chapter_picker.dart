@@ -124,7 +124,7 @@ class _ReaderChapterPickerDialog extends StatelessWidget {
                   AppLocalizations.of(
                     context,
                   ).uiImportTXTFilesImportAFolderOrAddAChapter,
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+                  style: TextStyle(color: context.fg.withValues(alpha: 0.55)),
                 ),
               )
             : ListView.builder(
@@ -142,7 +142,7 @@ class _ReaderChapterPickerDialog extends StatelessWidget {
                     subtitle: Text(
                       '${counts[chapter.id] ?? 0} segments',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: context.fg.withValues(alpha: 0.45),
                       ),
                     ),
                     trailing: Wrap(

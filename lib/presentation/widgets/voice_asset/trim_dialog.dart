@@ -201,7 +201,7 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
     return Container(
       height: 120,
       decoration: BoxDecoration(
-        color: AppTheme.surfaceBright,
+        color: context.colors.raised,
         borderRadius: BorderRadius.circular(8),
       ),
       child: LayoutBuilder(
@@ -223,6 +223,7 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
               endSec: _endSec,
               playheadSec: _playing ? _playheadSec : null,
               accent: AppTheme.accentColor,
+              fg: context.fg,
             ),
             size: Size(constraints.maxWidth, 120),
           );
@@ -239,7 +240,7 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
           'Start  ${_fmt(_startSec)}',
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withValues(alpha: 0.7),
+            color: context.fg.withValues(alpha: 0.7),
             fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
@@ -256,7 +257,7 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
           'End  ${_fmt(_endSec)}',
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withValues(alpha: 0.7),
+            color: context.fg.withValues(alpha: 0.7),
             fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
@@ -281,7 +282,7 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
                   AppLocalizations.of(context).uiStart,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: context.fg.withValues(alpha: 0.6),
                   ),
                 ),
               ),
@@ -309,7 +310,7 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
                   AppLocalizations.of(context).uiEnd,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: context.fg.withValues(alpha: 0.6),
                   ),
                 ),
               ),
@@ -372,7 +373,7 @@ class _TrimDialogState extends ConsumerState<TrimDialog> {
               ButtonSegment(
                 value: false,
                 label: Text(AppLocalizations.of(context).uiSaveAsNew),
-                icon: Icon(Icons.note_add_outlined, size: 16),
+                icon: Icon(Icons.note_add_rounded, size: 16),
               ),
             ],
             selected: {_replaceOriginal},

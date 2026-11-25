@@ -72,7 +72,7 @@ class CueCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white.withValues(alpha: 0.55),
+                      color: context.fg.withValues(alpha: 0.55),
                     ),
                   ),
                   SizedBox(width: 8),
@@ -82,7 +82,7 @@ class CueCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 10,
                         fontFamily: 'monospace',
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: context.fg.withValues(alpha: 0.45),
                       ),
                     ),
                   ),
@@ -139,7 +139,7 @@ class CueCard extends StatelessWidget {
                       size: 14,
                       color: canGenerate
                           ? AppTheme.accentColor
-                          : Colors.white.withValues(alpha: 0.18),
+                          : context.fg.withValues(alpha: 0.18),
                     ),
                     tooltip: cue.audioPath != null
                         ? AppLocalizations.of(context).uiRegenerate
@@ -153,9 +153,9 @@ class CueCard extends StatelessWidget {
                       height: 24,
                     ),
                     icon: Icon(
-                      Icons.edit_outlined,
+                      Icons.edit_rounded,
                       size: 14,
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: context.fg.withValues(alpha: 0.4),
                     ),
                     tooltip: AppLocalizations.of(context).uiEdit,
                     onPressed: onEdit,
@@ -169,7 +169,7 @@ class CueCard extends StatelessWidget {
                     icon: Icon(
                       Icons.close_rounded,
                       size: 14,
-                      color: Colors.white.withValues(alpha: 0.35),
+                      color: context.fg.withValues(alpha: 0.35),
                     ),
                     onPressed: onDelete,
                   ),

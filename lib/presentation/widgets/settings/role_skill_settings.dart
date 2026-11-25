@@ -13,6 +13,7 @@ import '../novel_roles/skill_stage_labels.dart';
 import '../ai/capability_model_picker.dart';
 import '../ai/llm_model_summary.dart';
 import '../ai/role_tool_check.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 class RoleSkillSettingsCard extends ConsumerStatefulWidget {
   const RoleSkillSettingsCard({super.key});
@@ -140,7 +141,7 @@ class _RoleSkillSettingsCardState extends ConsumerState<RoleSkillSettingsCard> {
               spacing: 8,
               children: [
                 TextButton.icon(
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(Icons.add_rounded),
                   label: Text(l.roleSkillClone),
                   onPressed: _busy || _draft!.profiles.length >= 20
                       ? null
@@ -162,7 +163,7 @@ class _RoleSkillSettingsCardState extends ConsumerState<RoleSkillSettingsCard> {
                         }),
                 ),
                 TextButton.icon(
-                  icon: const Icon(Icons.restore),
+                  icon: const Icon(Icons.restore_rounded),
                   label: Text(l.roleSkillRestoreProfile),
                   onPressed: _busy
                       ? null
@@ -217,7 +218,10 @@ class _RoleSkillSettingsCardState extends ConsumerState<RoleSkillSettingsCard> {
               padding: const EdgeInsets.only(top: 4, left: 12),
               child: Text(
                 l.roleModelHint,
-                style: const TextStyle(fontSize: 12, color: Colors.white38),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: context.fg.withValues(alpha: 0.38),
+                ),
               ),
             ),
             RoleToolCheck(

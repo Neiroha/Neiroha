@@ -45,7 +45,7 @@ class VoiceCharacterVoxCpm2ModeSelector extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   color: isSelected
                       ? AppTheme.accentColor.withValues(alpha: 0.15)
-                      : AppTheme.surfaceDim,
+                      : context.colors.panel,
                   border: Border.all(
                     color: isSelected
                         ? AppTheme.accentColor.withValues(alpha: 0.5)
@@ -61,7 +61,7 @@ class VoiceCharacterVoxCpm2ModeSelector extends StatelessWidget {
                       size: 20,
                       color: isSelected
                           ? AppTheme.accentColor
-                          : Colors.white.withValues(alpha: 0.5),
+                          : context.fg.withValues(alpha: 0.5),
                     ),
                     SizedBox(height: 6),
                     Text(
@@ -70,8 +70,8 @@ class VoiceCharacterVoxCpm2ModeSelector extends StatelessWidget {
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: isSelected
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.7),
+                            ? context.fg
+                            : context.fg.withValues(alpha: 0.7),
                       ),
                     ),
                     SizedBox(height: 4),
@@ -79,7 +79,7 @@ class VoiceCharacterVoxCpm2ModeSelector extends StatelessWidget {
                       hint,
                       style: TextStyle(
                         fontSize: 10,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: context.fg.withValues(alpha: 0.4),
                       ),
                     ),
                   ],
@@ -143,7 +143,7 @@ class VoiceCharacterCosyVoiceModeSelector extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   color: isSelected
                       ? AppTheme.accentColor.withValues(alpha: 0.15)
-                      : AppTheme.surfaceDim,
+                      : context.colors.panel,
                   border: Border.all(
                     color: isSelected
                         ? AppTheme.accentColor.withValues(alpha: 0.5)
@@ -159,7 +159,7 @@ class VoiceCharacterCosyVoiceModeSelector extends StatelessWidget {
                       size: 20,
                       color: isSelected
                           ? AppTheme.accentColor
-                          : Colors.white.withValues(alpha: 0.5),
+                          : context.fg.withValues(alpha: 0.5),
                     ),
                     SizedBox(height: 6),
                     Text(
@@ -168,8 +168,8 @@ class VoiceCharacterCosyVoiceModeSelector extends StatelessWidget {
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: isSelected
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.7),
+                            ? context.fg
+                            : context.fg.withValues(alpha: 0.7),
                       ),
                     ),
                     SizedBox(height: 4),
@@ -177,7 +177,7 @@ class VoiceCharacterCosyVoiceModeSelector extends StatelessWidget {
                       hint,
                       style: TextStyle(
                         fontSize: 10,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: context.fg.withValues(alpha: 0.4),
                       ),
                     ),
                   ],
@@ -230,7 +230,7 @@ class VoiceCharacterGptSovitsModeSelector extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   color: isSelected
                       ? AppTheme.accentColor.withValues(alpha: 0.15)
-                      : AppTheme.surfaceDim,
+                      : context.colors.panel,
                   border: Border.all(
                     color: isSelected
                         ? AppTheme.accentColor.withValues(alpha: 0.5)
@@ -246,7 +246,7 @@ class VoiceCharacterGptSovitsModeSelector extends StatelessWidget {
                       size: 20,
                       color: isSelected
                           ? AppTheme.accentColor
-                          : Colors.white.withValues(alpha: 0.5),
+                          : context.fg.withValues(alpha: 0.5),
                     ),
                     SizedBox(height: 6),
                     Text(
@@ -255,8 +255,8 @@ class VoiceCharacterGptSovitsModeSelector extends StatelessWidget {
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: isSelected
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.7),
+                            ? context.fg
+                            : context.fg.withValues(alpha: 0.7),
                       ),
                     ),
                     SizedBox(height: 4),
@@ -264,7 +264,7 @@ class VoiceCharacterGptSovitsModeSelector extends StatelessWidget {
                       hint,
                       style: TextStyle(
                         fontSize: 10,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: context.fg.withValues(alpha: 0.4),
                       ),
                     ),
                   ],

@@ -98,7 +98,7 @@ class _LaneState extends ConsumerState<_Lane> {
     final custom = widget.lane != null && laneHasLimits(widget.lane!);
     // The built-in on-device connection has no row to open.
     final openable = c.id != OnDevicePlugin.connectionId;
-    final muted = Colors.white.withValues(alpha: 0.4);
+    final muted = context.fg.withValues(alpha: 0.4);
     return Material(
       type: MaterialType.transparency,
       child: Column(
@@ -249,7 +249,7 @@ class _ModelOrder extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(58, 0, 8, 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
+        color: context.fg.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(8),
       ),
       child: ReorderableListView.builder(
@@ -280,7 +280,7 @@ class _ModelOrder extends ConsumerWidget {
                       child: Icon(
                         Icons.drag_handle_rounded,
                         size: 16,
-                        color: Colors.white.withValues(alpha: 0.35),
+                        color: context.fg.withValues(alpha: 0.35),
                       ),
                     ),
                   ),
@@ -293,9 +293,9 @@ class _ModelOrder extends ConsumerWidget {
                         if (m.label != m.id)
                           TextSpan(
                             text: '  ${m.id}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
-                              color: Colors.white38,
+                              color: context.fg.withValues(alpha: 0.38),
                             ),
                           ),
                       ],
@@ -337,7 +337,7 @@ class _Tag extends StatelessWidget {
     margin: const EdgeInsets.only(left: 6),
     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
     decoration: BoxDecoration(
-      color: (muted ? Colors.white : AppTheme.accentColor).withValues(
+      color: (muted ? context.fg : AppTheme.accentColor).withValues(
         alpha: muted ? 0.08 : 0.18,
       ),
       borderRadius: BorderRadius.circular(4),
@@ -346,7 +346,9 @@ class _Tag extends StatelessWidget {
       text,
       style: TextStyle(
         fontSize: 10.5,
-        color: muted ? Colors.white60 : AppTheme.accentColor,
+        color: muted
+            ? context.fg.withValues(alpha: 0.60)
+            : AppTheme.accentColor,
       ),
     ),
   );

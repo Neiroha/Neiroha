@@ -67,7 +67,7 @@ class VoiceAssetScreen extends ConsumerWidget {
                         child: Text(
                           AppLocalizations.of(context).uiSelectATrack,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.4),
+                            color: context.fg.withValues(alpha: 0.4),
                           ),
                         ),
                       ),
@@ -106,16 +106,16 @@ class VoiceAssetScreen extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            Icons.library_music_outlined,
+            Icons.library_music_rounded,
             size: 64,
-            color: Colors.white.withValues(alpha: 0.1),
+            color: context.fg.withValues(alpha: 0.1),
           ),
           SizedBox(height: 16),
           Text(
             AppLocalizations.of(context).uiNoAudioTracksYet,
             style: TextStyle(
               fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.4),
+              color: context.fg.withValues(alpha: 0.4),
             ),
           ),
           SizedBox(height: 8),
@@ -125,7 +125,7 @@ class VoiceAssetScreen extends ConsumerWidget {
             ).uiUploadAnAudioFileOrRecordANewSampleToGetStarted,
             style: TextStyle(
               fontSize: 13,
-              color: Colors.white.withValues(alpha: 0.25),
+              color: context.fg.withValues(alpha: 0.25),
             ),
           ),
           SizedBox(height: 20),
@@ -287,7 +287,7 @@ class _TrackList extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: context.fg.withValues(alpha: 0.4),
                             ),
                           ),
                         ],
@@ -299,14 +299,14 @@ class _TrackList extends StatelessWidget {
                         child: Icon(
                           Icons.subtitles_rounded,
                           size: 14,
-                          color: Colors.white.withValues(alpha: 0.25),
+                          color: context.fg.withValues(alpha: 0.25),
                         ),
                       ),
                     Text(
                       _formatDuration(t.durationSec),
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: context.fg.withValues(alpha: 0.4),
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),

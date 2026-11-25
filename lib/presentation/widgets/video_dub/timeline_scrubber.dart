@@ -103,9 +103,9 @@ class _RangeScrubberState extends State<_RangeScrubber> {
                 child: Container(
                   margin: const EdgeInsets.symmetric(vertical: 3),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: context.fg.withValues(alpha: 0.06),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: context.fg.withValues(alpha: 0.08),
                     ),
                     borderRadius: BorderRadius.circular(4),
                   ),
@@ -150,7 +150,7 @@ class _RangeScrubberState extends State<_RangeScrubber> {
                           width: 34,
                           height: 3,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.38),
+                            color: context.fg.withValues(alpha: 0.38),
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -273,7 +273,7 @@ class _RangeScrubberState extends State<_RangeScrubber> {
               decoration: BoxDecoration(
                 color: AppTheme.accentColor,
                 borderRadius: BorderRadius.circular(3),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                border: Border.all(color: context.fg.withValues(alpha: 0.2)),
               ),
             ),
           ),

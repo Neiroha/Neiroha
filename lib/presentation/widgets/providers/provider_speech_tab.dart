@@ -17,6 +17,7 @@ import 'package:uuid/uuid.dart';
 
 import 'provider_draft.dart';
 import 'provider_models.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// Speech synthesis of one connection: its TTS models with their built-in
 /// voices, account and custom voices, fetch and manual entries.
@@ -186,7 +187,10 @@ class _ProviderSpeechTabState extends ConsumerState<ProviderSpeechTab> {
             separate
                 ? l.uiNoModelsOrVoicesYetUseFetchAllOrAddManually
                 : l.uiNoVoicesYetUseFetchToGetAvailableVoices,
-            style: const TextStyle(fontSize: 12, color: Colors.white38),
+            style: TextStyle(
+              fontSize: 12,
+              color: context.fg.withValues(alpha: 0.38),
+            ),
           )
         else if (separate) ...[
           // Voices are not nested per model: the schema has no model→voice

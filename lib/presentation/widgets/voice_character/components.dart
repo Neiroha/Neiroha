@@ -36,12 +36,12 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceDim,
+          color: context.colors.panel,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: path != null
                 ? Colors.green.withValues(alpha: 0.4)
-                : Colors.white.withValues(alpha: 0.1),
+                : context.fg.withValues(alpha: 0.1),
           ),
         ),
         child: path == null
@@ -50,14 +50,12 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
                 children: [
                   Icon(
                     Icons.upload_file_rounded,
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: context.fg.withValues(alpha: 0.4),
                   ),
                   SizedBox(width: 10),
                   Text(
                     AppLocalizations.of(context).uiClickToSelectAudioFile,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
-                    ),
+                    style: TextStyle(color: context.fg.withValues(alpha: 0.4)),
                   ),
                 ],
               )
@@ -81,7 +79,7 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
                           AppLocalizations.of(context).uiTapToChange,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.3),
+                            color: context.fg.withValues(alpha: 0.3),
                           ),
                         ),
                       ],
@@ -142,12 +140,13 @@ class VoiceCharacterAvatar extends StatelessWidget {
     }
     return CircleAvatar(
       radius: radius,
-      backgroundColor: selected
-          ? AppTheme.accentColor
-          : const Color(0xFF2A2A36),
+      backgroundColor: selected ? AppTheme.accentColor : context.colors.divider,
       child: Text(
         name.isNotEmpty ? name[0].toUpperCase() : '?',
-        style: TextStyle(fontSize: radius * 0.75, color: Colors.white),
+        style: TextStyle(
+          fontSize: radius * 0.75,
+          color: selected ? Colors.white : context.fg,
+        ),
       ),
     );
   }
@@ -184,7 +183,7 @@ class VoiceCharacterSectionLabel extends StatelessWidget {
       fontSize: 11,
       fontWeight: FontWeight.w600,
       letterSpacing: 1.2,
-      color: Colors.white.withValues(alpha: 0.4),
+      color: context.fg.withValues(alpha: 0.4),
     ),
   );
 }
@@ -287,7 +286,7 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
                     ? Icons.arrow_drop_up_rounded
                     : Icons.arrow_drop_down_rounded,
                 size: 20,
-                color: Colors.white.withValues(alpha: 0.4),
+                color: context.fg.withValues(alpha: 0.4),
               ),
             ),
             child: Text(
@@ -295,8 +294,8 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
               style: TextStyle(
                 fontSize: 14,
                 color: widget.selected != null
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: 0.4),
+                    ? context.fg
+                    : context.fg.withValues(alpha: 0.4),
               ),
             ),
           ),
@@ -327,9 +326,9 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
           Container(
             height: 200,
             decoration: BoxDecoration(
-              color: AppTheme.surfaceDim,
+              color: context.colors.panel,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              border: Border.all(color: context.fg.withValues(alpha: 0.08)),
             ),
             child: _filtered.isEmpty
                 ? Center(
@@ -337,7 +336,7 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
                       'No match "${_searchCtrl.text}"',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: context.fg.withValues(alpha: 0.4),
                       ),
                     ),
                   )
@@ -375,7 +374,7 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
                                     fontSize: 13,
                                     color: isSelected
                                         ? AppTheme.accentColor
-                                        : Colors.white.withValues(alpha: 0.85),
+                                        : context.fg.withValues(alpha: 0.85),
                                     fontWeight: isSelected
                                         ? FontWeight.w600
                                         : FontWeight.normal,

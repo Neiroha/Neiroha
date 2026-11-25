@@ -16,6 +16,7 @@ import 'provider_hub.dart';
 import 'provider_limits_tab.dart';
 import 'provider_overview_tab.dart';
 import 'provider_speech_tab.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// Editor of one provider row, one tab per capability it offers:
 /// overview (account and health), each capability, then limits.
@@ -185,7 +186,7 @@ class _ProviderEditorState extends ConsumerState<ProviderEditor> {
                           style: TextStyle(
                             fontSize: 12,
                             color: supported
-                                ? Colors.white.withValues(alpha: 0.5)
+                                ? context.fg.withValues(alpha: 0.5)
                                 : Colors.redAccent,
                           ),
                         ),

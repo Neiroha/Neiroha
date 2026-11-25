@@ -351,7 +351,7 @@ class _ProgressDialog extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: context.fg.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -395,7 +395,7 @@ Future<void> showExportSuccessDialog({
               extraNote,
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.white.withValues(alpha: 0.55),
+                color: context.fg.withValues(alpha: 0.55),
               ),
             ),
           ],

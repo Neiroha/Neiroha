@@ -20,10 +20,7 @@ class SubtitleCueList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (cues.isEmpty) {
       return Center(
-        child: Text(
-          empty,
-          style: TextStyle(color: Colors.white.withAlpha(120)),
-        ),
+        child: Text(empty, style: TextStyle(color: context.fg.withAlpha(120))),
       );
     }
     return ListView.separated(
@@ -35,7 +32,7 @@ class SubtitleCueList extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: AppTheme.surfaceBright,
+            color: context.colors.raised,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -48,7 +45,7 @@ class SubtitleCueList extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontFeatures: const [FontFeature.tabularFigures()],
-                    color: Colors.white.withAlpha(150),
+                    color: context.fg.withAlpha(150),
                   ),
                 ),
               ),

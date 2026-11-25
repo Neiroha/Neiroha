@@ -53,7 +53,7 @@ extension _PresetVoiceFields on _CreateCharacterDialogState {
             ).uiNoTTSModelsFoundGoToProvidersFetchAllToCacheAvailable,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.white.withValues(alpha: 0.4),
+              color: context.fg.withValues(alpha: 0.4),
             ),
           ),
         ),
@@ -116,7 +116,7 @@ extension _PresetVoiceFields on _CreateCharacterDialogState {
               AppLocalizations.of(context).uiCloudVoiceCloneHint,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.4),
+                color: context.fg.withValues(alpha: 0.4),
               ),
             ),
             SizedBox(height: 8),
@@ -150,7 +150,7 @@ extension _PresetVoiceFields on _CreateCharacterDialogState {
             ).uiALabelForThisClonedVoiceTheActualVoiceIsDerivedFrom,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.white.withValues(alpha: 0.4),
+              color: context.fg.withValues(alpha: 0.4),
             ),
           ),
           SizedBox(height: 8),
@@ -175,7 +175,7 @@ extension _PresetVoiceFields on _CreateCharacterDialogState {
             ).uiDescribeTheVoiceYouWantToCreateThisWillBeUsedTo,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.white.withValues(alpha: 0.4),
+              color: context.fg.withValues(alpha: 0.4),
             ),
           ),
           SizedBox(height: 8),

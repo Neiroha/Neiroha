@@ -386,7 +386,7 @@ class _RecordDialogState extends State<RecordDialog>
         AppLocalizations.of(context).uiDefaultMicrophone,
         style: TextStyle(
           fontSize: 12,
-          color: Colors.white.withValues(alpha: 0.5),
+          color: context.fg.withValues(alpha: 0.5),
         ),
       );
     }
@@ -438,7 +438,7 @@ class _RecordDialogState extends State<RecordDialog>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceBright,
+        color: context.colors.raised,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -471,9 +471,9 @@ class _RecordDialogState extends State<RecordDialog>
           ),
           Text(
             '${_fmt(_previewPos)} / ${_fmt(dur)}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: Colors.white54,
+              color: context.fg.withValues(alpha: 0.54),
               fontFeatures: [FontFeature.tabularFigures()],
             ),
           ),

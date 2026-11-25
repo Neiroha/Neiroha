@@ -285,7 +285,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
             children: [
               Text(
                 AppLocalizations.of(context).uiEnabled,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                style: TextStyle(color: context.fg.withValues(alpha: 0.8)),
               ),
               const Spacer(),
               Switch(

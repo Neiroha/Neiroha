@@ -60,14 +60,14 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceDim,
+                      color: context.colors.panel,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       l10n.uiVoiceCount(voiceCount),
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: context.fg.withValues(alpha: 0.5),
                       ),
                     ),
                   ),
@@ -93,12 +93,12 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                     IconButton(
                       tooltip: l10n.uiExportVideo,
                       onPressed: exportVideo,
-                      icon: busyOr(Icons.file_download_outlined),
+                      icon: busyOr(Icons.file_download_rounded),
                     )
                   else
                     OutlinedButton.icon(
                       onPressed: exportVideo,
-                      icon: busyOr(Icons.file_download_outlined),
+                      icon: busyOr(Icons.file_download_rounded),
                       label: Text(
                         _exporting ? l10n.uiExporting : l10n.uiExportVideo,
                       ),
@@ -134,7 +134,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.movie_outlined,
+                Icons.movie_rounded,
                 size: 56,
                 color: Colors.white.withValues(alpha: 0.25),
               ),
@@ -179,7 +179,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
         .toDouble();
     return ExcludeSemantics(
       child: Container(
-        color: AppTheme.surfaceDim,
+        color: context.colors.panel,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
           children: [
@@ -257,7 +257,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                   size: 18,
                   color: _syncDub
                       ? AppTheme.accentColor
-                      : Colors.white.withValues(alpha: 0.4),
+                      : context.fg.withValues(alpha: 0.4),
                 ),
                 onPressed: () async {
                   _updateState(() => _syncDub = !_syncDub);
@@ -281,7 +281,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
     Map<String, db.VoiceAsset> assetMap,
   ) {
     return Container(
-      color: AppTheme.surfaceDim,
+      color: context.colors.panel,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -304,14 +304,14 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                 IconButton(
                   tooltip: AppLocalizations.of(context).uiAddCue,
                   onPressed: () => _addCueDialog(project, cues),
-                  icon: const Icon(Icons.add, size: 18),
+                  icon: const Icon(Icons.add_rounded, size: 18),
                 ),
                 IconButton(
                   tooltip: AppLocalizations.of(
                     context,
                   ).uiAddSubtitlesImportSRTLRC,
                   onPressed: () => _importSubtitles(project, cues),
-                  icon: const Icon(Icons.subtitles_outlined, size: 18),
+                  icon: const Icon(Icons.subtitles_rounded, size: 18),
                 ),
                 if (cues.isNotEmpty)
                   IconButton(
@@ -341,7 +341,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                   IconButton(
                     tooltip: AppLocalizations.of(context).uiClearAllCues,
                     onPressed: () => _confirmClearCues(project),
-                    icon: const Icon(Icons.delete_sweep_outlined, size: 18),
+                    icon: const Icon(Icons.delete_sweep_rounded, size: 18),
                   ),
               ],
             ),
@@ -356,9 +356,9 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.subtitles_off_outlined,
+                            Icons.subtitles_off_rounded,
                             size: 42,
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: context.fg.withValues(alpha: 0.2),
                           ),
                           SizedBox(height: 10),
                           Text(
@@ -367,7 +367,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                             ).uiNoCuesYetImportAnSRTLRCFileOrAddOneManually,
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: context.fg.withValues(alpha: 0.4),
                               fontSize: 12,
                             ),
                           ),
@@ -452,7 +452,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(Icons.auto_awesome, size: 18),
+                      : const Icon(Icons.auto_awesome_rounded, size: 18),
                   label: Text(AppLocalizations.of(context).uiGenerateAll),
                 ),
               ],

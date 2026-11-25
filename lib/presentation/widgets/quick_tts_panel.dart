@@ -163,13 +163,13 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
           Icon(
             Icons.graphic_eq_rounded,
             size: 40,
-            color: Colors.white.withValues(alpha: 0.1),
+            color: context.fg.withValues(alpha: 0.1),
           ),
           SizedBox(height: 10),
           Text(
             AppLocalizations.of(context).uiSelectACharacterToQuickTest,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.4),
+              color: context.fg.withValues(alpha: 0.4),
               fontSize: 12,
             ),
           ),
@@ -197,7 +197,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.7),
+              color: context.fg.withValues(alpha: 0.7),
             ),
           ),
           SizedBox(width: 8),
@@ -207,7 +207,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.4),
+                color: context.fg.withValues(alpha: 0.4),
               ),
             ),
           ),
@@ -267,7 +267,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                     ),
                     icon: Icon(
                       Icons.delete_sweep_rounded,
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: context.fg.withValues(alpha: 0.4),
                     ),
                   ),
         ],

@@ -7,6 +7,7 @@ class _TrimWaveformPainter extends CustomPainter {
   final double endSec;
   final double? playheadSec;
   final Color accent;
+  final Color fg;
 
   _TrimWaveformPainter({
     required this.peaks,
@@ -15,6 +16,7 @@ class _TrimWaveformPainter extends CustomPainter {
     required this.endSec,
     required this.playheadSec,
     required this.accent,
+    required this.fg,
   });
 
   @override
@@ -22,7 +24,7 @@ class _TrimWaveformPainter extends CustomPainter {
     if (totalSec <= 0) return;
 
     final midY = size.height / 2;
-    final dim = Paint()..color = Colors.white.withValues(alpha: 0.18);
+    final dim = Paint()..color = fg.withValues(alpha: 0.18);
     final hot = Paint()..color = accent;
 
     final pxCount = size.width.ceil();
@@ -81,6 +83,7 @@ class _TrimWaveformPainter extends CustomPainter {
       old.startSec != startSec ||
       old.endSec != endSec ||
       old.playheadSec != playheadSec ||
+      old.fg != fg ||
       old.totalSec != totalSec;
 }
 

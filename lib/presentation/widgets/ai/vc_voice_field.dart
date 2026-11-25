@@ -87,7 +87,7 @@ class _VcVoiceFieldState extends State<VcVoiceField> {
         : _voices.isEmpty
         ? null
         : PopupMenuButton<String>(
-            icon: const Icon(Icons.arrow_drop_down),
+            icon: const Icon(Icons.arrow_drop_down_rounded),
             tooltip: widget.label,
             onSelected: (id) => setState(() => widget.controller.text = id),
             itemBuilder: (_) => [

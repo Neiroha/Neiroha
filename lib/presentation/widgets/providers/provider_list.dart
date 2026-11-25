@@ -65,9 +65,7 @@ class ProviderList extends ConsumerWidget {
               ? Center(
                   child: Text(
                     AppLocalizations.of(context).uiNoProvidersYet,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
-                    ),
+                    style: TextStyle(color: context.fg.withValues(alpha: 0.4)),
                   ),
                 )
               : ReorderableListView.builder(
@@ -157,7 +155,7 @@ class _ProviderRow extends ConsumerWidget {
                     child: Icon(
                       Icons.drag_indicator_rounded,
                       size: 18,
-                      color: Colors.white.withValues(alpha: 0.25),
+                      color: context.fg.withValues(alpha: 0.25),
                     ),
                   ),
                 ),
@@ -169,7 +167,7 @@ class _ProviderRow extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(8),
                     color: provider.enabled && supported
                         ? AppTheme.accentColor.withValues(alpha: 0.2)
-                        : AppTheme.surfaceBright,
+                        : context.colors.raised,
                   ),
                   child: Icon(
                     !supported
@@ -208,7 +206,11 @@ class _ProviderRow extends ConsumerWidget {
                                 message: failed.isEmpty
                                     ? l10n.provHealthOk
                                     : l10n.provHealthSome(failed.join(', ')),
-                                child: Icon(Icons.circle, size: 8, color: dot),
+                                child: Icon(
+                                  Icons.circle_rounded,
+                                  size: 8,
+                                  color: dot,
+                                ),
                               ),
                             ),
                         ],
@@ -219,7 +221,7 @@ class _ProviderRow extends ConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white.withValues(alpha: 0.4),
+                          color: context.fg.withValues(alpha: 0.4),
                         ),
                       ),
                       CapabilityBadges(provider: provider),
@@ -252,7 +254,7 @@ class _ProviderRow extends ConsumerWidget {
                     child: Icon(
                       Icons.chevron_right_rounded,
                       size: 20,
-                      color: Colors.white.withValues(alpha: 0.35),
+                      color: context.fg.withValues(alpha: 0.35),
                     ),
                   ),
               ],

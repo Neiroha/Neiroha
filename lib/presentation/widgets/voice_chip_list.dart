@@ -34,7 +34,7 @@ class _VoiceChipListState extends State<VoiceChipList> {
     final shown = matches.take(VoiceChipList._cap).toList();
     final style = TextStyle(
       fontSize: 11,
-      color: Colors.white.withValues(alpha: 0.7),
+      color: context.fg.withValues(alpha: 0.7),
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,11 +65,9 @@ class _VoiceChipListState extends State<VoiceChipList> {
                   bottom: 3,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
+                  color: context.fg.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.08),
-                  ),
+                  border: Border.all(color: context.fg.withValues(alpha: 0.08)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -93,7 +91,7 @@ class _VoiceChipListState extends State<VoiceChipList> {
             padding: const EdgeInsets.only(top: 6),
             child: Text(
               l.voiceMoreHidden(matches.length - shown.length),
-              style: style.copyWith(color: Colors.white38),
+              style: style.copyWith(color: context.fg.withValues(alpha: 0.38)),
             ),
           ),
       ],
@@ -129,7 +127,7 @@ class _VoiceGroupRowState extends State<VoiceGroupRow> {
       padding: const EdgeInsets.only(bottom: 4),
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surfaceBright,
+          color: context.colors.raised,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -166,7 +164,7 @@ class _VoiceGroupRowState extends State<VoiceGroupRow> {
                           ? Icons.expand_less_rounded
                           : Icons.expand_more_rounded,
                       size: 16,
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: context.fg.withValues(alpha: 0.5),
                     ),
                   ],
                 ),
@@ -196,15 +194,12 @@ class VoiceCountBadge extends StatelessWidget {
     margin: const EdgeInsets.only(right: 4),
     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
     decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.06),
+      color: context.fg.withValues(alpha: 0.06),
       borderRadius: BorderRadius.circular(4),
     ),
     child: Text(
       AppLocalizations.of(context).uiVoiceCount(count),
-      style: TextStyle(
-        fontSize: 10,
-        color: Colors.white.withValues(alpha: 0.55),
-      ),
+      style: TextStyle(fontSize: 10, color: context.fg.withValues(alpha: 0.55)),
     ),
   );
 }

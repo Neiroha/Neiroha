@@ -189,7 +189,7 @@ class _HorizontalDragDividerState extends State<_HorizontalDragDivider> {
               decoration: BoxDecoration(
                 color: active
                     ? AppTheme.accentColor.withValues(alpha: 0.7)
-                    : const Color(0xFF2A2A36),
+                    : context.colors.divider,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -211,7 +211,7 @@ class _BackButton extends StatelessWidget {
     return Tooltip(
       message: AppLocalizations.of(context).uiBack,
       child: Material(
-        color: AppTheme.surfaceBright.withValues(alpha: 0.9),
+        color: context.colors.raised.withValues(alpha: 0.9),
         shape: const CircleBorder(),
         elevation: 4,
         shadowColor: Colors.black54,

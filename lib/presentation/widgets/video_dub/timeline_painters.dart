@@ -6,22 +6,24 @@ class _RulerPainter extends CustomPainter {
   final double pxPerMs;
   final int viewLeftMs;
   final int viewSpanMs;
+  final Color fg;
 
   _RulerPainter({
     required this.pxPerMs,
     required this.viewLeftMs,
     required this.viewSpanMs,
+    required this.fg,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final tickPaint = Paint()
-      ..color = Colors.white24
+      ..color = fg.withValues(alpha: 0.24)
       ..strokeWidth = 1;
     final majorPaint = Paint()
-      ..color = Colors.white38
+      ..color = fg.withValues(alpha: 0.38)
       ..strokeWidth = 1;
-    const textStyle = TextStyle(color: Colors.white38, fontSize: 9);
+    final textStyle = TextStyle(color: fg.withValues(alpha: 0.38), fontSize: 9);
 
     // Choose a tick interval in seconds that gives ~50..120 px spacing.
     final secondsVisible = viewSpanMs / 1000;
@@ -91,7 +93,8 @@ class _RulerPainter extends CustomPainter {
   bool shouldRepaint(_RulerPainter old) =>
       old.pxPerMs != pxPerMs ||
       old.viewLeftMs != viewLeftMs ||
-      old.viewSpanMs != viewSpanMs;
+      old.viewSpanMs != viewSpanMs ||
+      old.fg != fg;
 }
 
 class _WaveformPainter extends CustomPainter {
@@ -140,7 +143,8 @@ class _WaveformPainter extends CustomPainter {
       old.peaks != peaks ||
       old.viewLeftMs != viewLeftMs ||
       old.viewSpanMs != viewSpanMs ||
-      old.totalMs != totalMs;
+      old.totalMs != totalMs ||
+      old.color != color;
 }
 
 class _MiniOverviewPainter extends CustomPainter {

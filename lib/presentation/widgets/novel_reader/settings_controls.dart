@@ -146,7 +146,7 @@ class _ColorChipButton extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 10,
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: context.fg.withValues(alpha: 0.5),
                   ),
                 ),
               ],
@@ -219,7 +219,7 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: current == color
-                              ? Colors.white.withValues(alpha: 0.8)
+                              ? context.fg.withValues(alpha: 0.8)
                               : Colors.transparent,
                           width: 2,
                         ),
@@ -285,7 +285,7 @@ class _SliderSetting extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.white.withValues(alpha: 0.55),
+              color: context.fg.withValues(alpha: 0.55),
             ),
           ),
         ),
@@ -349,7 +349,7 @@ class _PanelTitle extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.0,
-          color: Colors.white.withValues(alpha: 0.38),
+          color: context.fg.withValues(alpha: 0.38),
         ),
       ),
     );

@@ -12,9 +12,9 @@ class _ApiLogPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceBright,
+        color: context.colors.raised,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(color: context.fg.withValues(alpha: 0.06)),
       ),
       child: Column(
         children: [
@@ -26,7 +26,7 @@ class _ApiLogPanel extends StatelessWidget {
                   AppLocalizations.of(context).uiRequestS(logs.length),
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.58),
+                    color: context.fg.withValues(alpha: 0.58),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -47,7 +47,7 @@ class _ApiLogPanel extends StatelessWidget {
                     child: Text(
                       AppLocalizations.of(context).uiNoAPIRequestsLoggedYet,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.42),
+                        color: context.fg.withValues(alpha: 0.42),
                         fontSize: 12,
                       ),
                     ),
@@ -57,7 +57,7 @@ class _ApiLogPanel extends StatelessWidget {
                     itemCount: logs.length,
                     separatorBuilder: (_, _) => Divider(
                       height: 1,
-                      color: Colors.white.withValues(alpha: 0.05),
+                      color: context.fg.withValues(alpha: 0.05),
                     ),
                     itemBuilder: (context, index) =>
                         _ApiLogRow(entry: logs[index]),
@@ -121,7 +121,7 @@ class _ApiLogRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.46),
+                    color: context.fg.withValues(alpha: 0.46),
                   ),
                 ),
                 if (entry.errorMessage != null) ...[

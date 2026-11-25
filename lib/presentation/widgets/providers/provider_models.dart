@@ -181,7 +181,7 @@ class ProviderModelTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceBright,
+        color: context.colors.raised,
         borderRadius: BorderRadius.circular(8),
         border: isDefault
             ? Border.all(color: AppTheme.accentColor.withValues(alpha: 0.5))
@@ -206,7 +206,10 @@ class ProviderModelTile extends StatelessWidget {
                 ),
                 Text(
                   label == id ? source : '$id · $source',
-                  style: const TextStyle(fontSize: 11, color: Colors.white38),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: context.fg.withValues(alpha: 0.38),
+                  ),
                 ),
                 if (details case final d?)
                   Padding(padding: const EdgeInsets.only(top: 4), child: d),
@@ -260,12 +263,12 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
     decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.06),
+      color: context.fg.withValues(alpha: 0.06),
       borderRadius: BorderRadius.circular(4),
     ),
     child: Text(
       text,
-      style: const TextStyle(fontSize: 10, color: Colors.white60),
+      style: TextStyle(fontSize: 10, color: context.fg.withValues(alpha: 0.60)),
     ),
   );
 }

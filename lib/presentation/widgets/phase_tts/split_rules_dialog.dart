@@ -159,7 +159,7 @@ class _RuleTile extends StatelessWidget {
     final subtitle = localizedSplitRuleSummary(context, rule);
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceDim,
+        color: context.colors.panel,
         borderRadius: BorderRadius.circular(8),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -208,7 +208,7 @@ class _RuleTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontFamily: rule.isNewline ? null : 'monospace',
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: context.fg.withValues(alpha: 0.5),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

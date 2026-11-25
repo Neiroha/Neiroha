@@ -71,7 +71,7 @@ class ChatSessionList extends StatelessWidget {
                       l.chatListEmpty,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: context.fg.withValues(alpha: 0.45),
                       ),
                     ),
                   ),
@@ -91,7 +91,7 @@ class ChatSessionList extends StatelessWidget {
     final character = characters[s.voiceAssetId];
     final engine = ChatEngine.fromName(s.engine);
     final selected = s.id == selectedId;
-    final muted = Colors.white.withValues(alpha: 0.45);
+    final muted = context.fg.withValues(alpha: 0.45);
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
       child: Material(

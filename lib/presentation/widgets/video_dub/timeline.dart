@@ -148,7 +148,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
         final trackContentHeight = _rulerHeight + tracks.length * _trackHeight;
 
         return Container(
-          color: AppTheme.surfaceDim,
+          color: context.colors.panel,
           child: Column(
             children: [
               _buildToolbar(),
@@ -222,14 +222,17 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
                   children: [
                     Text(
                       AppLocalizations.of(context).uiDubTimeline,
-                      style: TextStyle(fontSize: 12, color: Colors.white54),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.fg.withValues(alpha: 0.54),
+                      ),
                     ),
                     SizedBox(width: 12),
                     Text(
                       '${widget.cues.length} cues · ${widget.clips.length} clips · ${_fmtMs(_contentTotalMs)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white38,
+                        color: context.fg.withValues(alpha: 0.38),
                       ),
                     ),
                     SizedBox(width: 24),
@@ -239,7 +242,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
                         onPressed: widget.v1Occupied
                             ? null
                             : () => widget.onImport(DubImportKind.video),
-                        icon: const Icon(Icons.movie_outlined, size: 16),
+                        icon: const Icon(Icons.movie_rounded, size: 16),
                         label: Text(AppLocalizations.of(context).uiImportVideo),
                       ),
                     ),
@@ -278,7 +281,10 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
                   : AppLocalizations.of(
                       context,
                     ).uiFFmpegUnavailableWaveformsAndLocalExportsAreDisabled,
-              style: TextStyle(fontSize: 11, color: Colors.white70),
+              style: TextStyle(
+                fontSize: 11,
+                color: context.fg.withValues(alpha: 0.70),
+              ),
             ),
           ),
           if (widget.ffmpegSupported)
@@ -330,7 +336,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: t.kind == _TrackKind.a1 && widget.a1Muted
-                            ? Colors.white.withValues(alpha: 0.35)
+                            ? context.fg.withValues(alpha: 0.35)
                             : t.accent,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -352,7 +358,7 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
                                 : Icons.volume_up_rounded,
                             size: 14,
                             color: widget.a1Muted
-                                ? Colors.white.withValues(alpha: 0.35)
+                                ? context.fg.withValues(alpha: 0.35)
                                 : t.accent,
                           ),
                         ),

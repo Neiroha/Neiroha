@@ -39,7 +39,7 @@ class NovelStructureTools extends ConsumerWidget {
       spacing: 8,
       children: [
         TextButton.icon(
-          icon: const Icon(Icons.call_split),
+          icon: const Icon(Icons.call_split_rounded),
           label: Text(l.roleSplitText),
           onPressed: () async {
             final selection = await showDialog<TextSelection>(
@@ -54,7 +54,7 @@ class NovelStructureTools extends ConsumerWidget {
           },
         ),
         TextButton.icon(
-          icon: const Icon(Icons.call_merge),
+          icon: const Icon(Icons.call_merge_rounded),
           label: Text(l.roleMergeText),
           onPressed: () async {
             final chapter =
@@ -82,7 +82,7 @@ class NovelStructureTools extends ConsumerWidget {
           },
         ),
         TextButton.icon(
-          icon: const Icon(Icons.undo),
+          icon: const Icon(Icons.undo_rounded),
           label: Text(l.roleUndoStructure),
           onPressed: () => run(() async {
             await editor.undo(segment.projectId);

@@ -11,18 +11,21 @@ class _IndexBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (bg, fg) = switch (status) {
-      _SegmentStatus.done => (_doneColor.withValues(alpha: 0.14), _doneColor),
+      _SegmentStatus.done => (
+        context.colors.success.withValues(alpha: 0.14),
+        context.colors.success,
+      ),
       _SegmentStatus.failed => (
-        _failedColor.withValues(alpha: 0.14),
-        _failedColor,
+        context.colors.danger.withValues(alpha: 0.14),
+        context.colors.danger,
       ),
       _SegmentStatus.generating => (
         AppTheme.accentColor.withValues(alpha: 0.2),
         Colors.white,
       ),
       _SegmentStatus.pending => (
-        Colors.white.withValues(alpha: 0.05),
-        Colors.white.withValues(alpha: 0.5),
+        context.fg.withValues(alpha: 0.05),
+        context.fg.withValues(alpha: 0.5),
       ),
     };
     return Container(
@@ -79,7 +82,7 @@ class _VoiceChip extends StatelessWidget {
             l10n.uiUnassigned,
             style: TextStyle(
               fontSize: 13,
-              color: Colors.white.withValues(alpha: 0.6),
+              color: context.fg.withValues(alpha: 0.6),
             ),
           ),
         ),
@@ -96,7 +99,7 @@ class _VoiceChip extends StatelessWidget {
                   size: 16,
                   color: asset.id == value
                       ? AppTheme.accentColor
-                      : Colors.white.withValues(alpha: 0.4),
+                      : context.fg.withValues(alpha: 0.4),
                 ),
                 const SizedBox(width: 10),
                 Flexible(
@@ -136,7 +139,7 @@ class _VoiceChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   color: assigned
-                      ? Colors.white.withValues(alpha: 0.9)
+                      ? context.fg.withValues(alpha: 0.9)
                       : Colors.amber,
                 ),
               ),
@@ -144,7 +147,7 @@ class _VoiceChip extends StatelessWidget {
             Icon(
               Icons.arrow_drop_down_rounded,
               size: 18,
-              color: Colors.white.withValues(alpha: 0.5),
+              color: context.fg.withValues(alpha: 0.5),
             ),
           ],
         ),
@@ -175,8 +178,8 @@ class _CardAction extends StatelessWidget {
       visualDensity: VisualDensity.compact,
       constraints: const BoxConstraints.tightFor(width: 34, height: 34),
       padding: EdgeInsets.zero,
-      color: color ?? Colors.white.withValues(alpha: 0.75),
-      disabledColor: Colors.white.withValues(alpha: 0.18),
+      color: color ?? context.fg.withValues(alpha: 0.75),
+      disabledColor: context.fg.withValues(alpha: 0.18),
       icon: Icon(icon),
     );
   }
@@ -285,7 +288,7 @@ class _EmptyState extends StatelessWidget {
             Icon(
               Icons.segment_rounded,
               size: 36,
-              color: Colors.white.withValues(alpha: 0.18),
+              color: context.fg.withValues(alpha: 0.18),
             ),
             const SizedBox(height: 10),
             Text(
@@ -293,7 +296,7 @@ class _EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.35),
+                color: context.fg.withValues(alpha: 0.35),
               ),
             ),
             if (action != null) ...[const SizedBox(height: 8), action!],

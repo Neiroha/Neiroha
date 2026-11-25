@@ -148,7 +148,7 @@ class _TextFilterRuleTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceDim,
+        color: context.colors.panel,
         borderRadius: BorderRadius.circular(8),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -201,7 +201,7 @@ class _TextFilterRuleTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontFamily: 'monospace',
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: context.fg.withValues(alpha: 0.5),
                   ),
                 ),
               ],

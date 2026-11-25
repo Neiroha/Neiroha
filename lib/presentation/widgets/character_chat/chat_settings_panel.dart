@@ -112,7 +112,7 @@ class _ChatSettingsPanelState extends State<ChatSettingsPanel> {
     final tools = _toolSupport(descriptor);
 
     return Material(
-      color: AppTheme.surfaceDim,
+      color: context.colors.panel,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -147,7 +147,7 @@ class _ChatSettingsPanelState extends State<ChatSettingsPanel> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
               children: [
                 if (widget.appliesLater) _note(l.chatAppliesNextCall),
-                _section(Icons.badge_outlined, l.chatPanelPersona),
+                _section(Icons.badge_rounded, l.chatPanelPersona),
                 TextField(
                   controller: _persona,
                   minLines: 6,
@@ -219,7 +219,7 @@ class _ChatSettingsPanelState extends State<ChatSettingsPanel> {
                 if (!_realtime)
                   _line(Icons.record_voice_over_rounded, widget.voiceLabel),
                 _line(
-                  Icons.account_tree_outlined,
+                  Icons.account_tree_rounded,
                   widget.chain.isActive
                       ? l.chatVoiceChain(_chainSummary(l, widget.chain))
                       : l.chatVoiceNoChain,
@@ -230,7 +230,7 @@ class _ChatSettingsPanelState extends State<ChatSettingsPanel> {
                   style: TextStyle(
                     fontSize: 12,
                     height: 1.4,
-                    color: Colors.white.withValues(alpha: 0.45),
+                    color: context.fg.withValues(alpha: 0.45),
                   ),
                 ),
               ],
@@ -299,7 +299,7 @@ class _ChatSettingsPanelState extends State<ChatSettingsPanel> {
         l.chatFeatureUnknown,
         style: TextStyle(
           fontSize: 12,
-          color: Colors.white.withValues(alpha: 0.45),
+          color: context.fg.withValues(alpha: 0.45),
         ),
       );
     }
@@ -314,7 +314,7 @@ class _ChatSettingsPanelState extends State<ChatSettingsPanel> {
               decoration: BoxDecoration(
                 color: on
                     ? AppTheme.accentColor.withValues(alpha: 0.16)
-                    : Colors.white.withValues(alpha: 0.05),
+                    : context.fg.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Row(
@@ -325,14 +325,14 @@ class _ChatSettingsPanelState extends State<ChatSettingsPanel> {
                     size: 12,
                     color: on
                         ? AppTheme.accentColor
-                        : Colors.white.withValues(alpha: 0.4),
+                        : context.fg.withValues(alpha: 0.4),
                   ),
                   const SizedBox(width: 4),
                   Text(
                     label,
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.white.withValues(alpha: on ? 0.85 : 0.45),
+                      color: context.fg.withValues(alpha: on ? 0.85 : 0.45),
                     ),
                   ),
                 ],
@@ -371,7 +371,7 @@ class _ChatSettingsPanelState extends State<ChatSettingsPanel> {
     padding: const EdgeInsets.symmetric(vertical: 4),
     child: Row(
       children: [
-        Icon(icon, size: 16, color: Colors.white.withValues(alpha: 0.5)),
+        Icon(icon, size: 16, color: context.fg.withValues(alpha: 0.5)),
         const SizedBox(width: 8),
         Expanded(
           child: Text(

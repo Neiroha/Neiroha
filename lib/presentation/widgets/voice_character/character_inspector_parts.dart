@@ -28,17 +28,17 @@ class InspectorTabs extends StatelessWidget {
       segments: [
         ButtonSegment(
           value: InspectorTab.basic,
-          icon: const Icon(Icons.badge_outlined, size: 16),
+          icon: const Icon(Icons.badge_rounded, size: 16),
           label: Text(l.inspectorTabBasic),
         ),
         ButtonSegment(
           value: InspectorTab.voice,
-          icon: const Icon(Icons.record_voice_over_outlined, size: 16),
+          icon: const Icon(Icons.record_voice_over_rounded, size: 16),
           label: Text(l.inspectorTabVoice),
         ),
         ButtonSegment(
           value: InspectorTab.chain,
-          icon: const Icon(Icons.account_tree_outlined, size: 16),
+          icon: const Icon(Icons.account_tree_rounded, size: 16),
           label: Text(l.chainTitle),
         ),
       ],

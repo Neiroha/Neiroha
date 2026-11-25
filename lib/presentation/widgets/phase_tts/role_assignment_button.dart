@@ -99,7 +99,7 @@ class _PhaseRoleAssignmentButtonState
       ValueListenableBuilder<TextEditingValue>(
         valueListenable: widget.controller,
         builder: (_, value, _) => OutlinedButton.icon(
-          icon: const Icon(Icons.psychology_alt_outlined),
+          icon: const Icon(Icons.psychology_alt_rounded),
           label: Text(AppLocalizations.of(context).phaseAutoRoles),
           onPressed: widget.enabled && !_busy && value.text.trim().isNotEmpty
               ? _open

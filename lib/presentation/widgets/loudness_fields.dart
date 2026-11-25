@@ -31,7 +31,7 @@ class _LoudnessSlider extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, size: 16, color: Colors.white.withValues(alpha: 0.55)),
+            Icon(icon, size: 16, color: context.fg.withValues(alpha: 0.55)),
             const SizedBox(width: 8),
             Expanded(child: Text(label, style: const TextStyle(fontSize: 13))),
             Text(
@@ -57,7 +57,7 @@ class _LoudnessSlider extends StatelessWidget {
           hint,
           style: TextStyle(
             fontSize: 11,
-            color: Colors.white.withValues(alpha: 0.45),
+            color: context.fg.withValues(alpha: 0.45),
           ),
         ),
       ],

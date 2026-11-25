@@ -51,9 +51,9 @@ class LlmTraitsChips extends StatelessWidget {
     final r = traits.reasoning;
     final levels = r?.thinkingLevels ?? const [];
     final thinking = switch (r) {
-      null => chip(Icons.psychology_outlined, l.llmThinkUnknown),
+      null => chip(Icons.psychology_rounded, l.llmThinkUnknown),
       ReasoningSpec(supported: false) => chip(
-        Icons.psychology_outlined,
+        Icons.psychology_rounded,
         l.llmThinkNone,
       ),
       _ when levels.isEmpty => chip(

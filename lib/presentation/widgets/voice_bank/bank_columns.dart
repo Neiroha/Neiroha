@@ -11,13 +11,13 @@ extension _BankColumns on _VoiceBankScreenState {
             Icon(
               Icons.people_outline_rounded,
               size: 64,
-              color: Colors.white.withValues(alpha: 0.1),
+              color: context.fg.withValues(alpha: 0.1),
             ),
             SizedBox(height: 16),
             Text(
               AppLocalizations.of(context).uiSelectOrCreateAVoiceBank,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.4),
+                color: context.fg.withValues(alpha: 0.4),
                 fontSize: 15,
               ),
             ),
@@ -28,7 +28,7 @@ extension _BankColumns on _VoiceBankScreenState {
               ).uiAVoiceBankGroupsCharactersForAProjectOnlyOneBankCan,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.25),
+                color: context.fg.withValues(alpha: 0.25),
                 fontSize: 13,
               ),
             ),
@@ -131,13 +131,13 @@ extension _BankColumns on _VoiceBankScreenState {
             Icon(
               Icons.person_outline_rounded,
               size: 48,
-              color: Colors.white.withValues(alpha: 0.1),
+              color: context.fg.withValues(alpha: 0.1),
             ),
             SizedBox(height: 12),
             Text(
               AppLocalizations.of(context).uiNoCharactersInThisBankYet,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.4),
+                color: context.fg.withValues(alpha: 0.4),
                 fontSize: 13,
               ),
             ),
@@ -176,7 +176,7 @@ extension _BankColumns on _VoiceBankScreenState {
         child: Text(
           'No characters match "$_characterFilter"',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.4),
+            color: context.fg.withValues(alpha: 0.4),
             fontSize: 13,
           ),
         ),

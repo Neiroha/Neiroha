@@ -91,21 +91,21 @@ class _EmptyTaskState extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceBright.withValues(alpha: 0.55),
+        color: context.colors.raised.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: context.fg.withValues(alpha: 0.05)),
       ),
       child: Column(
         children: [
           Icon(
             Icons.inbox_rounded,
             size: 32,
-            color: Colors.white.withValues(alpha: 0.28),
+            color: context.fg.withValues(alpha: 0.28),
           ),
           SizedBox(height: 8),
           Text(
             AppLocalizations.of(context).uiTTSQueueIsIdle,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.62)),
+            style: TextStyle(color: context.fg.withValues(alpha: 0.62)),
           ),
         ],
       ),
@@ -167,7 +167,7 @@ class _TaskSection extends StatelessWidget {
           Text(
             title,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.58),
+              color: context.fg.withValues(alpha: 0.58),
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -192,9 +192,9 @@ class _TaskRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 6),
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 8 : 10),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceBright,
+        color: context.colors.raised,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: context.fg.withValues(alpha: 0.05)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,13 +275,13 @@ class _TaskMetaChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.045),
+        color: context.fg.withValues(alpha: 0.045),
         borderRadius: BorderRadius.circular(5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: Colors.white.withValues(alpha: 0.45)),
+          Icon(icon, size: 12, color: context.fg.withValues(alpha: 0.45)),
           SizedBox(width: 4),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 180),
@@ -290,7 +290,7 @@ class _TaskMetaChip extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.54),
+                color: context.fg.withValues(alpha: 0.54),
                 fontSize: 11,
               ),
             ),

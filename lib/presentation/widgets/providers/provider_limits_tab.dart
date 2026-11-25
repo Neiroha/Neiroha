@@ -39,7 +39,10 @@ class ProviderLimitsTab extends ConsumerWidget {
         SectionHeader(l.provLimitsConnection),
         Text(
           l.uiConcurrency1IsSafestForLocalGPUTTSLeaveRateFieldsBlank,
-          style: const TextStyle(fontSize: 12, color: Colors.white38),
+          style: TextStyle(
+            fontSize: 12,
+            color: context.fg.withValues(alpha: 0.38),
+          ),
         ),
         const SizedBox(height: 10),
         Wrap(
@@ -66,7 +69,10 @@ class ProviderLimitsTab extends ConsumerWidget {
           SectionHeader(l.provLimitsPerCapability),
           Text(
             l.capLimitsHint,
-            style: const TextStyle(fontSize: 12, color: Colors.white38),
+            style: TextStyle(
+              fontSize: 12,
+              color: context.fg.withValues(alpha: 0.38),
+            ),
           ),
           const SizedBox(height: 6),
           for (final cap in AiCapability.values)

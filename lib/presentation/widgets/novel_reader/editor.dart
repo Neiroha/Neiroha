@@ -154,12 +154,12 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
               ButtonSegment(
                 value: false,
                 label: Text(AppLocalizations.of(context).roleReadMode),
-                icon: const Icon(Icons.menu_book),
+                icon: const Icon(Icons.menu_book_rounded),
               ),
               ButtonSegment(
                 value: true,
                 label: Text(AppLocalizations.of(context).roleReviewMode),
-                icon: const Icon(Icons.people_outline),
+                icon: const Icon(Icons.people_outline_rounded),
               ),
             ],
             selected: {_reviewingRoles},

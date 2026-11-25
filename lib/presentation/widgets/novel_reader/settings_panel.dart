@@ -72,7 +72,7 @@ class _NovelSettingsPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppTheme.surfaceDim,
+      color: context.colors.panel,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
         children: [
@@ -200,7 +200,7 @@ class _NovelSettingsPane extends StatelessWidget {
                   ).novelGeneratingSegments(generatingSegmentIds.length),
             style: TextStyle(
               fontSize: 11,
-              color: Colors.white.withValues(alpha: 0.45),
+              color: context.fg.withValues(alpha: 0.45),
             ),
           ),
           SizedBox(height: 18),

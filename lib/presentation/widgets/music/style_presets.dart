@@ -116,9 +116,9 @@ class StylePresetPicker extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 7),
                       child: Text(
                         title(l),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white54,
+                          color: context.fg.withValues(alpha: 0.54),
                         ),
                       ),
                     ),

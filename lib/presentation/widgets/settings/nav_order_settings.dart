@@ -19,7 +19,7 @@ class NavOrderSettingsCard extends ConsumerWidget {
     final layout =
         ref.watch(navOrderProvider).value ?? const NavLayout(NavOrder.defaults);
     final notifier = ref.read(navOrderProvider.notifier);
-    final dim = Colors.white.withValues(alpha: 0.4);
+    final dim = context.fg.withValues(alpha: 0.4);
     return Card(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -59,7 +59,7 @@ class NavOrderSettingsCard extends ConsumerWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.surfaceDim,
+                          color: context.colors.panel,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: _NavRow(

@@ -13,6 +13,7 @@ import 'package:neiroha/presentation/widgets/video_dub/editor.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:uuid/uuid.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// Video Dub — dub video with TTS generated from subtitle cues.
 ///
@@ -86,7 +87,7 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
                     Icon(
                       Icons.tablet_mac_rounded,
                       size: 58,
-                      color: Colors.white.withValues(alpha: 0.18),
+                      color: context.fg.withValues(alpha: 0.18),
                     ),
                     SizedBox(height: 18),
                     Text(
@@ -101,7 +102,7 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
                       l10n.uiVideoDubUnavailableOnAndroidPhoneDescription,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: context.fg.withValues(alpha: 0.55),
                         height: 1.45,
                       ),
                     ),

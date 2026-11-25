@@ -175,14 +175,16 @@ extension _SegmentPanelBars on _SegmentVoicePanelState {
                   Icon(
                     Icons.record_voice_over_rounded,
                     size: 16,
-                    color: none ? Colors.white24 : AppTheme.accentColor,
+                    color: none
+                        ? context.fg.withValues(alpha: 0.24)
+                        : AppTheme.accentColor,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     l10n.phaseAssignVoice,
                     style: TextStyle(
                       fontSize: 13,
-                      color: none ? Colors.white38 : null,
+                      color: none ? context.fg.withValues(alpha: 0.38) : null,
                     ),
                   ),
                 ],
@@ -203,10 +205,10 @@ extension _SegmentPanelBars on _SegmentVoicePanelState {
           IconButton(
             tooltip: l10n.phaseDeleteSelected,
             onPressed: none ? null : () => _delete(chosen),
-            icon: const Icon(
+            icon: Icon(
               Icons.delete_outline_rounded,
               size: 20,
-              color: _failedColor,
+              color: context.colors.danger,
             ),
           ),
           IconButton(
@@ -238,7 +240,7 @@ class _PanelHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final muted = Colors.white.withValues(alpha: 0.5);
+    final muted = context.fg.withValues(alpha: 0.5);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 8, 10),
       child: Column(
@@ -258,7 +260,7 @@ class _PanelHeader extends StatelessWidget {
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 1.2,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: context.fg.withValues(alpha: 0.4),
                       ),
                     ),
                     Text(
@@ -277,9 +279,9 @@ class _PanelHeader extends StatelessWidget {
                     if (failed > 0)
                       Text(
                         l10n.phaseStatsFailed(failed),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: _failedColor,
+                          color: context.colors.danger,
                         ),
                       ),
                     if (unassigned > 0)
@@ -300,7 +302,7 @@ class _PanelHeader extends StatelessWidget {
                   child: Icon(
                     Icons.keyboard_rounded,
                     size: 16,
-                    color: Colors.white.withValues(alpha: 0.35),
+                    color: context.fg.withValues(alpha: 0.35),
                   ),
                 ),
               ),
@@ -315,8 +317,10 @@ class _PanelHeader extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: done / total,
                   minHeight: 3,
-                  backgroundColor: Colors.white.withValues(alpha: 0.06),
-                  color: done == total ? _doneColor : AppTheme.accentColor,
+                  backgroundColor: context.fg.withValues(alpha: 0.06),
+                  color: done == total
+                      ? context.colors.success
+                      : AppTheme.accentColor,
                 ),
               ),
             ),

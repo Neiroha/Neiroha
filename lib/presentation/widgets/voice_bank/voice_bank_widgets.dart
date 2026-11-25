@@ -54,7 +54,7 @@ class _VoiceBankCharacterTileState extends State<VoiceBankCharacterTile> {
         child: Material(
           color: isSelected
               ? AppTheme.accentColor.withValues(alpha: 0.12)
-              : AppTheme.surfaceDim,
+              : context.colors.panel,
           borderRadius: BorderRadius.circular(10),
           child: InkWell(
             borderRadius: BorderRadius.circular(10),
@@ -87,7 +87,7 @@ class _VoiceBankCharacterTileState extends State<VoiceBankCharacterTile> {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.4),
+                            color: context.fg.withValues(alpha: 0.4),
                           ),
                         ),
                       ],
@@ -121,7 +121,7 @@ class _VoiceBankCharacterTileState extends State<VoiceBankCharacterTile> {
                       icon: Icon(
                         Icons.remove_circle_outline_rounded,
                         size: 18,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: context.fg.withValues(alpha: 0.4),
                       ),
                       onPressed: widget.onRemove,
                     ),

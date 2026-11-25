@@ -14,6 +14,7 @@ import 'package:neiroha/presentation/widgets/character_chat/new_chat_dialog.dart
 import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/chat_providers.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// Chats with characters: an AI companion that answers in the character's
 /// own voice, or a live Realtime call. Scripted dialog dubbing stays in
@@ -151,7 +152,7 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
             ? Center(
                 child: Text(
                   l.chatPick,
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.45)),
+                  style: TextStyle(color: context.fg.withValues(alpha: 0.45)),
                 ),
               )
             : ChatView(

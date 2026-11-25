@@ -19,6 +19,7 @@ extension _TimelineLanes on _VideoDubTimelineState {
                 pxPerMs: pxPerMs,
                 viewLeftMs: _viewLeftMs,
                 viewSpanMs: _viewSpanMs,
+                fg: context.fg,
               ),
             ),
           ),
@@ -31,7 +32,7 @@ extension _TimelineLanes on _VideoDubTimelineState {
               height: _trackHeight,
               child: Container(
                 color: i.isOdd
-                    ? Colors.white.withValues(alpha: 0.015)
+                    ? context.fg.withValues(alpha: 0.015)
                     : Colors.transparent,
               ),
             ),
@@ -222,7 +223,7 @@ extension _TimelineLanes on _VideoDubTimelineState {
                 totalMs: widget.duration.inMilliseconds > 0
                     ? widget.duration.inMilliseconds
                     : _contentTotalMs,
-                color: Colors.white.withValues(alpha: 0.12),
+                color: context.fg.withValues(alpha: 0.12),
               ),
             ),
           ),
@@ -247,11 +248,11 @@ extension _TimelineLanes on _VideoDubTimelineState {
     switch (clip.sourceType) {
       case 'video':
         bg = const Color(0xFF3A5AA3);
-        icon = Icons.movie_outlined;
+        icon = Icons.movie_rounded;
         break;
       case 'image':
         bg = const Color(0xFF2C8F7A);
-        icon = Icons.image_outlined;
+        icon = Icons.image_rounded;
         break;
       case 'video-audio':
         bg = const Color(0xFF5C7AB0);
@@ -344,7 +345,7 @@ extension _TimelineLanes on _VideoDubTimelineState {
     return ExcludeSemantics(
       child: Container(
         height: _scrubberHeight,
-        color: AppTheme.surfaceBright,
+        color: context.colors.raised,
         padding: const EdgeInsets.only(
           left: _headerWidth,
           right: 8,

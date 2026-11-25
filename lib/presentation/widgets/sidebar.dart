@@ -100,7 +100,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
         children: [
           Positioned.fill(
             child: ColoredBox(
-              color: AppTheme.sidebarBg,
+              color: context.colors.sidebar,
               child: Column(
                 children: [
                   // Traffic-light strip and logo move the window on macOS.
@@ -164,7 +164,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
                           ? Icons.keyboard_double_arrow_left_rounded
                           : Icons.keyboard_double_arrow_right_rounded,
                       size: 18,
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: context.fg.withValues(alpha: 0.4),
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -242,7 +242,7 @@ class AppNavigationDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     return Drawer(
-      backgroundColor: AppTheme.sidebarBg,
+      backgroundColor: context.colors.sidebar,
       child: SafeArea(
         child: Column(
           children: [
@@ -311,8 +311,8 @@ class _DrawerTabTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final foreground = selected
-        ? Colors.white.withValues(alpha: 0.95)
-        : Colors.white.withValues(alpha: 0.72);
+        ? context.fg.withValues(alpha: 0.95)
+        : context.fg.withValues(alpha: 0.72);
     return ListTile(
       selected: selected,
       leading: Icon(
@@ -350,7 +350,7 @@ class _SidebarButton extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final color = isSelected
         ? AppTheme.accentColor
-        : Colors.white.withValues(alpha: open ? 0.6 : 0.4);
+        : context.fg.withValues(alpha: open ? 0.6 : 0.4);
     final label = tab.localizedLabel(l10n);
     final body = Padding(
       padding: EdgeInsets.symmetric(vertical: 2, horizontal: open ? 12 : 0),
@@ -387,8 +387,8 @@ class _SidebarButton extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           color: isSelected
-                              ? Colors.white.withValues(alpha: 0.95)
-                              : Colors.white.withValues(alpha: 0.7),
+                              ? context.fg.withValues(alpha: 0.95)
+                              : context.fg.withValues(alpha: 0.7),
                           fontWeight: isSelected
                               ? FontWeight.w600
                               : FontWeight.w500,

@@ -66,7 +66,7 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
                 ).uiCharactersAreSharedImportingJustAddsThemAsMembersOfThisBank,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: context.fg.withValues(alpha: 0.5),
                 ),
               ),
             ),
@@ -119,7 +119,7 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
                               ? 'No other banks to import from'
                               : 'Select a source bank above',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.4),
+                            color: context.fg.withValues(alpha: 0.4),
                           ),
                         ),
                       ),
@@ -184,7 +184,7 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
                 AppLocalizations.of(
                   context,
                 ).uiAllCharactersFromThisBankAreAlreadyMembers,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                style: TextStyle(color: context.fg.withValues(alpha: 0.4)),
               ),
             ),
           );
@@ -195,7 +195,7 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
             child: Center(
               child: Text(
                 'No characters match "$_filter"',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                style: TextStyle(color: context.fg.withValues(alpha: 0.4)),
               ),
             ),
           );
@@ -218,7 +218,7 @@ class _ImportFromBankDialogState extends ConsumerState<ImportFromBankDialog> {
                 _modeLabel(a.taskMode),
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.white.withValues(alpha: 0.4),
+                  color: context.fg.withValues(alpha: 0.4),
                 ),
               ),
               trailing: IconButton(

@@ -42,7 +42,7 @@ class SongCover extends StatelessWidget {
       child: Icon(
         playing ? Icons.graphic_eq_rounded : Icons.music_note_rounded,
         size: size * 0.45,
-        color: Colors.white.withValues(alpha: 0.85),
+        color: context.fg.withValues(alpha: 0.85),
       ),
     );
   }
@@ -112,9 +112,9 @@ class SongDetail extends ConsumerWidget {
                     Text(
                       '${song.provider} · ${song.model} · '
                       '${when.formatShortDate(song.created)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white54,
+                        color: context.fg.withValues(alpha: 0.54),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -182,7 +182,7 @@ class SongDetail extends ConsumerWidget {
             value: progress ?? 0,
             minHeight: 3,
             borderRadius: BorderRadius.circular(2),
-            backgroundColor: Colors.white.withValues(alpha: 0.08),
+            backgroundColor: context.fg.withValues(alpha: 0.08),
           ),
         ),
         const SizedBox(height: 8),
@@ -263,20 +263,28 @@ class _SyncedLyricsState extends ConsumerState<SyncedLyrics> {
             if (timed)
               Text(
                 l.musicSeekHint,
-                style: const TextStyle(fontSize: 11, color: Colors.white38),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: context.fg.withValues(alpha: 0.38),
+                ),
               ),
           ],
         ),
         const SizedBox(height: 8),
         if (lines.isEmpty)
-          Text(l.musicNoLyrics, style: const TextStyle(color: Colors.white38)),
+          Text(
+            l.musicNoLyrics,
+            style: TextStyle(color: context.fg.withValues(alpha: 0.38)),
+          ),
         for (final (i, line) in lines.indexed) ...[
           if (line.section != null && line.section != section)
             Padding(
               padding: const EdgeInsets.only(top: 14, bottom: 4),
               child: Text(
                 (section = line.section)!,
-                style: theme.labelSmall?.copyWith(color: Colors.white38),
+                style: theme.labelSmall?.copyWith(
+                  color: context.fg.withValues(alpha: 0.38),
+                ),
               ),
             ),
           InkWell(
@@ -297,7 +305,9 @@ class _SyncedLyricsState extends ConsumerState<SyncedLyrics> {
                       width: 48,
                       child: Text(
                         _stamp(line.start!),
-                        style: theme.bodySmall?.copyWith(color: Colors.white38),
+                        style: theme.bodySmall?.copyWith(
+                          color: context.fg.withValues(alpha: 0.38),
+                        ),
                       ),
                     ),
                   Expanded(
@@ -312,8 +322,8 @@ class _SyncedLyricsState extends ConsumerState<SyncedLyrics> {
                         color: i == active
                             ? AppTheme.accentColor
                             : active == null
-                            ? Colors.white.withValues(alpha: 0.85)
-                            : Colors.white.withValues(alpha: 0.5),
+                            ? context.fg.withValues(alpha: 0.85)
+                            : context.fg.withValues(alpha: 0.5),
                       ),
                       child: Text(line.text),
                     ),

@@ -135,7 +135,7 @@ class _DragDividerState extends State<_DragDivider> {
               decoration: BoxDecoration(
                 color: active
                     ? AppTheme.accentColor.withValues(alpha: 0.7)
-                    : const Color(0xFF2A2A36),
+                    : context.colors.divider,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

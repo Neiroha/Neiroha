@@ -32,9 +32,9 @@ class PersistentAudioBar extends ConsumerWidget {
 
     return Container(
       height: 72,
-      decoration: const BoxDecoration(
-        color: AppTheme.surfaceDim,
-        border: Border(top: BorderSide(color: Color(0xFF2A2A36))),
+      decoration: BoxDecoration(
+        color: context.colors.panel,
+        border: Border(top: BorderSide(color: context.colors.divider)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: LayoutBuilder(
@@ -80,9 +80,9 @@ class PersistentAudioBar extends ConsumerWidget {
                     if (state.subtitle != null && state.subtitle!.isNotEmpty)
                       Text(
                         state.subtitle!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white54,
+                          color: context.fg.withValues(alpha: 0.54),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -116,9 +116,9 @@ class PersistentAudioBar extends ConsumerWidget {
                 SizedBox(width: 8),
                 Text(
                   '${_fmt(state.position)} / ${_fmt(state.duration)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: Colors.white54,
+                    color: context.fg.withValues(alpha: 0.54),
                     fontFeatures: [FontFeature.tabularFigures()],
                   ),
                 ),
@@ -128,16 +128,16 @@ class PersistentAudioBar extends ConsumerWidget {
               IconButton(
                 icon: Icon(
                   state.isPlaying && !state.isPaused
-                      ? Icons.pause_circle_filled
-                      : Icons.play_circle_fill,
+                      ? Icons.pause_circle_filled_rounded
+                      : Icons.play_circle_fill_rounded,
                 ),
                 iconSize: 34,
                 color: AppTheme.accentColor,
                 onPressed: notifier.togglePlay,
               ),
               IconButton(
-                icon: const Icon(Icons.close, size: 18),
-                color: Colors.white38,
+                icon: const Icon(Icons.close_rounded, size: 18),
+                color: context.fg.withValues(alpha: 0.38),
                 tooltip: AppLocalizations.of(context).uiClosePlayer,
                 onPressed: notifier.stop,
               ),
@@ -197,9 +197,13 @@ class _PlaybackActions extends ConsumerWidget {
           width: 28,
           height: 36,
           child: Icon(
-            loop && canLoop ? Icons.repeat_one_rounded : Icons.more_vert,
+            loop && canLoop
+                ? Icons.repeat_one_rounded
+                : Icons.more_vert_rounded,
             size: 18,
-            color: loop && canLoop ? AppTheme.accentColor : Colors.white54,
+            color: loop && canLoop
+                ? AppTheme.accentColor
+                : context.fg.withValues(alpha: 0.54),
           ),
         ),
         onSelected: (action) => action(),
@@ -227,14 +231,16 @@ class _PlaybackActions extends ConsumerWidget {
               loop ? Icons.repeat_one_rounded : Icons.repeat_rounded,
               size: 18,
             ),
-            color: loop ? AppTheme.accentColor : Colors.white54,
+            color: loop
+                ? AppTheme.accentColor
+                : context.fg.withValues(alpha: 0.54),
             isSelected: loop,
             tooltip: loop ? l10n.playbackLoopOn : l10n.playbackLoop,
             onPressed: toggleLoop,
           ),
         IconButton(
           icon: const Icon(Icons.download_rounded, size: 18),
-          color: Colors.white54,
+          color: context.fg.withValues(alpha: 0.54),
           tooltip: l10n.playbackDownload,
           onPressed: audioPath == null ? null : download,
         ),

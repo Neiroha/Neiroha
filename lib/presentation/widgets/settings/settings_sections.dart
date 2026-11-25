@@ -33,7 +33,7 @@ class SettingsSectionRail extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Container(
-      color: const Color(0xFF12121A),
+      color: context.colors.sidebar,
       child: Column(
         children: [
           WindowDragArea(
@@ -96,11 +96,11 @@ class _SettingsSectionTileState extends State<_SettingsSectionTile> {
   Widget build(BuildContext context) {
     final selected = widget.selected;
     final foreground = selected
-        ? Colors.white.withValues(alpha: 0.94)
-        : Colors.white.withValues(alpha: _hovering ? 0.82 : 0.68);
+        ? context.fg.withValues(alpha: 0.94)
+        : context.fg.withValues(alpha: _hovering ? 0.82 : 0.68);
     final iconColor = selected
         ? AppTheme.accentColor
-        : Colors.white.withValues(alpha: _hovering ? 0.76 : 0.58);
+        : context.fg.withValues(alpha: _hovering ? 0.76 : 0.58);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovering = true),
@@ -111,7 +111,7 @@ class _SettingsSectionTileState extends State<_SettingsSectionTile> {
           duration: const Duration(milliseconds: 130),
           height: 46,
           color: _hovering
-              ? Colors.white.withValues(alpha: 0.025)
+              ? context.fg.withValues(alpha: 0.025)
               : Colors.transparent,
           child: Row(
             children: [
@@ -164,7 +164,7 @@ class SettingsCompactPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Container(
-      color: AppTheme.surfaceDim,
+      color: context.colors.panel,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,7 +280,7 @@ class _SettingsPageHeader extends StatelessWidget {
               TextSpan(
                 text: section.localizedDescription(l10n),
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: context.fg.withValues(alpha: 0.45),
                   fontSize: 12.5,
                   fontWeight: FontWeight.w400,
                 ),

@@ -121,7 +121,7 @@ class _ProviderLevelList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     return Container(
-      color: AppTheme.surfaceDim,
+      color: context.colors.panel,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

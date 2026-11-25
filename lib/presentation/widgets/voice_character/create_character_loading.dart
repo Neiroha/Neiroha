@@ -375,7 +375,7 @@ extension _CreateCharacterLoading on _CreateCharacterDialogState {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.white.withValues(alpha: 0.3),
+              color: context.fg.withValues(alpha: 0.3),
             ),
           ),
           SizedBox(height: 8),

@@ -19,7 +19,7 @@ class RecordingIndicator extends StatelessWidget {
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceBright,
+        color: context.colors.raised,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -45,7 +45,7 @@ class RecordingIndicator extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: active
                             ? Colors.redAccent.shade200
-                            : Colors.white.withValues(alpha: 0.25),
+                            : context.fg.withValues(alpha: 0.25),
                       ),
                     ),
                   ),
@@ -65,7 +65,7 @@ class RecordingIndicator extends StatelessWidget {
                     fontSize: 13,
                     color: active
                         ? Colors.redAccent.shade100
-                        : Colors.white.withValues(alpha: 0.58),
+                        : context.fg.withValues(alpha: 0.58),
                   ),
                 ),
                 SizedBox(height: 5),
@@ -75,7 +75,7 @@ class RecordingIndicator extends StatelessWidget {
                     height: 5,
                     child: Stack(
                       children: [
-                        Container(color: Colors.white.withValues(alpha: 0.08)),
+                        Container(color: context.fg.withValues(alpha: 0.08)),
                         FractionallySizedBox(
                           widthFactor: level,
                           child: DecoratedBox(
@@ -124,7 +124,9 @@ class RecordingTimerRow extends StatelessWidget {
         status,
         style: TextStyle(
           fontSize: 12,
-          color: recording ? Colors.redAccent.shade200 : Colors.white54,
+          color: recording
+              ? Colors.redAccent.shade200
+              : context.fg.withValues(alpha: 0.54),
         ),
       ),
       Text(

@@ -74,7 +74,7 @@ class ChatBubble extends StatelessWidget {
       'forget_fact' => l.chatToolForget(fact),
       _ => l.chatToolOther(name),
     };
-    final muted = Colors.white.withValues(alpha: 0.45);
+    final muted = context.fg.withValues(alpha: 0.45);
     return Center(
       child: Tooltip(
         message: result,
@@ -83,7 +83,7 @@ class ChatBubble extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.build_circle_outlined, size: 14, color: muted),
+              Icon(Icons.build_circle_rounded, size: 14, color: muted),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
@@ -112,7 +112,7 @@ class ChatBubble extends StatelessWidget {
         !user && audio != null && onPlay != null && File(audio).existsSync();
     final playing = canPlay && audio == playingPath;
     final style = '${meta['style'] ?? ''}'.trim();
-    final muted = Colors.white.withValues(alpha: 0.45);
+    final muted = context.fg.withValues(alpha: 0.45);
     return Align(
       alignment: user ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -122,7 +122,7 @@ class ChatBubble extends StatelessWidget {
         decoration: BoxDecoration(
           color: user
               ? AppTheme.accentColor.withValues(alpha: 0.24)
-              : AppTheme.surfaceBright,
+              : context.colors.raised,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(14),
             topRight: const Radius.circular(14),

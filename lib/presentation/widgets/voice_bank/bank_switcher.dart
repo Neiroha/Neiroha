@@ -14,7 +14,7 @@ extension _BankSwitcher on _VoiceBankScreenState {
     required VoidCallback healthCheck,
   }) {
     final l10n = AppLocalizations.of(context);
-    final muted = Colors.white.withValues(alpha: 0.4);
+    final muted = context.fg.withValues(alpha: 0.4);
     return SizedBox(
       height: _paneHeaderHeight,
       child: Padding(
@@ -261,7 +261,7 @@ class _PaneHeader extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.7),
+                color: context.fg.withValues(alpha: 0.7),
               ),
             ),
           ),

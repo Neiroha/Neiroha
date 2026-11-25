@@ -17,6 +17,7 @@ import 'package:neiroha/providers/app_providers.dart';
 import 'package:uuid/uuid.dart';
 
 import 'provider_models.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// One capability of one connection (everything but speech synthesis):
 /// its switch, the catalog, fetched and added models, and the default.
@@ -264,7 +265,10 @@ class _ProviderCapabilityTabState extends ConsumerState<ProviderCapabilityTab> {
         if (shown.isEmpty)
           Text(
             l.modelNoModels,
-            style: const TextStyle(fontSize: 12, color: Colors.white38),
+            style: TextStyle(
+              fontSize: 12,
+              color: context.fg.withValues(alpha: 0.38),
+            ),
           ),
         for (final e in usable) tile(e),
         if (available.isNotEmpty) ...[
@@ -273,7 +277,10 @@ class _ProviderCapabilityTabState extends ConsumerState<ProviderCapabilityTab> {
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               l.provAvailableModelsHint,
-              style: const TextStyle(fontSize: 12, color: Colors.white38),
+              style: TextStyle(
+                fontSize: 12,
+                color: context.fg.withValues(alpha: 0.38),
+              ),
             ),
           ),
           for (final e in available) tile(e),

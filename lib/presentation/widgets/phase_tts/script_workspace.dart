@@ -179,7 +179,7 @@ class _PhaseScriptWorkspaceState extends ConsumerState<PhaseScriptWorkspace> {
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: context.fg.withValues(alpha: 0.4),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -191,7 +191,7 @@ class _PhaseScriptWorkspaceState extends ConsumerState<PhaseScriptWorkspace> {
                       ).phaseCharCount(value.text.characters.length),
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withValues(alpha: 0.35),
+                        color: context.fg.withValues(alpha: 0.35),
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
@@ -250,9 +250,9 @@ class _PhaseScriptWorkspaceState extends ConsumerState<PhaseScriptWorkspace> {
         hintText: AppLocalizations.of(
           context,
         ).uiPasteYourNovelTextHereUseAutoSplitToBreakItInto,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.25)),
+        hintStyle: TextStyle(color: context.fg.withValues(alpha: 0.25)),
         filled: true,
-        fillColor: AppTheme.surfaceDim,
+        fillColor: context.colors.panel,
       ),
     );
   }

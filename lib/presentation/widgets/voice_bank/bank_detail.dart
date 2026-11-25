@@ -85,13 +85,13 @@ class _DetailHint extends StatelessWidget {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 48, color: Colors.white.withValues(alpha: 0.1)),
+        Icon(icon, size: 48, color: context.fg.withValues(alpha: 0.1)),
         const SizedBox(height: 12),
         Text(
           text,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.4),
+            color: context.fg.withValues(alpha: 0.4),
             fontSize: 13,
           ),
         ),

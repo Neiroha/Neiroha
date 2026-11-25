@@ -71,7 +71,7 @@ class PageHeader extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 12.5,
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: context.fg.withValues(alpha: 0.45),
                     ),
                   ),
                 ),

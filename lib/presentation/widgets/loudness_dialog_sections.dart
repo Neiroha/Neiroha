@@ -8,7 +8,7 @@ extension _LoudnessSections on _LoudnessDialogState {
       fontSize: 11,
       fontWeight: FontWeight.w600,
       letterSpacing: 1.1,
-      color: Colors.white.withValues(alpha: 0.45),
+      color: context.fg.withValues(alpha: 0.45),
     ),
   );
 
@@ -127,7 +127,7 @@ extension _LoudnessSections on _LoudnessDialogState {
                         : Icons.warning_amber_rounded,
                     size: 18,
                     color: _failed == 0
-                        ? const Color(0xFF4ADE80)
+                        ? context.colors.success
                         : Colors.amberAccent,
                   ),
                   const SizedBox(width: 8),
@@ -217,6 +217,8 @@ extension _LoudnessSections on _LoudnessDialogState {
                 values: values,
                 target: target.lufs,
                 tolerance: target.toleranceLu,
+                fg: context.fg,
+                success: context.colors.success,
               ),
             ),
           ),
@@ -300,9 +302,9 @@ class _Panel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceDim,
+        color: context.colors.panel,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(color: context.fg.withValues(alpha: 0.06)),
       ),
       child: child,
     );
@@ -324,7 +326,7 @@ class _Stat extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 11,
-            color: Colors.white.withValues(alpha: 0.45),
+            color: context.fg.withValues(alpha: 0.45),
           ),
         ),
         const SizedBox(height: 2),
@@ -347,11 +349,15 @@ class _DistributionPainter extends CustomPainter {
   final List<double> values;
   final double target;
   final double tolerance;
+  final Color fg;
+  final Color success;
 
   _DistributionPainter({
     required this.values,
     required this.target,
     required this.tolerance,
+    required this.fg,
+    required this.success,
   });
 
   @override
@@ -365,7 +371,7 @@ class _DistributionPainter extends CustomPainter {
       Offset(0, axisY),
       Offset(size.width, axisY),
       Paint()
-        ..color = Colors.white.withValues(alpha: 0.12)
+        ..color = fg.withValues(alpha: 0.12)
         ..strokeWidth = 1,
     );
 
@@ -391,7 +397,7 @@ class _DistributionPainter extends CustomPainter {
     for (final v in values) {
       final off = (v - target).abs() <= tolerance;
       tick.color = off
-          ? const Color(0xFF4ADE80).withValues(alpha: 0.85)
+          ? success.withValues(alpha: 0.85)
           : Colors.amberAccent.withValues(alpha: 0.7);
       canvas.drawLine(Offset(x(v), 12), Offset(x(v), axisY), tick);
     }
@@ -400,10 +406,7 @@ class _DistributionPainter extends CustomPainter {
       final tp = TextPainter(
         text: TextSpan(
           text: text,
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.white.withValues(alpha: 0.45),
-          ),
+          style: TextStyle(fontSize: 10, color: fg.withValues(alpha: 0.45)),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
@@ -426,5 +429,7 @@ class _DistributionPainter extends CustomPainter {
   bool shouldRepaint(covariant _DistributionPainter old) =>
       old.values != values ||
       old.target != target ||
-      old.tolerance != tolerance;
+      old.tolerance != tolerance ||
+      old.fg != fg ||
+      old.success != success;
 }

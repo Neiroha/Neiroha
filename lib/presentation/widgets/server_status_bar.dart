@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// Compact server status indicator for the bottom of the sidebar or top bar.
 class ServerStatusBar extends ConsumerWidget {
@@ -13,7 +14,7 @@ class ServerStatusBar extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: const Color(0xFF12121A),
+      color: context.colors.sidebar,
       child: Row(
         children: [
           Container(
@@ -35,7 +36,7 @@ class ServerStatusBar extends ConsumerWidget {
                 : AppLocalizations.of(context).uiAPIOff,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.white.withValues(alpha: 0.6),
+              color: context.fg.withValues(alpha: 0.6),
             ),
           ),
           const Spacer(),

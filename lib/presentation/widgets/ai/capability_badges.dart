@@ -95,7 +95,7 @@ class CapabilityBadges extends ConsumerWidget {
                   capabilityIcon(cap),
                   size: 12,
                   color: off.contains(cap.name)
-                      ? Colors.white24
+                      ? context.fg.withValues(alpha: 0.24)
                       : AppTheme.accentColor.withValues(alpha: 0.8),
                 ),
               ),

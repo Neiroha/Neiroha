@@ -85,7 +85,7 @@ class _QuickTtsGenerateBarState extends State<QuickTtsGenerateBar> {
         ? IconButton(
             tooltip: l10n.uiStopSynthesis,
             style: _compact,
-            icon: const Icon(Icons.stop_circle_outlined),
+            icon: const Icon(Icons.stop_circle_rounded),
             onPressed: widget.onStop,
           )
         : IconButton.filled(
@@ -109,9 +109,9 @@ class _QuickTtsGenerateBarState extends State<QuickTtsGenerateBar> {
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceBright,
+        color: context.colors.raised,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: context.fg.withValues(alpha: 0.08)),
       ),
       child: Row(
         // The button stays on the last line as the box grows.
@@ -142,7 +142,7 @@ class _QuickTtsGenerateBarState extends State<QuickTtsGenerateBar> {
                     hintText: widget.hintText ?? l10n.uiTypeSomethingToTest,
                     hintMaxLines: 1,
                     hintStyle: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.3),
+                      color: context.fg.withValues(alpha: 0.3),
                       fontSize: fontSize,
                       height: _line / fontSize,
                     ),

@@ -24,16 +24,16 @@ class _ChapterEditPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF0F0F14),
+      color: context.colors.background,
       child: Column(
         children: [
           Container(
             height: 48,
             padding: const EdgeInsets.symmetric(horizontal: 22),
             decoration: BoxDecoration(
-              color: AppTheme.surfaceDim,
+              color: context.colors.panel,
               border: Border(
-                bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                bottom: BorderSide(color: context.fg.withValues(alpha: 0.08)),
               ),
             ),
             child: Row(
@@ -58,7 +58,7 @@ class _ChapterEditPane extends StatelessWidget {
                   '${segments.length} segments',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.45),
+                    color: context.fg.withValues(alpha: 0.45),
                   ),
                 ),
               ],
@@ -73,7 +73,7 @@ class _ChapterEditPane extends StatelessWidget {
                       ).uiImportOrAddAChapterToEditNovelText,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: context.fg.withValues(alpha: 0.45),
                       ),
                     ),
                   )
@@ -162,11 +162,11 @@ class _EditableSegmentRowState extends State<_EditableSegmentRow> {
       decoration: BoxDecoration(
         color: widget.active
             ? AppTheme.accentColor.withValues(alpha: 0.12)
-            : AppTheme.surfaceDim,
+            : context.colors.panel,
         border: Border.all(
           color: widget.active
               ? AppTheme.accentColor.withValues(alpha: 0.5)
-              : Colors.white.withValues(alpha: 0.07),
+              : context.fg.withValues(alpha: 0.07),
         ),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -191,7 +191,7 @@ class _EditableSegmentRowState extends State<_EditableSegmentRow> {
                           fontFeatures: const [FontFeature.tabularFigures()],
                           color: widget.active
                               ? AppTheme.accentColor
-                              : Colors.white.withValues(alpha: 0.45),
+                              : context.fg.withValues(alpha: 0.45),
                         ),
                       ),
                       SizedBox(height: 6),
@@ -200,7 +200,7 @@ class _EditableSegmentRowState extends State<_EditableSegmentRow> {
                             ? Icons.record_voice_over_rounded
                             : Icons.notes_rounded,
                         size: 15,
-                        color: Colors.white.withValues(alpha: 0.38),
+                        color: context.fg.withValues(alpha: 0.38),
                       ),
                     ],
                   ),

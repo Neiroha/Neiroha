@@ -63,7 +63,7 @@ class ProviderNavPane extends ConsumerWidget {
     final view = ref.watch(providerPageViewProvider);
     final enabled = providers.where((p) => p.enabled).length;
     return Container(
-      color: AppTheme.surfaceDim,
+      color: context.colors.panel,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -178,7 +178,7 @@ class _HubTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: context.fg.withValues(alpha: 0.4),
                       ),
                     ),
                   ],
@@ -187,7 +187,7 @@ class _HubTile extends StatelessWidget {
               Icon(
                 Icons.chevron_right_rounded,
                 size: 18,
-                color: Colors.white.withValues(alpha: selected ? 0.6 : 0.25),
+                color: context.fg.withValues(alpha: selected ? 0.6 : 0.25),
               ),
             ],
           ),

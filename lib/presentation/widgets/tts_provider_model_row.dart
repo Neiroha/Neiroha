@@ -51,7 +51,7 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
       padding: const EdgeInsets.only(bottom: 4),
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surfaceBright,
+          color: context.colors.raised,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -91,7 +91,10 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
                           AppLocalizations.of(context),
                           block,
                         ),
-                        child: const Icon(Icons.do_not_disturb_alt, size: 16),
+                        child: const Icon(
+                          Icons.do_not_disturb_alt_rounded,
+                          size: 16,
+                        ),
                       ),
                     if (widget.shutdownAt case final date?)
                       RetirementChip(shutdownAt: date),
@@ -119,7 +122,7 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
                             ? Icons.expand_less_rounded
                             : Icons.expand_more_rounded,
                         size: 16,
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: context.fg.withValues(alpha: 0.5),
                       ),
                     SizedBox(width: 4),
                     InkWell(

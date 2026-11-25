@@ -334,9 +334,6 @@ enum _SegmentFilter { all, pending, done, failed }
 
 enum _SegmentStatus { pending, generating, done, failed }
 
-const _doneColor = Color(0xFF4ADE80);
-const _failedColor = Color(0xFFF87171);
-
 String _formatClock(double seconds) {
   final total = seconds.round();
   final h = total ~/ 3600;

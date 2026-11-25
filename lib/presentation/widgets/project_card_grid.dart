@@ -83,13 +83,11 @@ class _ProjectCardGridState extends State<ProjectCardGrid> {
               onChanged: (v) => setState(() => _query = v),
               decoration: InputDecoration(
                 hintText: AppLocalizations.of(context).uiSearchProjects,
-                hintStyle: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.3),
-                ),
+                hintStyle: TextStyle(color: context.fg.withValues(alpha: 0.3)),
                 prefixIcon: Icon(
                   Icons.search_rounded,
                   size: 18,
-                  color: Colors.white.withValues(alpha: 0.4),
+                  color: context.fg.withValues(alpha: 0.4),
                 ),
                 suffixIcon: _query.isEmpty
                     ? null
@@ -127,7 +125,7 @@ class _ProjectCardGridState extends State<ProjectCardGrid> {
       child: Text(
         label,
         style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.3),
+          color: context.fg.withValues(alpha: 0.3),
           fontSize: 13,
         ),
       ),
@@ -199,7 +197,7 @@ class _ProjectCardState extends State<_ProjectCard> {
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
       child: Material(
-        color: _hovering ? AppTheme.surfaceBright : AppTheme.surfaceDim,
+        color: _hovering ? context.colors.raised : context.colors.panel,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
@@ -245,7 +243,7 @@ class _ProjectCardState extends State<_ProjectCard> {
                         icon: Icon(
                           Icons.more_vert_rounded,
                           size: 18,
-                          color: Colors.white.withValues(alpha: 0.4),
+                          color: context.fg.withValues(alpha: 0.4),
                         ),
                         onSelected: (v) {
                           if (v == 'settings') widget.onSettings?.call();
@@ -311,7 +309,7 @@ class _ProjectCardState extends State<_ProjectCard> {
                       style: TextStyle(
                         fontSize: 13,
                         height: 1.3,
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: context.fg.withValues(alpha: 0.55),
                       ),
                     ),
                   ),
@@ -319,7 +317,7 @@ class _ProjectCardState extends State<_ProjectCard> {
                   _formatDate(d.updatedAt),
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.35),
+                    color: context.fg.withValues(alpha: 0.35),
                   ),
                 ),
               ],

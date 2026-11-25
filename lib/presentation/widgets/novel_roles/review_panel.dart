@@ -129,7 +129,7 @@ class _NovelRoleReviewPanelState extends ConsumerState<NovelRoleReviewPanel> {
             onPreview: () => onPreview(selected),
           ),
         OutlinedButton.icon(
-          icon: const Icon(Icons.undo),
+          icon: const Icon(Icons.undo_rounded),
           label: Text(l.roleUndo),
           onPressed: () async {
             beforeChange();
@@ -166,7 +166,7 @@ class _NovelRoleReviewPanelState extends ConsumerState<NovelRoleReviewPanel> {
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.help_outline, size: 18),
+            leading: const Icon(Icons.help_outline_rounded, size: 18),
             title: Text(
               segment.segmentText,
               maxLines: 2,

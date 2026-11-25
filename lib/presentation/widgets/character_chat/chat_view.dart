@@ -394,7 +394,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                               : l.chatEmptyCompanion(name),
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.45),
+                            color: context.fg.withValues(alpha: 0.45),
                           ),
                         ),
                       ),

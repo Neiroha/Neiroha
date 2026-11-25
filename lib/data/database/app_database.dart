@@ -70,6 +70,10 @@ class AppDatabase extends _$AppDatabase {
   /// finish. [close] waits until every watcher has seen its stream end,
   /// and Riverpod pauses the watchers of providers nobody is looking at,
   /// so on quit it could wait forever and leave SQLite to be closed by its
-  /// finalizer while the process exits, which crashes.
-  Future<void> closeConnection() => executor.close();
+  /// finalizer while the process exits, which crashes. It also waits for
+  /// the SQLite isolate to exit, as drift answers before the file is shut.
+  Future<void> closeConnection() async {
+    await executor.close();
+    await databaseIsolatesExited();
+  }
 }

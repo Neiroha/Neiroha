@@ -102,8 +102,10 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
         ref.read(roleAnalysisServiceProvider).dispose();
         ref.read(roleReviewServiceProvider).dispose();
         // Each step is bounded: a step that fails or hangs must not keep
-        // the app from quitting. Timings go to logs/last_exit.log.
-        final log = <String>[];
+        // the app from quitting. Timings go to logs/last_exit.log, written
+        // before and after every step so a crash shows where it happened.
+        final log = <String>['started'];
+        _writeExitLog(log);
         await _exitStep(
           'playback',
           ref.read(playbackNotifierProvider.notifier).stop,
@@ -120,7 +122,7 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
           log,
           timeout: const Duration(seconds: 5),
         );
-        _writeExitLog(log);
+        _writeExitLog(log..add('done'));
         return AppExitResponse.exit;
       },
     );
@@ -139,6 +141,9 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
     Duration timeout = const Duration(seconds: 2),
   }) async {
     final watch = Stopwatch()..start();
+    log.add('$name: running');
+    _writeExitLog(log);
+    log.removeLast();
     var outcome = 'ok';
     try {
       await step().timeout(timeout);
@@ -148,6 +153,7 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
       outcome = 'failed: $error';
     }
     log.add('$name: ${watch.elapsedMilliseconds} ms, $outcome');
+    _writeExitLog(log);
   }
 
   /// Records how the last quit went, to trace a step that hangs.

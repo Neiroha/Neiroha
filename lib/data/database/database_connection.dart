@@ -1,28 +1,114 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:drift/drift.dart';
+import 'package:drift/isolate.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 
 import '../storage/path_service.dart';
 import 'schema_version.dart';
 
+/// The SQLite isolates still running; each future completes once its
+/// isolate has exited, which is after its file is closed.
+final _runningIsolates = <Future<void>>{};
+
+/// Completes once every database isolate has exited.
+///
+/// Drift answers a close as soon as its isolate *starts* shutting down, so
+/// quitting right after it can end the process while the isolate is still
+/// in sqlite3_close, which crashes. Waiting here closes that gap.
+Future<void> databaseIsolatesExited() => Future.wait(_runningIsolates.toList());
+
+/// Opens [file] in a background isolate, as drift's createInBackground does,
+/// but keeps track of the isolate so [databaseIsolatesExited] can wait for it.
+QueryExecutor openNeirohaDatabase(File file) =>
+    DatabaseConnection.delayed(_spawnDatabaseIsolate(file.absolute.path));
+
+Future<DatabaseConnection> _spawnDatabaseIsolate(String path) async {
+  final ready = ReceivePort();
+  final exit = ReceivePort();
+  try {
+    await Isolate.spawn(
+      _serveDatabase,
+      (path, ready.sendPort),
+      onExit: exit.sendPort,
+      debugName: 'Drift isolate for $path',
+    );
+  } catch (_) {
+    ready.close();
+    exit.close();
+    rethrow;
+  }
+  final exited = exit.first.then<void>((_) {});
+  _runningIsolates.add(exited);
+  unawaited(exited.whenComplete(() => _runningIsolates.remove(exited)));
+  // An isolate that dies while opening never answers; fail instead of
+  // waiting forever.
+  final answer = await Future.any<Object?>([
+    ready.first,
+    exited.then((_) => throw StateError('The database isolate exited.')),
+  ]);
+  ready.close();
+  return (answer as DriftIsolate).connect(singleClientMode: true);
+}
+
+Future<void> _serveDatabase((String, SendPort) start) async {
+  final (path, reply) = start;
+  final file = File(path);
+  await _bindCloseFunctions();
+  reply.send(
+    DriftIsolate.inCurrent(
+      () => DatabaseConnection(
+        NativeDatabase(file, setup: _backupBeforeMigration(file)),
+      ),
+      shutdownAfterLastDisconnect: true,
+      killIsolateWhenDone: true,
+    ),
+  );
+}
+
+/// Runs, once and before the real database opens, the SQLite functions that
+/// closing it uses.
+///
+/// Dart looks each function up the first time it is called. When the app's
+/// files are replaced while it runs (an update or a rebuild), a lookup made
+/// at quit loads a second copy of SQLite that was never initialised, and
+/// closing the real database through it crashes in sqlite3_close. Calling
+/// them now binds them to the copy that opens the database.
+Future<void> _bindCloseFunctions() async {
+  final probe = NativeDatabase.memory();
+  try {
+    await probe.ensureOpen(const _ProbeUser());
+    // A cached statement, so closing also finalises one.
+    await probe.runSelect('SELECT 1', const []);
+  } finally {
+    await probe.close();
+  }
+}
+
+class _ProbeUser implements QueryExecutorUser {
+  const _ProbeUser();
+  @override
+  int get schemaVersion => 1;
+  @override
+  Future<void> beforeOpen(QueryExecutor executor, OpeningDetails details) =>
+      Future.value();
+}
+
 /// VACUUM INTO captures a consistent snapshot, including WAL contents, before
 /// Drift starts its migration transaction. Existing backup files are retained.
-QueryExecutor openNeirohaDatabase(File file) =>
-    NativeDatabase.createInBackground(
-      file,
-      setup: (sqlite) {
-        final version =
-            sqlite.select('PRAGMA user_version').first['user_version'] as int;
-        if (version > 0 && version < neirohaSchemaVersion) {
-          final backup = File('${file.path}.before-v$neirohaSchemaVersion.bak');
-          if (!backup.existsSync()) {
-            sqlite.execute('VACUUM INTO ?', [backup.path]);
-          }
-        }
-      },
-    );
+DatabaseSetup _backupBeforeMigration(File file) => (sqlite) {
+  final version =
+      sqlite.select('PRAGMA user_version').first['user_version'] as int;
+  if (version > 0 && version < neirohaSchemaVersion) {
+    final backup = File('${file.path}.before-v$neirohaSchemaVersion.bak');
+    if (!backup.existsSync()) {
+      sqlite.execute('VACUUM INTO ?', [backup.path]);
+    }
+  }
+};
 
 LazyDatabase openAppConnection() {
   return LazyDatabase(() async {

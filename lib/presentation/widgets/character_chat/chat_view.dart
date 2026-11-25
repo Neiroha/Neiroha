@@ -68,8 +68,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// microphone.
   PlatformConversationAudio? _io;
 
-  /// The start in progress; a second tap joins it instead of starting a
-  /// second engine.
+  /// The start in progress; a second tap joins it.
   Future<ConversationEngine?>? _launching;
 
   /// Bumped by every stop; a start that sees it change gives up.
@@ -200,7 +199,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       final providers = await _db.getAllProviders();
       final chain = await VoiceChainHook.load(_db, widget.character.id);
       final history = await _history();
-      // Stopped (settings saved, page left) while reading: do not start.
+      // Stopped while reading (settings saved, page left): do not start.
       if (factory == null || !mounted || generation != _generation) {
         return null;
       }
@@ -234,8 +233,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 
   Future<void> _stopEngine() async {
-    // Take this call's engine, devices and subscription before waiting, so
-    // a late cleanup never touches the next call's.
+    // Take this call's parts before waiting: never touch the next call's.
     _generation++;
     final engine = _engine;
     final io = _io;
@@ -306,7 +304,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (text.isEmpty) return;
     _input.clear();
     final engine = await _ensureEngine(listen: _engineListens);
-    await engine?.sendText(text);
+    if (engine == null) {
+      // Start cancelled or failed: give the text back unless retyped.
+      if (mounted && _input.text.isEmpty) _input.text = text;
+      return;
+    }
+    await engine.sendText(text);
   }
 
   bool get _busy =>

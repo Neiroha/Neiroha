@@ -95,6 +95,14 @@ class CompanionConversation implements ConversationEngine {
   StreamSubscription<Uint8List>? _micSub;
   late VadStream? _vad = vad?.open(sampleRate: sttRate);
   final _heard = BytesBuilder(copy: false);
+
+  /// How much audio was dropped from the front of [_heard]; VAD segment
+  /// times count from the start of the stream.
+  Duration _heardFrom = Duration.zero;
+
+  /// Audio kept before speech starts, and the longest turn kept.
+  static const _preRoll = Duration(seconds: 3);
+  static const _maxTurn = Duration(seconds: 90);
   TtsCancelToken _turn = TtsCancelToken();
   bool _busy = false;
   bool _stopped = false;
@@ -142,14 +150,28 @@ class CompanionConversation implements ConversationEngine {
     if (_busy || _stopped || vad == null) return;
     _heard.add(pcm);
     final ended = vad.feed(pcm);
-    if (ended.isEmpty) return;
+    if (ended.isEmpty) {
+      _trimHeard(vad.inSpeech ? _maxTurn : _preRoll);
+      return;
+    }
     final audio = slicePcm(
       _heard.toBytes(),
       sttRate,
-      ended.first.start,
-      ended.first.end,
+      ended.first.start - _heardFrom,
+      ended.first.end - _heardFrom,
     );
     unawaited(_hear(audio));
+  }
+
+  /// Keeps the last [keep] of audio, so silence does not pile up while
+  /// the microphone waits. Trims once twice that has built up.
+  void _trimHeard(Duration keep) {
+    final keepBytes = keep.inMicroseconds * sttRate ~/ 1000000 * 2;
+    if (_heard.length <= keepBytes * 2) return;
+    final bytes = _heard.takeBytes();
+    final drop = bytes.length - keepBytes;
+    _heard.add(bytes.sublist(drop));
+    _heardFrom += Duration(microseconds: drop ~/ 2 * 1000000 ~/ sttRate);
   }
 
   Future<void> _hear(Uint8List audio) => _runTurn(() async {
@@ -222,6 +244,7 @@ class CompanionConversation implements ConversationEngine {
       _busy = false;
       _vad = vad?.open(sampleRate: sttRate);
       _heard.clear();
+      _heardFrom = Duration.zero;
       if (!_stopped) _state(ConversationState.listening);
     }
   }

@@ -132,12 +132,15 @@ class _ChatViewState extends ConsumerState<ChatView> {
     super.dispose();
   }
 
-  ConversationFactory? _factory() {
+  /// Phrase-by-phrase VC decodes encoded converters with FFmpeg, only when
+  /// it is installed; otherwise a reply is converted as one file.
+  Future<ConversationFactory?> _factory() async {
     final router = ref.read(aiCapabilityRouterProvider).value;
     if (router == null) return null;
-    final ffmpeg = kIsWeb
+    final service = ref.read(ffmpegServiceProvider);
+    final ffmpeg = kIsWeb || !await service.isAvailable()
         ? null
-        : MediaPcmDecoder(ref.read(ffmpegServiceProvider));
+        : MediaPcmDecoder(service);
     return ConversationFactory(
       router,
       decode: ffmpeg == null
@@ -163,8 +166,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
       return _engine;
     }
     await _stopEngine();
-    final factory = _factory();
-    if (factory == null) return null;
+    final factory = await _factory();
+    if (factory == null || !mounted) return null;
     setState(() {
       _error = null;
       _starting = true;
@@ -216,6 +219,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
       switch (event) {
         case ConversationStateChanged(:final state):
           _state = state;
+          // The engine ended the call itself (the connection dropped):
+          // forget it so the next call starts a new one.
+          if (state == ConversationState.idle && _engine != null) {
+            unawaited(_stopEngine());
+          }
         case UserTurn(:final text):
           _recorder.user(text);
         case CharacterTurn(:final text, done: false):
@@ -461,7 +469,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
   );
 
   Widget _micButton(AppLocalizations l) {
-    final canListen = _factory()?.companionCanListen ?? false;
+    final router = ref.read(aiCapabilityRouterProvider).value;
+    final canListen =
+        router != null && ConversationFactory(router).companionCanListen;
     final on = _engineListens && _engine != null;
     return IconButton(
       tooltip: !canListen

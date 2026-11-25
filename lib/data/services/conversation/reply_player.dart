@@ -171,8 +171,11 @@ class ReplyPlayer {
       final failure = _failure;
       // A reply with no audio at all has nothing to play.
       if (failure != null && (queued || failure is! FormatException)) {
-        _reset();
-        Error.throwWithStackTrace(failure, _failureTrace!);
+        // Keep the trace before stop() resets it; stop() also closes a
+        // sink an earlier phrase opened.
+        final trace = _failureTrace ?? StackTrace.current;
+        await stop();
+        Error.throwWithStackTrace(failure, trace);
       }
     } else if (conversion case final vc?) {
       final raw = _collected.takeBytes();

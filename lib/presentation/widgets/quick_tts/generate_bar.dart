@@ -74,9 +74,17 @@ class _QuickTtsGenerateBarState extends State<QuickTtsGenerateBar> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final fontSize = widget.roomy ? 14.0 : 13.0;
+    // Every line is _line tall (text and hint alike), so one line of text
+    // and the 32 px buttons, each in a _row-high slot, share a centre.
+    final strut = StrutStyle(
+      fontSize: fontSize,
+      height: _line / fontSize,
+      forceStrutHeight: true,
+    );
     final button = widget.generating
         ? IconButton(
             tooltip: l10n.uiStopSynthesis,
+            style: _compact,
             icon: const Icon(Icons.stop_circle_outlined),
             onPressed: widget.onStop,
           )
@@ -90,7 +98,10 @@ class _QuickTtsGenerateBarState extends State<QuickTtsGenerateBar> {
               disabledBackgroundColor: AppTheme.accentColor.withValues(
                 alpha: 0.3,
               ),
-              minimumSize: const Size(32, 32),
+              minimumSize: const Size.square(32),
+              fixedSize: const Size.square(32),
+              padding: EdgeInsets.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             icon: Icon(widget.sendIcon, size: 16),
           );
@@ -107,9 +118,11 @@ class _QuickTtsGenerateBarState extends State<QuickTtsGenerateBar> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (widget.leading case final leading?)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(6, 6, 0, 6),
-              child: leading,
+            _slot(
+              IconButtonTheme(
+                data: IconButtonThemeData(style: _compact),
+                child: leading,
+              ),
             ),
           Expanded(
             child: Focus(
@@ -122,27 +135,53 @@ class _QuickTtsGenerateBarState extends State<QuickTtsGenerateBar> {
                   minLines: 1,
                   maxLines: widget.roomy ? 10 : 4,
                   keyboardType: TextInputType.multiline,
-                  style: TextStyle(fontSize: fontSize, height: 1.4),
+                  style: TextStyle(fontSize: fontSize),
+                  strutStyle: strut,
+                  textAlignVertical: TextAlignVertical.center,
                   decoration: InputDecoration(
                     hintText: widget.hintText ?? l10n.uiTypeSomethingToTest,
+                    hintMaxLines: 1,
                     hintStyle: TextStyle(
                       color: Colors.white.withValues(alpha: 0.3),
                       fontSize: fontSize,
+                      height: _line / fontSize,
                     ),
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     filled: false,
                     isDense: true,
-                    contentPadding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+                    contentPadding: EdgeInsets.fromLTRB(
+                      widget.leading == null ? 14 : 4,
+                      (_row - _line) / 2,
+                      8,
+                      (_row - _line) / 2,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-          Padding(padding: const EdgeInsets.all(6), child: button),
+          _slot(button),
         ],
       ),
     );
   }
+
+  static const _line = 20.0;
+  static const _row = 44.0;
+
+  static final _compact = IconButton.styleFrom(
+    minimumSize: const Size.square(32),
+    fixedSize: const Size.square(32),
+    padding: EdgeInsets.zero,
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  );
+
+  /// A button centred on the last line of text.
+  static Widget _slot(Widget child) => SizedBox(
+    width: _row,
+    height: _row,
+    child: Center(child: child),
+  );
 }

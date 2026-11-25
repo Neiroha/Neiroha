@@ -4,14 +4,18 @@ import 'package:neiroha/data/ai/protocols/http/streaming_post.dart';
 import 'package:neiroha/data/ai/protocols/openai/openai_dio.dart';
 import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/domain/llm/llm_contract.dart';
+import 'package:neiroha/domain/llm/tool_chat.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 
 import '../gemini_endpoint.dart';
+import 'gemini_tool_chat.dart';
 
-/// Gemini text models over the native `models/{id}:generateContent` API.
-/// [thinkingLevel] maps onto `thinkingConfig.thinkingLevel` when the model
-/// supports thinking (Gemini 3 and newer).
-class GeminiLanguageModel implements StreamingLanguageModel {
+/// Gemini text models over the native `models/{id}:generateContent` API,
+/// with function calling ([GeminiToolChat]). [thinkingLevel] maps onto
+/// `thinkingConfig.thinkingLevel` when the model supports thinking (Gemini
+/// 3 and newer).
+class GeminiLanguageModel
+    implements StreamingLanguageModel, ToolCallingLanguageModel {
   GeminiLanguageModel(this.descriptor, this.endpoint, {this.thinkingLevel});
   @override
   final ModelDescriptor descriptor;
@@ -47,8 +51,7 @@ class GeminiLanguageModel implements StreamingLanguageModel {
       ],
       'generationConfig': {
         'maxOutputTokens': maxOutputTokens,
-        if (thinkingLevel != null && thinkingLevel != ReasoningEffort.none)
-          'thinkingConfig': {'thinkingLevel': thinkingLevel.name.toUpperCase()},
+        'thinkingConfig': ?thinkingConfig(thinkingLevel),
         if (schema != null) ...{
           'responseMimeType': 'application/json',
           'responseJsonSchema': schema,
@@ -56,6 +59,34 @@ class GeminiLanguageModel implements StreamingLanguageModel {
       },
     };
   }
+
+  static Map<String, Object?>? thinkingConfig(ReasoningEffort? level) =>
+      level == null || level == ReasoningEffort.none
+      ? null
+      : {'thinkingLevel': level.name.toUpperCase()};
+
+  @override
+  Future<ToolChatTurn> chatWithTools(
+    List<ToolChatMessage> messages, {
+    List<LlmTool> tools = const [],
+    String? schemaName,
+    Map<String, Object?>? replySchema,
+    TtsCancelToken? cancellation,
+    int maxOutputTokens = 1024,
+  }) => withCancel(cancellation, endpoint.apiKey, (token) async {
+    final response = await endpoint.dio().post<dynamic>(
+      'models/${descriptor.id}:generateContent',
+      data: GeminiToolChat.body(
+        messages,
+        tools: tools,
+        maxOutputTokens: maxOutputTokens,
+        thinkingConfig: thinkingConfig(thinkingLevel),
+        replySchema: replySchema,
+      ),
+      cancelToken: token,
+    );
+    return GeminiToolChat.parse(response.data);
+  });
 
   Future<(String, String, Map<String, Object?>)> _generate(
     Map<String, Object?> body,

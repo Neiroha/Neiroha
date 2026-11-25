@@ -24,12 +24,17 @@ class LlmToolCall {
     required this.id,
     required this.name,
     required this.arguments,
+    this.signature,
   });
   final String id;
   final String name;
 
   /// Raw JSON text, as the model wrote it.
   final String arguments;
+
+  /// An opaque token the provider needs back with this call when the
+  /// conversation continues (Gemini's thought signature).
+  final String? signature;
 }
 
 /// A message of a conversation with tools: what the user said, an answer

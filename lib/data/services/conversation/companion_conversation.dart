@@ -181,10 +181,16 @@ class CompanionConversation implements ConversationEngine {
         try {
           await _answerWithTools(model);
           return;
-        } on LlmChatException catch (e) {
-          // An OpenAI-compatible server without tools or JSON Schema
-          // output: answer by plain streaming from now on.
-          if (!const {400, 404, 422}.contains(e.statusCode)) rethrow;
+        } catch (e) {
+          // A server or model without tools or JSON Schema output (an
+          // OpenAI-compatible server, an older Gemini): answer by plain
+          // streaming from now on.
+          final status = switch (e) {
+            LlmChatException(:final statusCode) => statusCode,
+            AiProviderException(:final statusCode) => statusCode,
+            _ => null,
+          };
+          if (!const {400, 404, 422}.contains(status)) rethrow;
           _plainOnly = true;
         }
       }

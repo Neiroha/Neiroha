@@ -467,7 +467,11 @@ void main() {
     done.complete(
       TtsResult(audioBytes: Uint8List(3), contentType: 'audio/wav'),
     );
-    await pumpEventQueue();
+    // The audio file is written with real I/O, slower on CI machines.
+    for (var i = 0; i < 500; i++) {
+      if (store[job.id]!.status == SpeechJobStatus.succeeded) break;
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
     expect(store[job.id]!.status, SpeechJobStatus.succeeded);
     sub.resume();
     await pumpEventQueue();

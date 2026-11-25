@@ -464,15 +464,15 @@ void main() {
     final seen = <SpeechJobStatus>[];
     final sub = store.watch(job.id).listen((j) => seen.add(j.status));
     sub.pause();
+    // Ends when the final state is saved and announced (real file I/O).
+    final announced = store.watch(job.id).last;
     done.complete(
       TtsResult(audioBytes: Uint8List(3), contentType: 'audio/wav'),
     );
-    // The audio file is written with real I/O, slower on CI machines.
-    for (var i = 0; i < 500; i++) {
-      if (store[job.id]!.status == SpeechJobStatus.succeeded) break;
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-    }
-    expect(store[job.id]!.status, SpeechJobStatus.succeeded);
+    expect(
+      (await announced.timeout(const Duration(seconds: 10))).status,
+      SpeechJobStatus.succeeded,
+    );
     sub.resume();
     await pumpEventQueue();
     expect(seen, [SpeechJobStatus.running, SpeechJobStatus.succeeded]);

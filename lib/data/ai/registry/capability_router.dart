@@ -206,7 +206,9 @@ class CapabilityRouter {
         final model = c.typed<T>(cap, chosen.$2);
         return model == null ? null : RoutedModel(c, model);
       }
-      return null;
+      // An explicit pick of a connection that is gone stays unresolved; a
+      // default left behind by a deleted connection falls back.
+      if (connectionId != null) return null;
     }
     return automatic<T>(cap);
   }
@@ -215,10 +217,14 @@ class CapabilityRouter {
   /// automatic order, with that connection's first model.
   RoutedModel<T>? automatic<T extends CapabilityModel>(AiCapability cap) {
     for (final c in serving(cap)) {
-      // A set model order puts its first model ahead of the recommended one.
-      final first = modelOrder['${c.id}/${cap.name}'] == null
-          ? null
-          : modelsOf(c, cap).first.id;
+      // A set model order puts its first model ahead of the recommended
+      // one; a connection with no recommended model (an OpenAI-compatible
+      // server) uses the first model added to it.
+      final first =
+          modelOrder['${c.id}/${cap.name}'] != null ||
+              c.defaultModel(cap) == null
+          ? modelsOf(c, cap).first.id
+          : null;
       final model = c.typed<T>(cap, first);
       if (model != null) return RoutedModel(c, model);
     }

@@ -4,6 +4,17 @@
 
 基线：`dev@2d514adb`（最后一次上游提交为 2026-11-09 09:23，UTC+8）。本清单随 `dev` 分支版本管理；当前实现与验收结果见下文，提交状态以 Git 为准。本轮按核心功能、macOS、脚本/CI、文档交接四批提交。`[x]` 表示代码已实现且有本地检查；云端效果和 Mac 实机验收单列，不能由假服务测试替代。使用方法及兼容性见 [开发说明](../docs/streaming-and-roles-zh.md)。
 
+## v0.6.0 发布准备（2026-11-25）
+
+- [x] 版本号升到 0.6.0（`pubspec.yaml` 0.6.0+11 与 `lib/app_version.dart`，测试核对两者一致）；发布说明见 [`releases/v0.6.0.md`](../docs/releases/v0.6.0.md)。
+- [x] 浅色 / 深色 / 自动主题：颜色统一来自主题定义（`AppColors`），状态色改为成功 / 警告 / 错误三种，类别色在浅色下取更深色阶；11 个页面以浅色模式渲染逐一检查。
+- [x] 关于页检查更新：GitHub API 受限（匿名 60 次 / 小时）时改读 `releases/latest` 的跳转；启动时检查一次，可跳过版本或关闭。
+- [x] 侧边栏可隐藏页面并调整顺序。
+- [x] 陪伴模式的 Gemini 文字模型支持工具调用：`functionDeclarations` + `parametersJsonSchema`，Gemini 3 的 `thoughtSignature` 随调用回传；提供工具时回复 schema 写入系统指令（JSON 模式与工具并非所有模型都能同时使用），不提供工具时用 `responseJsonSchema`。模型拒绝工具（400 / 404 / 422）时改为普通流式回复。离线假服务测试覆盖；`gemini-3.8-flash` 真实凭据实测通过（调用 `remember_fact` 后按 schema 回复，`gemini_tool_chat_live_test.dart`）。
+- [x] 数据库：启动时用内存库把 drift 会用到的 SQLite 调用（各类型绑定与读取、写入、批量、提交 / 回滚事务、报错、关闭）各走一遍，避免运行中替换应用文件后首次查找到另一份未初始化的 SQLite；退出时等待数据库 isolate 结束。
+- [ ] 合入 `main`、打 `v0.6.0` 标签并由 CI 打包发布（需指挥官授权）。
+- [ ] 实机确认：浅色模式下有数据的时间轴、段落卡片；角色聊天设置面板、重播与 Gemini Live 真实连接。
+
 ## AI 能力层与界面（2026-11-22）
 
 本轮在 `feat/ai-capability-layer` 分支完成，详细进度、优先级与模型目录方案见 [Provider 重构方案第 11 节](../docs/provider-redesign-zh.md#11-进度与调整2026-11-22)。

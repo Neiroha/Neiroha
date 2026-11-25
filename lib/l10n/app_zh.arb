@@ -1351,5 +1351,10 @@
   "chatVoiceChainHint": "翻译、改写、音色转换等在语音库的角色处理链中设置。",
   "chatVoiceRealtimeHint": "通话使用实时模型的音色；处理链里的音色转换会套用到回复上。",
   "chatAppliesNextCall": "修改将在下次开始通话时生效。",
-  "chatChainConverts": "回复会经过处理链的音色转换"
+  "chatChainConverts": "回复会经过处理链的音色转换",
+  "themeSettingsTitle": "主题",
+  "themeSettingsSubtitle": "跟随系统自动切换，或固定使用浅色、深色。",
+  "themeModeSystem": "自动",
+  "themeModeLight": "浅色",
+  "themeModeDark": "深色"
 }

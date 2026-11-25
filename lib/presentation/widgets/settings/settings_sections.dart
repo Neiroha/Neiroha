@@ -10,6 +10,7 @@ import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
 import 'about_settings.dart';
+import 'appearance_settings.dart';
 import 'api_settings.dart';
 import 'general_settings.dart';
 import 'nav_order_settings.dart';
@@ -210,6 +211,8 @@ class SettingsSectionContent extends ConsumerWidget {
     final children = switch (section) {
       SettingsSection.general => const <Widget>[
         LanguageSettingsCard(),
+        SizedBox(height: 8),
+        ThemeSettingsCard(),
         SizedBox(height: 8),
         FontSettingsCard(),
         SizedBox(height: 8),

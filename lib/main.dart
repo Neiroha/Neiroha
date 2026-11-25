@@ -25,6 +25,7 @@ import 'data/services/transcription/media_pcm_decoder.dart';
 import 'providers/ai_capability_providers.dart';
 import 'providers/app_providers.dart';
 import 'server/api_server.dart';
+import 'package:neiroha/presentation/theme/app_theme_mode.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -198,6 +199,7 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
     final db = ref.read(databaseProvider);
     final storedLocale = await db.getSetting(AppLocaleSettings.localeKey);
     final storedFont = await db.getSetting(AppFontSettings.fontModeKey);
+    final storedTheme = await db.getSetting(AppThemeSettings.themeModeKey);
     final locale = AppLocaleSettings.parse(storedLocale);
     await db.localizeStarterContent(AppLocaleSettings.storageValue(locale));
     if (!mounted) return;
@@ -205,17 +207,23 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
     ref.read(appFontModeProvider.notifier).state = AppFontMode.parse(
       storedFont,
     );
+    ref.read(appThemeModeProvider.notifier).state = AppThemeSettings.parse(
+      storedTheme,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final locale = ref.watch(appLocaleProvider);
     final fontMode = ref.watch(appFontModeProvider);
+    final themeMode = ref.watch(appThemeModeProvider);
     return MaterialApp(
       title: 'Neiroha',
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark(fontMode: fontMode),
+      theme: AppTheme.light(fontMode: fontMode),
+      darkTheme: AppTheme.dark(fontMode: fontMode),
+      themeMode: themeMode,
       locale: locale,
       supportedLocales: AppLocaleSettings.supportedLocales,
       localizationsDelegates: const [

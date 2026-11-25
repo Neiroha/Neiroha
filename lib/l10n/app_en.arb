@@ -1966,11 +1966,29 @@
   "navOrderSubtitle": "Drag to reorder, and use the eye to hide pages you don''t use; AI services and Settings stay at the bottom.",
   "navOrderHidden": "Hidden",
   "navOrderHiddenCount": "{count, plural, =1{1 page hidden} other{{count} pages hidden}}; Restore default shows them all.",
-  "@navOrderHiddenCount": {"placeholders": {"count": {"type": "int"}}},
+  "@navOrderHiddenCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "navOrderHide": "Hide {page} from the sidebar",
-  "@navOrderHide": {"placeholders": {"page": {"type": "String"}}},
+  "@navOrderHide": {
+    "placeholders": {
+      "page": {
+        "type": "String"
+      }
+    }
+  },
   "navOrderShow": "Show {page} in the sidebar",
-  "@navOrderShow": {"placeholders": {"page": {"type": "String"}}},
+  "@navOrderShow": {
+    "placeholders": {
+      "page": {
+        "type": "String"
+      }
+    }
+  },
   "navCharacterChat": "Character Chat",
   "chatNew": "New chat",
   "chatListEmpty": "No chats yet. Start one with a character.",
@@ -2080,5 +2098,10 @@
   "chatVoiceChainHint": "Translation, rewriting and voice conversion are set in the character''s processing chain in the Voice Bank.",
   "chatVoiceRealtimeHint": "A call speaks with the Realtime voice; the chain''s voice conversion is applied to it.",
   "chatAppliesNextCall": "Changes apply the next time you start a call.",
-  "chatChainConverts": "Voice conversion from the processing chain"
+  "chatChainConverts": "Voice conversion from the processing chain",
+  "themeSettingsTitle": "Theme",
+  "themeSettingsSubtitle": "Follow the system, or always use light or dark.",
+  "themeModeSystem": "Auto",
+  "themeModeLight": "Light",
+  "themeModeDark": "Dark"
 }

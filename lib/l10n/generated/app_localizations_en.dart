@@ -4419,4 +4419,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatChainConverts => 'Voice conversion from the processing chain';
+
+  @override
+  String get themeSettingsTitle => 'Theme';
+
+  @override
+  String get themeSettingsSubtitle =>
+      'Follow the system, or always use light or dark.';
+
+  @override
+  String get themeModeSystem => 'Auto';
+
+  @override
+  String get themeModeLight => 'Light';
+
+  @override
+  String get themeModeDark => 'Dark';
 }

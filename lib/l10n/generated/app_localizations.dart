@@ -7855,6 +7855,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Voice conversion from the processing chain'**
   String get chatChainConverts;
+
+  /// No description provided for @themeSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get themeSettingsTitle;
+
+  /// No description provided for @themeSettingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the system, or always use light or dark.'**
+  String get themeSettingsSubtitle;
+
+  /// No description provided for @themeModeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get themeModeSystem;
+
+  /// No description provided for @themeModeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeModeLight;
+
+  /// No description provided for @themeModeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeModeDark;
 }
 
 class _AppLocalizationsDelegate

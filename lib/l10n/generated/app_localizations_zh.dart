@@ -4255,4 +4255,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatChainConverts => '回复会经过处理链的音色转换';
+
+  @override
+  String get themeSettingsTitle => '主题';
+
+  @override
+  String get themeSettingsSubtitle => '跟随系统自动切换，或固定使用浅色、深色。';
+
+  @override
+  String get themeModeSystem => '自动';
+
+  @override
+  String get themeModeLight => '浅色';
+
+  @override
+  String get themeModeDark => '深色';
 }

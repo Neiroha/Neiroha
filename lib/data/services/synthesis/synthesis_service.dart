@@ -1,5 +1,6 @@
 import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:neiroha/data/ai/protocols/audio/wav_utils.dart';
@@ -38,26 +39,39 @@ class SynthesisService {
   static const sessionAudioLimit = 32 * 1024 * 1024;
 
   /// The character's processing chain around [adapter], when it has one.
-  /// Each sentence after the first is a further request to [provider],
-  /// counted against its request limits; its text is already in the task's
-  /// token estimate. The wait ends with the chain's own cancellation.
+  ///
+  /// The queued task already paid for [request]'s estimated tokens and one
+  /// request. Each sentence the chain sends spends that prepaid estimate
+  /// first; tokens beyond it (a rewrite that grew the text, instructions
+  /// repeated per sentence) and every request after the first are counted
+  /// as they go. Waits end with the chain's own cancellation.
   Future<TtsAdapter> _chained(
     TtsAdapter adapter,
     TtsRequest request,
     db.TtsProvider provider,
-    TtsCancelToken cancellation,
-  ) async =>
-      await queue.voiceChains?.call(
-        adapter,
-        request,
-        beforeContinuation: (next, token) => queue.accountContinuation(
-          provider,
-          next,
-          token,
-          countTokens: false,
-        ),
-      ) ??
-      adapter;
+  ) async {
+    var prepaid = queue.estimateTokens(request);
+    Future<void> account(TtsRequest next, TtsCancelToken token, bool first) {
+      final cost = queue.estimateTokens(next);
+      final extra = math.max(0, cost - prepaid);
+      prepaid = math.max(0, prepaid - cost);
+      if (first && extra == 0) return Future.value();
+      return queue.accountContinuation(
+        provider,
+        next,
+        token,
+        tokens: extra,
+        countsRequest: !first,
+      );
+    }
+
+    return await queue.voiceChains?.call(
+          adapter,
+          request,
+          beforeRequest: account,
+        ) ??
+        adapter;
+  }
 
   Future<TtsResult> collectInMemory({
     required db.TtsProvider provider,
@@ -78,7 +92,6 @@ class SynthesisService {
         adapter ?? synthesisAdapter(provider, modelName, null),
         request,
         provider,
-        cancellation,
       );
       final buffer = BytesBuilder(copy: false);
       try {
@@ -173,7 +186,6 @@ class SynthesisService {
         adapter ?? synthesisAdapter(provider, modelName, profile),
         request,
         provider,
-        cancellation,
       );
       final receipt = await _consume(
         transport,

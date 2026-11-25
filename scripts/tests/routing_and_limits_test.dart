@@ -22,6 +22,8 @@ import 'package:neiroha/domain/synthesis/tts_event.dart';
 import 'package:neiroha/domain/synthesis/voice_chain.dart';
 import 'package:neiroha/server/jobs/speech_job_store.dart';
 
+import 'support/novel_fixture.dart';
+
 db.TtsProvider _row(String id, AdapterType type) => db.TtsProvider(
   id: id,
   name: id,
@@ -99,11 +101,15 @@ void main() {
   test('every chain sentence after the first is accounted', () async {
     final tts = _Tts();
     final accounted = <String>[];
+    final firsts = <bool>[];
     final chained = ChainedTtsAdapter(
       tts,
       const VoiceChain([VoiceChainStep(kind: VoiceChainStepKind.trim)]),
       VoiceChainRunner(CapabilityRouter(const [])),
-      beforeContinuation: (r, _) async => accounted.add(r.text),
+      beforeRequest: (r, _, first) async {
+        firsts.add(first);
+        if (!first) accounted.add(r.text);
+      },
     );
     await chained
         .synthesizeStream(
@@ -115,6 +121,8 @@ void main() {
     // is accounted, whatever the split.
     expect(tts.spoken.length, greaterThan(1));
     expect(accounted, tts.spoken.skip(1));
+    // Every request reaches the hook; only the first is the task's own.
+    expect(firsts, [true, for (final _ in accounted) false]);
   });
 
   test('a listener that stops reading stops new sentences', () async {
@@ -216,6 +224,24 @@ void main() {
       expect(await database.getCapabilityDefaults(), isEmpty);
       expect(await database.getConnectionCapabilities(), isEmpty);
     });
+  });
+
+  test('new novel audio of unknown length clears the old duration', () async {
+    final database = db.AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    await seedNovelFixture(database);
+    var segment = (await database.getNovelSegments('book')).first;
+    await database.completeNovelAudio(
+      segment,
+      path: '/a.wav',
+      cacheKey: 'k1',
+      duration: 2.5,
+    );
+    segment = (await database.getNovelSegments('book')).first;
+    await database.completeNovelAudio(segment, path: '/b.mp3', cacheKey: 'k2');
+    segment = (await database.getNovelSegments('book')).first;
+    expect(segment.audioPath, '/b.mp3');
+    expect(segment.audioDuration, isNull);
   });
 
   test('audio half written before a quit is removed on open', () async {

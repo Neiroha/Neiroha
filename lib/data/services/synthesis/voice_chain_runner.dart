@@ -5,6 +5,8 @@ import 'dart:convert';
 import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/data/ai/registry/capability_router.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/services/tts_queue_service.dart'
+    show ChainRequestHook;
 import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/domain/llm/llm_contract.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
@@ -210,7 +212,7 @@ class ChainedTtsAdapter extends TtsAdapter {
     this.lookahead = 1,
     this.decode,
     this.onCheck,
-    this.beforeContinuation,
+    this.beforeRequest,
   });
   final TtsAdapter inner;
   final VoiceChain chain;
@@ -221,10 +223,9 @@ class ChainedTtsAdapter extends TtsAdapter {
   /// Receives ASR read-back results of a `verify` step.
   final void Function(SpeechCheck check)? onCheck;
 
-  /// Runs before each sentence after the first goes upstream, so the queue
-  /// counts every request against the connection's limits.
-  final Future<void> Function(TtsRequest request, TtsCancelToken cancellation)?
-  beforeContinuation;
+  /// Runs before each sentence goes upstream, so the queue counts every
+  /// request against the connection's limits.
+  final ChainRequestHook? beforeRequest;
 
   bool get _pipelined => chain.isActive;
 
@@ -292,10 +293,12 @@ class ChainedTtsAdapter extends TtsAdapter {
     var emitted = false;
     var requested = 0;
     Stream<TtsEvent> speak(String sentence, TtsCancelToken c) async* {
-      if (requested++ > 0) {
-        // The pipeline's own token: a failed or abandoned line stops waiting.
-        await beforeContinuation?.call(request.withText(sentence), c);
-      }
+      // The pipeline's own token: a failed or abandoned line stops waiting.
+      await beforeRequest?.call(
+        request.withText(sentence),
+        c,
+        requested++ == 0,
+      );
       yield* _speak(request, sentence, c);
     }
 
@@ -390,8 +393,7 @@ class VoiceChainHook {
   Future<TtsAdapter> wrap(
     TtsAdapter adapter,
     TtsRequest request, {
-    Future<void> Function(TtsRequest request, TtsCancelToken cancellation)?
-    beforeContinuation,
+    ChainRequestHook? beforeRequest,
   }) async {
     final id = request.voiceAssetId;
     if (id == null) return adapter;
@@ -406,7 +408,7 @@ class VoiceChainHook {
           ? decode
           : null,
       onCheck: (c) => SpeechCheckLog.instance.add(c.forAsset(id)),
-      beforeContinuation: beforeContinuation,
+      beforeRequest: beforeRequest,
     );
   }
 }

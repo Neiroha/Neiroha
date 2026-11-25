@@ -81,22 +81,40 @@ class VoiceAssetScreen extends ConsumerWidget {
 
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    return PageHeader(
-      icon: Icons.library_music_rounded,
-      title: l10n.navVoiceAssets,
-      subtitle: l10n.uiSingleAudioTracksForVoiceCloning,
-      actions: [
-        OutlinedButton.icon(
-          onPressed: () => _recordTrack(context, ref),
-          icon: const Icon(Icons.mic_rounded, size: 18),
-          label: Text(l10n.uiRecord),
-        ),
-        FilledButton.icon(
-          onPressed: () => _uploadTrack(context, ref),
-          icon: const Icon(Icons.upload_file_rounded, size: 18),
-          label: Text(l10n.uiUploadAudio),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 460;
+        return PageHeader(
+          icon: Icons.library_music_rounded,
+          title: l10n.navVoiceAssets,
+          subtitle: compact ? null : l10n.uiSingleAudioTracksForVoiceCloning,
+          actions: compact
+              ? [
+                  IconButton.outlined(
+                    tooltip: l10n.uiRecord,
+                    onPressed: () => _recordTrack(context, ref),
+                    icon: const Icon(Icons.mic_rounded, size: 18),
+                  ),
+                  IconButton.filled(
+                    tooltip: l10n.uiUploadAudio,
+                    onPressed: () => _uploadTrack(context, ref),
+                    icon: const Icon(Icons.upload_file_rounded, size: 18),
+                  ),
+                ]
+              : [
+                  OutlinedButton.icon(
+                    onPressed: () => _recordTrack(context, ref),
+                    icon: const Icon(Icons.mic_rounded, size: 18),
+                    label: Text(l10n.uiRecord),
+                  ),
+                  FilledButton.icon(
+                    onPressed: () => _uploadTrack(context, ref),
+                    icon: const Icon(Icons.upload_file_rounded, size: 18),
+                    label: Text(l10n.uiUploadAudio),
+                  ),
+                ],
+        );
+      },
     );
   }
 

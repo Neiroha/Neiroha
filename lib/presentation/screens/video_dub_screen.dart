@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:neiroha/presentation/widgets/layout/page_header.dart';
+import 'package:neiroha/presentation/widgets/project_creation_dialog.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
@@ -240,60 +241,13 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
       return;
     }
 
-    final nameCtrl = TextEditingController();
-    var selectedBankId = banks.first.id;
-
-    final result = await showDialog<(String, String)?>(
+    final result = await showProjectCreationDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(AppLocalizations.of(context).uiNewVideoDubProject),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context).uiProjectName,
-                ),
-              ),
-              SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context).navVoiceBank,
-                ),
-                isExpanded: true,
-                initialValue: selectedBankId,
-                items: banks
-                    .map(
-                      (b) => DropdownMenuItem(value: b.id, child: Text(b.name)),
-                    )
-                    .toList(),
-                onChanged: (v) {
-                  if (v != null) {
-                    setDialogState(() => selectedBankId = v);
-                  }
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(AppLocalizations.of(context).uiCancel),
-            ),
-            FilledButton(
-              onPressed: () =>
-                  Navigator.pop(ctx, (nameCtrl.text, selectedBankId)),
-              child: Text(AppLocalizations.of(context).uiCreate),
-            ),
-          ],
-        ),
-      ),
+      title: AppLocalizations.of(context).uiNewVideoDubProject,
+      banks: banks,
     );
 
-    if (result != null && result.$1.trim().isNotEmpty) {
+    if (result != null && mounted) {
       final id = const Uuid().v4();
       final now = DateTime.now();
       await ref
@@ -301,13 +255,13 @@ class _VideoDubScreenState extends ConsumerState<VideoDubScreen> {
           .insertVideoDubProject(
             db.VideoDubProjectsCompanion(
               id: Value(id),
-              name: Value(result.$1.trim()),
-              bankId: Value(result.$2),
+              name: Value(result.name),
+              bankId: Value(result.bankId),
               createdAt: Value(now),
               updatedAt: Value(now),
             ),
           );
-      setState(() => _selectedProjectId = id);
+      if (mounted) setState(() => _selectedProjectId = id);
     }
   }
 

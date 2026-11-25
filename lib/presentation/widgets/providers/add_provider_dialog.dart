@@ -75,20 +75,34 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
             Text(l.provAddPick, style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
             Expanded(
-              child: GridView.extent(
-                maxCrossAxisExtent: 210,
-                childAspectRatio: 2.1,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                children: [
-                  for (final t in types)
-                    _VendorCard(
-                      name: _platform.displayNameForAdapter(t),
-                      caps: adapterCapabilities(t),
-                      selected: _type == t,
-                      onTap: () => setState(() => _type = t),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  const spacing = 8.0;
+                  const minCardWidth = 160.0;
+                  final columns =
+                      ((constraints.maxWidth + spacing) /
+                              (minCardWidth + spacing))
+                          .floor()
+                          .clamp(1, 4);
+                  return GridView(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: columns,
+                      mainAxisExtent:
+                          MediaQuery.textScalerOf(context).scale(44) + 56,
+                      mainAxisSpacing: spacing,
+                      crossAxisSpacing: spacing,
                     ),
-                ],
+                    children: [
+                      for (final t in types)
+                        _VendorCard(
+                          name: _platform.displayNameForAdapter(t),
+                          caps: adapterCapabilities(t),
+                          selected: _type == t,
+                          onTap: () => setState(() => _type = t),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
             const SizedBox(height: 8),
@@ -169,6 +183,7 @@ class _VendorCard extends StatelessWidget {
               ),
               Wrap(
                 spacing: 6,
+                runSpacing: 4,
                 children: [
                   for (final cap in AiCapability.values)
                     if (caps.contains(cap))

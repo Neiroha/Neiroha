@@ -26,6 +26,7 @@ import 'package:neiroha/providers/playback_provider.dart';
 import 'chat_bubbles.dart';
 import 'chat_error_bar.dart';
 import 'chat_memory_dialog.dart';
+import 'chat_mic_button.dart';
 import 'chat_header.dart';
 import 'chat_recorder.dart';
 import 'chat_settings_panel.dart';
@@ -70,6 +71,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// The start in progress; a second tap joins it instead of starting a
   /// second engine.
   Future<ConversationEngine?>? _launching;
+
+  /// Bumped by every stop; a start that sees it change gives up.
+  int _generation = 0;
   StreamSubscription<ConversationEvent>? _sub;
   ConversationState _state = ConversationState.idle;
   bool _starting = false;
@@ -191,9 +195,16 @@ class _ChatViewState extends ConsumerState<ChatView> {
       _starting = true;
     });
     try {
+      final generation = _generation;
       final factory = await _factory();
-      if (factory == null || !mounted) return null;
       final providers = await _db.getAllProviders();
+      final chain = await VoiceChainHook.load(_db, widget.character.id);
+      final history = await _history();
+      // Stopped (settings saved, page left) while reading: do not start.
+      if (factory == null || !mounted || generation != _generation) {
+        return null;
+      }
+      // Microphone and engine are made and registered together.
       final engine = factory.create(
         engine: _kind,
         character: widget.character,
@@ -202,9 +213,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
             .firstOrNull,
         settings: _settings,
         io: _io = PlatformConversationAudio(),
-        chain: _chain = await VoiceChainHook.load(_db, widget.character.id),
+        chain: _chain = chain,
         memory: _memory,
-        history: await _history(),
+        history: history,
         listen: listen,
       );
       _engine = engine;
@@ -223,16 +234,20 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 
   Future<void> _stopEngine() async {
+    // Take this call's engine, devices and subscription before waiting, so
+    // a late cleanup never touches the next call's.
+    _generation++;
     final engine = _engine;
     final io = _io;
+    final sub = _sub;
     _engine = null;
     _io = null;
+    _sub = null;
     _engineListens = false;
+    _pending = '';
+    await sub?.cancel();
     await engine?.stop();
     await io?.dispose().catchError((_) {});
-    await _sub?.cancel();
-    _sub = null;
-    _pending = '';
     if (mounted) setState(() => _state = ConversationState.idle);
   }
 
@@ -457,7 +472,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
               sendTooltip: l.quickTtsSendHint,
               onGenerate: _busy ? null : _send,
               onStop: () {},
-              leading: _kind == ChatEngine.companion ? _micButton(l) : null,
+              leading: _kind == ChatEngine.companion
+                  ? ChatMicButton(
+                      on: _engineListens && _engine != null,
+                      enabled: !_starting,
+                      onPressed: _toggleMic,
+                    )
+                  : null,
             ),
           ],
         );
@@ -471,24 +492,6 @@ class _ChatViewState extends ConsumerState<ChatView> {
           ],
         );
       },
-    );
-  }
-
-  Widget _micButton(AppLocalizations l) {
-    final router = ref.read(aiCapabilityRouterProvider).value;
-    final canListen =
-        router != null && ConversationFactory(router).companionCanListen;
-    final on = _engineListens && _engine != null;
-    return IconButton(
-      tooltip: !canListen
-          ? l.chatMicUnavailable
-          : on
-          ? l.chatMicStop
-          : l.chatMicStart,
-      isSelected: on,
-      color: on ? AppTheme.accentColor : null,
-      onPressed: !canListen || _starting ? null : _toggleMic,
-      icon: Icon(on ? Icons.mic_rounded : Icons.mic_none_rounded, size: 20),
     );
   }
 }

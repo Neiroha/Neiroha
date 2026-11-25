@@ -210,6 +210,7 @@ class ChainedTtsAdapter extends TtsAdapter {
     this.lookahead = 1,
     this.decode,
     this.onCheck,
+    this.beforeContinuation,
   });
   final TtsAdapter inner;
   final VoiceChain chain;
@@ -219,6 +220,10 @@ class ChainedTtsAdapter extends TtsAdapter {
 
   /// Receives ASR read-back results of a `verify` step.
   final void Function(SpeechCheck check)? onCheck;
+
+  /// Runs before each sentence after the first goes upstream, so the queue
+  /// counts every request against the connection's limits.
+  final Future<void> Function(TtsRequest request)? beforeContinuation;
 
   bool get _pipelined => chain.isActive;
 
@@ -284,9 +289,17 @@ class ChainedTtsAdapter extends TtsAdapter {
             runner.streamText(request.text, chain, cancellation: cancellation),
           );
     var emitted = false;
+    var requested = 0;
+    Stream<TtsEvent> speak(String sentence, TtsCancelToken c) async* {
+      if (requested++ > 0) {
+        await beforeContinuation?.call(request.withText(sentence));
+      }
+      yield* _speak(request, sentence, c);
+    }
+
     try {
       await for (final event in SentenceSpeechPipeline(
-        speak: (sentence, c) => _speak(request, sentence, c),
+        speak: speak,
         conversions: stages,
         lookahead: lookahead,
         decode: decode,
@@ -336,11 +349,15 @@ class ChainedTtsAdapter extends TtsAdapter {
 /// Loads a character's chain from app settings and wraps its adapter.
 /// Installed on the TTS queue so every app synthesis path honours it.
 class VoiceChainHook {
-  VoiceChainHook(this.database, {this.decode});
+  VoiceChainHook(this.database, {this.decode, this.decodeAvailable});
   final db.AppDatabase database;
 
   /// Lets sentence streaming read encoded engines (FFmpeg on desktop).
   final AudioDecoder? decode;
+
+  /// Whether [decode] works right now (FFmpeg installed). Without it an
+  /// encoded engine is spoken as one whole file instead of failing.
+  final Future<bool> Function()? decodeAvailable;
 
   static Future<VoiceChain> load(
     db.AppDatabase database,
@@ -368,7 +385,11 @@ class VoiceChainHook {
     jsonEncode(chain.normalized().toJson()),
   );
 
-  Future<TtsAdapter> wrap(TtsAdapter adapter, TtsRequest request) async {
+  Future<TtsAdapter> wrap(
+    TtsAdapter adapter,
+    TtsRequest request, {
+    Future<void> Function(TtsRequest request)? beforeContinuation,
+  }) async {
     final id = request.voiceAssetId;
     if (id == null) return adapter;
     final chain = await load(database, id);
@@ -378,8 +399,11 @@ class VoiceChainHook {
       adapter,
       chain,
       VoiceChainRunner(router),
-      decode: decode,
+      decode: decode != null && (await decodeAvailable?.call() ?? true)
+          ? decode
+          : null,
       onCheck: (c) => SpeechCheckLog.instance.add(c.forAsset(id)),
+      beforeContinuation: beforeContinuation,
     );
   }
 }

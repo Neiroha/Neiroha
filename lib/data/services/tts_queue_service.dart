@@ -8,6 +8,7 @@ import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 export 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 export 'package:neiroha/domain/ai/capability.dart' show AiCapability;
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/domain/ai/ai_exception.dart';
 import 'package:neiroha/domain/ai/capability.dart';
 
 import 'queue_limits.dart';
@@ -76,7 +77,13 @@ class TtsQueueService {
 
   /// Wraps a character's adapter in its processing chain; installed by the
   /// app at startup. Requests without a voice asset id pass through.
-  Future<TtsAdapter> Function(TtsAdapter adapter, TtsRequest request)?
+  /// [beforeContinuation] accounts each further upstream request the chain
+  /// makes (one per sentence) against the task's lease.
+  Future<TtsAdapter> Function(
+    TtsAdapter adapter,
+    TtsRequest request, {
+    Future<void> Function(TtsRequest request)? beforeContinuation,
+  })?
   voiceChains;
 
   static const Duration _minuteWindow = Duration(minutes: 1);
@@ -162,6 +169,16 @@ class TtsQueueService {
       return Future<T>.error(const TtsCancelledException());
     }
     final lane = queueLane(provider.id, capability);
+    // The capability switch holds for every caller, also characters and
+    // API requests bound to this connection directly, not just routing.
+    if (_laneRows[lane]?.enabled == false) {
+      return Future<T>.error(
+        AiProviderException(
+          '${capability.name.toUpperCase()} is turned off for '
+          '"${provider.name}" in its settings.',
+        ),
+      );
+    }
     final state = _states.putIfAbsent(lane, () => _ProviderQueueState());
     final queuedTask = _QueuedTtsTask<T>(
       id: '${++_nextTaskId}',

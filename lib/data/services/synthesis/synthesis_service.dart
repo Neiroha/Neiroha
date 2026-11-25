@@ -38,8 +38,21 @@ class SynthesisService {
   static const sessionAudioLimit = 32 * 1024 * 1024;
 
   /// The character's processing chain around [adapter], when it has one.
-  Future<TtsAdapter> _chained(TtsAdapter adapter, TtsRequest request) async =>
-      await queue.voiceChains?.call(adapter, request) ?? adapter;
+  /// Each sentence after the first is a further request to [provider],
+  /// counted against its rate limits.
+  Future<TtsAdapter> _chained(
+    TtsAdapter adapter,
+    TtsRequest request,
+    db.TtsProvider provider,
+    TtsCancelToken cancellation,
+  ) async =>
+      await queue.voiceChains?.call(
+        adapter,
+        request,
+        beforeContinuation: (next) =>
+            queue.accountContinuation(provider, next, cancellation),
+      ) ??
+      adapter;
 
   Future<TtsResult> collectInMemory({
     required db.TtsProvider provider,
@@ -59,6 +72,8 @@ class SynthesisService {
       final transport = await _chained(
         adapter ?? synthesisAdapter(provider, modelName, null),
         request,
+        provider,
+        cancellation,
       );
       final buffer = BytesBuilder(copy: false);
       try {
@@ -152,6 +167,8 @@ class SynthesisService {
       final transport = await _chained(
         adapter ?? synthesisAdapter(provider, modelName, profile),
         request,
+        provider,
+        cancellation,
       );
       final receipt = await _consume(
         transport,

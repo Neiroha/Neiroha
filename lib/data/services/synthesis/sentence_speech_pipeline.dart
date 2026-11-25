@@ -93,7 +93,9 @@ class SentenceSpeechPipeline {
           if (local.isCancelled) break;
           final job = _Sentence(text.trim());
           jobs.add(job);
-          unawaited(job.run(this, tts, local).whenComplete(slots.release));
+          // The slot frees once the sentence has been read out below, so a
+          // listener that stops reading also stops new sentences.
+          unawaited(job.run(this, tts, local));
         }
       } catch (error, stack) {
         if (!jobs.isClosed) jobs.addError(error, stack);
@@ -129,6 +131,7 @@ class SentenceSpeechPipeline {
           spoken += out.length;
           yield TtsAudioChunk(out);
         }
+        slots.release();
       }
       local.throwIfCancelled();
       if (spoken == 0) throw const FormatException('Nothing to speak.');

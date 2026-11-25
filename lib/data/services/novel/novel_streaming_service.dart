@@ -33,14 +33,20 @@ class NovelStreamPlan {
     this.binding,
     this.adapter,
     this.cacheKey,
-    this.chunks,
-  );
+    this.chunks, {
+    this.chained = false,
+  });
   final db.NovelProject project;
   final db.NovelSegment segment;
   final NovelSynthesisBinding binding;
   final TtsAdapter adapter;
   final String cacheKey;
   final List<String> chunks;
+
+  /// The character has an active processing chain. The chain then splits
+  /// and speaks the whole text itself; a [PcmSequenceAdapter] inside it
+  /// would replay every chunk for each sentence the chain asks for.
+  final bool chained;
   bool get canStream =>
       adapter.supportsStreaming &&
       {
@@ -110,6 +116,7 @@ class NovelStreamingService {
       rules,
     );
     if (text.trim().isEmpty) throw StateError('No text remains after filters.');
+    final chain = await VoiceChainHook.load(database, asset.id);
     final key = NovelAudioFingerprint.build(
       project: project,
       segment: segment,
@@ -117,7 +124,7 @@ class NovelStreamingService {
       provider: binding.provider,
       protocolSignature: binding.profileSignature,
       textFilterSignature: NovelTextFilterRulesService.signature(rules),
-      chainSignature: (await VoiceChainHook.load(database, asset.id)).signature,
+      chainSignature: chain.signature,
     );
     return NovelStreamPlan(
       project,
@@ -131,6 +138,7 @@ class NovelStreamingService {
         maxSliceChars: project.maxSliceChars,
         punctuationOnly: project.sliceOnlyAtPunctuation,
       ),
+      chained: chain.isActive,
     );
   }
 
@@ -204,7 +212,11 @@ class NovelStreamingService {
       final result = await synthesis.generate(
         provider: plan.binding.provider,
         modelName: asset.modelName,
-        request: requests.first,
+        // A chained character gets the whole text in one request: the
+        // chain (applied by [SynthesisService]) splits it into sentences.
+        request: plan.chained
+            ? requests.first.withText(plan.chunks.join('\n'))
+            : requests.first,
         outputBase:
             '${directory.path}/seg_${plan.segment.globalIndex}_${const Uuid().v4()}',
         cancellation: cancellation,
@@ -212,15 +224,18 @@ class NovelStreamingService {
         sink: sink,
         source: 'Novel Reader',
         label: plan.segment.segmentText,
-        adapter: PcmSequenceAdapter(
-          plan.adapter,
-          requests,
-          beforeContinuation: (request) => synthesis.queue.accountContinuation(
-            plan.binding.provider,
-            request,
-            cancellation,
-          ),
-        ),
+        adapter: plan.chained
+            ? plan.adapter
+            : PcmSequenceAdapter(
+                plan.adapter,
+                requests,
+                beforeContinuation: (request) =>
+                    synthesis.queue.accountContinuation(
+                      plan.binding.provider,
+                      request,
+                      cancellation,
+                    ),
+              ),
         onFirstAudio: onFirstAudio,
       );
       cancellation.throwIfCancelled();

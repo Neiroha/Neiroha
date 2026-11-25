@@ -53,8 +53,9 @@ extension AppDatabaseChatQueries on AppDatabase {
             ..orderBy([(t) => OrderingTerm.asc(t.orderIndex)]))
           .get();
 
-  /// Appends a line and moves the session to the top of the list.
-  Future<void> addChatMessage(
+  /// Appends a line, moves the session to the top of the list and returns
+  /// the line's id.
+  Future<String> addChatMessage(
     String sessionId, {
     required String role,
     required String content,
@@ -67,9 +68,10 @@ extension AppDatabaseChatQueries on AppDatabase {
       readsFrom: {chatMessages},
     ).getSingle();
     final now = DateTime.now();
+    final id = const Uuid().v4();
     await into(chatMessages).insert(
       ChatMessagesCompanion.insert(
-        id: const Uuid().v4(),
+        id: id,
         sessionId: sessionId,
         orderIndex: last.read<int>('n') + 1,
         role: role,
@@ -81,5 +83,22 @@ extension AppDatabaseChatQueries on AppDatabase {
     await (update(chatSessions)..where((t) => t.id.equals(sessionId))).write(
       ChatSessionsCompanion(updatedAt: Value(now)),
     );
+    return id;
   });
+
+  /// Adds [fields] to a line's metadata (e.g. the audio of a reply).
+  Future<void> mergeChatMessageMeta(String id, Map<String, Object?> fields) =>
+      transaction(() async {
+        final row = await (select(
+          chatMessages,
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
+        if (row == null) return;
+        final meta = <String, Object?>{
+          if (row.metaJson != null) ...jsonDecode(row.metaJson!) as Map,
+          ...fields,
+        };
+        await (update(chatMessages)..where((t) => t.id.equals(id))).write(
+          ChatMessagesCompanion(metaJson: Value(jsonEncode(meta))),
+        );
+      });
 }

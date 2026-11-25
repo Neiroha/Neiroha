@@ -188,6 +188,17 @@ class PathService {
     return File(p.join(dir.path, 'phase_segment_settings.json'));
   }
 
+  /// Recorded replies of one character chat.
+  Future<Directory> chatAudioDir(String sessionId) => _ensure(
+    Directory(
+      p.join(
+        voiceAssetRoot.path,
+        'chats',
+        sanitizeSegment(sessionId, fallback: 'chat'),
+      ),
+    ),
+  );
+
   Future<Directory> dialogTtsDir(String projectName) => _ensure(
     Directory(
       p.join(

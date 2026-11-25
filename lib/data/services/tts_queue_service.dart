@@ -82,7 +82,8 @@ class TtsQueueService {
   Future<TtsAdapter> Function(
     TtsAdapter adapter,
     TtsRequest request, {
-    Future<void> Function(TtsRequest request)? beforeContinuation,
+    Future<void> Function(TtsRequest request, TtsCancelToken cancellation)?
+    beforeContinuation,
   })?
   voiceChains;
 
@@ -169,8 +170,7 @@ class TtsQueueService {
       return Future<T>.error(const TtsCancelledException());
     }
     final lane = queueLane(provider.id, capability);
-    // The capability switch holds for every caller, also characters and
-    // API requests bound to this connection directly, not just routing.
+    // The switch binds every caller, not just routing.
     if (_laneRows[lane]?.enabled == false) {
       return Future<T>.error(
         AiProviderException(
@@ -209,11 +209,13 @@ class TtsQueueService {
 
   /// A multi-utterance session keeps its concurrency lease, but every further
   /// upstream request must still consume the provider's RPM/TPM/day budget.
+  /// [countTokens] = false: the task's estimate already covers the text.
   Future<void> accountContinuation(
     db.TtsProvider provider,
     TtsRequest request,
-    TtsCancelToken cancellation,
-  ) async {
+    TtsCancelToken cancellation, {
+    bool countTokens = true,
+  }) async {
     final state = _states[provider.id];
     if (state == null || state.activeTasks.isEmpty) {
       throw StateError('A continuation requires an active synthesis lease.');
@@ -223,7 +225,7 @@ class TtsQueueService {
     try {
       while (true) {
         cancellation.throwIfCancelled();
-        final tokens = estimateTokens(request);
+        final tokens = countTokens ? estimateTokens(request) : 0;
         final wait = state.waitBeforeStart(
           _limits(provider, AiCapability.tts),
           tokens,

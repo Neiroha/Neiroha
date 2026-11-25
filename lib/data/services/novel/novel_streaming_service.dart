@@ -241,9 +241,17 @@ class NovelStreamingService {
       cancellation.throwIfCancelled();
       final latest = await prepare(plan.project, plan.segment);
       if (latest.cacheKey != plan.cacheKey) throw const TtsCancelledException();
+      // Streamed PCM is cached as a 44-byte-header WAV. A chain that fell
+      // back to one encoded file (VC returning MP3 without FFmpeg) leaves
+      // the duration unknown rather than failing a finished synthesis.
+      final format = result.format;
       final duration =
-          ((await File(result.audioPath).length()) - 44) /
-          (result.format.sampleRate! * result.format.channels! * 2);
+          format.encoding == AudioEncoding.pcmS16le &&
+              format.sampleRate != null &&
+              format.channels != null
+          ? ((await File(result.audioPath).length()) - 44) /
+                (format.sampleRate! * format.channels! * 2)
+          : null;
       if (sink == null) {
         await loudness.normalizeGenerated(
           enabled: plan.project.autoNormalizeLoudness,

@@ -223,7 +223,8 @@ class ChainedTtsAdapter extends TtsAdapter {
 
   /// Runs before each sentence after the first goes upstream, so the queue
   /// counts every request against the connection's limits.
-  final Future<void> Function(TtsRequest request)? beforeContinuation;
+  final Future<void> Function(TtsRequest request, TtsCancelToken cancellation)?
+  beforeContinuation;
 
   bool get _pipelined => chain.isActive;
 
@@ -292,7 +293,8 @@ class ChainedTtsAdapter extends TtsAdapter {
     var requested = 0;
     Stream<TtsEvent> speak(String sentence, TtsCancelToken c) async* {
       if (requested++ > 0) {
-        await beforeContinuation?.call(request.withText(sentence));
+        // The pipeline's own token: a failed or abandoned line stops waiting.
+        await beforeContinuation?.call(request.withText(sentence), c);
       }
       yield* _speak(request, sentence, c);
     }
@@ -388,7 +390,8 @@ class VoiceChainHook {
   Future<TtsAdapter> wrap(
     TtsAdapter adapter,
     TtsRequest request, {
-    Future<void> Function(TtsRequest request)? beforeContinuation,
+    Future<void> Function(TtsRequest request, TtsCancelToken cancellation)?
+    beforeContinuation,
   }) async {
     final id = request.voiceAssetId;
     if (id == null) return adapter;

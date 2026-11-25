@@ -39,7 +39,8 @@ class SynthesisService {
 
   /// The character's processing chain around [adapter], when it has one.
   /// Each sentence after the first is a further request to [provider],
-  /// counted against its rate limits.
+  /// counted against its request limits; its text is already in the task's
+  /// token estimate. The wait ends with the chain's own cancellation.
   Future<TtsAdapter> _chained(
     TtsAdapter adapter,
     TtsRequest request,
@@ -49,8 +50,12 @@ class SynthesisService {
       await queue.voiceChains?.call(
         adapter,
         request,
-        beforeContinuation: (next) =>
-            queue.accountContinuation(provider, next, cancellation),
+        beforeContinuation: (next, token) => queue.accountContinuation(
+          provider,
+          next,
+          token,
+          countTokens: false,
+        ),
       ) ??
       adapter;
 

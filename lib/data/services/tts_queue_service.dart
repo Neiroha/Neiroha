@@ -15,14 +15,10 @@ import 'queue_limits.dart';
 
 part 'tts_queue_state.dart';
 
-/// Runs before each request a processing chain sends upstream, one per
-/// sentence; [first] is the request the queued task itself stands for.
+/// Runs right before each request a processing chain sends upstream (one
+/// per sentence, or the whole line), so it is counted when it is sent.
 typedef ChainRequestHook =
-    Future<void> Function(
-      TtsRequest request,
-      TtsCancelToken cancellation,
-      bool first,
-    );
+    Future<void> Function(TtsRequest request, TtsCancelToken cancellation);
 
 enum TtsQueueTaskStatus { queued, running, completed, failed }
 
@@ -175,6 +171,7 @@ class TtsQueueService {
     TtsCancelToken? cancelToken,
     bool interactive = false,
     AiCapability capability = AiCapability.tts,
+    FutureOr<bool> accountsUsage = true,
   }) {
     if (cancelToken?.isCancelled ?? false) {
       return Future<T>.error(const TtsCancelledException());
@@ -197,8 +194,19 @@ class TtsQueueService {
       source: source,
       label: label,
       estimatedTokens: math.max(1, estimatedTokens),
+      accountsUsage: accountsUsage is bool ? accountsUsage : null,
       run: task,
     );
+    // Decided shortly (whether a chain applies): the task keeps its place
+    // and the lane waits for the answer; an error accounts as usual.
+    if (accountsUsage is Future<bool>) {
+      accountsUsage
+          .then(
+            (v) => queuedTask.accountsUsage = v,
+            onError: (_) => queuedTask.accountsUsage = true,
+          )
+          .whenComplete(() => _drain(lane));
+    }
     if (interactive) {
       state.pending.addFirst(queuedTask);
     } else {
@@ -219,15 +227,11 @@ class TtsQueueService {
 
   /// A multi-utterance session keeps its concurrency lease, but every further
   /// upstream request must still consume the provider's RPM/TPM/day budget.
-  /// [tokens] overrides the request's estimate (the part not yet paid
-  /// for); [countsRequest] = false adds tokens to a request already counted.
   Future<void> accountContinuation(
     db.TtsProvider provider,
     TtsRequest request,
-    TtsCancelToken cancellation, {
-    int? tokens,
-    bool countsRequest = true,
-  }) async {
+    TtsCancelToken cancellation,
+  ) async {
     final state = _states[provider.id];
     if (state == null || state.activeTasks.isEmpty) {
       throw StateError('A continuation requires an active synthesis lease.');
@@ -237,14 +241,13 @@ class TtsQueueService {
     try {
       while (true) {
         cancellation.throwIfCancelled();
-        final cost = tokens ?? estimateTokens(request);
+        final tokens = estimateTokens(request);
         final wait = state.waitBeforeStart(
           _limits(provider, AiCapability.tts),
-          cost,
-          countsRequest: countsRequest,
+          tokens,
         );
         if (wait <= Duration.zero) {
-          state.recordStart(cost, countsRequest: countsRequest);
+          state.recordStart(tokens);
           return;
         }
         final delay = Completer<void>();
@@ -295,14 +298,20 @@ class TtsQueueService {
       final limits = _limits(next.provider, next.capability);
       if (state.activeTasks.length >= limits.maxConcurrency) return;
 
-      final wait = state.waitBeforeStart(limits, next.estimatedTokens);
+      // A task that accounts its own requests as it sends them (a chain)
+      // only takes a concurrency slot here.
+      final accounts = next.accountsUsage;
+      if (accounts == null) return; // drained again once decided
+      final wait = accounts
+          ? state.waitBeforeStart(limits, next.estimatedTokens)
+          : Duration.zero;
       if (wait > Duration.zero) {
         state.timer = Timer(wait, () => _drain(providerId));
         return;
       }
 
       state.pending.removeFirst();
-      state.recordStart(next.estimatedTokens);
+      if (accounts) state.recordStart(next.estimatedTokens);
       next.markRunning();
       state.activeTasks.add(next);
       _emitSnapshot();
@@ -354,6 +363,7 @@ class _QueuedTtsTask<T> {
     required this.source,
     required this.label,
     required this.estimatedTokens,
+    required this.accountsUsage,
     required this.run,
   }) : queuedAt = DateTime.now();
 
@@ -363,6 +373,10 @@ class _QueuedTtsTask<T> {
   final String source;
   final String label;
   final int estimatedTokens;
+
+  /// False when the task counts each upstream request itself; null until
+  /// that is known.
+  bool? accountsUsage;
   final Future<T> Function() run;
   final DateTime queuedAt;
   final Completer<T> completer = Completer<T>();

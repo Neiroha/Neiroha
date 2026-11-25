@@ -248,6 +248,7 @@ class ChainedTtsAdapter extends TtsAdapter {
   @override
   Future<TtsResult> synthesize(TtsRequest request) async {
     final prepared = await _prepared(request, null);
+    await beforeRequest?.call(prepared, TtsCancelToken());
     final spoken = await inner.synthesize(prepared);
     return runner.convertAudio(
       spoken,
@@ -291,14 +292,9 @@ class ChainedTtsAdapter extends TtsAdapter {
             runner.streamText(request.text, chain, cancellation: cancellation),
           );
     var emitted = false;
-    var requested = 0;
     Stream<TtsEvent> speak(String sentence, TtsCancelToken c) async* {
       // The pipeline's own token: a failed or abandoned line stops waiting.
-      await beforeRequest?.call(
-        request.withText(sentence),
-        c,
-        requested++ == 0,
-      );
+      await beforeRequest?.call(request.withText(sentence), c);
       yield* _speak(request, sentence, c);
     }
 
@@ -326,6 +322,7 @@ class ChainedTtsAdapter extends TtsAdapter {
   ) async* {
     final prepared = await _prepared(request, cancellation);
     cancellation.throwIfCancelled();
+    await beforeRequest?.call(prepared, cancellation);
     final spoken = await inner.synthesize(prepared.asWholeFile());
     cancellation.throwIfCancelled();
     final result = await runner.convertAudio(

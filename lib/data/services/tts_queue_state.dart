@@ -13,26 +13,15 @@ class _ProviderQueueState {
   DateTime _dayStart = _today(DateTime.now());
   Timer? timer;
 
-  /// Requests among the stamps (token-only stamps do not count).
-  int get _minuteRequests => _minuteUsage.where((s) => s.request).length;
-
-  /// [countsRequest] = false waits for token budget only: more text for a
-  /// request already counted.
-  Duration waitBeforeStart(
-    QueueLimits provider,
-    int tokens, {
-    bool countsRequest = true,
-  }) {
+  Duration waitBeforeStart(QueueLimits provider, int tokens) {
     final now = DateTime.now();
     _prune(now);
     _resetDayIfNeeded(now);
 
     final waits = <Duration>[];
     final rpm = _positive(provider.requestsPerMinute);
-    if (countsRequest && rpm != null && _minuteRequests >= rpm) {
-      waits.add(
-        _until(_minuteUsage.firstWhere((s) => s.request).startedAt, now),
-      );
+    if (rpm != null && _minuteUsage.length >= rpm) {
+      waits.add(_until(_minuteUsage.first.startedAt, now));
     }
 
     final tpm = _positive(provider.tokensPerMinute);
@@ -54,7 +43,7 @@ class _ProviderQueueState {
     }
 
     final rpd = _positive(provider.requestsPerDay);
-    if (countsRequest && rpd != null && _dayRequests >= rpd) {
+    if (rpd != null && _dayRequests >= rpd) {
       waits.add(_untilNextDay(now));
     }
 
@@ -71,12 +60,12 @@ class _ProviderQueueState {
     );
   }
 
-  void recordStart(int tokens, {bool countsRequest = true}) {
+  void recordStart(int tokens) {
     final now = DateTime.now();
     _prune(now);
     _resetDayIfNeeded(now);
-    _minuteUsage.add(_UsageStamp(now, tokens, request: countsRequest));
-    if (countsRequest) _dayRequests++;
+    _minuteUsage.add(_UsageStamp(now, tokens));
+    _dayRequests++;
     _dayTokens += tokens;
   }
 
@@ -115,11 +104,8 @@ class _ProviderQueueState {
 }
 
 class _UsageStamp {
-  const _UsageStamp(this.startedAt, this.tokens, {this.request = true});
+  const _UsageStamp(this.startedAt, this.tokens);
 
   final DateTime startedAt;
   final int tokens;
-
-  /// False for tokens added to a request already counted.
-  final bool request;
 }

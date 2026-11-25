@@ -10,10 +10,12 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neiroha/data/ai/core/tts_adapter.dart';
+import 'package:neiroha/data/ai/protocols/audio/wav_utils.dart';
 import 'package:neiroha/data/ai/registry/capability_router.dart';
 import 'package:neiroha/data/ai/registry/plugin_registry.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/synthesis/sentence_speech_pipeline.dart';
+import 'package:neiroha/data/services/synthesis/synthesis_service.dart';
 import 'package:neiroha/data/services/synthesis/voice_chain_runner.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/domain/ai/ai.dart';
@@ -60,11 +62,42 @@ class _Tts extends TtsAdapter {
   }
 
   @override
-  Future<TtsResult> synthesize(TtsRequest request) =>
-      throw UnimplementedError();
+  Future<TtsResult> synthesize(TtsRequest request) async {
+    spoken.add(request.text);
+    return TtsResult(
+      audioBytes: wrapPcmAsWav(_loud(4800), sampleRate: 24000),
+      contentType: 'audio/wav',
+    );
+  }
 
   @override
   Future<bool> healthCheck() async => true;
+}
+
+/// A converter that only returns MP3 files: without a decoder the chain
+/// speaks the whole line as one file.
+class _FileVc implements VoiceConverter {
+  @override
+  ModelDescriptor get descriptor => const ModelDescriptor(
+    id: 'vc',
+    capability: AiCapability.vc,
+    protocol: AiProtocol.native,
+  );
+  @override
+  Future<TtsResult> convert(
+    AudioInput audio, {
+    required String targetVoice,
+    TtsCancelToken? cancellation,
+  }) async => TtsResult(
+    audioBytes: Uint8List.fromList([73, 68, 51, 4, 0, 0]),
+    contentType: 'audio/mpeg',
+  );
+}
+
+class _VcRunner extends VoiceChainRunner {
+  _VcRunner() : super(CapabilityRouter(const []));
+  @override
+  VoiceConverter converter(VoiceChainStep step) => _FileVc();
 }
 
 void main() {
@@ -98,18 +131,14 @@ void main() {
     );
   });
 
-  test('every chain sentence after the first is accounted', () async {
+  test('every chain request is accounted as it is sent', () async {
     final tts = _Tts();
     final accounted = <String>[];
-    final firsts = <bool>[];
     final chained = ChainedTtsAdapter(
       tts,
       const VoiceChain([VoiceChainStep(kind: VoiceChainStepKind.trim)]),
       VoiceChainRunner(CapabilityRouter(const [])),
-      beforeRequest: (r, _, first) async {
-        firsts.add(first);
-        if (!first) accounted.add(r.text);
-      },
+      beforeRequest: (r, _) async => accounted.add(r.text),
     );
     await chained
         .synthesizeStream(
@@ -117,12 +146,68 @@ void main() {
           cancellation: TtsCancelToken(),
         )
         .drain<void>();
-    // The splitter may join short sentences; each request after the first
-    // is accounted, whatever the split.
+    // Every request is accounted with the text it sends, however the
+    // splitter joined the sentences.
     expect(tts.spoken.length, greaterThan(1));
-    expect(accounted, tts.spoken.skip(1));
-    // Every request reaches the hook; only the first is the task's own.
-    expect(firsts, [true, for (final _ in accounted) false]);
+    expect(accounted, tts.spoken);
+  });
+
+  test(
+    'a chained task is counted per request, not again at its lease',
+    () async {
+      final queue = TtsQueueService.instance;
+      queue.voiceChains = (adapter, request, {beforeRequest}) async =>
+          ChainedTtsAdapter(
+            adapter,
+            const VoiceChain([VoiceChainStep(kind: VoiceChainStepKind.trim)]),
+            VoiceChainRunner(CapabilityRouter(const [])),
+            beforeRequest: beforeRequest,
+          );
+      addTearDown(() => queue.voiceChains = null);
+      // One request a minute: counting the lease too would make the chain's
+      // only request wait for the next minute.
+      final provider = _row(
+        'rpm-one',
+        AdapterType.openaiTts,
+      ).copyWith(requestsPerMinute: const Value(1));
+      final result = await SynthesisService(queue)
+          .collectInMemory(
+            provider: provider,
+            request: const TtsRequest(
+              text: '一句。',
+              voice: 'v',
+              voiceAssetId: 'a',
+            ),
+            cancellation: TtsCancelToken(),
+            adapter: _Tts(),
+          )
+          .timeout(const Duration(seconds: 5));
+      expect(result.audioBytes, isNotEmpty);
+    },
+  );
+
+  test('the whole-line fallback is accounted too', () async {
+    final tts = _Tts();
+    final accounted = <String>[];
+    await ChainedTtsAdapter(
+          tts,
+          const VoiceChain([
+            VoiceChainStep(
+              kind: VoiceChainStepKind.convert,
+              connectionId: 'el',
+              targetVoice: 'v',
+            ),
+          ]),
+          _VcRunner(),
+          beforeRequest: (r, _) async => accounted.add(r.text),
+        )
+        .synthesizeStream(
+          const TtsRequest(text: '一句。', voice: 'v'),
+          cancellation: TtsCancelToken(),
+        )
+        .drain<void>();
+    expect(tts.spoken, ['一句。']);
+    expect(accounted, ['一句。']);
   });
 
   test('a listener that stops reading stops new sentences', () async {

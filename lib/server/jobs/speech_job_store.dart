@@ -116,6 +116,11 @@ class SpeechJobStore {
   Future<void> _load() async {
     if (!await dir.exists()) await dir.create(recursive: true);
     await for (final f in dir.list()) {
+      // Audio half written when the app last quit.
+      if (f is File && f.path.endsWith('.part')) {
+        await f.delete().catchError((_) => f);
+        continue;
+      }
       if (f is! File || !f.path.endsWith('.json')) continue;
       try {
         final job = SpeechJob._fromRecord(
@@ -251,12 +256,13 @@ class SpeechJobStore {
         // Written aside and moved into place only if this attempt is still
         // the job's: a cancel or retry during the write wins.
         final part = File('${_audio(job.id).path}.$attempt.part');
-        await part.writeAsBytes(result.audioBytes, flush: true);
-        if (!current()) {
-          await part.delete().catchError((_) => part);
-          return;
+        try {
+          await part.writeAsBytes(result.audioBytes, flush: true);
+          if (current()) await part.rename(_audio(job.id).path);
+        } finally {
+          // Left only by a failed write or a superseded attempt.
+          if (await part.exists()) await part.delete().catchError((_) => part);
         }
-        await part.rename(_audio(job.id).path);
         if (!current()) return; // audio() serves succeeded jobs only
         job
           ..contentType = result.contentType

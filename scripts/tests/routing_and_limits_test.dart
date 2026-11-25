@@ -103,7 +103,7 @@ void main() {
       tts,
       const VoiceChain([VoiceChainStep(kind: VoiceChainStepKind.trim)]),
       VoiceChainRunner(CapabilityRouter(const [])),
-      beforeContinuation: (r) async => accounted.add(r.text),
+      beforeContinuation: (r, _) async => accounted.add(r.text),
     );
     await chained
         .synthesizeStream(
@@ -187,6 +187,19 @@ void main() {
       );
     });
 
+    test('a default on a disabled connection stays unavailable', () {
+      final router = CapabilityRouter(
+        [compatible],
+        knownConnectionIds: {'compat', 'local-off'},
+        defaults: {AiCapability.stt: ('local-off', 'whisper-1')},
+        extraModels: {
+          'compat': [whisper],
+        },
+      );
+      // Turning off a local service must not move its audio elsewhere.
+      expect(router.resolve<Transcriber>(AiCapability.stt), isNull);
+    });
+
     test('deleting a connection deletes its defaults and rows', () async {
       final database = db.AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(database.close);
@@ -203,6 +216,14 @@ void main() {
       expect(await database.getCapabilityDefaults(), isEmpty);
       expect(await database.getConnectionCapabilities(), isEmpty);
     });
+  });
+
+  test('audio half written before a quit is removed on open', () async {
+    final dir = await Directory.systemTemp.createTemp('neiroha_jobs');
+    addTearDown(() => dir.delete(recursive: true));
+    final part = File('${dir.path}/job.audio.2.part')..writeAsBytesSync([1]);
+    await SpeechJobStore(dir, run: (_, _) => throw StateError('unused')).open();
+    expect(part.existsSync(), isFalse);
   });
 
   test('a paused job listener still receives the final state', () async {

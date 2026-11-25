@@ -303,7 +303,9 @@ class _SubtitleStudioScreenState extends ConsumerState<SubtitleStudioScreen> {
           selected: {_format},
           onSelectionChanged: (s) => setState(() => _format = s.first),
         ),
-        if (_target != null) ...[
+        // Export modes follow the cues on screen when there are some, not
+        // the language picked for the next run.
+        if (_cues.isNotEmpty ? _cuesTarget != null : _target != null) ...[
           const SizedBox(height: 12),
           SegmentedButton<SubtitleTextMode>(
             showSelectedIcon: false,

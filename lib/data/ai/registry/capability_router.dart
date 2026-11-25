@@ -28,9 +28,17 @@ class CapabilityRouter {
     this.extraModels = const {},
     this.priority = const {},
     this.modelOrder = const {},
+    this.knownConnectionIds,
   });
 
   final List<ProviderConnection> connections;
+
+  /// Every saved connection, disabled ones included. A default naming a
+  /// connection outside it was deleted and falls back to the automatic
+  /// order; one that is merely disabled stays unavailable, so turning off a
+  /// local service never moves its work to another provider. Null treats
+  /// every connection not in [connections] as deleted.
+  final Set<String>? knownConnectionIds;
 
   /// capability → (connection id, model id).
   final Map<AiCapability, (String, String)> defaults;
@@ -103,6 +111,7 @@ class CapabilityRouter {
     }
     return CapabilityRouter(
       connections,
+      knownConnectionIds: {for (final row in rows) row.id},
       defaults: {
         ...defaults,
         for (final r in defaultRows)
@@ -206,9 +215,10 @@ class CapabilityRouter {
         final model = c.typed<T>(cap, chosen.$2);
         return model == null ? null : RoutedModel(c, model);
       }
-      // An explicit pick of a connection that is gone stays unresolved; a
-      // default left behind by a deleted connection falls back.
+      // An explicit pick, or a default on a disabled connection, stays
+      // unresolved; a default left by a deleted connection falls back.
       if (connectionId != null) return null;
+      if (knownConnectionIds?.contains(chosen.$1) ?? false) return null;
     }
     return automatic<T>(cap);
   }

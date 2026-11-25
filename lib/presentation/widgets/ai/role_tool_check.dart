@@ -14,10 +14,10 @@ Widget? toolCallingBadge(BuildContext context, bool? tools) {
   return switch (tools) {
     true => Tooltip(
       message: l.roleToolSupported,
-      child: const Icon(
+      child: Icon(
         Icons.build_circle_rounded,
         size: 16,
-        color: Colors.greenAccent,
+        color: context.colors.success,
       ),
     ),
     false => Tooltip(
@@ -129,7 +129,7 @@ class _RoleToolCheckState extends ConsumerState<RoleToolCheck> {
       _State.checking => (null, null, l.roleToolChecking),
       _State.supported => (
         Icons.check_circle_rounded,
-        Colors.greenAccent,
+        context.colors.success,
         l.roleToolSupported,
       ),
       _State.unsupported => (
@@ -139,7 +139,7 @@ class _RoleToolCheckState extends ConsumerState<RoleToolCheck> {
       ),
       _State.failed => (
         Icons.warning_amber_rounded,
-        Colors.orangeAccent,
+        context.colors.warning,
         l.roleToolFailed(_error),
       ),
       _ => (

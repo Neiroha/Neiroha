@@ -106,10 +106,10 @@ class _VoiceBankCharacterTileState extends State<VoiceBankCharacterTile> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: healthOk == false
-                            ? Colors.redAccent
+                            ? context.colors.danger
                             : asset.enabled
-                            ? Colors.green
-                            : Colors.grey,
+                            ? context.colors.success
+                            : context.fg.withValues(alpha: 0.45),
                       ),
                     ),
                   ),

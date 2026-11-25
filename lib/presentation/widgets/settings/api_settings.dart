@@ -159,17 +159,17 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.12),
+                  color: context.colors.warning.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: Colors.orange.withValues(alpha: 0.4),
+                    color: context.colors.warning.withValues(alpha: 0.4),
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.warning_amber_rounded,
-                      color: Colors.orange,
+                      color: context.colors.warning,
                       size: 18,
                     ),
                     SizedBox(width: 8),

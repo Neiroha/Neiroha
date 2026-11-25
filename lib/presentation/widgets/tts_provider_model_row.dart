@@ -73,7 +73,12 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
                     Icon(
                       Icons.mic_rounded,
                       size: 16,
-                      color: Colors.purpleAccent.withValues(alpha: 0.7),
+                      color: context
+                          .pick(
+                            dark: Colors.purpleAccent,
+                            light: Colors.purple.shade600,
+                          )
+                          .withValues(alpha: 0.7),
                     ),
                     SizedBox(width: 8),
                     Expanded(
@@ -105,14 +110,24 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.purpleAccent.withValues(alpha: 0.15),
+                        color: context
+                            .pick(
+                              dark: Colors.purpleAccent,
+                              light: Colors.purple.shade600,
+                            )
+                            .withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         _typeLabel,
                         style: TextStyle(
                           fontSize: 10,
-                          color: Colors.purpleAccent.withValues(alpha: 0.8),
+                          color: context
+                              .pick(
+                                dark: Colors.purpleAccent,
+                                light: Colors.purple.shade600,
+                              )
+                              .withValues(alpha: 0.8),
                         ),
                       ),
                     ),
@@ -133,7 +148,7 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
                         child: Icon(
                           Icons.close_rounded,
                           size: 14,
-                          color: Colors.grey,
+                          color: context.fg.withValues(alpha: 0.45),
                         ),
                       ),
                     ),

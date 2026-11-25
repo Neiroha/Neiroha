@@ -101,7 +101,7 @@ extension _TimelineLanes on _VideoDubTimelineState {
 
     Color bg;
     if (hasError) {
-      bg = Colors.redAccent.withValues(alpha: 0.55);
+      bg = context.colors.danger.withValues(alpha: 0.55);
     } else if (hasAudio) {
       bg = AppTheme.accentColor;
     } else {
@@ -264,7 +264,7 @@ extension _TimelineLanes on _VideoDubTimelineState {
         icon = Icons.audiotrack_rounded;
     }
     if (isMissing) {
-      bg = Colors.redAccent.withValues(alpha: 0.55);
+      bg = context.colors.danger.withValues(alpha: 0.55);
     }
 
     return Positioned(
@@ -335,7 +335,7 @@ extension _TimelineLanes on _VideoDubTimelineState {
       top: 0,
       width: 2,
       height: bodyHeight,
-      child: Container(color: Colors.amber),
+      child: Container(color: context.colors.warning),
     );
   }
 

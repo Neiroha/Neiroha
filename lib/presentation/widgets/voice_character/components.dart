@@ -40,7 +40,7 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: path != null
-                ? Colors.green.withValues(alpha: 0.4)
+                ? context.colors.success.withValues(alpha: 0.4)
                 : context.fg.withValues(alpha: 0.1),
           ),
         ),
@@ -61,7 +61,7 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
               )
             : Row(
                 children: [
-                  const Icon(Icons.audio_file_rounded, color: Colors.green),
+                  Icon(Icons.audio_file_rounded, color: context.colors.success),
                   SizedBox(width: 10),
                   Expanded(
                     child: Column(

@@ -440,7 +440,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 
   Widget _errorBar() => Material(
-    color: Colors.redAccent.withValues(alpha: 0.12),
+    color: context.colors.danger.withValues(alpha: 0.12),
     child: Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
       child: Row(

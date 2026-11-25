@@ -218,6 +218,8 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
         : narratorId;
     final id = const Uuid().v4();
     final now = DateTime.now();
+    // A new book starts on the reading theme closest to the app's look.
+    final readerTheme = mounted && !context.isDark ? 'paper' : 'dark';
     await dbx.insertNovelProject(
       db.NovelProjectsCompanion(
         id: Value(id),
@@ -225,7 +227,7 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
         bankId: Value(result.bankId),
         narratorVoiceAssetId: Value(narratorId),
         dialogueVoiceAssetId: Value(dialogueId),
-        readerTheme: const Value('dark'),
+        readerTheme: Value(readerTheme),
         createdAt: Value(now),
         updatedAt: Value(now),
       ),

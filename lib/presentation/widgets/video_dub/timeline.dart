@@ -266,11 +266,15 @@ class _VideoDubTimelineState extends State<VideoDubTimeline> {
 
   Widget _buildFfmpegBanner() {
     return Container(
-      color: Colors.amber.withValues(alpha: 0.12),
+      color: context.colors.warning.withValues(alpha: 0.12),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Row(
         children: [
-          const Icon(Icons.info_outline_rounded, size: 14, color: Colors.amber),
+          Icon(
+            Icons.info_outline_rounded,
+            size: 14,
+            color: context.colors.warning,
+          ),
           SizedBox(width: 6),
           Expanded(
             child: Text(

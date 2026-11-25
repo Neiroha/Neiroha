@@ -89,9 +89,9 @@ class QuickTtsHistoryList extends ConsumerWidget {
                         if (hasError)
                           Tooltip(
                             message: entry.error!,
-                            child: const Icon(
+                            child: Icon(
                               Icons.error_rounded,
-                              color: Colors.redAccent,
+                              color: context.colors.danger,
                               size: 14,
                             ),
                           ),

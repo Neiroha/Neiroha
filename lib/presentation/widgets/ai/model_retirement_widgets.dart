@@ -4,6 +4,7 @@ import 'package:neiroha/data/services/capabilities/model_retirement.dart';
 import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// Small red "Retires yyyy-MM-dd" tag for model rows.
 class RetirementChip extends StatelessWidget {
@@ -12,7 +13,7 @@ class RetirementChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const color = Colors.redAccent;
+    final color = context.colors.danger;
     return Padding(
       padding: const EdgeInsets.only(left: 4),
       child: Container(
@@ -69,15 +70,15 @@ class _RetirementBannerState extends ConsumerState<RetirementBanner> {
     final days = daysUntil(date, widget.now ?? DateTime.now());
     final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: Colors.redAccent.withValues(alpha: 0.14),
+      color: context.colors.danger.withValues(alpha: 0.14),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.schedule_rounded,
               size: 18,
-              color: Colors.redAccent,
+              color: context.colors.danger,
             ),
             const SizedBox(width: 8),
             Expanded(

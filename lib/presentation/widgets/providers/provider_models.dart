@@ -135,7 +135,7 @@ class CapabilitySwitch extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               l.provCapOffHint(label),
-              style: const TextStyle(fontSize: 12, color: Colors.amber),
+              style: TextStyle(fontSize: 12, color: context.colors.warning),
             ),
           ),
       ],

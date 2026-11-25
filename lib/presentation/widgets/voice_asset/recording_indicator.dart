@@ -33,7 +33,9 @@ class RecordingIndicator extends StatelessWidget {
                 height: 22,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.redAccent.withValues(alpha: 0.10 + t * 0.18),
+                  color: context.colors.danger.withValues(
+                    alpha: 0.10 + t * 0.18,
+                  ),
                 ),
                 child: Center(
                   child: Transform.scale(
@@ -44,7 +46,7 @@ class RecordingIndicator extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: active
-                            ? Colors.redAccent.shade200
+                            ? context.colors.danger
                             : context.fg.withValues(alpha: 0.25),
                       ),
                     ),
@@ -64,7 +66,7 @@ class RecordingIndicator extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     color: active
-                        ? Colors.redAccent.shade100
+                        ? context.colors.danger
                         : context.fg.withValues(alpha: 0.58),
                   ),
                 ),
@@ -84,7 +86,7 @@ class RecordingIndicator extends StatelessWidget {
                                 colors: [
                                   AppTheme.accentColor,
                                   level > 0.85
-                                      ? Colors.redAccent
+                                      ? context.colors.danger
                                       : AppTheme.accentColor.withValues(
                                           alpha: 0.72,
                                         ),
@@ -125,7 +127,7 @@ class RecordingTimerRow extends StatelessWidget {
         style: TextStyle(
           fontSize: 12,
           color: recording
-              ? Colors.redAccent.shade200
+              ? context.colors.danger
               : context.fg.withValues(alpha: 0.54),
         ),
       ),

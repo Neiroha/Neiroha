@@ -71,7 +71,7 @@ class _TrimWaveformPainter extends CustomPainter {
     if (playheadSec != null) {
       final px = (playheadSec! / totalSec) * size.width;
       final ph = Paint()
-        ..color = Colors.white
+        ..color = fg
         ..strokeWidth = 1;
       canvas.drawLine(Offset(px, 0), Offset(px, size.height), ph);
     }

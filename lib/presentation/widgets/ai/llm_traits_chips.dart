@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:neiroha/domain/ai/llm_traits.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 String modalityLabel(AppLocalizations l, Modality m) => switch (m) {
   Modality.text => l.modalityText,
@@ -26,7 +27,7 @@ class LlmTraitsChips extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     Widget chip(IconData icon, String text, {bool? good, String? tooltip}) {
       final color = switch (good) {
-        true => Colors.greenAccent,
+        true => context.colors.success,
         false => scheme.error,
         null => scheme.onSurface.withAlpha(150),
       };

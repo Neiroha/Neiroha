@@ -21,7 +21,7 @@ class _IndexBadge extends StatelessWidget {
       ),
       _SegmentStatus.generating => (
         AppTheme.accentColor.withValues(alpha: 0.2),
-        Colors.white,
+        context.pick(dark: Colors.white, light: AppTheme.accentColor),
       ),
       _SegmentStatus.pending => (
         context.fg.withValues(alpha: 0.05),
@@ -119,7 +119,7 @@ class _VoiceChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: assigned
               ? AppTheme.accentColor.withValues(alpha: 0.14)
-              : Colors.amber.withValues(alpha: 0.10),
+              : context.colors.warning.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(15),
         ),
         child: Row(
@@ -128,7 +128,7 @@ class _VoiceChip extends StatelessWidget {
             Icon(
               Icons.record_voice_over_rounded,
               size: 14,
-              color: assigned ? AppTheme.accentColor : Colors.amber,
+              color: assigned ? AppTheme.accentColor : context.colors.warning,
             ),
             const SizedBox(width: 6),
             Flexible(
@@ -140,7 +140,7 @@ class _VoiceChip extends StatelessWidget {
                   fontSize: 12,
                   color: assigned
                       ? context.fg.withValues(alpha: 0.9)
-                      : Colors.amber,
+                      : context.colors.warning,
                 ),
               ),
             ),

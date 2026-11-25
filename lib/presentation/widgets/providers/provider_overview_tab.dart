@@ -230,11 +230,11 @@ class _ProviderOverviewTabState extends ConsumerState<ProviderOverviewTab> {
                     if (!supported) ...[
                       _Banner(
                         l.uiAdapterUnavailableOnThisPlatform,
-                        Colors.redAccent,
+                        context.colors.danger,
                       ),
                       const SizedBox(height: 14),
                     ] else if (!widget.provider.enabled) ...[
-                      _Banner(l.provConnectionOff, Colors.amber),
+                      _Banner(l.provConnectionOff, context.colors.warning),
                       const SizedBox(height: 14),
                     ],
                     if (wide)
@@ -323,9 +323,12 @@ class _CapabilityHealthRow extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final (text, color) = switch (health?.state) {
       null => (l.provHealthNotChecked, context.fg.withValues(alpha: 0.38)),
-      HealthState.ok => (l.provHealthOk, Colors.greenAccent),
-      HealthState.failed => (l.provHealthFailed, Colors.redAccent),
-      HealthState.unavailable => (l.provHealthUnavailable, Colors.amber),
+      HealthState.ok => (l.provHealthOk, context.colors.success),
+      HealthState.failed => (l.provHealthFailed, context.colors.danger),
+      HealthState.unavailable => (
+        l.provHealthUnavailable,
+        context.colors.warning,
+      ),
       HealthState.unknown => (
         l.provHealthUnknown,
         context.fg.withValues(alpha: 0.54),

@@ -132,7 +132,7 @@ class ChatHeader extends StatelessWidget {
               running
                   ? FilledButton.tonalIcon(
                       style: FilledButton.styleFrom(
-                        foregroundColor: Colors.redAccent,
+                        foregroundColor: context.colors.danger,
                       ),
                       onPressed: onCall,
                       icon: const Icon(Icons.call_end_rounded, size: 18),

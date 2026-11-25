@@ -287,9 +287,9 @@ class _PanelHeader extends StatelessWidget {
                     if (unassigned > 0)
                       Text(
                         l10n.phaseStatsUnassigned(unassigned),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Colors.amber,
+                          color: context.colors.warning,
                         ),
                       ),
                   ],

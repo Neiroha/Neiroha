@@ -116,7 +116,9 @@ class _ProviderEditorState extends ConsumerState<ProviderEditor> {
             child: Text(l.uiCancel),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: FilledButton.styleFrom(
+              backgroundColor: context.colors.danger,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(l.uiDelete),
           ),
@@ -187,7 +189,7 @@ class _ProviderEditorState extends ConsumerState<ProviderEditor> {
                             fontSize: 12,
                             color: supported
                                 ? context.fg.withValues(alpha: 0.5)
-                                : Colors.redAccent,
+                                : context.colors.danger,
                           ),
                         ),
                       ],
@@ -207,7 +209,7 @@ class _ProviderEditorState extends ConsumerState<ProviderEditor> {
                     onPressed: _delete,
                     icon: const Icon(Icons.delete_outline_rounded),
                     tooltip: l.uiDelete,
-                    color: Colors.redAccent,
+                    color: context.colors.danger,
                   ),
                 ],
               ),

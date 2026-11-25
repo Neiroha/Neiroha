@@ -5,6 +5,7 @@ import 'package:neiroha/data/ai/registry/capability_router.dart';
 import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/widgets/settings/ai_capability_settings.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// "Connection · model" for a routed model.
 String routedLabel(RoutedModel<CapabilityModel> routed) =>
@@ -117,7 +118,9 @@ class _CapabilityModelPickerState extends State<CapabilityModelPicker> {
           value: current,
           label: l.capModelUnavailable(current.$2),
           leadingIcon: const Icon(Icons.warning_amber_rounded, size: 18),
-          style: MenuItemButton.styleFrom(foregroundColor: Colors.orangeAccent),
+          style: MenuItemButton.styleFrom(
+            foregroundColor: context.colors.warning,
+          ),
         ),
       for (final (c, m) in choices)
         DropdownMenuEntry(

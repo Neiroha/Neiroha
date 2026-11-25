@@ -5,6 +5,7 @@ import 'package:neiroha/data/ai/core/capability_health.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/ai/ai.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// The provider row the provider screen shows; null picks the first one.
 final selectedProviderIdProvider = StateProvider<String?>((ref) => null);
@@ -112,9 +113,14 @@ String baseUrlHint(AdapterType type) => switch (type) {
 
 /// Green when every checked capability works, amber when some fail, red
 /// when all fail; null before any check.
-Color? healthColor(Map<AiCapability, CapabilityHealth>? health) {
+Color? healthColor(
+  BuildContext context,
+  Map<AiCapability, CapabilityHealth>? health,
+) {
   if (health == null || health.isEmpty) return null;
   final failed = health.values.where((h) => h.state == HealthState.failed);
-  if (failed.isEmpty) return Colors.greenAccent;
-  return failed.length == health.length ? Colors.redAccent : Colors.amber;
+  if (failed.isEmpty) return context.colors.success;
+  return failed.length == health.length
+      ? context.colors.danger
+      : context.colors.warning;
 }

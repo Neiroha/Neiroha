@@ -180,13 +180,13 @@ class ChatBubble extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.error_rounded, size: 16, color: Colors.redAccent),
+          Icon(Icons.error_rounded, size: 16, color: context.colors.danger),
           SizedBox(width: 6),
           Text(
             AppLocalizations.of(context).uiError,
             style: TextStyle(
               fontSize: 11,
-              color: Colors.redAccent.withValues(alpha: 0.7),
+              color: context.colors.danger.withValues(alpha: 0.7),
             ),
           ),
         ],

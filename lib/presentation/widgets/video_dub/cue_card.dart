@@ -51,7 +51,7 @@ class CueCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         side: BorderSide(
           color: isSelected
-              ? Colors.amber.withValues(alpha: 0.6)
+              ? context.colors.warning.withValues(alpha: 0.6)
               : Colors.transparent,
           width: 1,
         ),
@@ -95,10 +95,10 @@ class CueCard extends StatelessWidget {
                   else if (cue.error != null)
                     Tooltip(
                       message: cue.error!,
-                      child: const Icon(
+                      child: Icon(
                         Icons.error_rounded,
                         size: 16,
-                        color: Colors.redAccent,
+                        color: context.colors.danger,
                       ),
                     )
                   else if (cue.audioPath != null)

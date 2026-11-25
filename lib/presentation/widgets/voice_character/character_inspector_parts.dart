@@ -7,6 +7,7 @@ import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 
 import 'selection.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// Tabs of the character inspector.
 enum InspectorTab { basic, voice, chain }
@@ -79,7 +80,9 @@ class CharacterActions extends ConsumerWidget {
             onPressed: () => _delete(context, ref),
             icon: const Icon(Icons.delete_outline_rounded, size: 18),
             label: Text(l.uiDelete),
-            style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: context.colors.danger,
+            ),
           ),
         ),
       ],

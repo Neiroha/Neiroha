@@ -128,7 +128,7 @@ extension _LoudnessSections on _LoudnessDialogState {
                     size: 18,
                     color: _failed == 0
                         ? context.colors.success
-                        : Colors.amberAccent,
+                        : context.colors.warning,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -154,7 +154,7 @@ extension _LoudnessSections on _LoudnessDialogState {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.redAccent.withValues(alpha: 0.85),
+                    color: context.colors.danger.withValues(alpha: 0.85),
                   ),
                 ),
               ],
@@ -219,6 +219,7 @@ extension _LoudnessSections on _LoudnessDialogState {
                 tolerance: target.toleranceLu,
                 fg: context.fg,
                 success: context.colors.success,
+                warning: context.colors.warning,
               ),
             ),
           ),
@@ -230,7 +231,7 @@ extension _LoudnessSections on _LoudnessDialogState {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.redAccent.withValues(alpha: 0.85),
+                color: context.colors.danger.withValues(alpha: 0.85),
               ),
             ),
           ],
@@ -351,6 +352,7 @@ class _DistributionPainter extends CustomPainter {
   final double tolerance;
   final Color fg;
   final Color success;
+  final Color warning;
 
   _DistributionPainter({
     required this.values,
@@ -358,6 +360,7 @@ class _DistributionPainter extends CustomPainter {
     required this.tolerance,
     required this.fg,
     required this.success,
+    required this.warning,
   });
 
   @override
@@ -398,7 +401,7 @@ class _DistributionPainter extends CustomPainter {
       final off = (v - target).abs() <= tolerance;
       tick.color = off
           ? success.withValues(alpha: 0.85)
-          : Colors.amberAccent.withValues(alpha: 0.7);
+          : warning.withValues(alpha: 0.7);
       canvas.drawLine(Offset(x(v), 12), Offset(x(v), axisY), tick);
     }
 
@@ -431,5 +434,6 @@ class _DistributionPainter extends CustomPainter {
       old.target != target ||
       old.tolerance != tolerance ||
       old.fg != fg ||
-      old.success != success;
+      old.success != success ||
+      old.warning != warning;
 }

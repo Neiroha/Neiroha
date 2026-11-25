@@ -165,7 +165,9 @@ class _RangeScrubberState extends State<_RangeScrubber> {
                 top: 2,
                 width: 2,
                 bottom: 2,
-                child: Container(color: Colors.amber.withValues(alpha: 0.8)),
+                child: Container(
+                  color: context.colors.warning.withValues(alpha: 0.8),
+                ),
               ),
               // Left handle.
               _buildHandle(

@@ -285,7 +285,9 @@ class _HealthCheckResultsDialog extends StatelessWidget {
                       result.ok
                           ? Icons.check_circle_rounded
                           : Icons.error_rounded,
-                      color: result.ok ? Colors.green : Colors.redAccent,
+                      color: result.ok
+                          ? context.colors.success
+                          : context.colors.danger,
                       size: 20,
                     ),
                     title: Text(result.name, overflow: TextOverflow.ellipsis),

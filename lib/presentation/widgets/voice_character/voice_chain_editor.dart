@@ -236,10 +236,13 @@ class _StepChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final color = !step.ready
-        ? Colors.orangeAccent
+        ? context.colors.warning
         : step.kind.isText
-        ? Colors.lightBlueAccent
-        : Colors.pinkAccent;
+        ? context.pick(
+            dark: Colors.lightBlueAccent,
+            light: Colors.blue.shade700,
+          )
+        : context.pick(dark: Colors.pinkAccent, light: Colors.pink.shade600);
     return Opacity(
       opacity: step.enabled ? 1 : 0.45,
       child: InputChip(
@@ -344,7 +347,7 @@ class _StepDialogState extends State<_StepDialog> {
             else if (models.isEmpty)
               Text(
                 l.chainNoModels,
-                style: const TextStyle(color: Colors.orangeAccent),
+                style: TextStyle(color: context.colors.warning),
               )
             else
               DropdownButtonFormField<(String, String)?>(

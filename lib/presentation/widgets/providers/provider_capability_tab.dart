@@ -222,7 +222,7 @@ class _ProviderCapabilityTabState extends ConsumerState<ProviderCapabilityTab> {
         if (!widget.provider.enabled)
           Text(
             l.provConnectionOff,
-            style: const TextStyle(fontSize: 12, color: Colors.amber),
+            style: TextStyle(fontSize: 12, color: context.colors.warning),
           ),
         CapabilitySwitch(connectionId: c.id, cap: cap),
         SectionHeader(

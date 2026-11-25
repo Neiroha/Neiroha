@@ -77,7 +77,7 @@ class _ApiLogRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ok = entry.statusCode < 400;
-    final color = ok ? Colors.greenAccent : Colors.redAccent;
+    final color = ok ? context.colors.success : context.colors.danger;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
@@ -130,8 +130,8 @@ class _ApiLogRow extends StatelessWidget {
                     entry.errorMessage!,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.redAccent,
+                    style: TextStyle(
+                      color: context.colors.danger,
                       fontSize: 11,
                     ),
                   ),

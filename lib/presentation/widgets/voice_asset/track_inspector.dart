@@ -207,7 +207,9 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
             child: Text(AppLocalizations.of(context).uiCancel),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: FilledButton.styleFrom(
+              backgroundColor: context.colors.danger,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(AppLocalizations.of(context).uiDelete),
           ),
@@ -373,7 +375,7 @@ class _TrackInspectorState extends ConsumerState<_TrackInspector> {
               IconButton(
                 onPressed: _delete,
                 icon: const Icon(Icons.delete_outline_rounded),
-                color: Colors.redAccent,
+                color: context.colors.danger,
                 tooltip: AppLocalizations.of(context).uiDelete,
               ),
             ],

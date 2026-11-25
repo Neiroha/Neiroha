@@ -52,22 +52,22 @@ class _CheckLine extends StatelessWidget {
     final (icon, color, text) = switch (check) {
       SpeechCheck(:final error?) => (
         Icons.error_outline_rounded,
-        Colors.orangeAccent,
+        context.colors.warning,
         l.chainCheckFailed('$error'),
       ),
       SpeechCheck(clean: true) => (
         Icons.check_circle_outline_rounded,
-        Colors.greenAccent,
+        context.colors.success,
         l.chainCheckClean('$score'),
       ),
       SpeechCheck(missing: []) => (
         Icons.warning_amber_rounded,
-        Colors.amberAccent,
+        context.colors.warning,
         '$score% · ${l.chainCheckExtra(check.extra.join(' / '))}',
       ),
       _ => (
         Icons.warning_amber_rounded,
-        Colors.amberAccent,
+        context.colors.warning,
         [
           l.chainCheckMissing('$score', check.missing.join(' / ')),
           if (check.extra.isNotEmpty)

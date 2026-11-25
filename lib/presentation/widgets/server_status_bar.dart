@@ -22,10 +22,10 @@ class ServerStatusBar extends ConsumerWidget {
             height: 8,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: running ? Colors.green : Colors.orange,
+              color: running ? context.colors.success : context.colors.warning,
               boxShadow: [
                 if (running)
-                  const BoxShadow(color: Colors.green, blurRadius: 6),
+                  BoxShadow(color: context.colors.success, blurRadius: 6),
               ],
             ),
           ),

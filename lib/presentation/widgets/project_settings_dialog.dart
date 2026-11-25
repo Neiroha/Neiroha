@@ -108,7 +108,9 @@ Future<ProjectSettingsResult?> showProjectSettingsDialog({
               ),
               icon: const Icon(Icons.delete_rounded, size: 16),
               label: Text(l10n.uiDelete),
-              style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+              style: TextButton.styleFrom(
+                foregroundColor: context.colors.danger,
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx),

@@ -284,12 +284,14 @@ class _ProjectCardState extends State<_ProjectCard> {
                                   Icon(
                                     Icons.delete_rounded,
                                     size: 16,
-                                    color: Colors.redAccent,
+                                    color: context.colors.danger,
                                   ),
                                   SizedBox(width: 8),
                                   Text(
                                     AppLocalizations.of(context).uiDelete,
-                                    style: TextStyle(color: Colors.redAccent),
+                                    style: TextStyle(
+                                      color: context.colors.danger,
+                                    ),
                                   ),
                                 ],
                               ),

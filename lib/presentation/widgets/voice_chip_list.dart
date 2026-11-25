@@ -146,7 +146,12 @@ class _VoiceGroupRowState extends State<VoiceGroupRow> {
                     Icon(
                       widget.icon,
                       size: 16,
-                      color: Colors.tealAccent.withValues(alpha: 0.7),
+                      color: context
+                          .pick(
+                            dark: Colors.tealAccent,
+                            light: Colors.teal.shade700,
+                          )
+                          .withValues(alpha: 0.7),
                     ),
                     const SizedBox(width: 8),
                     Expanded(

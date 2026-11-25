@@ -98,7 +98,9 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
             child: Text(l.uiCancel),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: FilledButton.styleFrom(
+              backgroundColor: context.colors.danger,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(l.uiDelete),
           ),

@@ -21,6 +21,7 @@ import 'package:neiroha/presentation/widgets/settings/ai_capability_settings.dar
 import 'package:neiroha/presentation/widgets/subtitles/subtitle_cue_list.dart';
 import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 import 'package:path/path.dart' as p;
 
 /// Target languages offered in the picker; any other name can be typed.
@@ -347,7 +348,7 @@ class _SubtitleStudioScreenState extends ConsumerState<SubtitleStudioScreen> {
           const SizedBox(height: 12),
           SelectableText(
             _error!,
-            style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+            style: TextStyle(color: context.colors.danger, fontSize: 12),
           ),
         ],
       ],

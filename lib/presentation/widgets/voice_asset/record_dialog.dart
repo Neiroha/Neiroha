@@ -305,7 +305,7 @@ class _RecordDialogState extends State<RecordDialog>
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Text(
                   _initError!,
-                  style: TextStyle(color: Colors.orange.shade300, fontSize: 13),
+                  style: TextStyle(color: context.colors.warning, fontSize: 13),
                 ),
               )
             else ...[
@@ -371,9 +371,7 @@ class _RecordDialogState extends State<RecordDialog>
             ),
             label: Text(_phase == _Phase.recording ? 'Stop' : 'Record'),
             style: _phase == _Phase.recording
-                ? FilledButton.styleFrom(
-                    backgroundColor: Colors.redAccent.shade400,
-                  )
+                ? FilledButton.styleFrom(backgroundColor: context.colors.danger)
                 : null,
           ),
       ],

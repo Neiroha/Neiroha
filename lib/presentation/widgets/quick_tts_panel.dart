@@ -244,7 +244,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                       }
                     },
                     style: TextButton.styleFrom(
-                      foregroundColor: Colors.redAccent,
+                      foregroundColor: context.colors.danger,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       minimumSize: const Size(0, 28),
                     ),

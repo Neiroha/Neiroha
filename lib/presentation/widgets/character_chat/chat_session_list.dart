@@ -155,7 +155,7 @@ class ChatSessionList extends StatelessWidget {
                       value: 'delete',
                       child: Text(
                         l.uiDelete,
-                        style: const TextStyle(color: Colors.redAccent),
+                        style: TextStyle(color: context.colors.danger),
                       ),
                     ),
                   ],

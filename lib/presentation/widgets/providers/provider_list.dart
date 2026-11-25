@@ -128,7 +128,7 @@ class _ProviderRow extends ConsumerWidget {
         adapterType != null && capabilities.supportsTtsAdapter(adapterType);
     final l10n = AppLocalizations.of(context);
     final health = ref.watch(providerHealthProvider)[provider.id];
-    final dot = healthColor(health);
+    final dot = healthColor(context, health);
     final failed = [
       for (final MapEntry(:key, :value) in (health ?? const {}).entries)
         if (value.state == HealthState.failed) key.name,
@@ -178,7 +178,9 @@ class _ProviderRow extends ConsumerWidget {
                     size: 16,
                     color: provider.enabled && supported
                         ? AppTheme.accentColor
-                        : (!supported ? Colors.redAccent : Colors.grey),
+                        : (!supported
+                              ? context.colors.danger
+                              : context.fg.withValues(alpha: 0.45)),
                   ),
                 ),
                 SizedBox(width: 10),
@@ -230,9 +232,9 @@ class _ProviderRow extends ConsumerWidget {
                           l10n.uiUnavailableOnThisPlatform,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: Colors.redAccent,
+                            color: context.colors.danger,
                           ),
                         ),
                     ],

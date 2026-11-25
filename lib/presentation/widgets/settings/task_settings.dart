@@ -45,7 +45,10 @@ class TaskMonitorSettingsCard extends ConsumerWidget {
                   _TaskCountChip(
                     label: AppLocalizations.of(context).uiRunning,
                     count: snapshot.runningCount,
-                    color: Colors.lightGreenAccent,
+                    color: context.pick(
+                      dark: Colors.lightGreenAccent,
+                      light: Colors.lightGreen.shade800,
+                    ),
                   ),
                   _TaskCountChip(
                     label: AppLocalizations.of(context).uiQueued,
@@ -187,7 +190,7 @@ class _TaskRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _taskStatusColor(task.status);
+    final color = _taskStatusColor(context, task.status);
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 8 : 10),
@@ -247,8 +250,8 @@ class _TaskRow extends StatelessWidget {
                     task.errorMessage!,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.redAccent,
+                    style: TextStyle(
+                      color: context.colors.danger,
                       fontSize: 11,
                     ),
                   ),
@@ -308,7 +311,7 @@ class _TaskStatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _taskStatusColor(status);
+    final color = _taskStatusColor(context, status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -328,12 +331,15 @@ class _TaskStatusPill extends StatelessWidget {
   }
 }
 
-Color _taskStatusColor(TtsQueueTaskStatus status) {
+Color _taskStatusColor(BuildContext context, TtsQueueTaskStatus status) {
   return switch (status) {
     TtsQueueTaskStatus.queued => AppTheme.accentColor,
-    TtsQueueTaskStatus.running => Colors.lightGreenAccent,
-    TtsQueueTaskStatus.completed => Colors.greenAccent,
-    TtsQueueTaskStatus.failed => Colors.redAccent,
+    TtsQueueTaskStatus.running => context.pick(
+      dark: Colors.lightGreenAccent,
+      light: Colors.lightGreen.shade800,
+    ),
+    TtsQueueTaskStatus.completed => context.colors.success,
+    TtsQueueTaskStatus.failed => context.colors.danger,
   };
 }
 

@@ -246,10 +246,7 @@ class _SongStudioScreenState extends ConsumerState<SongStudioScreen> {
       children: [
         _Section(icon: Icons.auto_awesome_rounded, title: l.musicModel),
         if (choices.isEmpty)
-          Text(
-            l.musicNoModel,
-            style: const TextStyle(color: Colors.orangeAccent),
-          )
+          Text(l.musicNoModel, style: TextStyle(color: context.colors.warning))
         else
           DropdownButtonFormField<(String, String)>(
             initialValue: pick,
@@ -418,7 +415,7 @@ class _SongStudioScreenState extends ConsumerState<SongStudioScreen> {
           const SizedBox(height: 12),
           SelectableText(
             _error!,
-            style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+            style: TextStyle(color: context.colors.danger, fontSize: 12),
           ),
         ],
         const SizedBox(height: 12),

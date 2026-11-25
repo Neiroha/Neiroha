@@ -163,7 +163,7 @@ extension _BankSwitcher on _VoiceBankScreenState {
                   'delete',
                   Icons.delete_outline_rounded,
                   l10n.uiDelete,
-                  color: Colors.redAccent,
+                  color: context.colors.danger,
                 ),
               ],
             ),
@@ -231,8 +231,8 @@ class _ActiveDot extends StatelessWidget {
     child: Container(
       width: 8,
       height: 8,
-      decoration: const BoxDecoration(
-        color: Colors.green,
+      decoration: BoxDecoration(
+        color: context.colors.success,
         shape: BoxShape.circle,
       ),
     ),

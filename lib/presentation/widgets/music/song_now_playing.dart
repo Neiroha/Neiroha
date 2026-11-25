@@ -170,7 +170,7 @@ class SongDetail extends ConsumerWidget {
               IconButton(
                 tooltip: l.musicDelete,
                 icon: const Icon(Icons.delete_outline_rounded),
-                color: Colors.redAccent,
+                color: context.colors.danger,
                 onPressed: () => onAction(song, SongAction.delete),
               ),
             ],

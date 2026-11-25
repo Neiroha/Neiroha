@@ -19,6 +19,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.divider,
     required this.fg,
     required this.success,
+    required this.warning,
     required this.danger,
   });
 
@@ -31,6 +32,7 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color divider;
   final Color fg;
   final Color success;
+  final Color warning;
   final Color danger;
 
   static const dark = AppColors(
@@ -43,7 +45,8 @@ class AppColors extends ThemeExtension<AppColors> {
     divider: Color(0xFF2A2A36),
     fg: Colors.white,
     success: Color(0xFF4ADE80),
-    danger: Color(0xFFF87171),
+    warning: Color(0xFFFFC107),
+    danger: Color(0xFFFF5252),
   );
 
   static const light = AppColors(
@@ -56,6 +59,7 @@ class AppColors extends ThemeExtension<AppColors> {
     divider: Color(0xFFDCDCE4),
     fg: Color(0xFF17171F),
     success: Color(0xFF16A34A),
+    warning: Color(0xFFB45309),
     danger: Color(0xFFDC2626),
   );
 
@@ -70,6 +74,7 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? divider,
     Color? fg,
     Color? success,
+    Color? warning,
     Color? danger,
   }) => AppColors(
     background: background ?? this.background,
@@ -81,6 +86,7 @@ class AppColors extends ThemeExtension<AppColors> {
     divider: divider ?? this.divider,
     fg: fg ?? this.fg,
     success: success ?? this.success,
+    warning: warning ?? this.warning,
     danger: danger ?? this.danger,
   );
 
@@ -98,6 +104,7 @@ class AppColors extends ThemeExtension<AppColors> {
       divider: mix(divider, other.divider),
       fg: mix(fg, other.fg),
       success: mix(success, other.success),
+      warning: mix(warning, other.warning),
       danger: mix(danger, other.danger),
     );
   }
@@ -110,4 +117,11 @@ extension AppColorsContext on BuildContext {
 
   /// The foreground to draw muted text, icons and tints from.
   Color get fg => colors.fg;
+
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+
+  /// A colour that only tells things apart (not a status), in a shade that
+  /// reads on the current background.
+  Color pick({required Color dark, required Color light}) =>
+      isDark ? dark : light;
 }

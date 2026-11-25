@@ -146,9 +146,15 @@ class RealtimeConversation implements ConversationEngine {
     }
     _session = session;
     // Handle events strictly in order: audio must not overtake begin().
+    // Events still queued when the call ends (or this session is replaced)
+    // are dropped, so they cannot reopen a player after cleanup.
+    bool live() => !_stopped && identical(_session, session);
     _sessionSub = session.events.listen(
-      (e) => _queue = _queue.then((_) => _onEvent(e)).catchError(_fail),
-      onError: (Object e) => _queue = _queue.then((_) => _onSessionError(e)),
+      (e) => _queue = _queue
+          .then((_) => live() ? _onEvent(e) : null)
+          .catchError(_fail),
+      onError: (Object e) =>
+          _queue = _queue.then((_) => live() ? _onSessionError(e) : null),
     );
   }
 
@@ -232,6 +238,7 @@ class RealtimeConversation implements ConversationEngine {
           _replyStarted = null;
         }
         _replyReceivedMs += pcm.length * 1000 ~/ (sampleRate * 2);
+        if (_stopped) return;
         if (!_replying) {
           _replying = true;
           _replyStarted = DateTime.now();

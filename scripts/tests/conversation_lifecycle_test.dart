@@ -223,6 +223,21 @@ void main() {
     await engine.stop();
   });
 
+  test('events still queued at hang-up open no player', () async {
+    final model = _SlowRealtime()..gate.complete();
+    final io = FakeConversationAudio();
+    final engine = RealtimeConversation(model: model, io: io, instructions: '');
+    await engine.start();
+    for (var i = 0; i < 3; i++) {
+      model.session.events_.add(
+        AudioDelta(Uint8List(4800), sampleRate: 24000, itemId: 'a'),
+      );
+    }
+    await engine.stop();
+    await pumpEventQueue();
+    expect(io.sinks, isEmpty);
+  });
+
   test('typing over a finished reply stops playback, not the server', () async {
     final model = _SlowRealtime()..gate.complete();
     final engine = RealtimeConversation(

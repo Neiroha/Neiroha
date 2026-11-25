@@ -24,6 +24,7 @@ import 'package:neiroha/providers/chat_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 
 import 'chat_bubbles.dart';
+import 'chat_error_bar.dart';
 import 'chat_memory_dialog.dart';
 import 'chat_header.dart';
 import 'chat_recorder.dart';
@@ -60,7 +61,15 @@ class _ChatViewState extends ConsumerState<ChatView> {
   CharacterLiveSettings _settings = const CharacterLiveSettings();
   ConversationEngine? _engine;
   bool _engineListens = false;
+
+  /// The running engine's own microphone and speakers. Each call gets new
+  /// ones, so a hung-up call still starting cannot stop the next call's
+  /// microphone.
   PlatformConversationAudio? _io;
+
+  /// The start in progress; a second tap joins it instead of starting a
+  /// second engine.
+  Future<ConversationEngine?>? _launching;
   StreamSubscription<ConversationEvent>? _sub;
   ConversationState _state = ConversationState.idle;
   bool _starting = false;
@@ -165,14 +174,25 @@ class _ChatViewState extends ConsumerState<ChatView> {
         (_kind == ChatEngine.realtime || _engineListens == listen)) {
       return _engine;
     }
+    if (_launching case final pending?) return pending;
+    final launch = _launching = _launch(listen);
+    try {
+      return await launch;
+    } finally {
+      if (identical(_launching, launch)) _launching = null;
+    }
+  }
+
+  Future<ConversationEngine?> _launch(bool listen) async {
     await _stopEngine();
-    final factory = await _factory();
-    if (factory == null || !mounted) return null;
+    if (!mounted) return null;
     setState(() {
       _error = null;
       _starting = true;
     });
     try {
+      final factory = await _factory();
+      if (factory == null || !mounted) return null;
       final providers = await _db.getAllProviders();
       final engine = factory.create(
         engine: _kind,
@@ -181,7 +201,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
             .where((p) => p.id == widget.character.providerId)
             .firstOrNull,
         settings: _settings,
-        io: _io ??= PlatformConversationAudio(),
+        io: _io = PlatformConversationAudio(),
         chain: _chain = await VoiceChainHook.load(_db, widget.character.id),
         memory: _memory,
         history: await _history(),
@@ -204,9 +224,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   Future<void> _stopEngine() async {
     final engine = _engine;
+    final io = _io;
     _engine = null;
+    _io = null;
     _engineListens = false;
     await engine?.stop();
+    await io?.dispose().catchError((_) {});
     await _sub?.cancel();
     _sub = null;
     _pending = '';
@@ -390,7 +413,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
               onBack: widget.onBack,
             ),
             const Divider(height: 1),
-            if (_error != null) _errorBar(),
+            if (_error != null)
+              ChatErrorBar(
+                message: _error!,
+                onClose: () => setState(() => _error = null),
+              ),
             Expanded(
               child: messages.isEmpty && _pending.isEmpty
                   ? Center(
@@ -446,27 +473,6 @@ class _ChatViewState extends ConsumerState<ChatView> {
       },
     );
   }
-
-  Widget _errorBar() => Material(
-    color: context.colors.danger.withValues(alpha: 0.12),
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: SelectableText(
-              _error!,
-              style: const TextStyle(fontSize: 12),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close_rounded, size: 16),
-            onPressed: () => setState(() => _error = null),
-          ),
-        ],
-      ),
-    ),
-  );
 
   Widget _micButton(AppLocalizations l) {
     final router = ref.read(aiCapabilityRouterProvider).value;

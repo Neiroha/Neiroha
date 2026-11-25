@@ -93,7 +93,10 @@ class SentencePreviewService {
         presetVoiceName: asset.presetVoiceName,
         speed: asset.speed,
         responseFormat: provider.adapterType == 'openaiTts' ? 'pcm' : null,
-        textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
+        textLang: TtsRequest.legacyTextLanguage(
+          provider.adapterType,
+          asset.modelName,
+        ),
         voiceInstruction:
             VoiceCapabilities.supportsVoiceInstruction(asset, provider)
             ? instruction?.isNotEmpty == true

@@ -57,7 +57,10 @@ Future<ResolvedSpeech> resolveSpeech(
       voice: voice,
       speed: (json['speed'] as num?)?.toDouble() ?? 1.0,
       responseFormat: json['response_format'] as String?,
-      textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
+      textLang: TtsRequest.legacyTextLanguage(
+        provider.adapterType,
+        asset.modelName,
+      ),
       refAudioPath: asset.refAudioPath,
       promptText: asset.promptText,
       promptLang: asset.promptLang,

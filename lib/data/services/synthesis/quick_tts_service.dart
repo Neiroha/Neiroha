@@ -36,7 +36,10 @@ TtsRequest quickTtsRequest(
   speed: asset.speed,
   responseFormat: responseFormat,
   presetVoiceName: asset.presetVoiceName,
-  textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
+  textLang: TtsRequest.legacyTextLanguage(
+    provider.adapterType,
+    asset.modelName,
+  ),
   // A reply's delivery style adds to the character's own instruction.
   voiceInstruction: [
     asset.voiceInstruction?.trim() ?? '',

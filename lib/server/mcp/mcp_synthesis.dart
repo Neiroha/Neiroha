@@ -33,7 +33,10 @@ TtsRequest characterSpeechRequest(
   text: text,
   voice: asset.presetVoiceName ?? asset.name,
   speed: speed ?? asset.speed,
-  textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
+  textLang: TtsRequest.legacyTextLanguage(
+    provider.adapterType,
+    asset.modelName,
+  ),
   presetVoiceName: asset.presetVoiceName,
   voiceInstruction: instruction ?? asset.voiceInstruction,
   refAudioPath: asset.refAudioPath,

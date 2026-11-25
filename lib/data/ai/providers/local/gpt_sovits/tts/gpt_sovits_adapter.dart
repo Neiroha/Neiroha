@@ -19,7 +19,6 @@ class GptSovitsAdapter extends TtsAdapter {
 
   static const _nativePrefix = 'api/gpt-sovits';
   static const _legacyNativePrefix = 'gpt-sovits';
-  static const _languageCodes = {'zh', 'en', 'ja', 'ko', 'yue', 'auto'};
 
   GptSovitsAdapter({
     required this.baseUrl,
@@ -178,23 +177,17 @@ class GptSovitsAdapter extends TtsAdapter {
 
   String get _openAiModelName {
     final model = modelName.trim();
-    if (model.isEmpty || _languageCodes.contains(model.toLowerCase())) {
+    if (model.isEmpty ||
+        TtsRequest.legacyTextLanguage('gptSovits', model) != null) {
       return 'default';
     }
-    if (model.isNotEmpty) {
-      return model;
-    }
-    return 'default';
+    return model;
   }
 
   String? _textLang(TtsRequest request) {
     final direct = request.textLang?.trim();
     if (direct != null && direct.isNotEmpty) return direct;
-    final model = modelName.trim().toLowerCase();
-    if (_languageCodes.contains(model)) {
-      return model;
-    }
-    return null;
+    return TtsRequest.legacyTextLanguage('gptSovits', modelName);
   }
 
   String _voiceName(TtsRequest request) {

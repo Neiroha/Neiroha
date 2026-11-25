@@ -318,9 +318,10 @@ extension _NovelReaderEditorSynthesis on _NovelReaderEditorState {
             voiceAssetId: asset.id,
             speed: asset.speed,
             responseFormat: preferWav ? 'wav' : 'mp3',
-            textLang: provider.adapterType == 'gptSovits'
-                ? asset.modelName
-                : null,
+            textLang: TtsRequest.legacyTextLanguage(
+              provider.adapterType,
+              asset.modelName,
+            ),
             presetVoiceName: asset.presetVoiceName,
             voiceInstruction:
                 VoiceCapabilities.supportsVoiceInstruction(asset, provider)

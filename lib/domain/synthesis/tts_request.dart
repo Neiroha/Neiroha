@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:neiroha/domain/enums/adapter_type.dart';
+
 /// Request payload for TTS synthesis, unified across all adapters.
 class TtsRequest {
   final String text;
@@ -45,6 +47,27 @@ class TtsRequest {
     this.audioTagPrefix,
     this.voiceAssetId,
   });
+
+  /// Older GPT-SoVITS characters stored the text language in the model field.
+  static String? legacyTextLanguage(String adapterType, String? modelName) {
+    if (adapterType != AdapterType.gptSovits.name) return null;
+    final language = modelName?.trim().toLowerCase();
+    return const {
+          'auto',
+          'auto_yue',
+          'en',
+          'zh',
+          'ja',
+          'yue',
+          'ko',
+          'all_zh',
+          'all_ja',
+          'all_yue',
+          'all_ko',
+        }.contains(language)
+        ? language
+        : null;
+  }
 
   /// Same request with [text] replaced (after a chain's text steps).
   TtsRequest withText(String text) => _copy(text, responseFormat);

@@ -231,9 +231,10 @@ extension _PhaseEditorGeneration on _PhaseTtsScreenState {
               voice: asset.presetVoiceName ?? asset.name,
               voiceAssetId: asset.id,
               speed: asset.speed,
-              textLang: provider.adapterType == 'gptSovits'
-                  ? asset.modelName
-                  : null,
+              textLang: TtsRequest.legacyTextLanguage(
+                provider.adapterType,
+                asset.modelName,
+              ),
               presetVoiceName: asset.presetVoiceName,
               voiceInstruction:
                   VoiceCapabilities.supportsVoiceInstruction(asset, provider)

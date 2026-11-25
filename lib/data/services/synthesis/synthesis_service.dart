@@ -52,6 +52,10 @@ class SynthesisService {
     TtsCancelToken cancellation,
     _ChainDecision decision,
   ) async {
+    // Whether to chain was decided at admission: a chain switched on while
+    // queued does not wrap an adapter planned without it (a novel's fixed
+    // audio sequence) and is not counted twice.
+    if (await decision.leaseCounted) return adapter;
     final wrapped =
         await queue.voiceChains?.call(
           adapter,
@@ -61,8 +65,8 @@ class SynthesisService {
         ) ??
         adapter;
     // The chain was switched off after queueing: its one request still
-    // counts. (One switched on counts every request itself.)
-    if (identical(wrapped, adapter) && !await decision.leaseCounted) {
+    // counts.
+    if (identical(wrapped, adapter)) {
       await queue.accountContinuation(provider, request, cancellation);
     }
     return wrapped;
@@ -344,10 +348,14 @@ class _ChainDecision {
   final TtsRequest request;
   Future<bool>? _chained;
 
-  Future<bool> decide() =>
-      _chained = queue.hasVoiceChain?.call(request) ?? Future.value(false);
+  /// Without a cheap check, any installed chain hook decides (it counts a
+  /// single request itself when it does not wrap).
+  Future<bool> decide() => _chained =
+      queue.hasVoiceChain?.call(request) ??
+      Future.value(queue.voiceChains != null);
 
-  /// True when the lease counted the task's request (no chain, or unknown).
+  /// True when the lease counted the task's request (no chain, or the
+  /// check failed): the task then runs without a chain.
   Future<bool> get leaseCounted async {
     try {
       return !await (_chained ?? Future.value(false));

@@ -191,6 +191,46 @@ void main() {
     },
   );
 
+  test('a chain switched on while queued leaves the task as planned', () async {
+    final queue = TtsQueueService.instance;
+    var wrapped = 0;
+    queue.voiceChains = (adapter, request, {beforeRequest}) async {
+      wrapped++;
+      return ChainedTtsAdapter(
+        adapter,
+        const VoiceChain([VoiceChainStep(kind: VoiceChainStepKind.trim)]),
+        VoiceChainRunner(CapabilityRouter(const [])),
+        beforeRequest: beforeRequest,
+      );
+    };
+    // No chain when admitted; the hook would chain it by start time.
+    queue.hasVoiceChain = (_) async => false;
+    addTearDown(
+      () => queue
+        ..voiceChains = null
+        ..hasVoiceChain = null,
+    );
+    final provider = _row(
+      'rpm-planned',
+      AdapterType.openaiTts,
+    ).copyWith(requestsPerMinute: const Value(1));
+    final tts = _Tts();
+    await SynthesisService(queue)
+        .collectInMemory(
+          provider: provider,
+          request: const TtsRequest(
+            text: '一。二。',
+            voice: 'v',
+            voiceAssetId: 'a',
+          ),
+          cancellation: TtsCancelToken(),
+          adapter: tts,
+        )
+        .timeout(const Duration(seconds: 5));
+    expect(wrapped, 0);
+    expect(tts.spoken, ['一。二。']);
+  });
+
   test('a chain decision is asked only once the task is accepted', () async {
     var asked = false;
     await expectLater(

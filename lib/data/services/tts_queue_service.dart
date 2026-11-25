@@ -261,14 +261,12 @@ class TtsQueueService {
         }
         final delay = Completer<void>();
         final timer = Timer(wait, delay.complete);
+        final changed = state.limitsChanged();
         try {
-          await Future.any([
-            delay.future,
-            cancelled.future,
-            state.limitsChanged,
-          ]);
+          await Future.any([delay.future, cancelled.future, changed.future]);
         } finally {
           timer.cancel();
+          state.release(changed);
         }
       }
     } finally {

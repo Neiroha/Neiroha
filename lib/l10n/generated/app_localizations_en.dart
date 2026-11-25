@@ -4209,14 +4209,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paneCharacterSettings => 'Character settings';
 
   @override
-  String get navOrderTitle => 'Sidebar order';
+  String get navOrderReset => 'Restore default';
+
+  @override
+  String get navOrderTitle => 'Sidebar';
 
   @override
   String get navOrderSubtitle =>
-      'Drag to reorder the pages in the sidebar; AI services and Settings stay at the bottom.';
+      'Drag to reorder, and use the eye to hide pages you don\'t use; AI services and Settings stay at the bottom.';
 
   @override
-  String get navOrderReset => 'Restore default';
+  String get navOrderHidden => 'Hidden';
+
+  @override
+  String navOrderHiddenCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pages hidden',
+      one: '1 page hidden',
+    );
+    return '$_temp0; Restore default shows them all.';
+  }
+
+  @override
+  String navOrderHide(String page) {
+    return 'Hide $page from the sidebar';
+  }
+
+  @override
+  String navOrderShow(String page) {
+    return 'Show $page in the sidebar';
+  }
 
   @override
   String get navCharacterChat => 'Character Chat';

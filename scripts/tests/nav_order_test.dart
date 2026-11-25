@@ -1,4 +1,5 @@
-// The sidebar order: stored names, new pages, moves and reset.
+// The sidebar layout: stored order and hidden pages, new pages, moves,
+// hiding and reset.
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -51,11 +52,44 @@ void main() {
     await first
         .read(navOrderProvider.notifier)
         .move(NavOrder.defaults.length - 1, 0);
-    expect(first.read(navOrderProvider).value!.first, NavTab.voiceBank);
+    expect(first.read(navOrderProvider).value!.order.first, NavTab.voiceBank);
+    await first.read(navOrderProvider.notifier).setHidden(NavTab.music, true);
+    // Pinned pages cannot be hidden.
+    await first
+        .read(navOrderProvider.notifier)
+        .setHidden(NavTab.settings, true);
 
     final again = open();
-    expect((await again.read(navOrderProvider.future)).first, NavTab.voiceBank);
+    final layout = await again.read(navOrderProvider.future);
+    expect(layout.order.first, NavTab.voiceBank);
+    expect(layout.hidden, {NavTab.music});
+    expect(layout.visible, isNot(contains(NavTab.music)));
+    expect(layout.order, contains(NavTab.music)); // keeps its place
     await again.read(navOrderProvider.notifier).reset();
-    expect(again.read(navOrderProvider).value, NavOrder.defaults);
+    final reset = again.read(navOrderProvider).value!;
+    expect(reset.order, NavOrder.defaults);
+    expect(reset.hidden, isEmpty);
+  });
+
+  test('stored hidden pages drop unknown and pinned names', () {
+    expect(NavOrder.parseHidden('music, nope,settings,subtitles,'), {
+      NavTab.music,
+      NavTab.subtitles,
+    });
+    expect(NavOrder.parseHidden(null), isEmpty);
+  });
+
+  test('a hidden startup page falls back to the first shown page', () {
+    final layout = NavLayout(NavOrder.defaults, {NavTab.novelReader});
+    expect(navShownTab(layout, NavTab.music), NavTab.music);
+    expect(navShownTab(layout, NavTab.novelReader), NavTab.dialogTts);
+    expect(
+      navShownTab(
+        NavLayout(NavOrder.defaults, NavOrder.defaults.toSet()),
+        NavTab.voiceBank,
+      ),
+      NavTab.settings,
+    );
+    expect(navShownTab(layout, NavTab.providers), NavTab.providers);
   });
 }

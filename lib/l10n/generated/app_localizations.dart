@@ -7532,23 +7532,47 @@ abstract class AppLocalizations {
   /// **'Character settings'**
   String get paneCharacterSettings;
 
-  /// No description provided for @navOrderTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Sidebar order'**
-  String get navOrderTitle;
-
-  /// No description provided for @navOrderSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Drag to reorder the pages in the sidebar; AI services and Settings stay at the bottom.'**
-  String get navOrderSubtitle;
-
   /// No description provided for @navOrderReset.
   ///
   /// In en, this message translates to:
   /// **'Restore default'**
   String get navOrderReset;
+
+  /// No description provided for @navOrderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sidebar'**
+  String get navOrderTitle;
+
+  /// No description provided for @navOrderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder, and use the eye to hide pages you don\'\'t use; AI services and Settings stay at the bottom.'**
+  String get navOrderSubtitle;
+
+  /// No description provided for @navOrderHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden'**
+  String get navOrderHidden;
+
+  /// No description provided for @navOrderHiddenCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 page hidden} other{{count} pages hidden}}; Restore default shows them all.'**
+  String navOrderHiddenCount(int count);
+
+  /// No description provided for @navOrderHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide {page} from the sidebar'**
+  String navOrderHide(String page);
+
+  /// No description provided for @navOrderShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {page} in the sidebar'**
+  String navOrderShow(String page);
 
   /// No description provided for @navCharacterChat.
   ///

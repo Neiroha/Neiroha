@@ -4061,13 +4061,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get paneCharacterSettings => '角色设置';
 
   @override
-  String get navOrderTitle => '侧边栏顺序';
-
-  @override
-  String get navOrderSubtitle => '拖动调整左侧页面的上下顺序；AI 服务与设置固定在底部。';
-
-  @override
   String get navOrderReset => '恢复默认';
+
+  @override
+  String get navOrderTitle => '侧边栏';
+
+  @override
+  String get navOrderSubtitle => '拖动调整顺序，点眼睛图标隐藏用不到的页面；AI 服务与设置固定在底部。';
+
+  @override
+  String get navOrderHidden => '已隐藏';
+
+  @override
+  String navOrderHiddenCount(int count) {
+    return '已隐藏 $count 个页面，恢复默认会全部显示。';
+  }
+
+  @override
+  String navOrderHide(String page) {
+    return '从侧边栏隐藏「$page」';
+  }
+
+  @override
+  String navOrderShow(String page) {
+    return '在侧边栏显示「$page」';
+  }
 
   @override
   String get navCharacterChat => '角色聊天';

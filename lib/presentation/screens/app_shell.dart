@@ -18,6 +18,7 @@ import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/presentation/widgets/sidebar.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
+import 'package:neiroha/providers/nav_order_provider.dart';
 
 import 'voice_bank_screen.dart';
 import 'provider_screen.dart';
@@ -56,10 +57,15 @@ class _AppShellState extends ConsumerState<AppShell> {
         : null;
     if (!mounted) return;
 
-    final startupTab =
-        NavTab.fromName(lastStored) ??
-        NavTab.fromName(stored) ??
-        AppNavigationSettings.defaultStartupTab;
+    // A page hidden from the sidebar is not opened at startup.
+    final layout = await ref.read(navOrderProvider.future);
+    if (!mounted) return;
+    final startupTab = navShownTab(
+      layout,
+      NavTab.fromName(lastStored) ??
+          NavTab.fromName(stored) ??
+          AppNavigationSettings.defaultStartupTab,
+    );
     _visitedTabs.add(startupTab);
     ref.read(selectedTabProvider.notifier).state = startupTab;
     unawaited(_storeLastTab(startupTab));

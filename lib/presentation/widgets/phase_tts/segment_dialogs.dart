@@ -171,7 +171,7 @@ extension _SegmentDialogs on _SegmentVoicePanelState {
                     hint,
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: context.fg.withValues(alpha: 0.5),
                     ),
                   ),
                 ],
@@ -242,7 +242,7 @@ extension _SegmentDialogs on _SegmentVoicePanelState {
                   l10n.phaseSplitHint,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: context.fg.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: 10),

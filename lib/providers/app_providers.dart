@@ -1,11 +1,15 @@
+import 'dart:convert';
+
 import 'package:neiroha/data/services/synthesis/synthesis_service.dart';
 import 'package:neiroha/data/services/synthesis/quick_tts_service.dart';
 import 'package:neiroha/data/services/capabilities/capability_repository.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:neiroha/data/database/app_database.dart';
+import 'package:neiroha/domain/synthesis/voice_chain.dart';
 import 'package:neiroha/data/services/android_media_session_service.dart';
 import 'package:neiroha/data/services/audio_merge_service.dart';
 import 'package:neiroha/data/services/auto_loudness_service.dart';
@@ -23,6 +27,7 @@ import 'package:neiroha/domain/platform/platform_capabilities.dart';
 import 'package:neiroha/l10n/app_locale.dart';
 import 'package:neiroha/presentation/theme/app_font.dart';
 import 'package:neiroha/server/api_server.dart';
+import 'package:neiroha/presentation/theme/app_theme_mode.dart';
 
 /// Single database instance for the app.
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -41,6 +46,12 @@ final appLocaleProvider = StateProvider<Locale>((ref) {
 /// [AppFontSettings.fontModeKey] and watched by MaterialApp.
 final appFontModeProvider = StateProvider<AppFontMode>((ref) {
   return AppFontSettings.defaultMode;
+});
+
+/// Light, dark or system theme. Persisted in AppSettings via
+/// [AppThemeSettings.themeModeKey] and watched by MaterialApp.
+final appThemeModeProvider = StateProvider<ThemeMode>((ref) {
+  return AppThemeSettings.defaultMode;
 });
 
 /// Current product capability matrix for the running platform.
@@ -255,6 +266,28 @@ final ttsProvidersStreamProvider = StreamProvider((ref) {
   final db = ref.watch(databaseProvider);
   return db.watchAllProviders();
 });
+
+/// Voice asset id → what its processing chain does (cache-key input);
+/// characters without an active chain are absent.
+final voiceChainSignaturesProvider = StreamProvider<Map<String, String>>(
+  (ref) => ref
+      .watch(databaseProvider)
+      .watchVoiceChains()
+      .map(
+        (rows) => {
+          for (final MapEntry(:key, :value) in rows.entries)
+            if (_chainSignature(value) case final s when s.isNotEmpty) key: s,
+        },
+      ),
+);
+
+String _chainSignature(String raw) {
+  try {
+    return VoiceChain.fromJson(jsonDecode(raw)).signature;
+  } on FormatException {
+    return '';
+  }
+}
 
 /// Stream of all voice assets from the database.
 final voiceAssetsStreamProvider = StreamProvider((ref) {

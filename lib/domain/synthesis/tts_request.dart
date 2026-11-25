@@ -26,6 +26,10 @@ class TtsRequest {
   // Audio tag prefix prepended to text, e.g. "(磁性)" or "(兴奋|颤抖)"
   final String? audioTagPrefix;
 
+  /// Voice character this line is spoken by. Lets the synthesis service run
+  /// the character's processing chain (translate → TTS → voice conversion).
+  final String? voiceAssetId;
+
   const TtsRequest({
     required this.text,
     required this.voice,
@@ -39,7 +43,34 @@ class TtsRequest {
     this.presetVoiceName,
     this.voiceClonePromptBase64,
     this.audioTagPrefix,
+    this.voiceAssetId,
   });
+
+  /// Same request with [text] replaced (after a chain's text steps).
+  TtsRequest withText(String text) => _copy(text, responseFormat);
+
+  /// Same request asking for [format] (`pcm`, `wav`, …).
+  TtsRequest withFormat(String format) => _copy(text, format);
+
+  /// Same request asking for a whole file instead of streamed raw PCM.
+  TtsRequest asWholeFile() =>
+      responseFormat == 'pcm' ? _copy(text, null) : this;
+
+  TtsRequest _copy(String text, String? format) => TtsRequest(
+    text: text,
+    voice: voice,
+    speed: speed,
+    responseFormat: format,
+    refAudioPath: refAudioPath,
+    promptText: promptText,
+    promptLang: promptLang,
+    textLang: textLang,
+    voiceInstruction: voiceInstruction,
+    presetVoiceName: presetVoiceName,
+    voiceClonePromptBase64: voiceClonePromptBase64,
+    audioTagPrefix: audioTagPrefix,
+    voiceAssetId: voiceAssetId,
+  );
 }
 
 /// Result of a TTS synthesis call.

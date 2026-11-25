@@ -1,21 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:neiroha/data/adapters/chat_completions_tts_adapter.dart';
+import 'package:neiroha/presentation/widgets/ai/model_retirement_widgets.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/actions/browser_speech_message.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/voice_chip_list.dart';
 
 class TtsProviderModelRow extends StatefulWidget {
   final db.ModelBinding model;
   final VoidCallback onDelete;
   final BrowserSpeechBlock? webBlock;
 
+  /// Voices this model ships with (`builtInVoicesFor`); tap to expand.
+  final List<String> voices;
+
+  /// Vendor shutdown date (`yyyy-MM-dd`), shown as a red tag.
+  final String? shutdownAt;
+
   const TtsProviderModelRow({
     super.key,
     required this.model,
     required this.onDelete,
     this.webBlock,
+    this.voices = const [],
+    this.shutdownAt,
   });
 
   @override
@@ -33,22 +42,16 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
     return 'Preset';
   }
 
-  /// Built-in voices for this model (e.g., MiMo V2/V2.5). Empty if unknown.
-  List<String> get _builtInVoices =>
-      ChatCompletionsTtsAdapter.builtInVoicesForMimoModel(
-        widget.model.modelKey,
-      );
-
   @override
   Widget build(BuildContext context) {
-    final voices = _builtInVoices;
+    final voices = widget.voices;
     final hasBuiltIns = voices.isNotEmpty;
     final block = widget.webBlock;
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surfaceBright,
+          color: context.colors.raised,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -70,7 +73,12 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
                     Icon(
                       Icons.mic_rounded,
                       size: 16,
-                      color: Colors.purpleAccent.withValues(alpha: 0.7),
+                      color: context
+                          .pick(
+                            dark: Colors.purpleAccent,
+                            light: Colors.purple.shade600,
+                          )
+                          .withValues(alpha: 0.7),
                     ),
                     SizedBox(width: 8),
                     Expanded(
@@ -88,44 +96,38 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
                           AppLocalizations.of(context),
                           block,
                         ),
-                        child: const Icon(Icons.do_not_disturb_alt, size: 16),
-                      ),
-                    if (hasBuiltIns) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          AppLocalizations.of(
-                            context,
-                          ).uiVoiceCount(voices.length),
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.white.withValues(alpha: 0.55),
-                          ),
+                        child: const Icon(
+                          Icons.do_not_disturb_alt_rounded,
+                          size: 16,
                         ),
                       ),
-                      SizedBox(width: 4),
-                    ],
+                    if (widget.shutdownAt case final date?)
+                      RetirementChip(shutdownAt: date),
+                    if (hasBuiltIns) VoiceCountBadge(count: voices.length),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.purpleAccent.withValues(alpha: 0.15),
+                        color: context
+                            .pick(
+                              dark: Colors.purpleAccent,
+                              light: Colors.purple.shade600,
+                            )
+                            .withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         _typeLabel,
                         style: TextStyle(
                           fontSize: 10,
-                          color: Colors.purpleAccent.withValues(alpha: 0.8),
+                          color: context
+                              .pick(
+                                dark: Colors.purpleAccent,
+                                light: Colors.purple.shade600,
+                              )
+                              .withValues(alpha: 0.8),
                         ),
                       ),
                     ),
@@ -135,7 +137,7 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
                             ? Icons.expand_less_rounded
                             : Icons.expand_more_rounded,
                         size: 16,
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: context.fg.withValues(alpha: 0.5),
                       ),
                     SizedBox(width: 4),
                     InkWell(
@@ -146,7 +148,7 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
                         child: Icon(
                           Icons.close_rounded,
                           size: 14,
-                          color: Colors.grey,
+                          color: context.fg.withValues(alpha: 0.45),
                         ),
                       ),
                     ),
@@ -163,33 +165,8 @@ class _TtsProviderModelRowState extends State<TtsProviderModelRow> {
                   bottom: 8,
                   top: 2,
                 ),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: voices
-                      .map(
-                        (v) => Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.08),
-                            ),
-                          ),
-                          child: Text(
-                            v,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.white.withValues(alpha: 0.7),
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
+                child: VoiceChipList(
+                  voices: [for (final v in voices) (label: v, id: null)],
                 ),
               ),
           ],

@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
-import 'package:neiroha/data/adapters/pcm_sequence_adapter.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/protocols/audio/pcm_sequence_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
+import 'package:neiroha/data/services/synthesis/voice_chain_runner.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/auto_loudness_service.dart';
 import 'package:neiroha/data/services/capabilities/task_profile_repository.dart';
@@ -33,14 +33,20 @@ class NovelStreamPlan {
     this.binding,
     this.adapter,
     this.cacheKey,
-    this.chunks,
-  );
+    this.chunks, {
+    this.chained = false,
+  });
   final db.NovelProject project;
   final db.NovelSegment segment;
   final NovelSynthesisBinding binding;
   final TtsAdapter adapter;
   final String cacheKey;
   final List<String> chunks;
+
+  /// The character has an active processing chain. The chain then splits
+  /// and speaks the whole text itself; a [PcmSequenceAdapter] inside it
+  /// would replay every chunk for each sentence the chain asks for.
+  final bool chained;
   bool get canStream =>
       adapter.supportsStreaming &&
       {
@@ -110,13 +116,15 @@ class NovelStreamingService {
       rules,
     );
     if (text.trim().isEmpty) throw StateError('No text remains after filters.');
+    final chain = await VoiceChainHook.load(database, asset.id);
     final key = NovelAudioFingerprint.build(
       project: project,
       segment: segment,
       asset: binding.asset,
       provider: binding.provider,
-      protocolSignature: profile == null ? '' : jsonEncode(profile.toJson()),
+      protocolSignature: binding.profileSignature,
       textFilterSignature: NovelTextFilterRulesService.signature(rules),
+      chainSignature: chain.signature,
     );
     return NovelStreamPlan(
       project,
@@ -130,6 +138,7 @@ class NovelStreamingService {
         maxSliceChars: project.maxSliceChars,
         punctuationOnly: project.sliceOnlyAtPunctuation,
       ),
+      chained: chain.isActive,
     );
   }
 
@@ -187,6 +196,7 @@ class NovelStreamingService {
         TtsRequest(
           text: text,
           voice: asset.presetVoiceName ?? asset.name,
+          voiceAssetId: asset.id,
           presetVoiceName: asset.presetVoiceName,
           speed: asset.speed,
           voiceInstruction: asset.voiceInstruction,
@@ -202,7 +212,11 @@ class NovelStreamingService {
       final result = await synthesis.generate(
         provider: plan.binding.provider,
         modelName: asset.modelName,
-        request: requests.first,
+        // A chained character gets the whole text in one request: the
+        // chain (applied by [SynthesisService]) splits it into sentences.
+        request: plan.chained
+            ? requests.first.withText(plan.chunks.join('\n'))
+            : requests.first,
         outputBase:
             '${directory.path}/seg_${plan.segment.globalIndex}_${const Uuid().v4()}',
         cancellation: cancellation,
@@ -210,23 +224,34 @@ class NovelStreamingService {
         sink: sink,
         source: 'Novel Reader',
         label: plan.segment.segmentText,
-        adapter: PcmSequenceAdapter(
-          plan.adapter,
-          requests,
-          beforeContinuation: (request) => synthesis.queue.accountContinuation(
-            plan.binding.provider,
-            request,
-            cancellation,
-          ),
-        ),
+        adapter: plan.chained
+            ? plan.adapter
+            : PcmSequenceAdapter(
+                plan.adapter,
+                requests,
+                beforeContinuation: (request) =>
+                    synthesis.queue.accountContinuation(
+                      plan.binding.provider,
+                      request,
+                      cancellation,
+                    ),
+              ),
         onFirstAudio: onFirstAudio,
       );
       cancellation.throwIfCancelled();
       final latest = await prepare(plan.project, plan.segment);
       if (latest.cacheKey != plan.cacheKey) throw const TtsCancelledException();
+      // Streamed PCM is cached as a 44-byte-header WAV. A chain that fell
+      // back to one encoded file (VC returning MP3 without FFmpeg) leaves
+      // the duration unknown rather than failing a finished synthesis.
+      final format = result.format;
       final duration =
-          ((await File(result.audioPath).length()) - 44) /
-          (result.format.sampleRate! * result.format.channels! * 2);
+          format.encoding == AudioEncoding.pcmS16le &&
+              format.sampleRate != null &&
+              format.channels != null
+          ? ((await File(result.audioPath).length()) - 44) /
+                (format.sampleRate! * format.channels! * 2)
+          : null;
       if (sink == null) {
         await loudness.normalizeGenerated(
           enabled: plan.project.autoNormalizeLoudness,

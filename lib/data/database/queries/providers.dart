@@ -35,6 +35,17 @@ extension AppDatabaseProviderQueries on AppDatabase {
       await deleteVoiceAsset(asset.id);
     }
     await (delete(modelBindings)..where((t) => t.providerId.equals(id))).go();
+    // The schema declares ON DELETE CASCADE for these, but the app's
+    // SQLite connections run with foreign keys off, so delete them here.
+    await (delete(
+      connectionCapabilities,
+    )..where((t) => t.connectionId.equals(id))).go();
+    await (delete(
+      providerModels,
+    )..where((t) => t.connectionId.equals(id))).go();
+    await (delete(
+      capabilityDefaults,
+    )..where((t) => t.connectionId.equals(id))).go();
     return (delete(ttsProviders)..where((t) => t.id.equals(id))).go();
   });
 

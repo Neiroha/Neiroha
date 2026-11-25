@@ -4,9 +4,9 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
-import 'package:neiroha/data/adapters/openai_tts_adapter.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/protocols/openai/llm_chat_adapter.dart';
+import 'package:neiroha/data/ai/providers/openai/tts/openai_tts_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/capabilities/capability_repository.dart';
 import 'package:neiroha/data/services/capabilities/provider_declaration_service.dart';

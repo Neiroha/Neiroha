@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:neiroha/data/ai/registry/plugin_registry.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/domain/capabilities/model_capability.dart';
 import 'package:neiroha/data/services/capabilities/role_ai_connection.dart';
@@ -68,7 +69,7 @@ class _TaskProfilesDialogState extends ConsumerState<TaskProfilesDialog> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final providers = (ref.watch(ttsProvidersStreamProvider).value ?? [])
-        .where((p) => _task == ModelTask.synthesis || p.supportsRoleAi)
+        .where((p) => _task == ModelTask.synthesis || providerOffersLlm(p))
         .toList();
     final selected =
         providers.where((p) => p.id == _provider).firstOrNull ??
@@ -144,7 +145,7 @@ class _TaskProfilesDialogState extends ConsumerState<TaskProfilesDialog> {
                 decoration: InputDecoration(
                   labelText: l.roleAnalysisModel,
                   suffixIcon: IconButton(
-                    icon: const Icon(Icons.manage_search),
+                    icon: const Icon(Icons.manage_search_rounded),
                     onPressed: _busy || selected == null
                         ? null
                         : () async {

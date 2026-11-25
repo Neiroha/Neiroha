@@ -106,7 +106,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navVoiceBank => 'Voice Bank';
 
   @override
-  String get navProviders => 'Providers';
+  String get navProviders => 'AI Services';
 
   @override
   String get navSettings => 'Settings';
@@ -198,8 +198,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Novel playback will stop when leaving the reader.';
 
   @override
-  String get aboutSubtitle =>
-      'v0.5.1 - AI Audio Middleware & Dubbing Workstation';
+  String aboutSubtitle(String version) {
+    return 'v$version - AI Audio Middleware & Dubbing Workstation';
+  }
 
   @override
   String get uiUnassigned => '-- Unassigned --';
@@ -3133,4 +3134,1365 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get playbackMoreActions => 'More playback actions';
+
+  @override
+  String get navSubtitles => 'Transcribe & Translate';
+
+  @override
+  String get transcribeFromAudio =>
+      'Transcribe the audio into the reference text';
+
+  @override
+  String get transcribeNeedsStt =>
+      'Enable a provider with speech-to-text (e.g. OpenAI, ElevenLabs) to transcribe';
+
+  @override
+  String get transcribeFilled =>
+      'Reference text filled from the audio. Review it, then save.';
+
+  @override
+  String transcribeFailed(String error) {
+    return 'Transcription failed: $error';
+  }
+
+  @override
+  String get liveModeRealtime => 'Live call';
+
+  @override
+  String get liveModeCompanion => 'AI companion';
+
+  @override
+  String get liveModeRealtimeHint =>
+      'Talk in real time with a Realtime model, like a phone call';
+
+  @override
+  String get liveModeCompanionHint =>
+      'An LLM answers with tools; the character\'s own voice speaks';
+
+  @override
+  String get liveNeedsRealtime =>
+      'Needs a provider with a Realtime model (e.g. OpenAI)';
+
+  @override
+  String get liveNeedsCompanion => 'Needs a language model (LLM) service';
+
+  @override
+  String get liveStateIdle => 'Idle';
+
+  @override
+  String get liveStateConnecting => 'Connecting';
+
+  @override
+  String get liveStateListening => 'Listening';
+
+  @override
+  String get liveStateThinking => 'Thinking';
+
+  @override
+  String get liveStateSpeaking => 'Speaking';
+
+  @override
+  String get liveSettings => 'Character live settings';
+
+  @override
+  String get livePersona => 'Persona';
+
+  @override
+  String get livePersonaHint =>
+      'How the character thinks and talks. Empty uses the voice name, description and instruction.';
+
+  @override
+  String get liveRealtimeVoice => 'Realtime voice';
+
+  @override
+  String get liveDefault => 'Default';
+
+  @override
+  String get liveAllowInterrupt => 'Allow interrupting (headphones)';
+
+  @override
+  String get liveAllowInterruptHint =>
+      'Keeps the microphone open while the character speaks. Without headphones it would hear itself.';
+
+  @override
+  String get subtitlePickMedia => 'Choose a video or audio file';
+
+  @override
+  String get subtitleSourceLanguage => 'Spoken language';
+
+  @override
+  String get subtitleSourceLanguageHint => 'Optional, e.g. ja. Empty = detect';
+
+  @override
+  String get subtitleTargetLanguage => 'Translate to';
+
+  @override
+  String get subtitleNoTranslation => 'No translation (transcript only)';
+
+  @override
+  String get subtitleContext => 'Context for the translator';
+
+  @override
+  String get subtitleContextHint => 'Title, names, genre or glossary';
+
+  @override
+  String get subtitleFormat => 'Output format';
+
+  @override
+  String get subtitleModeOriginal => 'Original';
+
+  @override
+  String get subtitleModeTranslation => 'Translation';
+
+  @override
+  String get subtitleModeBilingual => 'Bilingual';
+
+  @override
+  String get subtitleRun => 'Transcribe';
+
+  @override
+  String get subtitleExport => 'Export subtitles';
+
+  @override
+  String subtitleSaved(String path) {
+    return 'Saved $path';
+  }
+
+  @override
+  String get subtitlePreview => 'Preview';
+
+  @override
+  String get subtitleEmpty => 'Pick a file and run to see the subtitles here.';
+
+  @override
+  String get subtitleMissingCapability => 'not available';
+
+  @override
+  String get subtitleStageDecoding => 'Decoding';
+
+  @override
+  String get subtitleStageDetecting => 'Detecting speech';
+
+  @override
+  String get subtitleStageTranscribing => 'Transcribing';
+
+  @override
+  String get subtitleStageTranslating => 'Translating';
+
+  @override
+  String get subtitleStageDone => 'Done';
+
+  @override
+  String get modalityText => 'Text';
+
+  @override
+  String get modalityImage => 'Image';
+
+  @override
+  String get modalityAudio => 'Audio';
+
+  @override
+  String get modalityVideo => 'Video';
+
+  @override
+  String get modalityPdf => 'PDF';
+
+  @override
+  String get llmThinkUnknown => 'Thinking ?';
+
+  @override
+  String get llmThinkNone => 'No thinking';
+
+  @override
+  String get llmThinkLevelsUnknown => 'Thinking (levels unknown)';
+
+  @override
+  String llmThinkLevels(int count, String from, String to) {
+    return 'Thinking $count levels $from→$to';
+  }
+
+  @override
+  String get llmThinkCanDisable => ', can turn off';
+
+  @override
+  String llmThinkDefault(String level) {
+    return 'Default: $level';
+  }
+
+  @override
+  String llmThinkModes(String modes) {
+    return 'Modes: $modes';
+  }
+
+  @override
+  String get llmTools => 'Tool calling';
+
+  @override
+  String get llmToolsNo => 'No tool calling';
+
+  @override
+  String get llmToolsUnknown => 'Tool calling ?';
+
+  @override
+  String get llmToolsParallel => 'Can call several tools in one turn';
+
+  @override
+  String get llmInputsUnknown => 'Input ?';
+
+  @override
+  String get llmSchema => 'JSON schema';
+
+  @override
+  String llmContext(String tokens) {
+    return '$tokens context';
+  }
+
+  @override
+  String get llmSourceCatalog => 'Built-in catalog';
+
+  @override
+  String get llmSourceAccount => 'Found in this account';
+
+  @override
+  String get llmSourceUnlisted =>
+      'Built-in catalog · not listed by this account';
+
+  @override
+  String llmPickerTitle(String provider) {
+    return 'Language models · $provider';
+  }
+
+  @override
+  String get llmPickerSearch => 'Search, or type a model ID';
+
+  @override
+  String get llmPickerToolsOnly => 'Tool calling only';
+
+  @override
+  String get llmPickerLoading => 'Reading the model list…';
+
+  @override
+  String llmPickerFound(int count) {
+    return 'The account lists $count models; traits come from the public catalog.';
+  }
+
+  @override
+  String llmPickerDenied(String error) {
+    return 'Credentials rejected: $error';
+  }
+
+  @override
+  String get llmPickerOffline =>
+      'No model list from this provider; showing the built-in catalog.';
+
+  @override
+  String llmPickerUse(String id) {
+    return 'Use $id';
+  }
+
+  @override
+  String get llmNeedsToolsNo =>
+      'This model cannot call tools; role analysis needs tool calling.';
+
+  @override
+  String get llmNeedsToolsUnknown =>
+      'Tool calling unknown; one small test request runs before the first analysis.';
+
+  @override
+  String get llmProviderDisabled => '(disabled)';
+
+  @override
+  String get llmProviderHint =>
+      'Only providers that offer a language model are listed';
+
+  @override
+  String get voiceFilterHint => 'Filter voices';
+
+  @override
+  String voiceMoreHidden(int count) {
+    return '$count more — type to filter';
+  }
+
+  @override
+  String voiceEngineVoices(String engine) {
+    return '$engine voices';
+  }
+
+  @override
+  String get navMusic => 'Song Studio';
+
+  @override
+  String get musicModel => 'Model';
+
+  @override
+  String get musicTitle => 'Title';
+
+  @override
+  String get musicTitleHint => 'Untitled song';
+
+  @override
+  String get musicPrompt => 'Style & arrangement';
+
+  @override
+  String get musicPromptHint =>
+      'Genre, mood, instruments, vocalist, tempo, length…';
+
+  @override
+  String get musicLyrics => 'Lyrics';
+
+  @override
+  String get musicLyricsHint =>
+      'Leave empty to let the model write them. Section tags such as [Verse] and [Chorus] shape the song.';
+
+  @override
+  String get musicInstrumental => 'Instrumental (no vocals)';
+
+  @override
+  String get musicLossless => 'Lossless WAV when the model offers it';
+
+  @override
+  String get musicImages => 'Reference images';
+
+  @override
+  String get musicAddImage => 'Add image';
+
+  @override
+  String get musicGenerate => 'Compose';
+
+  @override
+  String musicGenerating(int seconds) {
+    return 'Composing… ${seconds}s';
+  }
+
+  @override
+  String get musicNoModel =>
+      'No enabled provider offers song generation. Add a Google Gemini provider.';
+
+  @override
+  String get musicEmpty => 'Generated songs appear here.';
+
+  @override
+  String get musicShowInFolder => 'Show in folder';
+
+  @override
+  String get musicSaveAs => 'Save as…';
+
+  @override
+  String get musicDelete => 'Delete';
+
+  @override
+  String get musicReuse => 'Reuse settings';
+
+  @override
+  String get musicNoLyrics => 'Instrumental, no lyrics.';
+
+  @override
+  String get musicWatermark =>
+      'Lyria audio carries an inaudible SynthID watermark.';
+
+  @override
+  String musicSaved(String path) {
+    return 'Saved to $path';
+  }
+
+  @override
+  String get liveRealtimeModel => 'Realtime model';
+
+  @override
+  String get chainTitle => 'Processing chain';
+
+  @override
+  String get chainHint =>
+      'Steps wrap the TTS of this character like chained functions: text steps rewrite the line first, voice conversion re-voices the audio after. Applies wherever the character speaks.';
+
+  @override
+  String get chainInput => 'Line';
+
+  @override
+  String get chainOutput => 'Audio';
+
+  @override
+  String get chainAdd => 'Add step';
+
+  @override
+  String get chainTranslate => 'Translate (LLM)';
+
+  @override
+  String get chainRewrite => 'Rewrite (LLM)';
+
+  @override
+  String get chainConvert => 'Voice conversion';
+
+  @override
+  String chainTranslateTo(String language) {
+    return 'Translate → $language';
+  }
+
+  @override
+  String chainConvertTo(String voice) {
+    return 'Re-voice → $voice';
+  }
+
+  @override
+  String get chainTargetLanguage => 'Target language';
+
+  @override
+  String get chainTargetLanguageHint => 'e.g. Japanese, English, Cantonese';
+
+  @override
+  String get chainInstruction => 'Instruction';
+
+  @override
+  String get chainInstructionHint =>
+      'e.g. Say it in a calm, old-fashioned tone and keep it short.';
+
+  @override
+  String get chainTargetVoice => 'Target voice';
+
+  @override
+  String get chainModel => 'Model';
+
+  @override
+  String get chainNoModels => 'No enabled provider offers this capability yet.';
+
+  @override
+  String get chainNeedsSetup => 'Needs setup';
+
+  @override
+  String get chainNoStreaming =>
+      'Voice conversion runs sentence by sentence: playback starts once the first sentence is converted. On the web, converters that only return files convert the whole line first.';
+
+  @override
+  String retireBadge(Object date) {
+    return 'Retires $date';
+  }
+
+  @override
+  String retireHint(Object model, Object date, Object replacement) {
+    return '$model stops working on $date. Switch to $replacement.';
+  }
+
+  @override
+  String retireHintNoReplacement(Object model, Object date) {
+    return '$model stops working on $date. Pick a model from another provider.';
+  }
+
+  @override
+  String retireBanner(Object count, Object date, Object days) {
+    return '$count characters use models that stop working on $date ($days days left).';
+  }
+
+  @override
+  String get retireMigrate => 'Migrate';
+
+  @override
+  String get retireMigrateTitle => 'Move characters to replacement models?';
+
+  @override
+  String get retireMigrateManual =>
+      'No replacement runs here; change these in the character inspector:';
+
+  @override
+  String retireMigrated(Object count) {
+    return 'Moved $count characters.';
+  }
+
+  @override
+  String retireSwitchTo(Object model) {
+    return 'Switch to $model';
+  }
+
+  @override
+  String get retireLater => 'Later';
+
+  @override
+  String get chainTrim => 'Trim silence';
+
+  @override
+  String get chainVerify => 'ASR check';
+
+  @override
+  String get chainTrimHint =>
+      'Cuts silence at both ends of each sentence and shortens pauses longer than 0.35 s.';
+
+  @override
+  String get chainVerifyHint =>
+      'Transcribes what was spoken, compares it with the line and lists skipped words. Playback is not delayed.';
+
+  @override
+  String get chainVerifyLanguage => 'Recognition language (optional)';
+
+  @override
+  String chainCheckMissing(Object score, Object missing) {
+    return 'Heard $score% · missing: $missing';
+  }
+
+  @override
+  String chainCheckClean(Object score) {
+    return 'Heard $score% · nothing missing';
+  }
+
+  @override
+  String chainCheckFailed(Object error) {
+    return 'ASR check failed: $error';
+  }
+
+  @override
+  String get chainCheckNone =>
+      'No ASR check yet; preview the character to run one.';
+
+  @override
+  String get settingsAiCapabilities => 'AI capabilities';
+
+  @override
+  String get settingsAiCapabilitiesDescription =>
+      'Default models, per-capability limits and added models';
+
+  @override
+  String get capLlm => 'Language model';
+
+  @override
+  String get capTts => 'Speech synthesis';
+
+  @override
+  String get capStt => 'Speech recognition';
+
+  @override
+  String get capRealtime => 'Realtime voice';
+
+  @override
+  String get capTranslate => 'Speech translation';
+
+  @override
+  String get capVc => 'Voice conversion';
+
+  @override
+  String get capVad => 'Voice activity';
+
+  @override
+  String get capMusic => 'Music';
+
+  @override
+  String get capDefaultModel => 'Default model';
+
+  @override
+  String get capAutomatic => 'Automatic (first available)';
+
+  @override
+  String get capConnections => 'Connections';
+
+  @override
+  String get capNoConnections =>
+      'No enabled connection offers this capability.';
+
+  @override
+  String get capLimits => 'Limits';
+
+  @override
+  String capLimitsTitle(Object capability, Object connection) {
+    return '$capability limits · $connection';
+  }
+
+  @override
+  String get capLimitsHint =>
+      'Leave a field empty to inherit the connection limit. Each capability queues on its own, so language-model calls do not take speech slots.';
+
+  @override
+  String get capInherited => 'Inherited';
+
+  @override
+  String get capConcurrency => 'Concurrent requests';
+
+  @override
+  String get capRpm => 'Requests / minute';
+
+  @override
+  String get capRpd => 'Requests / day';
+
+  @override
+  String get capTpm => 'Tokens / minute';
+
+  @override
+  String get capTpd => 'Tokens / day';
+
+  @override
+  String get capAddModel => 'Add model';
+
+  @override
+  String get capModelId => 'Model id';
+
+  @override
+  String get capDisplayName => 'Display name (optional)';
+
+  @override
+  String capModelRejected(Object model) {
+    return 'This connection cannot open model $model.';
+  }
+
+  @override
+  String get capOff => 'Off';
+
+  @override
+  String get capAll => 'All';
+
+  @override
+  String get inspectorTabBasic => 'Basics';
+
+  @override
+  String get inspectorTabVoice => 'Voice';
+
+  @override
+  String get provTabOverview => 'Overview';
+
+  @override
+  String get provCapabilities => 'Capabilities';
+
+  @override
+  String provCapUse(Object capability) {
+    return 'Use $capability on this connection';
+  }
+
+  @override
+  String provCapOffHint(Object capability) {
+    return '$capability is off here; features will not route to this connection.';
+  }
+
+  @override
+  String get provConnectionOff =>
+      'This connection is turned off. Switch it on in the list before features use its models.';
+
+  @override
+  String get provSetDefault => 'Set as default';
+
+  @override
+  String get provIsDefault => 'Default';
+
+  @override
+  String get provSourceAdded => 'Added by you';
+
+  @override
+  String get provSourceFetched => 'Fetched from the account';
+
+  @override
+  String get provDiscoverLlm => 'Discover from account';
+
+  @override
+  String get provOtherModels => 'Other fetched models';
+
+  @override
+  String get provCheckAll => 'Check capabilities';
+
+  @override
+  String get provHealthOk => 'Available';
+
+  @override
+  String get provHealthFailed => 'Failed';
+
+  @override
+  String get provHealthUnavailable => 'Unavailable';
+
+  @override
+  String get provHealthUnknown => 'Unknown';
+
+  @override
+  String get provHealthNotChecked => 'Not checked yet';
+
+  @override
+  String provHealthSome(Object list) {
+    return 'Some capabilities failed: $list';
+  }
+
+  @override
+  String get provLimitsConnection => 'Connection limits';
+
+  @override
+  String get provLimitsPerCapability => 'Per capability';
+
+  @override
+  String get provAddPick => 'Choose a provider';
+
+  @override
+  String get provAddHint =>
+      'Fill in the address and key on the Overview tab after creating it, then check its capabilities.';
+
+  @override
+  String get featPresetVoices => 'Preset voices';
+
+  @override
+  String get featInstructions => 'Style instructions';
+
+  @override
+  String get featStreamingOutput => 'Streaming';
+
+  @override
+  String get featCloudClone => 'Cloud cloning';
+
+  @override
+  String get featZeroShotClone => 'Zero-shot cloning';
+
+  @override
+  String get featFileTranscription => 'File transcription';
+
+  @override
+  String get featStreamingTranscription => 'Streaming transcription';
+
+  @override
+  String get featWordTimestamps => 'Word timestamps';
+
+  @override
+  String get featDiarization => 'Speaker labels';
+
+  @override
+  String get featLanguageDetection => 'Language detection';
+
+  @override
+  String get featKeywords => 'Keywords';
+
+  @override
+  String get featAudioOutput => 'Audio output';
+
+  @override
+  String get featTextOutput => 'Text output';
+
+  @override
+  String get featToolCalls => 'Tool calls';
+
+  @override
+  String get featServerVad => 'Server VAD';
+
+  @override
+  String get featInputTranscription => 'Input transcript';
+
+  @override
+  String get featSourceTranscript => 'Source transcript';
+
+  @override
+  String get featStructuredOutput => 'Structured output';
+
+  @override
+  String get featReasoning => 'Reasoning';
+
+  @override
+  String get featVocals => 'Vocals';
+
+  @override
+  String get featTimedLyrics => 'Timed lyrics';
+
+  @override
+  String get featImagePrompt => 'Image prompt';
+
+  @override
+  String get featLosslessOutput => 'Lossless output';
+
+  @override
+  String get featZeroShot => 'Zero-shot';
+
+  @override
+  String get featLocal => 'Local';
+
+  @override
+  String get sidebarExpand => 'Expand sidebar';
+
+  @override
+  String get sidebarCollapse => 'Collapse sidebar';
+
+  @override
+  String get musicSearch => 'Search songs';
+
+  @override
+  String musicCount(Object count) {
+    return '$count songs';
+  }
+
+  @override
+  String get musicNoMatch => 'No song matches.';
+
+  @override
+  String get musicStyle => 'Style';
+
+  @override
+  String get musicGenre => 'Genre';
+
+  @override
+  String get musicMood => 'Mood';
+
+  @override
+  String get musicInstruments => 'Instruments';
+
+  @override
+  String get musicVoice => 'Vocals';
+
+  @override
+  String get musicTempo => 'Tempo';
+
+  @override
+  String get musicStyleHint =>
+      'Tap a tag to add it to the style; tap again to remove it.';
+
+  @override
+  String musicLyricsStats(Object lines, Object chars) {
+    return '$lines lines · $chars characters';
+  }
+
+  @override
+  String get musicOptions => 'Options';
+
+  @override
+  String get musicNowPlaying => 'Now playing';
+
+  @override
+  String get musicPlay => 'Play';
+
+  @override
+  String get musicPause => 'Pause';
+
+  @override
+  String get musicLyricsTitle => 'Lyrics';
+
+  @override
+  String get musicSeekHint => 'Tap a timed line to jump there.';
+
+  @override
+  String get musicGenPop => 'Pop';
+
+  @override
+  String get musicGenRock => 'Rock';
+
+  @override
+  String get musicGenElectronic => 'Electronic';
+
+  @override
+  String get musicGenFolk => 'Folk';
+
+  @override
+  String get musicGenChinese => 'Chinese traditional';
+
+  @override
+  String get musicGenJazz => 'Jazz';
+
+  @override
+  String get musicGenHipHop => 'Hip-hop';
+
+  @override
+  String get musicGenLofi => 'Lo-fi';
+
+  @override
+  String get musicGenOrchestral => 'Orchestral';
+
+  @override
+  String get musicGenAnime => 'Anime';
+
+  @override
+  String get musicMoodHappy => 'Upbeat';
+
+  @override
+  String get musicMoodSad => 'Melancholy';
+
+  @override
+  String get musicMoodEpic => 'Epic';
+
+  @override
+  String get musicMoodCalm => 'Calm';
+
+  @override
+  String get musicMoodDreamy => 'Dreamy';
+
+  @override
+  String get musicMoodDark => 'Dark';
+
+  @override
+  String get musicInsPiano => 'Piano';
+
+  @override
+  String get musicInsGuitar => 'Acoustic guitar';
+
+  @override
+  String get musicInsSynth => 'Synthesizer';
+
+  @override
+  String get musicInsStrings => 'Strings';
+
+  @override
+  String get musicInsGuzheng => 'Guzheng';
+
+  @override
+  String get musicInsDrums => 'Drums';
+
+  @override
+  String get musicVoxFemale => 'Female vocals';
+
+  @override
+  String get musicVoxMale => 'Male vocals';
+
+  @override
+  String get musicVoxChoir => 'Choir';
+
+  @override
+  String get musicTempoSlow => 'Slow';
+
+  @override
+  String get musicTempoMid => 'Mid-tempo';
+
+  @override
+  String get musicTempoFast => 'Fast';
+
+  @override
+  String chainCheckExtra(Object extra) {
+    return 'Extra: $extra';
+  }
+
+  @override
+  String capModelUnavailable(Object model) {
+    return '$model (unavailable)';
+  }
+
+  @override
+  String capFollowDefault(Object model) {
+    return 'Follow default ($model)';
+  }
+
+  @override
+  String get capFollowDefaultNone => 'Follow default';
+
+  @override
+  String get subtitleModels => 'Models';
+
+  @override
+  String get subtitleTranslateModel => 'Translation model';
+
+  @override
+  String get provHubDefaults => 'Default models';
+
+  @override
+  String get provHubDefaultsHint =>
+      'The model each capability uses by default; click a provider to open it';
+
+  @override
+  String get provHubDefaultsShort => 'What each capability runs on';
+
+  @override
+  String get provHubRoleAiShort => 'Profiles, model and stage prompts';
+
+  @override
+  String get provHubConnections => 'Providers';
+
+  @override
+  String get provHubFeatureModels => 'Models chosen by features';
+
+  @override
+  String get provHubFeatureModelsHint =>
+      'These features do not follow the defaults below';
+
+  @override
+  String get provHubResetFeatureModel => 'Follow the default again';
+
+  @override
+  String provModelCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count models',
+      one: '1 model',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get provConnection => 'Connection';
+
+  @override
+  String get settingsAiServicesHint => 'Providers, default models and role AI';
+
+  @override
+  String capAutomaticInOrder(Object model) {
+    return 'Automatic: in the order below ($model)';
+  }
+
+  @override
+  String get capAutoOrderHint =>
+      'With no default set, the first available connection below and its preferred model are used. Drag the handles to reorder; switched-off connections are skipped.';
+
+  @override
+  String get capPreferred => 'Preferred';
+
+  @override
+  String capPreferredModel(Object model) {
+    return 'Preferred: $model';
+  }
+
+  @override
+  String get capModelAdded => 'Added';
+
+  @override
+  String get capModelOrder => 'Model order';
+
+  @override
+  String capUseCustomModel(Object model, Object connection) {
+    return 'Use “$model” on $connection';
+  }
+
+  @override
+  String provHubConnectionsShort(int count, int enabled) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count connections',
+      one: '1 connection',
+    );
+    return '$_temp0 · $enabled on';
+  }
+
+  @override
+  String get provProvidersHint =>
+      'Tap to open its settings; drag the handle to reorder';
+
+  @override
+  String get roleAnalysisModelPick => 'Analysis model';
+
+  @override
+  String roleModelFollowDefault(Object model) {
+    return 'Follow the default LLM ($model)';
+  }
+
+  @override
+  String get roleModelHint =>
+      'Role assignment checks and corrects itself through function calling. Type to search; a picked model is tested at once.';
+
+  @override
+  String get roleToolChecking => 'Testing function calling…';
+
+  @override
+  String get roleToolSupported => 'Supports function calling';
+
+  @override
+  String get roleToolUnsupported =>
+      'No function calling: role assignment cannot correct itself, pick another model';
+
+  @override
+  String get roleToolUnknown => 'Function calling not tested yet';
+
+  @override
+  String roleToolFailed(Object error) {
+    return 'Function calling test failed: $error';
+  }
+
+  @override
+  String get roleToolTest => 'Test';
+
+  @override
+  String provAvailableModels(int count) {
+    return 'Models you can add · $count';
+  }
+
+  @override
+  String get provAvailableModelsHint =>
+      'Listed by the model catalog or your account. Added models appear in the defaults, the model order and every model picker; starring one as the default adds it too.';
+
+  @override
+  String get quickTtsSendHint =>
+      'Enter to generate, Shift+Enter for a new line';
+
+  @override
+  String get voiceRequired => 'Choose a voice';
+
+  @override
+  String voiceNotForModel(String voice, String model) {
+    return '$model does not offer the voice $voice; choose another';
+  }
+
+  @override
+  String get bankSwitch => 'Switch voice bank';
+
+  @override
+  String get bankActions => 'Voice bank actions';
+
+  @override
+  String get paneCharacterSettings => 'Character settings';
+
+  @override
+  String get navOrderReset => 'Restore default';
+
+  @override
+  String get navOrderTitle => 'Sidebar';
+
+  @override
+  String get navOrderSubtitle =>
+      'Drag to reorder, and use the eye to hide pages you don\'t use; AI services and Settings stay at the bottom.';
+
+  @override
+  String get navOrderHidden => 'Hidden';
+
+  @override
+  String navOrderHiddenCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pages hidden',
+      one: '1 page hidden',
+    );
+    return '$_temp0; Restore default shows them all.';
+  }
+
+  @override
+  String navOrderHide(String page) {
+    return 'Hide $page from the sidebar';
+  }
+
+  @override
+  String navOrderShow(String page) {
+    return 'Show $page in the sidebar';
+  }
+
+  @override
+  String get navCharacterChat => 'Character Chat';
+
+  @override
+  String get chatNew => 'New chat';
+
+  @override
+  String get chatListEmpty => 'No chats yet. Start one with a character.';
+
+  @override
+  String get chatPick => 'Pick a chat, or start a new one';
+
+  @override
+  String get chatCharacter => 'Character';
+
+  @override
+  String get chatEngine => 'Mode';
+
+  @override
+  String get chatTitleOptional => 'Title (optional)';
+
+  @override
+  String get chatNoCharacters => 'Add a character in the Voice Bank first.';
+
+  @override
+  String chatDeleteConfirm(String title) {
+    return 'Delete \"$title\" and all of its messages?';
+  }
+
+  @override
+  String chatComposerHint(String name) {
+    return 'Message $name';
+  }
+
+  @override
+  String get chatMicStart => 'Talk (microphone)';
+
+  @override
+  String get chatMicStop => 'Stop listening';
+
+  @override
+  String get chatMicUnavailable =>
+      'Speaking needs speech recognition and VAD services';
+
+  @override
+  String get chatCallStart => 'Start call';
+
+  @override
+  String get chatCallEnd => 'Hang up';
+
+  @override
+  String chatEmptyCompanion(String name) {
+    return 'Type a message, or turn on the microphone and talk. $name answers in their own voice.';
+  }
+
+  @override
+  String chatEmptyRealtime(String name) {
+    return 'Start the call and just talk; $name answers in real time. You can type too.';
+  }
+
+  @override
+  String get chatToolTime => 'Checked the time';
+
+  @override
+  String chatToolRemember(String fact) {
+    return 'Remembered: $fact';
+  }
+
+  @override
+  String chatToolForget(String fact) {
+    return 'Forgot: $fact';
+  }
+
+  @override
+  String chatToolOther(String name) {
+    return 'Used $name';
+  }
+
+  @override
+  String get chatMemory => 'Memory';
+
+  @override
+  String get chatMemoryEmpty =>
+      'Nothing remembered yet. Tell the character something about yourself.';
+
+  @override
+  String get chatLlmModel => 'Chat model';
+
+  @override
+  String get chatUseTools => 'Let the character use tools';
+
+  @override
+  String get chatUseToolsHint =>
+      'Check the time and remember what you tell them. The model must support function calling.';
+
+  @override
+  String chatEmotion(String emotion) {
+    String _temp0 = intl.Intl.selectLogic(emotion, {
+      'happy': 'happy',
+      'sad': 'sad',
+      'angry': 'angry',
+      'surprised': 'surprised',
+      'shy': 'shy',
+      'serious': 'serious',
+      'playful': 'playful',
+      'other': 'calm',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get chatReplay => 'Play again';
+
+  @override
+  String get chatStopReplay => 'Stop';
+
+  @override
+  String get chatPanelPersona => 'Persona';
+
+  @override
+  String get chatPersonaHint =>
+      'Who the character is: personality, way of speaking, relationship with you. Empty uses the default below.';
+
+  @override
+  String get chatPersonaDefault => 'Default persona';
+
+  @override
+  String get chatPanelModel => 'Model';
+
+  @override
+  String get chatPanelVoice => 'Voice';
+
+  @override
+  String get chatModelFeatures => 'Capabilities';
+
+  @override
+  String get chatFeatureTools => 'Tools';
+
+  @override
+  String get chatFeatureStructured => 'Structured reply';
+
+  @override
+  String get chatFeatureTranscribe => 'Transcribes you';
+
+  @override
+  String get chatFeatureVad => 'Turn detection';
+
+  @override
+  String get chatFeatureUnknown =>
+      'Capabilities unknown; tools are tried and dropped if refused';
+
+  @override
+  String get chatToolsUnsupported =>
+      'This model has no tools; the character just talks.';
+
+  @override
+  String chatVoiceChain(String steps) {
+    return 'Chain: $steps';
+  }
+
+  @override
+  String get chatVoiceNoChain => 'No processing chain';
+
+  @override
+  String get chatVoiceChainHint =>
+      'Translation, rewriting and voice conversion are set in the character\'s processing chain in the Voice Bank.';
+
+  @override
+  String get chatVoiceRealtimeHint =>
+      'A call speaks with the Realtime voice; the chain\'s voice conversion is applied to it.';
+
+  @override
+  String get chatAppliesNextCall =>
+      'Changes apply the next time you start a call.';
+
+  @override
+  String get chatChainConverts => 'Voice conversion from the processing chain';
+
+  @override
+  String get themeSettingsTitle => 'Theme';
+
+  @override
+  String get themeSettingsSubtitle =>
+      'Follow the system, or always use light or dark.';
+
+  @override
+  String get themeModeSystem => 'Auto';
+
+  @override
+  String get themeModeLight => 'Light';
+
+  @override
+  String get themeModeDark => 'Dark';
+
+  @override
+  String get linkCopied => 'Link copied to the clipboard.';
+
+  @override
+  String get updateTitle => 'Software update';
+
+  @override
+  String updateCurrent(String version) {
+    return 'Current version v$version';
+  }
+
+  @override
+  String get updateChecking => 'Checking for updates…';
+
+  @override
+  String updateUpToDate(String version) {
+    return 'v$version is the latest version.';
+  }
+
+  @override
+  String get updateCheckFailed => 'Could not reach GitHub; try again later.';
+
+  @override
+  String updateAvailableTitle(String version) {
+    return 'Version v$version is available';
+  }
+
+  @override
+  String updateAvailableBody(String current, String latest) {
+    return 'You have v$current; v$latest is ready to download.';
+  }
+
+  @override
+  String updatePublished(String date) {
+    return 'Released $date';
+  }
+
+  @override
+  String get updateSkipVersion => 'Skip this version';
+
+  @override
+  String get updateLater => 'Later';
+
+  @override
+  String get updateDownload => 'Download';
+
+  @override
+  String get updateCheckNow => 'Check now';
+
+  @override
+  String get updateAutoTitle => 'Check at startup';
+
+  @override
+  String get updateAutoSubtitle =>
+      'When the app opens, look for a newer release on GitHub and say so.';
+
+  @override
+  String get updateReleasesPage => 'Releases page';
 }

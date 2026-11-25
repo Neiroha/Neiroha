@@ -18,107 +18,110 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
         ? null
         : () => _exportVideo(project);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 720;
-        return Container(
-          padding: compact
-              ? const EdgeInsets.fromLTRB(4, 6, 8, 6)
-              : const EdgeInsets.fromLTRB(12, 10, 20, 10),
-          child: Row(
-            children: [
-              IconButton(
-                tooltip: l10n.uiBackToProjects,
-                onPressed: () => _back(project),
-                icon: const Icon(Icons.arrow_back_rounded, size: 20),
-              ),
-              if (!compact) ...[
-                SizedBox(width: 4),
-                Icon(
-                  Icons.movie_filter_rounded,
-                  color: AppTheme.accentColor,
-                  size: 18,
+    return WindowDragArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 720;
+          return Container(
+            constraints: const BoxConstraints(minHeight: 52),
+            padding: compact
+                ? const EdgeInsets.fromLTRB(4, 6, 8, 6)
+                : const EdgeInsets.fromLTRB(6, 6, 16, 6),
+            child: Row(
+              children: [
+                IconButton(
+                  tooltip: l10n.uiBackToProjects,
+                  onPressed: () => _back(project),
+                  icon: const Icon(Icons.arrow_back_rounded, size: 20),
                 ),
-                SizedBox(width: 10),
-              ],
-              Expanded(
-                child: Text(
-                  _dirty ? '• ${project.name}' : project.name,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                if (!compact) ...[
+                  SizedBox(width: 4),
+                  Icon(
+                    Icons.movie_filter_rounded,
+                    color: AppTheme.accentColor,
+                    size: 18,
                   ),
-                ),
-              ),
-              if (!compact) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceDim,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
+                  SizedBox(width: 10),
+                ],
+                Expanded(
                   child: Text(
-                    l10n.uiVoiceCount(voiceCount),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.5),
+                    _dirty ? '• ${project.name}' : project.name,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-                SizedBox(width: 12),
-              ],
-              if (capabilities.supportsLocalAudioMuxing) ...[
-                if (compact)
-                  IconButton(
-                    tooltip: l10n.uiExportAudio,
-                    onPressed: exportAudio,
-                    icon: busyOr(Icons.audiotrack_rounded),
-                  )
-                else
-                  OutlinedButton.icon(
-                    onPressed: exportAudio,
-                    icon: busyOr(Icons.audiotrack_rounded),
-                    label: Text(l10n.uiExportAudio),
-                  ),
-                SizedBox(width: compact ? 0 : 8),
-              ],
-              if (capabilities.supportsLocalVideoExport) ...[
-                if (compact)
-                  IconButton(
-                    tooltip: l10n.uiExportVideo,
-                    onPressed: exportVideo,
-                    icon: busyOr(Icons.file_download_outlined),
-                  )
-                else
-                  OutlinedButton.icon(
-                    onPressed: exportVideo,
-                    icon: busyOr(Icons.file_download_outlined),
-                    label: Text(
-                      _exporting ? l10n.uiExporting : l10n.uiExportVideo,
+                if (!compact) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.colors.panel,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      l10n.uiVoiceCount(voiceCount),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: context.fg.withValues(alpha: 0.5),
+                      ),
                     ),
                   ),
-                SizedBox(width: compact ? 4 : 8),
+                  SizedBox(width: 12),
+                ],
+                if (capabilities.supportsLocalAudioMuxing) ...[
+                  if (compact)
+                    IconButton(
+                      tooltip: l10n.uiExportAudio,
+                      onPressed: exportAudio,
+                      icon: busyOr(Icons.audiotrack_rounded),
+                    )
+                  else
+                    OutlinedButton.icon(
+                      onPressed: exportAudio,
+                      icon: busyOr(Icons.audiotrack_rounded),
+                      label: Text(l10n.uiExportAudio),
+                    ),
+                  SizedBox(width: compact ? 0 : 8),
+                ],
+                if (capabilities.supportsLocalVideoExport) ...[
+                  if (compact)
+                    IconButton(
+                      tooltip: l10n.uiExportVideo,
+                      onPressed: exportVideo,
+                      icon: busyOr(Icons.file_download_rounded),
+                    )
+                  else
+                    OutlinedButton.icon(
+                      onPressed: exportVideo,
+                      icon: busyOr(Icons.file_download_rounded),
+                      label: Text(
+                        _exporting ? l10n.uiExporting : l10n.uiExportVideo,
+                      ),
+                    ),
+                  SizedBox(width: compact ? 4 : 8),
+                ],
+                if (compact)
+                  IconButton.filled(
+                    tooltip: l10n.uiSave,
+                    onPressed: () => _save(project),
+                    icon: const Icon(Icons.save_rounded, size: 18),
+                  )
+                else
+                  FilledButton.icon(
+                    onPressed: () => _save(project),
+                    icon: const Icon(Icons.save_rounded, size: 16),
+                    label: Text(l10n.uiSave),
+                  ),
               ],
-              if (compact)
-                IconButton.filled(
-                  tooltip: l10n.uiSave,
-                  onPressed: () => _save(project),
-                  icon: const Icon(Icons.save_rounded, size: 18),
-                )
-              else
-                FilledButton.icon(
-                  onPressed: () => _save(project),
-                  icon: const Icon(Icons.save_rounded, size: 16),
-                  label: Text(l10n.uiSave),
-                ),
-            ],
-          ),
-        );
-      },
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -131,7 +134,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.movie_outlined,
+                Icons.movie_rounded,
                 size: 56,
                 color: Colors.white.withValues(alpha: 0.25),
               ),
@@ -176,7 +179,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
         .toDouble();
     return ExcludeSemantics(
       child: Container(
-        color: AppTheme.surfaceDim,
+        color: context.colors.panel,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
           children: [
@@ -254,7 +257,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                   size: 18,
                   color: _syncDub
                       ? AppTheme.accentColor
-                      : Colors.white.withValues(alpha: 0.4),
+                      : context.fg.withValues(alpha: 0.4),
                 ),
                 onPressed: () async {
                   _updateState(() => _syncDub = !_syncDub);
@@ -278,7 +281,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
     Map<String, db.VoiceAsset> assetMap,
   ) {
     return Container(
-      color: AppTheme.surfaceDim,
+      color: context.colors.panel,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -301,14 +304,14 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                 IconButton(
                   tooltip: AppLocalizations.of(context).uiAddCue,
                   onPressed: () => _addCueDialog(project, cues),
-                  icon: const Icon(Icons.add, size: 18),
+                  icon: const Icon(Icons.add_rounded, size: 18),
                 ),
                 IconButton(
                   tooltip: AppLocalizations.of(
                     context,
                   ).uiAddSubtitlesImportSRTLRC,
                   onPressed: () => _importSubtitles(project, cues),
-                  icon: const Icon(Icons.subtitles_outlined, size: 18),
+                  icon: const Icon(Icons.subtitles_rounded, size: 18),
                 ),
                 if (cues.isNotEmpty)
                   IconButton(
@@ -338,7 +341,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                   IconButton(
                     tooltip: AppLocalizations.of(context).uiClearAllCues,
                     onPressed: () => _confirmClearCues(project),
-                    icon: const Icon(Icons.delete_sweep_outlined, size: 18),
+                    icon: const Icon(Icons.delete_sweep_rounded, size: 18),
                   ),
               ],
             ),
@@ -353,9 +356,9 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.subtitles_off_outlined,
+                            Icons.subtitles_off_rounded,
                             size: 42,
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: context.fg.withValues(alpha: 0.2),
                           ),
                           SizedBox(height: 10),
                           Text(
@@ -364,7 +367,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                             ).uiNoCuesYetImportAnSRTLRCFileOrAddOneManually,
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: context.fg.withValues(alpha: 0.4),
                               fontSize: 12,
                             ),
                           ),
@@ -449,7 +452,7 @@ extension _VideoDubEditorLayout on _VideoDubEditorState {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(Icons.auto_awesome, size: 18),
+                      : const Icon(Icons.auto_awesome_rounded, size: 18),
                   label: Text(AppLocalizations.of(context).uiGenerateAll),
                 ),
               ],

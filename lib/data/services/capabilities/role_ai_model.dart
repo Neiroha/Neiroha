@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:neiroha/data/adapters/openai_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/openai/tts/openai_tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/capabilities/model_capability.dart';
 import 'package:neiroha/domain/capabilities/service_endpoint.dart';

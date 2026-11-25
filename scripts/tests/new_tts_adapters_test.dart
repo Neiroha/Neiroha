@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neiroha/data/adapters/elevenlabs_adapter.dart';
-import 'package:neiroha/data/adapters/gemini_tts_adapter.dart';
-import 'package:neiroha/data/adapters/index_tts_adapter.dart';
-import 'package:neiroha/data/adapters/minimax_tts_adapter.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/elevenlabs/tts/elevenlabs_adapter.dart';
+import 'package:neiroha/data/ai/providers/gemini/tts/gemini_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/local/index_tts/tts/index_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/minimax/tts/minimax_tts_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 
 /// Tiny scripted HTTP server: [handler] gets the request + body and writes
 /// the response itself.

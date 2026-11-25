@@ -3,8 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neiroha/data/adapters/openai_tts_adapter.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/openai/tts/openai_tts_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 
 class _Http {
   final Uri uri;
@@ -128,6 +128,23 @@ void main() {
     expect(body.containsKey('instructions'), isFalse);
     expect(body.containsKey('speed'), isFalse);
     expect(body['response_format'], 'wav');
+  });
+
+  test('a character name is never sent as the voice', () {
+    // Quick test and the speech API pass the character name as `voice`.
+    TtsRequest req(String voice, [String? preset]) =>
+        TtsRequest(text: 'x', voice: voice, presetVoiceName: preset);
+    const realtime = 'gpt-realtime-2.1';
+    expect(
+      OpenAiTtsAdapter.resolveVoice(req('OpenAI_gpt-realtime-2.1'), realtime),
+      OpenAiTtsAdapter.kRealtimeVoices.first,
+    );
+    expect(OpenAiTtsAdapter.resolveVoice(req('x', 'cedar'), realtime), 'cedar');
+    expect(OpenAiTtsAdapter.resolveVoice(req('marin'), realtime), 'marin');
+    expect(
+      OpenAiTtsAdapter.resolveVoice(req('voice_abc'), 'gpt-4o-mini-tts'),
+      'voice_abc',
+    );
   });
 
   test('Speech API pcm output is wrapped as WAV', () async {

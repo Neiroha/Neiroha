@@ -1,5 +1,7 @@
+import 'package:neiroha/data/ai/registry/built_in_voices.dart';
+import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
+import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:drift/drift.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:uuid/uuid.dart';
 
@@ -40,8 +42,14 @@ class ProviderModelInventory {
           ),
         );
       }
+      // Voices a listed TTS model ships with are shown under that model;
+      // only account / custom voices are stored separately.
+      final type = AdapterType.values.asNameMap()[provider.adapterType];
+      final builtIn = type == null
+          ? const <String>{}
+          : builtInVoicesAcross(type, modelIds);
       for (final voice in voices) {
-        if (!voiceIds.add(voice)) continue;
+        if (builtIn.contains(voice) || !voiceIds.add(voice)) continue;
         await database.insertBinding(
           db.ModelBindingsCompanion(
             id: Value(const Uuid().v4()),

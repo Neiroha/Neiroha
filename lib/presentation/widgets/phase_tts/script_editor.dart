@@ -30,7 +30,7 @@ class ScriptEditor extends StatelessWidget {
               fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 1.2,
-              color: Colors.white.withValues(alpha: 0.4),
+              color: context.fg.withValues(alpha: 0.4),
             ),
           ),
         ),
@@ -47,11 +47,9 @@ class ScriptEditor extends StatelessWidget {
                 hintText: AppLocalizations.of(
                   context,
                 ).uiPasteYourNovelTextHereEachParagraphBecomesATTSSegment,
-                hintStyle: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.25),
-                ),
+                hintStyle: TextStyle(color: context.fg.withValues(alpha: 0.25)),
                 filled: true,
-                fillColor: AppTheme.surfaceDim,
+                fillColor: context.colors.panel,
               ),
             ),
           ),

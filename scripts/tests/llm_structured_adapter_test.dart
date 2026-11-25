@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
+import 'package:neiroha/data/ai/protocols/openai/llm_chat_adapter.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 
 void main() {

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
-import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
+import 'package:neiroha/data/ai/protocols/openai/llm_chat_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/data/services/capabilities/capability_repository.dart';
@@ -177,6 +177,7 @@ class RoleReviewService {
         session.chargedTokens += reserve;
         await repository.save(session);
         final result = await queue.enqueue(
+          capability: AiCapability.llm,
           provider: provider,
           source: 'Novel local review',
           label: 'turn ${session.calls}',

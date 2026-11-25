@@ -4,9 +4,9 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neiroha/data/adapters/gpt_sovits_adapter.dart';
-import 'package:neiroha/data/adapters/http_error_message.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/local/gpt_sovits/tts/gpt_sovits_adapter.dart';
+import 'package:neiroha/data/ai/protocols/http/http_error_message.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 
 void main() {
   test('model discovery uses OpenAI voice-set models', () async {

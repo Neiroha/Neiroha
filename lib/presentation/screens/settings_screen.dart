@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/widgets/resizable_split_pane.dart';
 import 'package:neiroha/presentation/widgets/settings/settings_sections.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 const double _settingsWideBreakpoint = 840;
 const double _settingsInitialRailFraction = 0.22;
@@ -29,7 +30,7 @@ class SettingsScreen extends ConsumerWidget {
                   ref.read(settingsSectionProvider.notifier).state = section,
             ),
             right: DecoratedBox(
-              decoration: const BoxDecoration(color: Color(0xFF0F0F14)),
+              decoration: BoxDecoration(color: context.colors.background),
               child: SettingsSectionContent(section: selectedSection),
             ),
           );

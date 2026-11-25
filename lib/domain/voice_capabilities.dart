@@ -1,4 +1,4 @@
-import 'package:neiroha/data/adapters/openai_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/openai/tts/openai_tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 
 /// Which per-call style controls a character's engine understands. Shared by
@@ -21,6 +21,7 @@ abstract final class VoiceCapabilities {
       'elevenLabs' => true,
       'minimaxTts' => true,
       'indexTts' => true,
+      'irodori' => asset.refAudioPath?.trim().isNotEmpty == true,
       _ => false,
     };
   }

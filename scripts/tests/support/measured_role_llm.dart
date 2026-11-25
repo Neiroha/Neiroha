@@ -1,4 +1,4 @@
-import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
+import 'package:neiroha/data/ai/protocols/openai/llm_chat_adapter.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'evaluation_budget.dart';
 import 'evaluation_proxy.dart';

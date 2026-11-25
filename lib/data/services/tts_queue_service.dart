@@ -3,10 +3,22 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:math' as math;
 
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 export 'package:neiroha/domain/synthesis/tts_cancellation.dart';
+export 'package:neiroha/domain/ai/capability.dart' show AiCapability;
 import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/domain/ai/ai_exception.dart';
+import 'package:neiroha/domain/ai/capability.dart';
+
+import 'queue_limits.dart';
+
+part 'tts_queue_state.dart';
+
+/// Runs right before each request a processing chain sends upstream (one
+/// per sentence, or the whole line), so it is counted when it is sent.
+typedef ChainRequestHook =
+    Future<void> Function(TtsRequest request, TtsCancelToken cancellation);
 
 enum TtsQueueTaskStatus { queued, running, completed, failed }
 
@@ -70,9 +82,44 @@ class TtsQueueService {
 
   static final TtsQueueService instance = TtsQueueService._();
 
+  /// Wraps a character's adapter in its processing chain; installed by the
+  /// app at startup. Requests without a voice asset id pass through.
+  /// [beforeRequest] accounts each upstream request the chain makes (one
+  /// per sentence) against the task's lease.
+  Future<TtsAdapter> Function(
+    TtsAdapter adapter,
+    TtsRequest request, {
+    ChainRequestHook? beforeRequest,
+  })?
+  voiceChains;
+
+  /// Whether [voiceChains] will wrap this request (its character has an
+  /// active chain); a cheap read used when the queue admits a task.
+  Future<bool> Function(TtsRequest request)? hasVoiceChain;
+
   static const Duration _minuteWindow = Duration(minutes: 1);
 
   final Map<String, _ProviderQueueState> _states = {};
+  Map<String, db.ConnectionCapability> _laneRows = const {};
+
+  /// Per-capability limits (`connection_capabilities`); lanes without a row
+  /// use the connection's own limits.
+  void setCapabilityLimits(Iterable<db.ConnectionCapability> rows) {
+    _laneRows = {for (final r in rows) _laneOf(r): r};
+    // Requests waiting inside running tasks re-check the new limits too.
+    for (final state in _states.values) {
+      state.wakeWaiters();
+    }
+    _states.keys.toList().forEach(_drain);
+  }
+
+  static String _laneOf(db.ConnectionCapability r) => queueLane(
+    r.connectionId,
+    AiCapability.values.asNameMap()[r.capability] ?? AiCapability.tts,
+  );
+
+  QueueLimits _limits(db.TtsProvider p, AiCapability cap) =>
+      QueueLimits.of(p, _laneRows[queueLane(p.id, cap)]);
   final StreamController<TtsQueueSnapshot> _snapshotController =
       StreamController<TtsQueueSnapshot>.broadcast();
   final List<TtsQueueTaskSnapshot> _recentFinished = <TtsQueueTaskSnapshot>[];
@@ -131,19 +178,44 @@ class TtsQueueService {
     String label = 'TTS request',
     TtsCancelToken? cancelToken,
     bool interactive = false,
+    AiCapability capability = AiCapability.tts,
+    Future<bool> Function()? selfAccounting,
   }) {
     if (cancelToken?.isCancelled ?? false) {
       return Future<T>.error(const TtsCancelledException());
     }
-    final state = _states.putIfAbsent(provider.id, () => _ProviderQueueState());
+    final lane = queueLane(provider.id, capability);
+    // The switch binds every caller, not just routing.
+    if (_laneRows[lane]?.enabled == false) {
+      return Future<T>.error(
+        AiProviderException(
+          '${capability.name.toUpperCase()} is turned off for '
+          '"${provider.name}" in its settings.',
+        ),
+      );
+    }
+    final state = _states.putIfAbsent(lane, () => _ProviderQueueState());
     final queuedTask = _QueuedTtsTask<T>(
       id: '${++_nextTaskId}',
       provider: provider,
+      capability: capability,
       source: source,
       label: label,
       estimatedTokens: math.max(1, estimatedTokens),
+      accountsUsage: selfAccounting == null ? true : null,
       run: task,
     );
+    // Asked only now that the task is accepted (whether its chain counts
+    // its requests): the task keeps its place and the lane waits for the
+    // answer; an error accounts as usual.
+    if (selfAccounting != null) {
+      Future.sync(selfAccounting)
+          .then(
+            (chained) => queuedTask.accountsUsage = !chained,
+            onError: (_) => queuedTask.accountsUsage = true,
+          )
+          .whenComplete(() => _drain(lane));
+    }
     if (interactive) {
       state.pending.addFirst(queuedTask);
     } else {
@@ -153,10 +225,10 @@ class TtsQueueService {
       if (!state.pending.remove(queuedTask)) return;
       queuedTask.completer.completeError(const TtsCancelledException());
       _emitSnapshot();
-      _drain(provider.id);
+      _drain(lane);
     });
     _emitSnapshot();
-    _drain(provider.id);
+    _drain(lane);
     return queuedTask.completer.future.whenComplete(() {
       removeCancelListener?.call();
     });
@@ -179,17 +251,22 @@ class TtsQueueService {
       while (true) {
         cancellation.throwIfCancelled();
         final tokens = estimateTokens(request);
-        final wait = state.waitBeforeStart(provider, tokens);
+        final wait = state.waitBeforeStart(
+          _limits(provider, AiCapability.tts),
+          tokens,
+        );
         if (wait <= Duration.zero) {
           state.recordStart(tokens);
           return;
         }
         final delay = Completer<void>();
         final timer = Timer(wait, delay.complete);
+        final changed = state.limitsChanged();
         try {
-          await Future.any([delay.future, cancelled.future]);
+          await Future.any([delay.future, cancelled.future, changed.future]);
         } finally {
           timer.cancel();
+          state.release(changed);
         }
       }
     } finally {
@@ -229,17 +306,22 @@ class TtsQueueService {
 
     while (state.pending.isNotEmpty) {
       final next = state.pending.first;
-      final maxConcurrency = _maxConcurrency(next.provider);
-      if (state.activeTasks.length >= maxConcurrency) return;
+      final limits = _limits(next.provider, next.capability);
+      if (state.activeTasks.length >= limits.maxConcurrency) return;
 
-      final wait = state.waitBeforeStart(next.provider, next.estimatedTokens);
+      final accounts = next.accountsUsage;
+      if (accounts == null) return; // drained again once decided
+      // A task that counts its own requests (a chain) is not recorded here,
+      // but still waits for room for its first one, so it never holds a
+      // slot waiting while interactive work could run.
+      final wait = state.waitBeforeStart(limits, next.estimatedTokens);
       if (wait > Duration.zero) {
         state.timer = Timer(wait, () => _drain(providerId));
         return;
       }
 
       state.pending.removeFirst();
-      state.recordStart(next.estimatedTokens);
+      if (accounts) state.recordStart(next.estimatedTokens);
       next.markRunning();
       state.activeTasks.add(next);
       _emitSnapshot();
@@ -269,10 +351,6 @@ class TtsQueueService {
     }
   }
 
-  int _maxConcurrency(db.TtsProvider provider) {
-    return provider.maxConcurrency.clamp(1, 64).toInt();
-  }
-
   void _addRecent(TtsQueueTaskSnapshot task) {
     _recentFinished.insert(0, task);
     if (_recentFinished.length > 50) {
@@ -287,122 +365,28 @@ class TtsQueueService {
   }
 }
 
-class _ProviderQueueState {
-  final Queue<_QueuedTtsTask<dynamic>> pending =
-      Queue<_QueuedTtsTask<dynamic>>();
-  final Set<_QueuedTtsTask<dynamic>> activeTasks = <_QueuedTtsTask<dynamic>>{};
-  final List<_UsageStamp> _minuteUsage = <_UsageStamp>[];
-
-  int _dayRequests = 0;
-  int _dayTokens = 0;
-  DateTime _dayStart = _today(DateTime.now());
-  Timer? timer;
-
-  Duration waitBeforeStart(db.TtsProvider provider, int tokens) {
-    final now = DateTime.now();
-    _prune(now);
-    _resetDayIfNeeded(now);
-
-    final waits = <Duration>[];
-    final rpm = _positive(provider.requestsPerMinute);
-    if (rpm != null && _minuteUsage.length >= rpm) {
-      waits.add(_until(_minuteUsage.first.startedAt, now));
-    }
-
-    final tpm = _positive(provider.tokensPerMinute);
-    if (tpm != null && tokens > tpm) {
-      if (_minuteUsage.isNotEmpty) {
-        waits.add(_until(_minuteUsage.first.startedAt, now));
-      }
-    } else if (tpm != null) {
-      final currentTokens = _minuteUsage.fold<int>(
-        0,
-        (sum, stamp) => sum + stamp.tokens,
-      );
-      var projected = currentTokens + tokens;
-      for (final stamp in _minuteUsage) {
-        if (projected <= tpm) break;
-        projected -= stamp.tokens;
-        waits.add(_until(stamp.startedAt, now));
-      }
-    }
-
-    final rpd = _positive(provider.requestsPerDay);
-    if (rpd != null && _dayRequests >= rpd) {
-      waits.add(_untilNextDay(now));
-    }
-
-    final tpd = _positive(provider.tokensPerDay);
-    if (tpd != null &&
-        ((tokens > tpd && _dayTokens > 0) ||
-            (tokens <= tpd && _dayTokens + tokens > tpd))) {
-      waits.add(_untilNextDay(now));
-    }
-
-    return waits.fold<Duration>(
-      Duration.zero,
-      (maxWait, wait) => wait > maxWait ? wait : maxWait,
-    );
-  }
-
-  void recordStart(int tokens) {
-    final now = DateTime.now();
-    _prune(now);
-    _resetDayIfNeeded(now);
-    _minuteUsage.add(_UsageStamp(now, tokens));
-    _dayRequests++;
-    _dayTokens += tokens;
-  }
-
-  void _prune(DateTime now) {
-    _minuteUsage.removeWhere(
-      (stamp) =>
-          now.difference(stamp.startedAt) >= TtsQueueService._minuteWindow,
-    );
-  }
-
-  void _resetDayIfNeeded(DateTime now) {
-    final today = _today(now);
-    if (today == _dayStart) return;
-    _dayStart = today;
-    _dayRequests = 0;
-    _dayTokens = 0;
-  }
-
-  Duration _until(DateTime startedAt, DateTime now) {
-    final wait = startedAt.add(TtsQueueService._minuteWindow).difference(now);
-    if (wait <= Duration.zero) return const Duration(milliseconds: 1);
-    return wait + const Duration(milliseconds: 10);
-  }
-
-  Duration _untilNextDay(DateTime now) {
-    return _today(now).add(const Duration(days: 1)).difference(now);
-  }
-
-  static int? _positive(int? value) {
-    if (value == null || value <= 0) return null;
-    return value;
-  }
-
-  static DateTime _today(DateTime now) =>
-      DateTime(now.year, now.month, now.day);
-}
-
 class _QueuedTtsTask<T> {
   _QueuedTtsTask({
     required this.id,
     required this.provider,
+    required this.capability,
     required this.source,
     required this.label,
     required this.estimatedTokens,
+    required this.accountsUsage,
     required this.run,
   }) : queuedAt = DateTime.now();
 
   final String id;
   final db.TtsProvider provider;
+  final AiCapability capability;
   final String source;
   final String label;
   final int estimatedTokens;
+
+  /// False when the task counts each upstream request itself; null until
+  /// that is known.
+  bool? accountsUsage;
   final Future<T> Function() run;
   final DateTime queuedAt;
   final Completer<T> completer = Completer<T>();
@@ -442,11 +426,4 @@ class _QueuedTtsTask<T> {
       errorMessage: errorMessage,
     );
   }
-}
-
-class _UsageStamp {
-  const _UsageStamp(this.startedAt, this.tokens);
-
-  final DateTime startedAt;
-  final int tokens;
 }

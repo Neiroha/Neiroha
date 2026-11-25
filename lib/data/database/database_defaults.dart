@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:neiroha/data/ai/providers/openai/tts/openai_tts_adapter.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/domain/platform/platform_capabilities.dart';
 
@@ -6,6 +7,9 @@ import 'app_database.dart';
 import 'migrations/schema_editor.dart';
 import 'migrations/v030.dart';
 import 'migrations/v032.dart';
+
+/// Seeded by [upgradeToV32].
+const _openAiOfficial = 'default-openai-official';
 
 extension DatabaseDefaults on AppDatabase {
   /// Populate the database with built-in providers and starter data so new
@@ -124,16 +128,24 @@ extension DatabaseDefaults on AppDatabase {
     await upgradeToV30(SchemaEditor(this));
     await upgradeToV32(SchemaEditor(this));
 
-    // ── Default voice character ──
+    // Official OpenAI heads the list: one key covers speech, chat, Realtime
+    // and transcription, so a new install can try every page with it.
+    await customStatement(
+      "UPDATE tts_providers SET position = CASE "
+      "WHEN id = '$_openAiOfficial' THEN 0 ELSE position + 1 END",
+    );
+
+    // ── Default voice character: OpenAI's default model and voice ──
     const defaultCharId = 'default-character';
     await into(voiceAssets).insert(
       VoiceAssetsCompanion(
         id: const Value(defaultCharId),
         name: const Value('Default Voice'),
         description: const Value('Built-in starter character'),
-        providerId: const Value(providerOpenai),
+        providerId: const Value(_openAiOfficial),
+        modelName: const Value(OpenAiTtsAdapter.defaultModel),
         taskMode: const Value('presetVoice'),
-        presetVoiceName: const Value('alloy'),
+        presetVoiceName: const Value('marin'),
         enabled: const Value(true),
       ),
     );

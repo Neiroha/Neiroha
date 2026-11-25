@@ -15,3 +15,6 @@ LazyDatabase openAppConnection() => LazyDatabase(() async {
   }
   return database.resolvedExecutor;
 });
+
+/// The browser database has no isolate to wait for.
+Future<void> databaseIsolatesExited() async {}

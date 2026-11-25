@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:neiroha/data/ai/registry/capability_router.dart';
 import 'package:neiroha/data/services/novel/role_skill_profiles_repository.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/widgets/settings/role_skill_settings.dart';
+import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/novel_role_providers.dart';
 import 'support/role_review_fixture.dart';
@@ -21,26 +24,31 @@ void main() {
         f.database,
         loadBuiltin: () async => builtin!,
       );
+      final rows = [
+        f.provider,
+        f.provider.copyWith(
+          id: 'tts-only',
+          name: 'CosyVoice',
+          adapterType: 'cosyvoice',
+        ),
+        f.provider.copyWith(
+          id: 'gemini',
+          name: 'Google AI Studio',
+          adapterType: 'geminiTts',
+          apiKey: 'fixture',
+          enabled: true,
+        ),
+      ];
       await tester.binding.setSurfaceSize(const Size(360, 850));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             roleSkillProfilesRepositoryProvider.overrideWithValue(repo),
-            ttsProvidersStreamProvider.overrideWith(
-              (_) => Stream.value([
-                f.provider,
-                f.provider.copyWith(
-                  id: 'tts-only',
-                  name: 'CosyVoice',
-                  adapterType: 'cosyvoice',
-                ),
-                f.provider.copyWith(
-                  id: 'gemini',
-                  name: 'Google AI Studio',
-                  adapterType: 'geminiTts',
-                ),
-              ]),
+            databaseProvider.overrideWithValue(f.database),
+            ttsProvidersStreamProvider.overrideWith((_) => Stream.value(rows)),
+            aiCapabilityRouterProvider.overrideWith(
+              (_) async => CapabilityRouter.fromProviders(rows),
             ),
           ],
           child: MaterialApp(
@@ -64,16 +72,25 @@ void main() {
       }
 
       await settleIo();
-      final providerMenu = find.widgetWithText(
-        DropdownButtonFormField<String>,
-        '使用当前入口选择的连接',
+      // The model picker lists LLM connections only, and starts on the
+      // default LLM.
+      final picker = find.descendant(
+        of: find.byType(DropdownMenu<(String, String)>),
+        matching: find.byType(TextField),
       );
-      await tester.ensureVisible(providerMenu);
-      await tester.tap(providerMenu);
+      await tester.ensureVisible(picker);
+      expect(
+        find.descendant(
+          of: picker,
+          matching: find.textContaining('跟随默认大模型（Google AI Studio ·'),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(picker);
       await tester.pumpAndSettle();
-      expect(find.text('Google AI Studio'), findsOneWidget);
-      expect(find.text('CosyVoice'), findsNothing);
-      await tester.tap(find.text('使用当前入口选择的连接').last);
+      expect(find.textContaining('Google AI Studio ·'), findsWidgets);
+      expect(find.textContaining('CosyVoice'), findsNothing);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
       final clone = find.text('复制为新配置');
       await tester.ensureVisible(clone);

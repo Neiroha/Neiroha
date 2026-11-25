@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
-import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
+import 'package:neiroha/data/ai/protocols/openai/llm_chat_adapter.dart';
 import 'package:neiroha/data/services/novel/annotation_repository.dart';
 import 'package:neiroha/data/services/novel/character_repository.dart';
 import 'package:neiroha/data/services/novel/novel_text_revision.dart';

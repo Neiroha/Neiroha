@@ -92,9 +92,9 @@ class _InputBarState extends State<InputBar> {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceBright,
+        color: context.colors.raised,
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+          top: BorderSide(color: context.fg.withValues(alpha: 0.08)),
         ),
       ),
       child: Row(
@@ -146,11 +146,11 @@ class _InputBarState extends State<InputBar> {
                       context,
                     ).uiTypeDialogLineEnterToSendCtrlEnterForNewline,
                     hintStyle: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.3),
+                      color: context.fg.withValues(alpha: 0.3),
                     ),
                     isDense: true,
                     filled: true,
-                    fillColor: AppTheme.surfaceDim,
+                    fillColor: context.colors.panel,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 10,

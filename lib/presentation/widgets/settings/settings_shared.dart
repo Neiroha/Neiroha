@@ -20,7 +20,7 @@ class SettingsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final trailing = this.trailing;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final compact = constraints.maxWidth < 520;
@@ -41,7 +41,7 @@ class SettingsRow extends StatelessWidget {
                       subtitle,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: context.fg.withValues(alpha: 0.5),
                       ),
                     ),
                   ],

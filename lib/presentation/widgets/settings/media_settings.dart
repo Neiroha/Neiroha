@@ -11,6 +11,7 @@ import 'package:neiroha/providers/app_providers.dart';
 
 import 'settings_shared.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 // ───────────────────────────── FFmpeg card ─────────────────────────────
 
@@ -51,7 +52,7 @@ class _FfmpegSettingsCardState extends ConsumerState<FfmpegSettingsCard> {
     if (!capabilities.supportsFfmpegCli) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SettingsRow(
             icon: Icons.block_rounded,
             title: 'FFmpeg',
@@ -77,7 +78,7 @@ class _FfmpegSettingsCardState extends ConsumerState<FfmpegSettingsCard> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
           children: [
             SettingsRow(
@@ -150,7 +151,7 @@ class _FfmpegSettingsCardState extends ConsumerState<FfmpegSettingsCard> {
                               context,
                             ).uiLeaveBlankToAutoDetectEGCFfmpegBinFfmpegExe,
                       hintStyle: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.3),
+                        color: context.fg.withValues(alpha: 0.3),
                         fontSize: 12,
                       ),
                       suffixIcon: IconButton(
@@ -266,7 +267,7 @@ class _ExportPrefsSettingsCardState
     final prefs = _prefs;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: prefs == null
             ? SizedBox(
                 height: 40,

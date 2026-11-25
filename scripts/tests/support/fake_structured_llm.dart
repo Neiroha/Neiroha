@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
+import 'package:neiroha/data/ai/protocols/openai/llm_chat_adapter.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 
 class FakeStructuredLlm extends LlmChatAdapter {

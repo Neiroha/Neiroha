@@ -4,6 +4,54 @@
 
 基线：`dev@2d514adb`（最后一次上游提交为 2026-11-09 09:23，UTC+8）。本清单随 `dev` 分支版本管理；当前实现与验收结果见下文，提交状态以 Git 为准。本轮按核心功能、macOS、脚本/CI、文档交接四批提交。`[x]` 表示代码已实现且有本地检查；云端效果和 Mac 实机验收单列，不能由假服务测试替代。使用方法及兼容性见 [开发说明](../docs/streaming-and-roles-zh.md)。
 
+## v0.6.0 发布准备（2026-11-25）
+
+- [x] 版本号升到 0.6.0（`pubspec.yaml` 0.6.0+11 与 `lib/app_version.dart`，测试核对两者一致）；发布说明见 [`releases/v0.6.0.md`](../docs/releases/v0.6.0.md)。
+- [x] 浅色 / 深色 / 自动主题：颜色统一来自主题定义（`AppColors`），状态色改为成功 / 警告 / 错误三种，类别色在浅色下取更深色阶；11 个页面以浅色模式渲染逐一检查。
+- [x] 关于页检查更新：GitHub API 受限（匿名 60 次 / 小时）时改读 `releases/latest` 的跳转；启动时检查一次，可跳过版本或关闭。
+- [x] 侧边栏可隐藏页面并调整顺序。
+- [x] 陪伴模式的 Gemini 文字模型支持工具调用：`functionDeclarations` + `parametersJsonSchema`，Gemini 3 的 `thoughtSignature` 随调用回传；提供工具时回复 schema 写入系统指令（JSON 模式与工具并非所有模型都能同时使用），不提供工具时用 `responseJsonSchema`。模型拒绝工具（400 / 404 / 422）时改为普通流式回复。离线假服务测试覆盖；`gemini-3.8-flash` 真实凭据实测通过（调用 `remember_fact` 后按 schema 回复，`gemini_tool_chat_live_test.dart`）。
+- [x] 数据库：启动时用内存库把 drift 会用到的 SQLite 调用（各类型绑定与读取、写入、批量、提交 / 回滚事务、报错、关闭）各走一遍，避免运行中替换应用文件后首次查找到另一份未初始化的 SQLite；退出时等待数据库 isolate 结束。
+- [x] PR #12 经 Codex（gpt-6.2-sol xhigh）六轮审阅：实时通话与陪伴模式的启动 / 挂断时序、聊天页重复启动、处理链逐句记账与限额唤醒、能力开关与默认连接、任务事件与半写音频、字幕导出等问题均已修复并补测试。
+- [ ] 取舍待定：带处理链的任务入队时按整段估算 token 判断有无额度（避免占住并发槽挡住交互试听），每日额度将尽时首句可能被推迟；若要按首句判断，需同时处理占槽问题。在 `dev` 上实测后再定。
+- [ ] 合入 `main`、打 `v0.6.0` 标签并由 CI 打包发布（需指挥官授权）。
+- [ ] 实机确认：浅色模式下有数据的时间轴、段落卡片；角色聊天设置面板、重播与 Gemini Live 真实连接。
+
+## AI 能力层与界面（2026-11-22）
+
+本轮在 `feat/ai-capability-layer` 分支完成，详细进度、优先级与模型目录方案见 [Provider 重构方案第 11 节](../docs/provider-redesign-zh.md#11-进度与调整2026-11-22)。
+
+- [x] Gemini 原生 LLM / STT / Live / 翻译；Lyria 3 / 3.5 歌曲创作页（歌词、纯音乐、参考图、无损 WAV、LRC）。
+- [x] 服务商页音色随 TTS 模型折叠显示，Azure 为单行可筛选音色组；模型行按目录标注 ASR、实时、翻译、音乐等能力。
+- [x] Azure 流式 PCM（`audio/basic`）与 SSML 语言修复；MiMo `mimo-v2.5-asr` 注册为转写能力。
+- [x] 角色实时设置可选实时模型，音色列表随模型变化。
+- [x] macOS 标题栏透明融合、窗口尺寸不再逐次缩小；统一 52pt `PageHeader`，页头兼作拖动区；桌面输入与设置、服务商表单紧凑化。
+- [x] 角色处理链：LLM 翻译 / 改写 → TTS → VC，各合成入口统一经过 TTS 队列应用；检查器可视化编辑。Gemini 翻译接 TTS 已真实凭据实测。
+- [x] macOS 全量测试 426 项通过、60 项跳过；带凭据的厂商实测脚本通过（MiMo ASR 因账号余额为 402 跳过）。
+- [ ] Codex 实机复测：窗口拖动、各页紧凑布局、处理链编辑与试听。
+- [ ] MiMo 账号充值后实测 `mimo-v2.5-asr`。
+- [x] **P0（2027-01-06 前）**：OpenAI Speech 模型停用提示与一键迁移。服务商模型行显示红色停用日期；全局横幅统计受影响角色并一键迁移到 `gpt-realtime-2.1-mini`（Realtime 没有的音色改为 `marin`，服务商默认模型一并迁移）；角色模型栏提示停用并可一键改用。网页端 Realtime 不可用，列出角色由用户改用其他服务商。
+- [ ] P0 实机确认：横幅、迁移对话框与角色模型栏提示的布局；迁移后试听。
+- [x] P1：schema v34。新表 `voice_asset_settings`（角色处理链与实时设置，自 `AppSettings` 迁入，已删角色的旧行丢弃）、`connection_capabilities`（按能力开关与限额）、`provider_models`（目录外自行添加的模型）、`capability_defaults`（能力 / 用途默认模型）。TTS 队列按“连接 × 能力”分道，小说角色分析等 LLM 调用不再占用同连接的 TTS 名额。历史快照、跨版本升级与数据迁移测试已补。
+- [ ] 后续（M2）：`provider_connections` / `provider_voices` 取代 `TtsProviders` / `ModelBindings`，钥匙串存储密钥。
+- [x] P2：服务商列表按能力分页（全部 / 各能力）并显示连接能力徽章（已关闭的变暗）；「设置 → AI 能力」路由页：每项能力的默认模型、各连接开关、按能力限额与自行添加模型；角色检查器分“基本 / 音色 / 处理链”三个标签。
+- [ ] P2 实机确认：AI 能力页、服务商分页与检查器标签的布局与交互。
+- [x] 服务商编辑页按能力分标签（概览 / 各能力 / 限额）：LLM 等非语音能力有独立标签，可设默认模型、开关能力、从账号发现；添加服务商改为卡片选择；列表显示最近一次能力检测结果。
+- [ ] 服务商新界面实机确认：各标签布局、能力检测、LLM 账号发现与卡片式添加。
+- [x] 本地 RVC 变声连接（`AdapterType.rvc`，仅 VC 能力）：实时读取模型 / 音色目录，`auto` 按音色选权重，`convert-stream` 流式 PCM；处理链与实时设置可选音色。离线假服务 + 可选实测（Tailnet 不通时自动跳过）。
+- [x] 逐句流式：LLM 流式 → 分句 → TTS → VC，处理链与陪伴模式共用 `SentenceSpeechPipeline`；编码音频经 FFmpeg 解码，Web 无解码器时回退整句。实测 Irodori 首音 ≈3.1 s（整句 ≈4.3 s），GPT-SoVITS ≈4.3 s（整句 ≈9.6 s）。
+- [x] LLM 目录数据化：models.dev（MIT，`assets/model_catalog/models_dev.snapshot.json` + LICENSE）优先、LiteLLM 兜底，运行时每日刷新缓存；读取 OpenRouter 推理档位 / 默认档位 / `expiration_date` / `endpoints`；插件只留推荐 LLM 与默认思考档位。
+- [x] 本地 TTS 自述：`.well-known/neiroha-capabilities` v2（音色、语言、流式格式、接口路径、认证头），兼容 v1；声明的音色并入服务商音色列表。
+- [ ] 让 Irodori / GPT-SoVITS / RVC 服务端实际提供 v2 声明（当前均 404）。
+- [x] 实时对话的 VC 按停顿分段（约 1.2–4 s）逐段转换，首段转换完即播放（RVC 实测首音 1.9 s / 回复 5.1 s）；陪伴模式应用角色自己的处理链，链中有变声时不再叠加实时设置的 VC。
+- [x] 小说缓存键包含处理链（未启用处理链的角色缓存不变）；本机 API `apply_chain` 与 MCP `synthesize_speech.apply_chain` 开关，默认运行处理链（此前 API / MCP 不运行处理链）；复制角色时一并复制处理链。
+- [x] 处理链扩展：去静音（首尾留 60 ms，超过 0.35 s 的停顿缩短，按 10 ms 能量判定）与 ASR 回听校验（转写后与台词逐字 / 逐词比对，列出漏读；与播放并行，不拖慢首音）。逐句与整句路径均生效，检查器显示最近的回听结果。
+- [x] 回听校验真实 STT 实测（`speech_check_live_test.dart`，OpenAI Realtime 合成，OpenAI / Gemini 转写，中英日各 3 句完整读与漏读一个分句）：漏读检出 18/18。首轮误报 3/18（她→他同音、九→9、three→3:00），比对改为数字统一、她它→他与的地得同音折叠后降为 1/18（日文汉字被转写成假名）；再加“汉字漏掉处多出假名视为写法不同”的规则。另发现 Realtime 朗读偶尔先说“All right, let me read that aloud…”，回听新增“多读”（连续 4 个以上多出的字词），朗读提示也明确禁止开场白。
+- [ ] Realtime 偶尔把标点读出来（实测一次读出 “comma”），单词级多读低于阈值不报告；需要时可对标点词单独检测。
+- [x] 退出崩溃：并非 sqlite，而是 flutter_soloud 5.3 的 `applicationWillTerminate:` 调用两个动态查找、未绑定（为 0）的原生符号（`EXC_BAD_ACCESS` at 0）。`MainFlutterWindow` 注册插件后移除其退出观察者（该清理仅针对 VST3 宿主，本应用未使用）。修复前每次退出必现，修复后连续三次启动 / 退出无崩溃报告。
+- [x] flutter_soloud 升级到 5.3.2（上游 #618 修复同一崩溃），已撤回 `MainFlutterWindow` 中的规避；Release 连续三次启动 / 退出无崩溃报告。
+- [x] 本机 API `/v1/jobs` 异步任务：创建、列表、状态、取消 / 删除、重试（新 attempt）、SSE 进度、`GET /v1/jobs/:id/audio` 与 `GET /v1/audio/speech/:id`。任务落盘于数据目录 `api_jobs/`，重启后未完成的标记失败，保留最近 200 个已完成任务。
+
 ## v0.5.1（2026-11-22）
 
 - [x] [Issue #10](https://github.com/Neiroha/Neiroha/issues/10)：GPT-SoVITS 合成失败时读取 JSON 中的 `error.message`（兼容 `message`、`detail`），与状态码一起显示；空响应、非 JSON 与连接异常保留通用提示。假服务回归覆盖四种响应。

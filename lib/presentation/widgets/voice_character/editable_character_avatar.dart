@@ -21,9 +21,9 @@ class EditableCharacterAvatar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: AppTheme.surfaceBright,
+                color: context.colors.raised,
                 shape: BoxShape.circle,
-                border: Border.all(color: AppTheme.surfaceDim, width: 2),
+                border: Border.all(color: context.colors.panel, width: 2),
               ),
               child: const Icon(
                 Icons.camera_alt_rounded,

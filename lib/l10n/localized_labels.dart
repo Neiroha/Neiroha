@@ -6,8 +6,11 @@ extension NavTabLocalization on NavTab {
     return switch (this) {
       NavTab.novelReader => l10n.navNovelReader,
       NavTab.dialogTts => l10n.navDialogTts,
+      NavTab.characterChat => l10n.navCharacterChat,
       NavTab.phaseTts => l10n.navPhaseTts,
       NavTab.videoDub => l10n.navVideoDub,
+      NavTab.subtitles => l10n.navSubtitles,
+      NavTab.music => l10n.navMusic,
       NavTab.voiceAssets => l10n.navVoiceAssets,
       NavTab.voiceBank => l10n.navVoiceBank,
       NavTab.providers => l10n.navProviders,
@@ -20,7 +23,6 @@ extension SettingsSectionLocalization on SettingsSection {
   String localizedLabel(AppLocalizations l10n) {
     return switch (this) {
       SettingsSection.general => l10n.settingsGeneral,
-      SettingsSection.roleAi => l10n.settingsRoleAi,
       SettingsSection.tasks => l10n.settingsTasks,
       SettingsSection.api => l10n.settingsApi,
       SettingsSection.storage => l10n.settingsStorage,
@@ -32,7 +34,6 @@ extension SettingsSectionLocalization on SettingsSection {
   String localizedDescription(AppLocalizations l10n) {
     return switch (this) {
       SettingsSection.general => l10n.settingsGeneralDescription,
-      SettingsSection.roleAi => l10n.settingsRoleAiDescription,
       SettingsSection.tasks => l10n.settingsTasksDescription,
       SettingsSection.api => l10n.settingsApiDescription,
       SettingsSection.storage => l10n.settingsStorageDescription,

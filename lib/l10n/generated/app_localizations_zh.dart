@@ -95,7 +95,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get navVoiceBank => '语音库';
 
   @override
-  String get navProviders => '服务商';
+  String get navProviders => 'AI 服务';
 
   @override
   String get navSettings => '设置';
@@ -180,7 +180,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get keepTtsRunningDisabled => '离开小说阅读器时会停止播放。';
 
   @override
-  String get aboutSubtitle => 'v0.5.1 - AI 音频中间件与配音工作站';
+  String aboutSubtitle(String version) {
+    return 'v$version - AI 音频中间件与配音工作站';
+  }
 
   @override
   String get uiUnassigned => '-- 未分配 --';
@@ -3030,4 +3032,1302 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get playbackMoreActions => '更多播放操作';
+
+  @override
+  String get navSubtitles => '转写翻译';
+
+  @override
+  String get transcribeFromAudio => '用语音识别填写参考文本';
+
+  @override
+  String get transcribeNeedsStt => '启用带语音识别的服务商（如 OpenAI、ElevenLabs）后即可识别';
+
+  @override
+  String get transcribeFilled => '已根据音频填写参考文本，请核对后保存。';
+
+  @override
+  String transcribeFailed(String error) {
+    return '识别失败：$error';
+  }
+
+  @override
+  String get liveModeRealtime => '实时通话';
+
+  @override
+  String get liveModeCompanion => '角色陪聊';
+
+  @override
+  String get liveModeRealtimeHint => '接入 Realtime 模型，像打电话一样实时语音对话';
+
+  @override
+  String get liveModeCompanionHint => '大模型思考回复（可调用工具），角色用自己的音色说出来';
+
+  @override
+  String get liveNeedsRealtime => '需要带 Realtime 模型的服务商（如 OpenAI）';
+
+  @override
+  String get liveNeedsCompanion => '需要启用大模型（LLM）能力';
+
+  @override
+  String get liveStateIdle => '未开始';
+
+  @override
+  String get liveStateConnecting => '连接中';
+
+  @override
+  String get liveStateListening => '聆听中';
+
+  @override
+  String get liveStateThinking => '思考中';
+
+  @override
+  String get liveStateSpeaking => '说话中';
+
+  @override
+  String get liveSettings => '角色对话设置';
+
+  @override
+  String get livePersona => '人设';
+
+  @override
+  String get livePersonaHint => '角色的性格与说话方式。留空则使用音色名称、描述和语气指令。';
+
+  @override
+  String get liveRealtimeVoice => 'Realtime 音色';
+
+  @override
+  String get liveDefault => '默认';
+
+  @override
+  String get liveAllowInterrupt => '允许打断（需戴耳机）';
+
+  @override
+  String get liveAllowInterruptHint => '角色说话时也保持麦克风开启；不戴耳机会把自己的声音录进去。';
+
+  @override
+  String get subtitlePickMedia => '选择视频或音频文件';
+
+  @override
+  String get subtitleSourceLanguage => '原始语言';
+
+  @override
+  String get subtitleSourceLanguageHint => '可选，如 ja；留空自动识别';
+
+  @override
+  String get subtitleTargetLanguage => '翻译为';
+
+  @override
+  String get subtitleNoTranslation => '不翻译（仅转写）';
+
+  @override
+  String get subtitleContext => '翻译背景';
+
+  @override
+  String get subtitleContextHint => '标题、人名、类型或术语表';
+
+  @override
+  String get subtitleFormat => '输出格式';
+
+  @override
+  String get subtitleModeOriginal => '原文';
+
+  @override
+  String get subtitleModeTranslation => '译文';
+
+  @override
+  String get subtitleModeBilingual => '双语';
+
+  @override
+  String get subtitleRun => '开始转写';
+
+  @override
+  String get subtitleExport => '导出字幕';
+
+  @override
+  String subtitleSaved(String path) {
+    return '已保存 $path';
+  }
+
+  @override
+  String get subtitlePreview => '预览';
+
+  @override
+  String get subtitleEmpty => '选择文件并开始转写后，字幕会显示在这里。';
+
+  @override
+  String get subtitleMissingCapability => '未启用';
+
+  @override
+  String get subtitleStageDecoding => '解码中';
+
+  @override
+  String get subtitleStageDetecting => '检测人声';
+
+  @override
+  String get subtitleStageTranscribing => '转写中';
+
+  @override
+  String get subtitleStageTranslating => '翻译中';
+
+  @override
+  String get subtitleStageDone => '完成';
+
+  @override
+  String get modalityText => '文本';
+
+  @override
+  String get modalityImage => '图片';
+
+  @override
+  String get modalityAudio => '音频';
+
+  @override
+  String get modalityVideo => '视频';
+
+  @override
+  String get modalityPdf => 'PDF';
+
+  @override
+  String get llmThinkUnknown => '思考 ?';
+
+  @override
+  String get llmThinkNone => '不支持思考';
+
+  @override
+  String get llmThinkLevelsUnknown => '支持思考（档位未知）';
+
+  @override
+  String llmThinkLevels(int count, String from, String to) {
+    return '思考 $count 档 $from→$to';
+  }
+
+  @override
+  String get llmThinkCanDisable => '，可关闭';
+
+  @override
+  String llmThinkDefault(String level) {
+    return '默认：$level';
+  }
+
+  @override
+  String llmThinkModes(String modes) {
+    return '模式：$modes';
+  }
+
+  @override
+  String get llmTools => '工具调用';
+
+  @override
+  String get llmToolsNo => '不支持工具调用';
+
+  @override
+  String get llmToolsUnknown => '工具调用 ?';
+
+  @override
+  String get llmToolsParallel => '支持一次并行调用多个工具';
+
+  @override
+  String get llmInputsUnknown => '输入 ?';
+
+  @override
+  String get llmSchema => '结构化输出';
+
+  @override
+  String llmContext(String tokens) {
+    return '$tokens 上下文';
+  }
+
+  @override
+  String get llmSourceCatalog => '内置目录';
+
+  @override
+  String get llmSourceAccount => '账号中发现';
+
+  @override
+  String get llmSourceUnlisted => '内置目录 · 账号未列出';
+
+  @override
+  String llmPickerTitle(String provider) {
+    return '语言模型 · $provider';
+  }
+
+  @override
+  String get llmPickerSearch => '搜索，或直接输入模型 ID';
+
+  @override
+  String get llmPickerToolsOnly => '仅显示支持工具调用';
+
+  @override
+  String get llmPickerLoading => '正在读取模型列表…';
+
+  @override
+  String llmPickerFound(int count) {
+    return '账号列出 $count 个模型；能力来自公开目录。';
+  }
+
+  @override
+  String llmPickerDenied(String error) {
+    return '凭据被拒绝：$error';
+  }
+
+  @override
+  String get llmPickerOffline => '该服务商未提供模型列表，显示内置目录。';
+
+  @override
+  String llmPickerUse(String id) {
+    return '使用 $id';
+  }
+
+  @override
+  String get llmNeedsToolsNo => '该模型不支持工具调用，小说分角色需要工具调用。';
+
+  @override
+  String get llmNeedsToolsUnknown => '工具调用能力未知，首次分析前会发一次小请求验证。';
+
+  @override
+  String get llmProviderDisabled => '（已停用）';
+
+  @override
+  String get llmProviderHint => '只列出提供语言模型能力的服务商';
+
+  @override
+  String get voiceFilterHint => '筛选音色';
+
+  @override
+  String voiceMoreHidden(int count) {
+    return '还有 $count 个，输入关键字筛选';
+  }
+
+  @override
+  String voiceEngineVoices(String engine) {
+    return '$engine 音色';
+  }
+
+  @override
+  String get navMusic => '歌曲创作';
+
+  @override
+  String get musicModel => '模型';
+
+  @override
+  String get musicTitle => '标题';
+
+  @override
+  String get musicTitleHint => '未命名歌曲';
+
+  @override
+  String get musicPrompt => '风格与编曲';
+
+  @override
+  String get musicPromptHint => '曲风、情绪、乐器、演唱者、速度、时长……';
+
+  @override
+  String get musicLyrics => '歌词';
+
+  @override
+  String get musicLyricsHint => '留空则由模型作词；[Verse]、[Chorus] 等段落标签可安排歌曲结构。';
+
+  @override
+  String get musicInstrumental => '纯音乐（无人声）';
+
+  @override
+  String get musicLossless => '模型支持时输出无损 WAV';
+
+  @override
+  String get musicImages => '参考图片';
+
+  @override
+  String get musicAddImage => '添加图片';
+
+  @override
+  String get musicGenerate => '生成歌曲';
+
+  @override
+  String musicGenerating(int seconds) {
+    return '生成中…… $seconds 秒';
+  }
+
+  @override
+  String get musicNoModel => '没有已启用的服务商提供歌曲生成，请添加 Google Gemini。';
+
+  @override
+  String get musicEmpty => '生成的歌曲会显示在这里。';
+
+  @override
+  String get musicShowInFolder => '在文件夹中显示';
+
+  @override
+  String get musicSaveAs => '另存为……';
+
+  @override
+  String get musicDelete => '删除';
+
+  @override
+  String get musicReuse => '沿用此设定';
+
+  @override
+  String get musicNoLyrics => '纯音乐，无歌词。';
+
+  @override
+  String get musicWatermark => 'Lyria 生成的音频带有不可听的 SynthID 水印。';
+
+  @override
+  String musicSaved(String path) {
+    return '已保存到 $path';
+  }
+
+  @override
+  String get liveRealtimeModel => '实时模型';
+
+  @override
+  String get chainTitle => '处理链';
+
+  @override
+  String get chainHint =>
+      '像函数一样串在角色 TTS 前后：文本步骤先改写台词，变声步骤再把音频换成目标音色。角色在任何地方发声都会生效。';
+
+  @override
+  String get chainInput => '台词';
+
+  @override
+  String get chainOutput => '音频';
+
+  @override
+  String get chainAdd => '添加步骤';
+
+  @override
+  String get chainTranslate => '翻译（LLM）';
+
+  @override
+  String get chainRewrite => '改写（LLM）';
+
+  @override
+  String get chainConvert => '变声（VC）';
+
+  @override
+  String chainTranslateTo(String language) {
+    return '翻译 → $language';
+  }
+
+  @override
+  String chainConvertTo(String voice) {
+    return '变声 → $voice';
+  }
+
+  @override
+  String get chainTargetLanguage => '目标语言';
+
+  @override
+  String get chainTargetLanguageHint => '如：日语、英语、粤语';
+
+  @override
+  String get chainInstruction => '改写要求';
+
+  @override
+  String get chainInstructionHint => '如：用沉稳、略带古风的口吻说，保持简短。';
+
+  @override
+  String get chainTargetVoice => '目标音色';
+
+  @override
+  String get chainModel => '模型';
+
+  @override
+  String get chainNoModels => '还没有启用的服务商提供这项能力。';
+
+  @override
+  String get chainNeedsSetup => '待配置';
+
+  @override
+  String get chainNoStreaming =>
+      '变声逐句进行：首句转换完成即开始播放。网页端使用只返回文件的变声服务时，会整句转换后再播放。';
+
+  @override
+  String retireBadge(Object date) {
+    return '$date 停用';
+  }
+
+  @override
+  String retireHint(Object model, Object date, Object replacement) {
+    return '$model 将于 $date 停用，建议改用 $replacement。';
+  }
+
+  @override
+  String retireHintNoReplacement(Object model, Object date) {
+    return '$model 将于 $date 停用，请改用其他服务商的模型。';
+  }
+
+  @override
+  String retireBanner(Object count, Object date, Object days) {
+    return '$count 个角色使用的模型将于 $date 停用（还剩 $days 天）。';
+  }
+
+  @override
+  String get retireMigrate => '一键迁移';
+
+  @override
+  String get retireMigrateTitle => '将角色迁移到替代模型？';
+
+  @override
+  String get retireMigrateManual => '以下角色在当前平台没有可用的替代模型，请在角色检查器中改用其他服务商：';
+
+  @override
+  String retireMigrated(Object count) {
+    return '已迁移 $count 个角色。';
+  }
+
+  @override
+  String retireSwitchTo(Object model) {
+    return '改用 $model';
+  }
+
+  @override
+  String get retireLater => '稍后';
+
+  @override
+  String get chainTrim => '去静音';
+
+  @override
+  String get chainVerify => '回听校验（ASR）';
+
+  @override
+  String get chainTrimHint => '裁掉每句首尾的静音，并把超过 0.35 秒的停顿缩短。';
+
+  @override
+  String get chainVerifyHint => '用语音识别听一遍合成结果，与台词比对并列出漏读，不影响播放。';
+
+  @override
+  String get chainVerifyLanguage => '识别语言（可选）';
+
+  @override
+  String chainCheckMissing(Object score, Object missing) {
+    return '回听 $score% · 漏读：$missing';
+  }
+
+  @override
+  String chainCheckClean(Object score) {
+    return '回听 $score%，未发现漏读';
+  }
+
+  @override
+  String chainCheckFailed(Object error) {
+    return '回听失败：$error';
+  }
+
+  @override
+  String get chainCheckNone => '还没有回听结果，试听角色后显示。';
+
+  @override
+  String get settingsAiCapabilities => 'AI 能力';
+
+  @override
+  String get settingsAiCapabilitiesDescription => '默认模型、按能力的限额与自行添加的模型';
+
+  @override
+  String get capLlm => '大模型';
+
+  @override
+  String get capTts => '语音合成';
+
+  @override
+  String get capStt => '语音识别';
+
+  @override
+  String get capRealtime => '实时语音';
+
+  @override
+  String get capTranslate => '语音翻译';
+
+  @override
+  String get capVc => '变声';
+
+  @override
+  String get capVad => '人声检测';
+
+  @override
+  String get capMusic => '音乐';
+
+  @override
+  String get capDefaultModel => '默认模型';
+
+  @override
+  String get capAutomatic => '自动（第一个可用）';
+
+  @override
+  String get capConnections => '连接';
+
+  @override
+  String get capNoConnections => '还没有启用的连接提供这项能力。';
+
+  @override
+  String get capLimits => '限额';
+
+  @override
+  String capLimitsTitle(Object capability, Object connection) {
+    return '$capability限额 · $connection';
+  }
+
+  @override
+  String get capLimitsHint => '留空即沿用连接自身的限额。各能力分开排队，大模型调用不再占用语音合成名额。';
+
+  @override
+  String get capInherited => '沿用';
+
+  @override
+  String get capConcurrency => '并发请求';
+
+  @override
+  String get capRpm => '每分钟请求';
+
+  @override
+  String get capRpd => '每日请求';
+
+  @override
+  String get capTpm => '每分钟 Token';
+
+  @override
+  String get capTpd => '每日 Token';
+
+  @override
+  String get capAddModel => '添加模型';
+
+  @override
+  String get capModelId => '模型 ID';
+
+  @override
+  String get capDisplayName => '显示名称（可选）';
+
+  @override
+  String capModelRejected(Object model) {
+    return '该连接无法打开模型 $model。';
+  }
+
+  @override
+  String get capOff => '已关闭';
+
+  @override
+  String get capAll => '全部';
+
+  @override
+  String get inspectorTabBasic => '基本';
+
+  @override
+  String get inspectorTabVoice => '音色';
+
+  @override
+  String get provTabOverview => '概览';
+
+  @override
+  String get provCapabilities => '能力';
+
+  @override
+  String provCapUse(Object capability) {
+    return '在此连接使用$capability';
+  }
+
+  @override
+  String provCapOffHint(Object capability) {
+    return '此连接已关闭$capability，功能不会路由到这里。';
+  }
+
+  @override
+  String get provConnectionOff => '此连接未启用。在左侧列表开启后，各功能才会使用它的模型。';
+
+  @override
+  String get provSetDefault => '设为默认';
+
+  @override
+  String get provIsDefault => '默认';
+
+  @override
+  String get provSourceAdded => '手动添加';
+
+  @override
+  String get provSourceFetched => '已从账号获取';
+
+  @override
+  String get provDiscoverLlm => '从账号发现';
+
+  @override
+  String get provOtherModels => '其他已获取模型';
+
+  @override
+  String get provCheckAll => '检测各能力';
+
+  @override
+  String get provHealthOk => '可用';
+
+  @override
+  String get provHealthFailed => '失败';
+
+  @override
+  String get provHealthUnavailable => '不可用';
+
+  @override
+  String get provHealthUnknown => '未知';
+
+  @override
+  String get provHealthNotChecked => '尚未检测';
+
+  @override
+  String provHealthSome(Object list) {
+    return '部分能力不可用：$list';
+  }
+
+  @override
+  String get provLimitsConnection => '连接限额';
+
+  @override
+  String get provLimitsPerCapability => '按能力';
+
+  @override
+  String get provAddPick => '选择服务商';
+
+  @override
+  String get provAddHint => '创建后在概览中填写地址与密钥，再检测各能力。';
+
+  @override
+  String get featPresetVoices => '预设音色';
+
+  @override
+  String get featInstructions => '情感指令';
+
+  @override
+  String get featStreamingOutput => '流式输出';
+
+  @override
+  String get featCloudClone => '云端克隆';
+
+  @override
+  String get featZeroShotClone => '零样本克隆';
+
+  @override
+  String get featFileTranscription => '文件转写';
+
+  @override
+  String get featStreamingTranscription => '流式转写';
+
+  @override
+  String get featWordTimestamps => '字级时间戳';
+
+  @override
+  String get featDiarization => '说话人区分';
+
+  @override
+  String get featLanguageDetection => '语种识别';
+
+  @override
+  String get featKeywords => '热词';
+
+  @override
+  String get featAudioOutput => '音频输出';
+
+  @override
+  String get featTextOutput => '文本输出';
+
+  @override
+  String get featToolCalls => '工具调用';
+
+  @override
+  String get featServerVad => '服务端断句';
+
+  @override
+  String get featInputTranscription => '输入转写';
+
+  @override
+  String get featSourceTranscript => '原文转写';
+
+  @override
+  String get featStructuredOutput => '结构化输出';
+
+  @override
+  String get featReasoning => '推理';
+
+  @override
+  String get featVocals => '人声';
+
+  @override
+  String get featTimedLyrics => '时间轴歌词';
+
+  @override
+  String get featImagePrompt => '图片提示';
+
+  @override
+  String get featLosslessOutput => '无损输出';
+
+  @override
+  String get featZeroShot => '零样本';
+
+  @override
+  String get featLocal => '本地';
+
+  @override
+  String get sidebarExpand => '展开侧栏';
+
+  @override
+  String get sidebarCollapse => '收起侧栏';
+
+  @override
+  String get musicSearch => '搜索歌曲';
+
+  @override
+  String musicCount(Object count) {
+    return '共 $count 首';
+  }
+
+  @override
+  String get musicNoMatch => '没有匹配的歌曲。';
+
+  @override
+  String get musicStyle => '风格';
+
+  @override
+  String get musicGenre => '曲风';
+
+  @override
+  String get musicMood => '情绪';
+
+  @override
+  String get musicInstruments => '乐器';
+
+  @override
+  String get musicVoice => '人声';
+
+  @override
+  String get musicTempo => '速度';
+
+  @override
+  String get musicStyleHint => '点击标签加入风格描述，再点一次移除。';
+
+  @override
+  String musicLyricsStats(Object lines, Object chars) {
+    return '$lines 行 · $chars 字';
+  }
+
+  @override
+  String get musicOptions => '选项';
+
+  @override
+  String get musicNowPlaying => '正在播放';
+
+  @override
+  String get musicPlay => '播放';
+
+  @override
+  String get musicPause => '暂停';
+
+  @override
+  String get musicLyricsTitle => '歌词';
+
+  @override
+  String get musicSeekHint => '点击带时间的歌词可跳转。';
+
+  @override
+  String get musicGenPop => '流行';
+
+  @override
+  String get musicGenRock => '摇滚';
+
+  @override
+  String get musicGenElectronic => '电子';
+
+  @override
+  String get musicGenFolk => '民谣';
+
+  @override
+  String get musicGenChinese => '古风';
+
+  @override
+  String get musicGenJazz => '爵士';
+
+  @override
+  String get musicGenHipHop => '嘻哈';
+
+  @override
+  String get musicGenLofi => 'Lo-fi';
+
+  @override
+  String get musicGenOrchestral => '管弦';
+
+  @override
+  String get musicGenAnime => '动漫';
+
+  @override
+  String get musicMoodHappy => '欢快';
+
+  @override
+  String get musicMoodSad => '忧伤';
+
+  @override
+  String get musicMoodEpic => '热血';
+
+  @override
+  String get musicMoodCalm => '治愈';
+
+  @override
+  String get musicMoodDreamy => '梦幻';
+
+  @override
+  String get musicMoodDark => '暗黑';
+
+  @override
+  String get musicInsPiano => '钢琴';
+
+  @override
+  String get musicInsGuitar => '木吉他';
+
+  @override
+  String get musicInsSynth => '合成器';
+
+  @override
+  String get musicInsStrings => '弦乐';
+
+  @override
+  String get musicInsGuzheng => '古筝';
+
+  @override
+  String get musicInsDrums => '鼓组';
+
+  @override
+  String get musicVoxFemale => '女声';
+
+  @override
+  String get musicVoxMale => '男声';
+
+  @override
+  String get musicVoxChoir => '合唱';
+
+  @override
+  String get musicTempoSlow => '慢速';
+
+  @override
+  String get musicTempoMid => '中速';
+
+  @override
+  String get musicTempoFast => '快速';
+
+  @override
+  String chainCheckExtra(Object extra) {
+    return '多读：$extra';
+  }
+
+  @override
+  String capModelUnavailable(Object model) {
+    return '$model（当前不可用）';
+  }
+
+  @override
+  String capFollowDefault(Object model) {
+    return '跟随默认（$model）';
+  }
+
+  @override
+  String get capFollowDefaultNone => '跟随默认';
+
+  @override
+  String get subtitleModels => '使用的模型';
+
+  @override
+  String get subtitleTranslateModel => '翻译用大模型';
+
+  @override
+  String get provHubDefaults => '默认模型';
+
+  @override
+  String get provHubDefaultsHint => '各能力默认用哪个模型；点服务商名可打开它的设置';
+
+  @override
+  String get provHubDefaultsShort => '各能力默认用哪个模型';
+
+  @override
+  String get provHubRoleAiShort => '方案、模型与阶段提示词';
+
+  @override
+  String get provHubConnections => '服务商';
+
+  @override
+  String get provHubFeatureModels => '功能单独指定的模型';
+
+  @override
+  String get provHubFeatureModelsHint => '这些功能不跟随下方的默认模型';
+
+  @override
+  String get provHubResetFeatureModel => '恢复跟随默认';
+
+  @override
+  String provModelCount(int count) {
+    return '$count 个模型';
+  }
+
+  @override
+  String get provConnection => '连接';
+
+  @override
+  String get settingsAiServicesHint => '服务商、默认模型与分角色 AI';
+
+  @override
+  String capAutomaticInOrder(Object model) {
+    return '自动：按下方顺序（$model）';
+  }
+
+  @override
+  String get capAutoOrderHint =>
+      '未指定默认模型时，按下方顺序取第一个可用的连接及其首选模型。拖动左侧手柄调整顺序；关闭的连接会被跳过。';
+
+  @override
+  String get capPreferred => '首选';
+
+  @override
+  String capPreferredModel(Object model) {
+    return '首选 $model';
+  }
+
+  @override
+  String get capModelAdded => '自添加';
+
+  @override
+  String get capModelOrder => '模型顺序';
+
+  @override
+  String capUseCustomModel(Object model, Object connection) {
+    return '在 $connection 使用“$model”';
+  }
+
+  @override
+  String provHubConnectionsShort(int count, int enabled) {
+    return '$count 个连接 · $enabled 个已启用';
+  }
+
+  @override
+  String get provProvidersHint => '点按进入设置；拖动手柄调整顺序';
+
+  @override
+  String get roleAnalysisModelPick => '分析模型';
+
+  @override
+  String roleModelFollowDefault(Object model) {
+    return '跟随默认大模型（$model）';
+  }
+
+  @override
+  String get roleModelHint =>
+      '分角色依靠工具调用（function calling）来校对和纠错；可输入搜索，选择后会自动测试。';
+
+  @override
+  String get roleToolChecking => '正在测试工具调用…';
+
+  @override
+  String get roleToolSupported => '支持工具调用';
+
+  @override
+  String get roleToolUnsupported => '不支持工具调用，分角色无法纠错，请换一个模型';
+
+  @override
+  String get roleToolUnknown => '尚未测试工具调用';
+
+  @override
+  String roleToolFailed(Object error) {
+    return '工具调用测试失败：$error';
+  }
+
+  @override
+  String get roleToolTest => '测试';
+
+  @override
+  String provAvailableModels(int count) {
+    return '可添加的模型 · $count';
+  }
+
+  @override
+  String get provAvailableModelsHint =>
+      '来自模型目录或账户列表。添加后才会出现在默认模型、模型顺序和各处的模型选择里；点星标设为默认也会自动添加。';
+
+  @override
+  String get quickTtsSendHint => 'Enter 生成，Shift+Enter 换行';
+
+  @override
+  String get voiceRequired => '请选择音色';
+
+  @override
+  String voiceNotForModel(String voice, String model) {
+    return '$model 不支持音色 $voice，请重新选择';
+  }
+
+  @override
+  String get bankSwitch => '切换语音库';
+
+  @override
+  String get bankActions => '语音库操作';
+
+  @override
+  String get paneCharacterSettings => '角色设置';
+
+  @override
+  String get navOrderReset => '恢复默认';
+
+  @override
+  String get navOrderTitle => '侧边栏';
+
+  @override
+  String get navOrderSubtitle => '拖动调整顺序，点眼睛图标隐藏用不到的页面；AI 服务与设置固定在底部。';
+
+  @override
+  String get navOrderHidden => '已隐藏';
+
+  @override
+  String navOrderHiddenCount(int count) {
+    return '已隐藏 $count 个页面，恢复默认会全部显示。';
+  }
+
+  @override
+  String navOrderHide(String page) {
+    return '从侧边栏隐藏「$page」';
+  }
+
+  @override
+  String navOrderShow(String page) {
+    return '在侧边栏显示「$page」';
+  }
+
+  @override
+  String get navCharacterChat => '角色聊天';
+
+  @override
+  String get chatNew => '新聊天';
+
+  @override
+  String get chatListEmpty => '还没有聊天，选一个角色开始吧。';
+
+  @override
+  String get chatPick => '选择一段聊天，或新建一段';
+
+  @override
+  String get chatCharacter => '角色';
+
+  @override
+  String get chatEngine => '方式';
+
+  @override
+  String get chatTitleOptional => '标题（可选）';
+
+  @override
+  String get chatNoCharacters => '请先在语音库中添加角色。';
+
+  @override
+  String chatDeleteConfirm(String title) {
+    return '删除「$title」及其中的全部消息？';
+  }
+
+  @override
+  String chatComposerHint(String name) {
+    return '发消息给 $name';
+  }
+
+  @override
+  String get chatMicStart => '语音输入（麦克风）';
+
+  @override
+  String get chatMicStop => '停止聆听';
+
+  @override
+  String get chatMicUnavailable => '语音输入需要启用语音识别和 VAD 能力';
+
+  @override
+  String get chatCallStart => '开始通话';
+
+  @override
+  String get chatCallEnd => '挂断';
+
+  @override
+  String chatEmptyCompanion(String name) {
+    return '输入文字，或打开麦克风直接说话，$name会用自己的声音回答。';
+  }
+
+  @override
+  String chatEmptyRealtime(String name) {
+    return '开始通话后直接说话，$name会实时回应；也可以打字。';
+  }
+
+  @override
+  String get chatToolTime => '看了一眼时间';
+
+  @override
+  String chatToolRemember(String fact) {
+    return '记住了：$fact';
+  }
+
+  @override
+  String chatToolForget(String fact) {
+    return '忘记了：$fact';
+  }
+
+  @override
+  String chatToolOther(String name) {
+    return '使用了 $name';
+  }
+
+  @override
+  String get chatMemory => '记忆';
+
+  @override
+  String get chatMemoryEmpty => '还没记住什么。和角色聊聊你自己吧。';
+
+  @override
+  String get chatLlmModel => '对话模型';
+
+  @override
+  String get chatUseTools => '允许角色使用工具';
+
+  @override
+  String get chatUseToolsHint => '查看时间、记住你说过的事。需要模型支持函数调用。';
+
+  @override
+  String chatEmotion(String emotion) {
+    String _temp0 = intl.Intl.selectLogic(emotion, {
+      'happy': '开心',
+      'sad': '难过',
+      'angry': '生气',
+      'surprised': '惊讶',
+      'shy': '害羞',
+      'serious': '认真',
+      'playful': '俏皮',
+      'other': '平静',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get chatReplay => '重新播放';
+
+  @override
+  String get chatStopReplay => '停止';
+
+  @override
+  String get chatPanelPersona => '人设';
+
+  @override
+  String get chatPersonaHint => '角色是谁、性格、说话方式、和你的关系。留空则使用下方默认人设。';
+
+  @override
+  String get chatPersonaDefault => '默认人设';
+
+  @override
+  String get chatPanelModel => '模型';
+
+  @override
+  String get chatPanelVoice => '声音';
+
+  @override
+  String get chatModelFeatures => '模型能力';
+
+  @override
+  String get chatFeatureTools => '工具调用';
+
+  @override
+  String get chatFeatureStructured => '结构化回复';
+
+  @override
+  String get chatFeatureTranscribe => '语音转写';
+
+  @override
+  String get chatFeatureVad => '自动断句';
+
+  @override
+  String get chatFeatureUnknown => '能力未知：会先尝试工具调用，被拒绝时自动关闭';
+
+  @override
+  String get chatToolsUnsupported => '该模型不支持工具调用，角色将直接对话。';
+
+  @override
+  String chatVoiceChain(String steps) {
+    return '处理链：$steps';
+  }
+
+  @override
+  String get chatVoiceNoChain => '未设置处理链';
+
+  @override
+  String get chatVoiceChainHint => '翻译、改写、音色转换等在语音库的角色处理链中设置。';
+
+  @override
+  String get chatVoiceRealtimeHint => '通话使用实时模型的音色；处理链里的音色转换会套用到回复上。';
+
+  @override
+  String get chatAppliesNextCall => '修改将在下次开始通话时生效。';
+
+  @override
+  String get chatChainConverts => '回复会经过处理链的音色转换';
+
+  @override
+  String get themeSettingsTitle => '主题';
+
+  @override
+  String get themeSettingsSubtitle => '跟随系统自动切换，或固定使用浅色、深色。';
+
+  @override
+  String get themeModeSystem => '自动';
+
+  @override
+  String get themeModeLight => '浅色';
+
+  @override
+  String get themeModeDark => '深色';
+
+  @override
+  String get linkCopied => '链接已复制到剪贴板。';
+
+  @override
+  String get updateTitle => '软件更新';
+
+  @override
+  String updateCurrent(String version) {
+    return '当前版本 v$version';
+  }
+
+  @override
+  String get updateChecking => '正在检查更新…';
+
+  @override
+  String updateUpToDate(String version) {
+    return 'v$version 已是最新版本。';
+  }
+
+  @override
+  String get updateCheckFailed => '无法连接 GitHub，请稍后再试。';
+
+  @override
+  String updateAvailableTitle(String version) {
+    return '发现新版本 v$version';
+  }
+
+  @override
+  String updateAvailableBody(String current, String latest) {
+    return '当前为 v$current，可更新到 v$latest。';
+  }
+
+  @override
+  String updatePublished(String date) {
+    return '发布于 $date';
+  }
+
+  @override
+  String get updateSkipVersion => '跳过此版本';
+
+  @override
+  String get updateLater => '稍后';
+
+  @override
+  String get updateDownload => '前往下载';
+
+  @override
+  String get updateCheckNow => '检查更新';
+
+  @override
+  String get updateAutoTitle => '启动时检查更新';
+
+  @override
+  String get updateAutoSubtitle => '打开软件时检查 GitHub 上的最新版本，有新版本时弹窗提醒。';
+
+  @override
+  String get updateReleasesPage => '发布页';
 }

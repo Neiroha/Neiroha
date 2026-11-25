@@ -1,11 +1,16 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:drift/drift.dart' show Value;
+import 'package:uuid/uuid.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/capabilities/model_capability.dart';
+import 'capability_declaration.dart';
 import 'capability_repository.dart';
 import 'model_discovery_service.dart';
 
-/// Read-only, opt-in declaration for gateways. Never modifies a backend.
+/// Read-only, opt-in declaration for gateways and self-hosted engines
+/// (`.well-known/neiroha-capabilities`, see [CapabilityDeclaration]).
+/// Never modifies a backend.
 class ProviderDeclarationService {
   const ProviderDeclarationService(this.database, this.capabilities);
   final db.AppDatabase database;
@@ -41,70 +46,31 @@ class ProviderDeclarationService {
       if (raw.length > 2 * 1024 * 1024) {
         throw const FormatException('Capability declaration too large.');
       }
-      final object = jsonDecode(raw);
-      if (object is! Map ||
-          object['version'] != 1 ||
-          object['models'] is! List ||
-          (object['models'] as List).length > 5000) {
-        throw const FormatException('Invalid capability declaration.');
-      }
+      final declaration = CapabilityDeclaration.parse(jsonDecode(raw));
+      final now = DateTime.now().toUtc();
       final result = <DiscoveredModel>[];
-      final seen = <String>{};
-      for (final model in object['models'] as List) {
-        if (model is! Map ||
-            model['id'] is! String ||
-            model['routes'] is! Map ||
-            (model['id'] as String).isEmpty ||
-            !seen.add(model['id'] as String)) {
-          throw const FormatException('Invalid or duplicate declared model.');
-        }
-        final features = (model['routes'] as Map)[route.name];
-        if (features == null) continue;
-        if (features is! Map) {
-          throw const FormatException('Invalid route features.');
-        }
-        final facts = <String, CapabilityEvidence>{};
-        for (final entry in features.entries) {
-          if (!{
-            'text',
-            'speech',
-            'streaming',
-            'structuredOutput',
-            'functionCalling',
-            'audioInput',
-            'audioOutput',
-            'instructions',
-          }.contains(entry.key)) {
-            continue;
-          }
-          if (entry.value != null && entry.value is! bool) {
-            throw const FormatException('Capability must be bool or null.');
-          }
-          facts[entry.key as String] = CapabilityEvidence(
-            entry.value == null
-                ? CapabilitySupport.unknown
-                : entry.value == true
-                ? CapabilitySupport.supported
-                : CapabilitySupport.unsupported,
-            CapabilitySource.provider,
-            checkedAt: DateTime.now().toUtc(),
-          );
-        }
+      final declared = <DeclaredModel>[];
+      for (final model in declaration.models) {
+        final facts = CapabilityDeclaration.evidence(model, route, now);
+        if (facts == null) continue;
         final record = ModelCapability(
           connectionId: capabilities.scope(provider),
-          modelId: model['id'] as String,
+          modelId: model.id,
           route: route,
           facts: facts,
         );
+        declared.add(model);
         result.add(
           DiscoveredModel(
-            id: record.modelId,
-            name: model['name'] as String? ?? record.modelId,
+            id: model.id,
+            name: model.name,
             capability: (await capabilities.load(
               provider,
-              record.modelId,
+              model.id,
               route,
             )).merge(record),
+            voices: [for (final v in model.voices) v.label],
+            languages: model.languages,
           ),
         );
       }
@@ -116,9 +82,37 @@ class ProviderDeclarationService {
         await database.setSetting(
           'model.declaration.inventory.${capabilities.scope(provider)}.${route.name}',
           jsonEncode([
-            for (final m in result) {'id': m.id, 'name': m.name},
+            for (final m in declared)
+              {
+                'id': m.id,
+                'name': m.name,
+                if (m.languages.isNotEmpty) 'languages': m.languages,
+                if (m.voices.isNotEmpty)
+                  'voices': [for (final v in m.voices) v.toJson()],
+                if (m.paths.isNotEmpty) 'paths': m.paths,
+                if (m.streamFormats.isNotEmpty) 'streaming': m.streamFormats,
+              },
           ]),
         );
+        // Declared voices join the provider's voice list (additive, like
+        // adapter discovery: nothing the user already has is removed).
+        final existing = {
+          for (final b in await database.getBindingsForProvider(provider.id))
+            if (b.supportedTaskModes == 'voice') b.modelKey,
+        };
+        for (final m in declared) {
+          for (final v in m.voices) {
+            if (!existing.add(v.label)) continue;
+            await database.insertBinding(
+              db.ModelBindingsCompanion(
+                id: Value(const Uuid().v4()),
+                providerId: Value(provider.id),
+                modelKey: Value(v.label),
+                supportedTaskModes: const Value('voice'),
+              ),
+            );
+          }
+        }
       });
       return result;
     } finally {

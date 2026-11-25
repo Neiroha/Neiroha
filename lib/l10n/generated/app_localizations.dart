@@ -263,7 +263,7 @@ abstract class AppLocalizations {
   /// No description provided for @navProviders.
   ///
   /// In en, this message translates to:
-  /// **'Providers'**
+  /// **'AI Services'**
   String get navProviders;
 
   /// No description provided for @navSettings.
@@ -425,8 +425,8 @@ abstract class AppLocalizations {
   /// No description provided for @aboutSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'v0.5.1 - AI Audio Middleware & Dubbing Workstation'**
-  String get aboutSubtitle;
+  /// **'v{version} - AI Audio Middleware & Dubbing Workstation'**
+  String aboutSubtitle(String version);
 
   /// No description provided for @uiUnassigned.
   ///
@@ -5659,6 +5659,2328 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'More playback actions'**
   String get playbackMoreActions;
+
+  /// No description provided for @navSubtitles.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribe & Translate'**
+  String get navSubtitles;
+
+  /// No description provided for @transcribeFromAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribe the audio into the reference text'**
+  String get transcribeFromAudio;
+
+  /// No description provided for @transcribeNeedsStt.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable a provider with speech-to-text (e.g. OpenAI, ElevenLabs) to transcribe'**
+  String get transcribeNeedsStt;
+
+  /// No description provided for @transcribeFilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference text filled from the audio. Review it, then save.'**
+  String get transcribeFilled;
+
+  /// No description provided for @transcribeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcription failed: {error}'**
+  String transcribeFailed(String error);
+
+  /// No description provided for @liveModeRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Live call'**
+  String get liveModeRealtime;
+
+  /// No description provided for @liveModeCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'AI companion'**
+  String get liveModeCompanion;
+
+  /// No description provided for @liveModeRealtimeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Talk in real time with a Realtime model, like a phone call'**
+  String get liveModeRealtimeHint;
+
+  /// No description provided for @liveModeCompanionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'An LLM answers with tools; the character\'\'s own voice speaks'**
+  String get liveModeCompanionHint;
+
+  /// No description provided for @liveNeedsRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a provider with a Realtime model (e.g. OpenAI)'**
+  String get liveNeedsRealtime;
+
+  /// No description provided for @liveNeedsCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a language model (LLM) service'**
+  String get liveNeedsCompanion;
+
+  /// No description provided for @liveStateIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get liveStateIdle;
+
+  /// No description provided for @liveStateConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting'**
+  String get liveStateConnecting;
+
+  /// No description provided for @liveStateListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening'**
+  String get liveStateListening;
+
+  /// No description provided for @liveStateThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking'**
+  String get liveStateThinking;
+
+  /// No description provided for @liveStateSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking'**
+  String get liveStateSpeaking;
+
+  /// No description provided for @liveSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Character live settings'**
+  String get liveSettings;
+
+  /// No description provided for @livePersona.
+  ///
+  /// In en, this message translates to:
+  /// **'Persona'**
+  String get livePersona;
+
+  /// No description provided for @livePersonaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How the character thinks and talks. Empty uses the voice name, description and instruction.'**
+  String get livePersonaHint;
+
+  /// No description provided for @liveRealtimeVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime voice'**
+  String get liveRealtimeVoice;
+
+  /// No description provided for @liveDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get liveDefault;
+
+  /// No description provided for @liveAllowInterrupt.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow interrupting (headphones)'**
+  String get liveAllowInterrupt;
+
+  /// No description provided for @liveAllowInterruptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps the microphone open while the character speaks. Without headphones it would hear itself.'**
+  String get liveAllowInterruptHint;
+
+  /// No description provided for @subtitlePickMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a video or audio file'**
+  String get subtitlePickMedia;
+
+  /// No description provided for @subtitleSourceLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Spoken language'**
+  String get subtitleSourceLanguage;
+
+  /// No description provided for @subtitleSourceLanguageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional, e.g. ja. Empty = detect'**
+  String get subtitleSourceLanguageHint;
+
+  /// No description provided for @subtitleTargetLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate to'**
+  String get subtitleTargetLanguage;
+
+  /// No description provided for @subtitleNoTranslation.
+  ///
+  /// In en, this message translates to:
+  /// **'No translation (transcript only)'**
+  String get subtitleNoTranslation;
+
+  /// No description provided for @subtitleContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Context for the translator'**
+  String get subtitleContext;
+
+  /// No description provided for @subtitleContextHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Title, names, genre or glossary'**
+  String get subtitleContextHint;
+
+  /// No description provided for @subtitleFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Output format'**
+  String get subtitleFormat;
+
+  /// No description provided for @subtitleModeOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get subtitleModeOriginal;
+
+  /// No description provided for @subtitleModeTranslation.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation'**
+  String get subtitleModeTranslation;
+
+  /// No description provided for @subtitleModeBilingual.
+  ///
+  /// In en, this message translates to:
+  /// **'Bilingual'**
+  String get subtitleModeBilingual;
+
+  /// No description provided for @subtitleRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribe'**
+  String get subtitleRun;
+
+  /// No description provided for @subtitleExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export subtitles'**
+  String get subtitleExport;
+
+  /// No description provided for @subtitleSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved {path}'**
+  String subtitleSaved(String path);
+
+  /// No description provided for @subtitlePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get subtitlePreview;
+
+  /// No description provided for @subtitleEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a file and run to see the subtitles here.'**
+  String get subtitleEmpty;
+
+  /// No description provided for @subtitleMissingCapability.
+  ///
+  /// In en, this message translates to:
+  /// **'not available'**
+  String get subtitleMissingCapability;
+
+  /// No description provided for @subtitleStageDecoding.
+  ///
+  /// In en, this message translates to:
+  /// **'Decoding'**
+  String get subtitleStageDecoding;
+
+  /// No description provided for @subtitleStageDetecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Detecting speech'**
+  String get subtitleStageDetecting;
+
+  /// No description provided for @subtitleStageTranscribing.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribing'**
+  String get subtitleStageTranscribing;
+
+  /// No description provided for @subtitleStageTranslating.
+  ///
+  /// In en, this message translates to:
+  /// **'Translating'**
+  String get subtitleStageTranslating;
+
+  /// No description provided for @subtitleStageDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get subtitleStageDone;
+
+  /// No description provided for @modalityText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get modalityText;
+
+  /// No description provided for @modalityImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get modalityImage;
+
+  /// No description provided for @modalityAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get modalityAudio;
+
+  /// No description provided for @modalityVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get modalityVideo;
+
+  /// No description provided for @modalityPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF'**
+  String get modalityPdf;
+
+  /// No description provided for @llmThinkUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking ?'**
+  String get llmThinkUnknown;
+
+  /// No description provided for @llmThinkNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No thinking'**
+  String get llmThinkNone;
+
+  /// No description provided for @llmThinkLevelsUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking (levels unknown)'**
+  String get llmThinkLevelsUnknown;
+
+  /// No description provided for @llmThinkLevels.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking {count} levels {from}→{to}'**
+  String llmThinkLevels(int count, String from, String to);
+
+  /// No description provided for @llmThinkCanDisable.
+  ///
+  /// In en, this message translates to:
+  /// **', can turn off'**
+  String get llmThinkCanDisable;
+
+  /// No description provided for @llmThinkDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default: {level}'**
+  String llmThinkDefault(String level);
+
+  /// No description provided for @llmThinkModes.
+  ///
+  /// In en, this message translates to:
+  /// **'Modes: {modes}'**
+  String llmThinkModes(String modes);
+
+  /// No description provided for @llmTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool calling'**
+  String get llmTools;
+
+  /// No description provided for @llmToolsNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No tool calling'**
+  String get llmToolsNo;
+
+  /// No description provided for @llmToolsUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool calling ?'**
+  String get llmToolsUnknown;
+
+  /// No description provided for @llmToolsParallel.
+  ///
+  /// In en, this message translates to:
+  /// **'Can call several tools in one turn'**
+  String get llmToolsParallel;
+
+  /// No description provided for @llmInputsUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Input ?'**
+  String get llmInputsUnknown;
+
+  /// No description provided for @llmSchema.
+  ///
+  /// In en, this message translates to:
+  /// **'JSON schema'**
+  String get llmSchema;
+
+  /// No description provided for @llmContext.
+  ///
+  /// In en, this message translates to:
+  /// **'{tokens} context'**
+  String llmContext(String tokens);
+
+  /// No description provided for @llmSourceCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in catalog'**
+  String get llmSourceCatalog;
+
+  /// No description provided for @llmSourceAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Found in this account'**
+  String get llmSourceAccount;
+
+  /// No description provided for @llmSourceUnlisted.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in catalog · not listed by this account'**
+  String get llmSourceUnlisted;
+
+  /// No description provided for @llmPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Language models · {provider}'**
+  String llmPickerTitle(String provider);
+
+  /// No description provided for @llmPickerSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search, or type a model ID'**
+  String get llmPickerSearch;
+
+  /// No description provided for @llmPickerToolsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool calling only'**
+  String get llmPickerToolsOnly;
+
+  /// No description provided for @llmPickerLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the model list…'**
+  String get llmPickerLoading;
+
+  /// No description provided for @llmPickerFound.
+  ///
+  /// In en, this message translates to:
+  /// **'The account lists {count} models; traits come from the public catalog.'**
+  String llmPickerFound(int count);
+
+  /// No description provided for @llmPickerDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Credentials rejected: {error}'**
+  String llmPickerDenied(String error);
+
+  /// No description provided for @llmPickerOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'No model list from this provider; showing the built-in catalog.'**
+  String get llmPickerOffline;
+
+  /// No description provided for @llmPickerUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {id}'**
+  String llmPickerUse(String id);
+
+  /// No description provided for @llmNeedsToolsNo.
+  ///
+  /// In en, this message translates to:
+  /// **'This model cannot call tools; role analysis needs tool calling.'**
+  String get llmNeedsToolsNo;
+
+  /// No description provided for @llmNeedsToolsUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool calling unknown; one small test request runs before the first analysis.'**
+  String get llmNeedsToolsUnknown;
+
+  /// No description provided for @llmProviderDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'(disabled)'**
+  String get llmProviderDisabled;
+
+  /// No description provided for @llmProviderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only providers that offer a language model are listed'**
+  String get llmProviderHint;
+
+  /// No description provided for @voiceFilterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter voices'**
+  String get voiceFilterHint;
+
+  /// No description provided for @voiceMoreHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} more — type to filter'**
+  String voiceMoreHidden(int count);
+
+  /// No description provided for @voiceEngineVoices.
+  ///
+  /// In en, this message translates to:
+  /// **'{engine} voices'**
+  String voiceEngineVoices(String engine);
+
+  /// No description provided for @navMusic.
+  ///
+  /// In en, this message translates to:
+  /// **'Song Studio'**
+  String get navMusic;
+
+  /// No description provided for @musicModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get musicModel;
+
+  /// No description provided for @musicTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get musicTitle;
+
+  /// No description provided for @musicTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled song'**
+  String get musicTitleHint;
+
+  /// No description provided for @musicPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Style & arrangement'**
+  String get musicPrompt;
+
+  /// No description provided for @musicPromptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Genre, mood, instruments, vocalist, tempo, length…'**
+  String get musicPromptHint;
+
+  /// No description provided for @musicLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics'**
+  String get musicLyrics;
+
+  /// No description provided for @musicLyricsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty to let the model write them. Section tags such as [Verse] and [Chorus] shape the song.'**
+  String get musicLyricsHint;
+
+  /// No description provided for @musicInstrumental.
+  ///
+  /// In en, this message translates to:
+  /// **'Instrumental (no vocals)'**
+  String get musicInstrumental;
+
+  /// No description provided for @musicLossless.
+  ///
+  /// In en, this message translates to:
+  /// **'Lossless WAV when the model offers it'**
+  String get musicLossless;
+
+  /// No description provided for @musicImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference images'**
+  String get musicImages;
+
+  /// No description provided for @musicAddImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add image'**
+  String get musicAddImage;
+
+  /// No description provided for @musicGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Compose'**
+  String get musicGenerate;
+
+  /// No description provided for @musicGenerating.
+  ///
+  /// In en, this message translates to:
+  /// **'Composing… {seconds}s'**
+  String musicGenerating(int seconds);
+
+  /// No description provided for @musicNoModel.
+  ///
+  /// In en, this message translates to:
+  /// **'No enabled provider offers song generation. Add a Google Gemini provider.'**
+  String get musicNoModel;
+
+  /// No description provided for @musicEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated songs appear here.'**
+  String get musicEmpty;
+
+  /// No description provided for @musicShowInFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in folder'**
+  String get musicShowInFolder;
+
+  /// No description provided for @musicSaveAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as…'**
+  String get musicSaveAs;
+
+  /// No description provided for @musicDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get musicDelete;
+
+  /// No description provided for @musicReuse.
+  ///
+  /// In en, this message translates to:
+  /// **'Reuse settings'**
+  String get musicReuse;
+
+  /// No description provided for @musicNoLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Instrumental, no lyrics.'**
+  String get musicNoLyrics;
+
+  /// No description provided for @musicWatermark.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyria audio carries an inaudible SynthID watermark.'**
+  String get musicWatermark;
+
+  /// No description provided for @musicSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to {path}'**
+  String musicSaved(String path);
+
+  /// No description provided for @liveRealtimeModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime model'**
+  String get liveRealtimeModel;
+
+  /// No description provided for @chainTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing chain'**
+  String get chainTitle;
+
+  /// No description provided for @chainHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps wrap the TTS of this character like chained functions: text steps rewrite the line first, voice conversion re-voices the audio after. Applies wherever the character speaks.'**
+  String get chainHint;
+
+  /// No description provided for @chainInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Line'**
+  String get chainInput;
+
+  /// No description provided for @chainOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get chainOutput;
+
+  /// No description provided for @chainAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add step'**
+  String get chainAdd;
+
+  /// No description provided for @chainTranslate.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate (LLM)'**
+  String get chainTranslate;
+
+  /// No description provided for @chainRewrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewrite (LLM)'**
+  String get chainRewrite;
+
+  /// No description provided for @chainConvert.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice conversion'**
+  String get chainConvert;
+
+  /// No description provided for @chainTranslateTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate → {language}'**
+  String chainTranslateTo(String language);
+
+  /// No description provided for @chainConvertTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-voice → {voice}'**
+  String chainConvertTo(String voice);
+
+  /// No description provided for @chainTargetLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Target language'**
+  String get chainTargetLanguage;
+
+  /// No description provided for @chainTargetLanguageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Japanese, English, Cantonese'**
+  String get chainTargetLanguageHint;
+
+  /// No description provided for @chainInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Instruction'**
+  String get chainInstruction;
+
+  /// No description provided for @chainInstructionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Say it in a calm, old-fashioned tone and keep it short.'**
+  String get chainInstructionHint;
+
+  /// No description provided for @chainTargetVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Target voice'**
+  String get chainTargetVoice;
+
+  /// No description provided for @chainModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get chainModel;
+
+  /// No description provided for @chainNoModels.
+  ///
+  /// In en, this message translates to:
+  /// **'No enabled provider offers this capability yet.'**
+  String get chainNoModels;
+
+  /// No description provided for @chainNeedsSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs setup'**
+  String get chainNeedsSetup;
+
+  /// No description provided for @chainNoStreaming.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice conversion runs sentence by sentence: playback starts once the first sentence is converted. On the web, converters that only return files convert the whole line first.'**
+  String get chainNoStreaming;
+
+  /// No description provided for @retireBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Retires {date}'**
+  String retireBadge(Object date);
+
+  /// No description provided for @retireHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{model} stops working on {date}. Switch to {replacement}.'**
+  String retireHint(Object model, Object date, Object replacement);
+
+  /// No description provided for @retireHintNoReplacement.
+  ///
+  /// In en, this message translates to:
+  /// **'{model} stops working on {date}. Pick a model from another provider.'**
+  String retireHintNoReplacement(Object model, Object date);
+
+  /// No description provided for @retireBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} characters use models that stop working on {date} ({days} days left).'**
+  String retireBanner(Object count, Object date, Object days);
+
+  /// No description provided for @retireMigrate.
+  ///
+  /// In en, this message translates to:
+  /// **'Migrate'**
+  String get retireMigrate;
+
+  /// No description provided for @retireMigrateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move characters to replacement models?'**
+  String get retireMigrateTitle;
+
+  /// No description provided for @retireMigrateManual.
+  ///
+  /// In en, this message translates to:
+  /// **'No replacement runs here; change these in the character inspector:'**
+  String get retireMigrateManual;
+
+  /// No description provided for @retireMigrated.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved {count} characters.'**
+  String retireMigrated(Object count);
+
+  /// No description provided for @retireSwitchTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to {model}'**
+  String retireSwitchTo(Object model);
+
+  /// No description provided for @retireLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get retireLater;
+
+  /// No description provided for @chainTrim.
+  ///
+  /// In en, this message translates to:
+  /// **'Trim silence'**
+  String get chainTrim;
+
+  /// No description provided for @chainVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'ASR check'**
+  String get chainVerify;
+
+  /// No description provided for @chainTrimHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cuts silence at both ends of each sentence and shortens pauses longer than 0.35 s.'**
+  String get chainTrimHint;
+
+  /// No description provided for @chainVerifyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribes what was spoken, compares it with the line and lists skipped words. Playback is not delayed.'**
+  String get chainVerifyHint;
+
+  /// No description provided for @chainVerifyLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognition language (optional)'**
+  String get chainVerifyLanguage;
+
+  /// No description provided for @chainCheckMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Heard {score}% · missing: {missing}'**
+  String chainCheckMissing(Object score, Object missing);
+
+  /// No description provided for @chainCheckClean.
+  ///
+  /// In en, this message translates to:
+  /// **'Heard {score}% · nothing missing'**
+  String chainCheckClean(Object score);
+
+  /// No description provided for @chainCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'ASR check failed: {error}'**
+  String chainCheckFailed(Object error);
+
+  /// No description provided for @chainCheckNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No ASR check yet; preview the character to run one.'**
+  String get chainCheckNone;
+
+  /// No description provided for @settingsAiCapabilities.
+  ///
+  /// In en, this message translates to:
+  /// **'AI capabilities'**
+  String get settingsAiCapabilities;
+
+  /// No description provided for @settingsAiCapabilitiesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Default models, per-capability limits and added models'**
+  String get settingsAiCapabilitiesDescription;
+
+  /// No description provided for @capLlm.
+  ///
+  /// In en, this message translates to:
+  /// **'Language model'**
+  String get capLlm;
+
+  /// No description provided for @capTts.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech synthesis'**
+  String get capTts;
+
+  /// No description provided for @capStt.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech recognition'**
+  String get capStt;
+
+  /// No description provided for @capRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime voice'**
+  String get capRealtime;
+
+  /// No description provided for @capTranslate.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech translation'**
+  String get capTranslate;
+
+  /// No description provided for @capVc.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice conversion'**
+  String get capVc;
+
+  /// No description provided for @capVad.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice activity'**
+  String get capVad;
+
+  /// No description provided for @capMusic.
+  ///
+  /// In en, this message translates to:
+  /// **'Music'**
+  String get capMusic;
+
+  /// No description provided for @capDefaultModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Default model'**
+  String get capDefaultModel;
+
+  /// No description provided for @capAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic (first available)'**
+  String get capAutomatic;
+
+  /// No description provided for @capConnections.
+  ///
+  /// In en, this message translates to:
+  /// **'Connections'**
+  String get capConnections;
+
+  /// No description provided for @capNoConnections.
+  ///
+  /// In en, this message translates to:
+  /// **'No enabled connection offers this capability.'**
+  String get capNoConnections;
+
+  /// No description provided for @capLimits.
+  ///
+  /// In en, this message translates to:
+  /// **'Limits'**
+  String get capLimits;
+
+  /// No description provided for @capLimitsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{capability} limits · {connection}'**
+  String capLimitsTitle(Object capability, Object connection);
+
+  /// No description provided for @capLimitsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave a field empty to inherit the connection limit. Each capability queues on its own, so language-model calls do not take speech slots.'**
+  String get capLimitsHint;
+
+  /// No description provided for @capInherited.
+  ///
+  /// In en, this message translates to:
+  /// **'Inherited'**
+  String get capInherited;
+
+  /// No description provided for @capConcurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Concurrent requests'**
+  String get capConcurrency;
+
+  /// No description provided for @capRpm.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests / minute'**
+  String get capRpm;
+
+  /// No description provided for @capRpd.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests / day'**
+  String get capRpd;
+
+  /// No description provided for @capTpm.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens / minute'**
+  String get capTpm;
+
+  /// No description provided for @capTpd.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens / day'**
+  String get capTpd;
+
+  /// No description provided for @capAddModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Add model'**
+  String get capAddModel;
+
+  /// No description provided for @capModelId.
+  ///
+  /// In en, this message translates to:
+  /// **'Model id'**
+  String get capModelId;
+
+  /// No description provided for @capDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name (optional)'**
+  String get capDisplayName;
+
+  /// No description provided for @capModelRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'This connection cannot open model {model}.'**
+  String capModelRejected(Object model);
+
+  /// No description provided for @capOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get capOff;
+
+  /// No description provided for @capAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get capAll;
+
+  /// No description provided for @inspectorTabBasic.
+  ///
+  /// In en, this message translates to:
+  /// **'Basics'**
+  String get inspectorTabBasic;
+
+  /// No description provided for @inspectorTabVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get inspectorTabVoice;
+
+  /// No description provided for @provTabOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get provTabOverview;
+
+  /// No description provided for @provCapabilities.
+  ///
+  /// In en, this message translates to:
+  /// **'Capabilities'**
+  String get provCapabilities;
+
+  /// No description provided for @provCapUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {capability} on this connection'**
+  String provCapUse(Object capability);
+
+  /// No description provided for @provCapOffHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{capability} is off here; features will not route to this connection.'**
+  String provCapOffHint(Object capability);
+
+  /// No description provided for @provConnectionOff.
+  ///
+  /// In en, this message translates to:
+  /// **'This connection is turned off. Switch it on in the list before features use its models.'**
+  String get provConnectionOff;
+
+  /// No description provided for @provSetDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as default'**
+  String get provSetDefault;
+
+  /// No description provided for @provIsDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get provIsDefault;
+
+  /// No description provided for @provSourceAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added by you'**
+  String get provSourceAdded;
+
+  /// No description provided for @provSourceFetched.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetched from the account'**
+  String get provSourceFetched;
+
+  /// No description provided for @provDiscoverLlm.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover from account'**
+  String get provDiscoverLlm;
+
+  /// No description provided for @provOtherModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Other fetched models'**
+  String get provOtherModels;
+
+  /// No description provided for @provCheckAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Check capabilities'**
+  String get provCheckAll;
+
+  /// No description provided for @provHealthOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get provHealthOk;
+
+  /// No description provided for @provHealthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get provHealthFailed;
+
+  /// No description provided for @provHealthUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get provHealthUnavailable;
+
+  /// No description provided for @provHealthUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get provHealthUnknown;
+
+  /// No description provided for @provHealthNotChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Not checked yet'**
+  String get provHealthNotChecked;
+
+  /// No description provided for @provHealthSome.
+  ///
+  /// In en, this message translates to:
+  /// **'Some capabilities failed: {list}'**
+  String provHealthSome(Object list);
+
+  /// No description provided for @provLimitsConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection limits'**
+  String get provLimitsConnection;
+
+  /// No description provided for @provLimitsPerCapability.
+  ///
+  /// In en, this message translates to:
+  /// **'Per capability'**
+  String get provLimitsPerCapability;
+
+  /// No description provided for @provAddPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a provider'**
+  String get provAddPick;
+
+  /// No description provided for @provAddHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill in the address and key on the Overview tab after creating it, then check its capabilities.'**
+  String get provAddHint;
+
+  /// No description provided for @featPresetVoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset voices'**
+  String get featPresetVoices;
+
+  /// No description provided for @featInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Style instructions'**
+  String get featInstructions;
+
+  /// No description provided for @featStreamingOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Streaming'**
+  String get featStreamingOutput;
+
+  /// No description provided for @featCloudClone.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud cloning'**
+  String get featCloudClone;
+
+  /// No description provided for @featZeroShotClone.
+  ///
+  /// In en, this message translates to:
+  /// **'Zero-shot cloning'**
+  String get featZeroShotClone;
+
+  /// No description provided for @featFileTranscription.
+  ///
+  /// In en, this message translates to:
+  /// **'File transcription'**
+  String get featFileTranscription;
+
+  /// No description provided for @featStreamingTranscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Streaming transcription'**
+  String get featStreamingTranscription;
+
+  /// No description provided for @featWordTimestamps.
+  ///
+  /// In en, this message translates to:
+  /// **'Word timestamps'**
+  String get featWordTimestamps;
+
+  /// No description provided for @featDiarization.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaker labels'**
+  String get featDiarization;
+
+  /// No description provided for @featLanguageDetection.
+  ///
+  /// In en, this message translates to:
+  /// **'Language detection'**
+  String get featLanguageDetection;
+
+  /// No description provided for @featKeywords.
+  ///
+  /// In en, this message translates to:
+  /// **'Keywords'**
+  String get featKeywords;
+
+  /// No description provided for @featAudioOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio output'**
+  String get featAudioOutput;
+
+  /// No description provided for @featTextOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Text output'**
+  String get featTextOutput;
+
+  /// No description provided for @featToolCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool calls'**
+  String get featToolCalls;
+
+  /// No description provided for @featServerVad.
+  ///
+  /// In en, this message translates to:
+  /// **'Server VAD'**
+  String get featServerVad;
+
+  /// No description provided for @featInputTranscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Input transcript'**
+  String get featInputTranscription;
+
+  /// No description provided for @featSourceTranscript.
+  ///
+  /// In en, this message translates to:
+  /// **'Source transcript'**
+  String get featSourceTranscript;
+
+  /// No description provided for @featStructuredOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Structured output'**
+  String get featStructuredOutput;
+
+  /// No description provided for @featReasoning.
+  ///
+  /// In en, this message translates to:
+  /// **'Reasoning'**
+  String get featReasoning;
+
+  /// No description provided for @featVocals.
+  ///
+  /// In en, this message translates to:
+  /// **'Vocals'**
+  String get featVocals;
+
+  /// No description provided for @featTimedLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Timed lyrics'**
+  String get featTimedLyrics;
+
+  /// No description provided for @featImagePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Image prompt'**
+  String get featImagePrompt;
+
+  /// No description provided for @featLosslessOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Lossless output'**
+  String get featLosslessOutput;
+
+  /// No description provided for @featZeroShot.
+  ///
+  /// In en, this message translates to:
+  /// **'Zero-shot'**
+  String get featZeroShot;
+
+  /// No description provided for @featLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get featLocal;
+
+  /// No description provided for @sidebarExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand sidebar'**
+  String get sidebarExpand;
+
+  /// No description provided for @sidebarCollapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse sidebar'**
+  String get sidebarCollapse;
+
+  /// No description provided for @musicSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search songs'**
+  String get musicSearch;
+
+  /// No description provided for @musicCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} songs'**
+  String musicCount(Object count);
+
+  /// No description provided for @musicNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No song matches.'**
+  String get musicNoMatch;
+
+  /// No description provided for @musicStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Style'**
+  String get musicStyle;
+
+  /// No description provided for @musicGenre.
+  ///
+  /// In en, this message translates to:
+  /// **'Genre'**
+  String get musicGenre;
+
+  /// No description provided for @musicMood.
+  ///
+  /// In en, this message translates to:
+  /// **'Mood'**
+  String get musicMood;
+
+  /// No description provided for @musicInstruments.
+  ///
+  /// In en, this message translates to:
+  /// **'Instruments'**
+  String get musicInstruments;
+
+  /// No description provided for @musicVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Vocals'**
+  String get musicVoice;
+
+  /// No description provided for @musicTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo'**
+  String get musicTempo;
+
+  /// No description provided for @musicStyleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a tag to add it to the style; tap again to remove it.'**
+  String get musicStyleHint;
+
+  /// No description provided for @musicLyricsStats.
+  ///
+  /// In en, this message translates to:
+  /// **'{lines} lines · {chars} characters'**
+  String musicLyricsStats(Object lines, Object chars);
+
+  /// No description provided for @musicOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Options'**
+  String get musicOptions;
+
+  /// No description provided for @musicNowPlaying.
+  ///
+  /// In en, this message translates to:
+  /// **'Now playing'**
+  String get musicNowPlaying;
+
+  /// No description provided for @musicPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get musicPlay;
+
+  /// No description provided for @musicPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get musicPause;
+
+  /// No description provided for @musicLyricsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics'**
+  String get musicLyricsTitle;
+
+  /// No description provided for @musicSeekHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a timed line to jump there.'**
+  String get musicSeekHint;
+
+  /// No description provided for @musicGenPop.
+  ///
+  /// In en, this message translates to:
+  /// **'Pop'**
+  String get musicGenPop;
+
+  /// No description provided for @musicGenRock.
+  ///
+  /// In en, this message translates to:
+  /// **'Rock'**
+  String get musicGenRock;
+
+  /// No description provided for @musicGenElectronic.
+  ///
+  /// In en, this message translates to:
+  /// **'Electronic'**
+  String get musicGenElectronic;
+
+  /// No description provided for @musicGenFolk.
+  ///
+  /// In en, this message translates to:
+  /// **'Folk'**
+  String get musicGenFolk;
+
+  /// No description provided for @musicGenChinese.
+  ///
+  /// In en, this message translates to:
+  /// **'Chinese traditional'**
+  String get musicGenChinese;
+
+  /// No description provided for @musicGenJazz.
+  ///
+  /// In en, this message translates to:
+  /// **'Jazz'**
+  String get musicGenJazz;
+
+  /// No description provided for @musicGenHipHop.
+  ///
+  /// In en, this message translates to:
+  /// **'Hip-hop'**
+  String get musicGenHipHop;
+
+  /// No description provided for @musicGenLofi.
+  ///
+  /// In en, this message translates to:
+  /// **'Lo-fi'**
+  String get musicGenLofi;
+
+  /// No description provided for @musicGenOrchestral.
+  ///
+  /// In en, this message translates to:
+  /// **'Orchestral'**
+  String get musicGenOrchestral;
+
+  /// No description provided for @musicGenAnime.
+  ///
+  /// In en, this message translates to:
+  /// **'Anime'**
+  String get musicGenAnime;
+
+  /// No description provided for @musicMoodHappy.
+  ///
+  /// In en, this message translates to:
+  /// **'Upbeat'**
+  String get musicMoodHappy;
+
+  /// No description provided for @musicMoodSad.
+  ///
+  /// In en, this message translates to:
+  /// **'Melancholy'**
+  String get musicMoodSad;
+
+  /// No description provided for @musicMoodEpic.
+  ///
+  /// In en, this message translates to:
+  /// **'Epic'**
+  String get musicMoodEpic;
+
+  /// No description provided for @musicMoodCalm.
+  ///
+  /// In en, this message translates to:
+  /// **'Calm'**
+  String get musicMoodCalm;
+
+  /// No description provided for @musicMoodDreamy.
+  ///
+  /// In en, this message translates to:
+  /// **'Dreamy'**
+  String get musicMoodDreamy;
+
+  /// No description provided for @musicMoodDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get musicMoodDark;
+
+  /// No description provided for @musicInsPiano.
+  ///
+  /// In en, this message translates to:
+  /// **'Piano'**
+  String get musicInsPiano;
+
+  /// No description provided for @musicInsGuitar.
+  ///
+  /// In en, this message translates to:
+  /// **'Acoustic guitar'**
+  String get musicInsGuitar;
+
+  /// No description provided for @musicInsSynth.
+  ///
+  /// In en, this message translates to:
+  /// **'Synthesizer'**
+  String get musicInsSynth;
+
+  /// No description provided for @musicInsStrings.
+  ///
+  /// In en, this message translates to:
+  /// **'Strings'**
+  String get musicInsStrings;
+
+  /// No description provided for @musicInsGuzheng.
+  ///
+  /// In en, this message translates to:
+  /// **'Guzheng'**
+  String get musicInsGuzheng;
+
+  /// No description provided for @musicInsDrums.
+  ///
+  /// In en, this message translates to:
+  /// **'Drums'**
+  String get musicInsDrums;
+
+  /// No description provided for @musicVoxFemale.
+  ///
+  /// In en, this message translates to:
+  /// **'Female vocals'**
+  String get musicVoxFemale;
+
+  /// No description provided for @musicVoxMale.
+  ///
+  /// In en, this message translates to:
+  /// **'Male vocals'**
+  String get musicVoxMale;
+
+  /// No description provided for @musicVoxChoir.
+  ///
+  /// In en, this message translates to:
+  /// **'Choir'**
+  String get musicVoxChoir;
+
+  /// No description provided for @musicTempoSlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow'**
+  String get musicTempoSlow;
+
+  /// No description provided for @musicTempoMid.
+  ///
+  /// In en, this message translates to:
+  /// **'Mid-tempo'**
+  String get musicTempoMid;
+
+  /// No description provided for @musicTempoFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get musicTempoFast;
+
+  /// No description provided for @chainCheckExtra.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra: {extra}'**
+  String chainCheckExtra(Object extra);
+
+  /// No description provided for @capModelUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'{model} (unavailable)'**
+  String capModelUnavailable(Object model);
+
+  /// No description provided for @capFollowDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow default ({model})'**
+  String capFollowDefault(Object model);
+
+  /// No description provided for @capFollowDefaultNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow default'**
+  String get capFollowDefaultNone;
+
+  /// No description provided for @subtitleModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Models'**
+  String get subtitleModels;
+
+  /// No description provided for @subtitleTranslateModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation model'**
+  String get subtitleTranslateModel;
+
+  /// No description provided for @provHubDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Default models'**
+  String get provHubDefaults;
+
+  /// No description provided for @provHubDefaultsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The model each capability uses by default; click a provider to open it'**
+  String get provHubDefaultsHint;
+
+  /// No description provided for @provHubDefaultsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'What each capability runs on'**
+  String get provHubDefaultsShort;
+
+  /// No description provided for @provHubRoleAiShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Profiles, model and stage prompts'**
+  String get provHubRoleAiShort;
+
+  /// No description provided for @provHubConnections.
+  ///
+  /// In en, this message translates to:
+  /// **'Providers'**
+  String get provHubConnections;
+
+  /// No description provided for @provHubFeatureModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Models chosen by features'**
+  String get provHubFeatureModels;
+
+  /// No description provided for @provHubFeatureModelsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'These features do not follow the defaults below'**
+  String get provHubFeatureModelsHint;
+
+  /// No description provided for @provHubResetFeatureModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the default again'**
+  String get provHubResetFeatureModel;
+
+  /// No description provided for @provModelCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 model} other{{count} models}}'**
+  String provModelCount(int count);
+
+  /// No description provided for @provConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection'**
+  String get provConnection;
+
+  /// No description provided for @settingsAiServicesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Providers, default models and role AI'**
+  String get settingsAiServicesHint;
+
+  /// No description provided for @capAutomaticInOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic: in the order below ({model})'**
+  String capAutomaticInOrder(Object model);
+
+  /// No description provided for @capAutoOrderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'With no default set, the first available connection below and its preferred model are used. Drag the handles to reorder; switched-off connections are skipped.'**
+  String get capAutoOrderHint;
+
+  /// No description provided for @capPreferred.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferred'**
+  String get capPreferred;
+
+  /// No description provided for @capPreferredModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferred: {model}'**
+  String capPreferredModel(Object model);
+
+  /// No description provided for @capModelAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added'**
+  String get capModelAdded;
+
+  /// No description provided for @capModelOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Model order'**
+  String get capModelOrder;
+
+  /// No description provided for @capUseCustomModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Use “{model}” on {connection}'**
+  String capUseCustomModel(Object model, Object connection);
+
+  /// No description provided for @provHubConnectionsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 connection} other{{count} connections}} · {enabled} on'**
+  String provHubConnectionsShort(int count, int enabled);
+
+  /// No description provided for @provProvidersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to open its settings; drag the handle to reorder'**
+  String get provProvidersHint;
+
+  /// No description provided for @roleAnalysisModelPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis model'**
+  String get roleAnalysisModelPick;
+
+  /// No description provided for @roleModelFollowDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the default LLM ({model})'**
+  String roleModelFollowDefault(Object model);
+
+  /// No description provided for @roleModelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Role assignment checks and corrects itself through function calling. Type to search; a picked model is tested at once.'**
+  String get roleModelHint;
+
+  /// No description provided for @roleToolChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Testing function calling…'**
+  String get roleToolChecking;
+
+  /// No description provided for @roleToolSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Supports function calling'**
+  String get roleToolSupported;
+
+  /// No description provided for @roleToolUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'No function calling: role assignment cannot correct itself, pick another model'**
+  String get roleToolUnsupported;
+
+  /// No description provided for @roleToolUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Function calling not tested yet'**
+  String get roleToolUnknown;
+
+  /// No description provided for @roleToolFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Function calling test failed: {error}'**
+  String roleToolFailed(Object error);
+
+  /// No description provided for @roleToolTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Test'**
+  String get roleToolTest;
+
+  /// No description provided for @provAvailableModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Models you can add · {count}'**
+  String provAvailableModels(int count);
+
+  /// No description provided for @provAvailableModelsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Listed by the model catalog or your account. Added models appear in the defaults, the model order and every model picker; starring one as the default adds it too.'**
+  String get provAvailableModelsHint;
+
+  /// No description provided for @quickTtsSendHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter to generate, Shift+Enter for a new line'**
+  String get quickTtsSendHint;
+
+  /// No description provided for @voiceRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a voice'**
+  String get voiceRequired;
+
+  /// No description provided for @voiceNotForModel.
+  ///
+  /// In en, this message translates to:
+  /// **'{model} does not offer the voice {voice}; choose another'**
+  String voiceNotForModel(String voice, String model);
+
+  /// No description provided for @bankSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch voice bank'**
+  String get bankSwitch;
+
+  /// No description provided for @bankActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice bank actions'**
+  String get bankActions;
+
+  /// No description provided for @paneCharacterSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Character settings'**
+  String get paneCharacterSettings;
+
+  /// No description provided for @navOrderReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore default'**
+  String get navOrderReset;
+
+  /// No description provided for @navOrderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sidebar'**
+  String get navOrderTitle;
+
+  /// No description provided for @navOrderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder, and use the eye to hide pages you don\'\'t use; AI services and Settings stay at the bottom.'**
+  String get navOrderSubtitle;
+
+  /// No description provided for @navOrderHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden'**
+  String get navOrderHidden;
+
+  /// No description provided for @navOrderHiddenCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 page hidden} other{{count} pages hidden}}; Restore default shows them all.'**
+  String navOrderHiddenCount(int count);
+
+  /// No description provided for @navOrderHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide {page} from the sidebar'**
+  String navOrderHide(String page);
+
+  /// No description provided for @navOrderShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {page} in the sidebar'**
+  String navOrderShow(String page);
+
+  /// No description provided for @navCharacterChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Character Chat'**
+  String get navCharacterChat;
+
+  /// No description provided for @chatNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get chatNew;
+
+  /// No description provided for @chatListEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No chats yet. Start one with a character.'**
+  String get chatListEmpty;
+
+  /// No description provided for @chatPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a chat, or start a new one'**
+  String get chatPick;
+
+  /// No description provided for @chatCharacter.
+  ///
+  /// In en, this message translates to:
+  /// **'Character'**
+  String get chatCharacter;
+
+  /// No description provided for @chatEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode'**
+  String get chatEngine;
+
+  /// No description provided for @chatTitleOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Title (optional)'**
+  String get chatTitleOptional;
+
+  /// No description provided for @chatNoCharacters.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a character in the Voice Bank first.'**
+  String get chatNoCharacters;
+
+  /// No description provided for @chatDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{title}\" and all of its messages?'**
+  String chatDeleteConfirm(String title);
+
+  /// No description provided for @chatComposerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Message {name}'**
+  String chatComposerHint(String name);
+
+  /// No description provided for @chatMicStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Talk (microphone)'**
+  String get chatMicStart;
+
+  /// No description provided for @chatMicStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop listening'**
+  String get chatMicStop;
+
+  /// No description provided for @chatMicUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking needs speech recognition and VAD services'**
+  String get chatMicUnavailable;
+
+  /// No description provided for @chatCallStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start call'**
+  String get chatCallStart;
+
+  /// No description provided for @chatCallEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Hang up'**
+  String get chatCallEnd;
+
+  /// No description provided for @chatEmptyCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a message, or turn on the microphone and talk. {name} answers in their own voice.'**
+  String chatEmptyCompanion(String name);
+
+  /// No description provided for @chatEmptyRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Start the call and just talk; {name} answers in real time. You can type too.'**
+  String chatEmptyRealtime(String name);
+
+  /// No description provided for @chatToolTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked the time'**
+  String get chatToolTime;
+
+  /// No description provided for @chatToolRemember.
+  ///
+  /// In en, this message translates to:
+  /// **'Remembered: {fact}'**
+  String chatToolRemember(String fact);
+
+  /// No description provided for @chatToolForget.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot: {fact}'**
+  String chatToolForget(String fact);
+
+  /// No description provided for @chatToolOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Used {name}'**
+  String chatToolOther(String name);
+
+  /// No description provided for @chatMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get chatMemory;
+
+  /// No description provided for @chatMemoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing remembered yet. Tell the character something about yourself.'**
+  String get chatMemoryEmpty;
+
+  /// No description provided for @chatLlmModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat model'**
+  String get chatLlmModel;
+
+  /// No description provided for @chatUseTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Let the character use tools'**
+  String get chatUseTools;
+
+  /// No description provided for @chatUseToolsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the time and remember what you tell them. The model must support function calling.'**
+  String get chatUseToolsHint;
+
+  /// No description provided for @chatEmotion.
+  ///
+  /// In en, this message translates to:
+  /// **'{emotion, select, happy{happy} sad{sad} angry{angry} surprised{surprised} shy{shy} serious{serious} playful{playful} other{calm}}'**
+  String chatEmotion(String emotion);
+
+  /// No description provided for @chatReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play again'**
+  String get chatReplay;
+
+  /// No description provided for @chatStopReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get chatStopReplay;
+
+  /// No description provided for @chatPanelPersona.
+  ///
+  /// In en, this message translates to:
+  /// **'Persona'**
+  String get chatPanelPersona;
+
+  /// No description provided for @chatPersonaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Who the character is: personality, way of speaking, relationship with you. Empty uses the default below.'**
+  String get chatPersonaHint;
+
+  /// No description provided for @chatPersonaDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default persona'**
+  String get chatPersonaDefault;
+
+  /// No description provided for @chatPanelModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get chatPanelModel;
+
+  /// No description provided for @chatPanelVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get chatPanelVoice;
+
+  /// No description provided for @chatModelFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Capabilities'**
+  String get chatModelFeatures;
+
+  /// No description provided for @chatFeatureTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools'**
+  String get chatFeatureTools;
+
+  /// No description provided for @chatFeatureStructured.
+  ///
+  /// In en, this message translates to:
+  /// **'Structured reply'**
+  String get chatFeatureStructured;
+
+  /// No description provided for @chatFeatureTranscribe.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribes you'**
+  String get chatFeatureTranscribe;
+
+  /// No description provided for @chatFeatureVad.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn detection'**
+  String get chatFeatureVad;
+
+  /// No description provided for @chatFeatureUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Capabilities unknown; tools are tried and dropped if refused'**
+  String get chatFeatureUnknown;
+
+  /// No description provided for @chatToolsUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This model has no tools; the character just talks.'**
+  String get chatToolsUnsupported;
+
+  /// No description provided for @chatVoiceChain.
+  ///
+  /// In en, this message translates to:
+  /// **'Chain: {steps}'**
+  String chatVoiceChain(String steps);
+
+  /// No description provided for @chatVoiceNoChain.
+  ///
+  /// In en, this message translates to:
+  /// **'No processing chain'**
+  String get chatVoiceNoChain;
+
+  /// No description provided for @chatVoiceChainHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation, rewriting and voice conversion are set in the character\'\'s processing chain in the Voice Bank.'**
+  String get chatVoiceChainHint;
+
+  /// No description provided for @chatVoiceRealtimeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A call speaks with the Realtime voice; the chain\'\'s voice conversion is applied to it.'**
+  String get chatVoiceRealtimeHint;
+
+  /// No description provided for @chatAppliesNextCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes apply the next time you start a call.'**
+  String get chatAppliesNextCall;
+
+  /// No description provided for @chatChainConverts.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice conversion from the processing chain'**
+  String get chatChainConverts;
+
+  /// No description provided for @themeSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get themeSettingsTitle;
+
+  /// No description provided for @themeSettingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the system, or always use light or dark.'**
+  String get themeSettingsSubtitle;
+
+  /// No description provided for @themeModeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get themeModeSystem;
+
+  /// No description provided for @themeModeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeModeLight;
+
+  /// No description provided for @themeModeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeModeDark;
+
+  /// No description provided for @linkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied to the clipboard.'**
+  String get linkCopied;
+
+  /// No description provided for @updateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Software update'**
+  String get updateTitle;
+
+  /// No description provided for @updateCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current version v{version}'**
+  String updateCurrent(String version);
+
+  /// No description provided for @updateChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking for updates…'**
+  String get updateChecking;
+
+  /// No description provided for @updateUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'v{version} is the latest version.'**
+  String updateUpToDate(String version);
+
+  /// No description provided for @updateCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach GitHub; try again later.'**
+  String get updateCheckFailed;
+
+  /// No description provided for @updateAvailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Version v{version} is available'**
+  String updateAvailableTitle(String version);
+
+  /// No description provided for @updateAvailableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You have v{current}; v{latest} is ready to download.'**
+  String updateAvailableBody(String current, String latest);
+
+  /// No description provided for @updatePublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Released {date}'**
+  String updatePublished(String date);
+
+  /// No description provided for @updateSkipVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip this version'**
+  String get updateSkipVersion;
+
+  /// No description provided for @updateLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get updateLater;
+
+  /// No description provided for @updateDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get updateDownload;
+
+  /// No description provided for @updateCheckNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Check now'**
+  String get updateCheckNow;
+
+  /// No description provided for @updateAutoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check at startup'**
+  String get updateAutoTitle;
+
+  /// No description provided for @updateAutoSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'When the app opens, look for a newer release on GitHub and say so.'**
+  String get updateAutoSubtitle;
+
+  /// No description provided for @updateReleasesPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Releases page'**
+  String get updateReleasesPage;
 }
 
 class _AppLocalizationsDelegate

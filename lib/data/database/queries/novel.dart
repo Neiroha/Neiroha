@@ -190,9 +190,9 @@ extension AppDatabaseNovelQueries on AppDatabase {
             NovelSegmentsCompanion(
               audioPath: Value(path),
               audioCacheKey: Value(cacheKey),
-              audioDuration: duration == null
-                  ? const Value.absent()
-                  : Value(duration),
+              // The duration belongs to the new file; unknown clears the
+              // old file's value instead of keeping it.
+              audioDuration: Value(duration),
               error: const Value(null),
               missing: const Value(false),
             ),

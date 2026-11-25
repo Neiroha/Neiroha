@@ -5,7 +5,7 @@
 Neiroha exposes audio APIs at two levels:
 
 1. **Local API Server** (`lib/server/api_server.dart`) — an OpenAI-compatible HTTP server that proxies TTS requests through configured voice characters, scoped by active voice banks, plus an MCP endpoint for AI agents (`lib/server/mcp/`)
-2. **Upstream Adapter Layer** (`lib/data/adapters/`) — client-side adapters that talk to external TTS backends
+2. **Upstream Adapter Layer** (`lib/data/ai/`) — provider plugins and client-side adapters that talk to external TTS backends
 
 ---
 
@@ -50,6 +50,8 @@ The API uses **voice banks** as the `model` abstraction:
 | `GET` | `/speakers` | List voices from active banks (SillyTavern format) | **Implemented** |
 | `GET` | `/health` | Server health check | **Implemented** |
 | `POST` | `/mcp` | Model Context Protocol endpoint for AI agents | **Implemented** |
+| `POST` / `GET` / `DELETE` | `/v1/jobs…` | Asynchronous synthesis jobs (below) | **Implemented** |
+| `GET` | `/v1/audio/speech/:id` | Audio of a job by id | **Implemented** |
 
 ### `POST /v1/audio/speech`
 
@@ -73,6 +75,8 @@ OpenAI-compatible TTS endpoint. Resolves voice by name (optionally scoped to a b
 | `model` | string | no | Voice bank name — scopes voice lookup to that bank's members |
 | `speed` | number | no | Playback speed multiplier (default: 1.0) |
 | `response_format` | string | no | Output format hint passed to upstream adapter |
+| `stream` | boolean | no | `true` returns chunked PCM (requires `response_format: "pcm"`) |
+| `apply_chain` | boolean | no | Neiroha extension: run the character's processing chain (translate / rewrite / voice conversion); default `true` |
 
 **Voice resolution order:**
 1. If `model` is provided, find the active bank with that name and look up the voice within its members
@@ -148,6 +152,22 @@ Simple health check.
 }
 ```
 
+### Async jobs `/v1/jobs`
+
+The body is the same as `POST /v1/audio/speech` (`stream` is not allowed). The voice is resolved on creation, so an unknown voice fails with 404 right away; the job then runs through the global TTS queue under the same provider limits. Jobs and their audio are kept in the data directory under `api_jobs/` and survive a restart; jobs left unfinished by a restart come back as `failed`. The newest 200 finished jobs are kept.
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/v1/jobs` | Create a job; `202` with the job object (`Location` points at it) |
+| `GET` | `/v1/jobs?limit=` | List jobs, newest first |
+| `GET` | `/v1/jobs/:id` | Job status |
+| `DELETE` | `/v1/jobs/:id` | Cancel a queued / running job; delete a finished one |
+| `POST` | `/v1/jobs/:id/retry` | Run a finished job again as a new attempt; `409` while running |
+| `GET` | `/v1/jobs/:id/events` | SSE (`event: status`) with the job object on every change; closes when it finishes |
+| `GET` | `/v1/jobs/:id/audio`, `/v1/audio/speech/:id` | Audio of a succeeded job; `409` until then |
+
+`status` is one of `queued`, `running`, `succeeded`, `failed` (with `error`) or `cancelled`; a succeeded job carries `result: {content_type, bytes, url}`.
+
 ### MCP endpoint (`/mcp`) for AI agents
 
 The same server also speaks the [Model Context Protocol](https://modelcontextprotocol.io)
@@ -181,6 +201,9 @@ Tools: `get_overview`, `list_adapter_types`, `list_providers`,
 `add_subtitle_cues`, `update_subtitle_cues`, `delete_subtitle_cues`,
 `generate_video_dub_audio`, `normalize_video_dub_loudness`, `export_video_dub`,
 `delete_video_dub_project`.
+
+`synthesize_speech` and video dub generation run the character's processing
+chain; pass `apply_chain: false` to `synthesize_speech` to skip it.
 
 Loudness: `update_voice_bank` takes `loudness_target_lufs` (the cast's base
 loudness), `create_voice_character` / `update_voice_character` take
@@ -568,18 +591,12 @@ directory focused on published API references.
 
 | Method | Path | Description | Priority |
 |---|---|---|---|
-| `POST` | `/v1/jobs` | Create a durable async TTS job | High |
-| `GET` | `/v1/jobs/:id` | Inspect job status/progress/result metadata | High |
-| `DELETE` | `/v1/jobs/:id` | Cancel a queued/running job | High |
-| `POST` | `/v1/jobs/:id/retry` | Retry a failed or completed job as a new attempt | Medium |
-| `GET` | `/v1/jobs/:id/events` | Optional SSE progress stream | Medium |
-| `GET` | `/v1/audio/speech/:id` | Retrieve previously generated audio by ID | Medium |
+| — | — | None at the moment (async jobs are implemented, see section 1) | — |
 
 ### Missing adapter capabilities
 
 | Feature | Description | Priority |
 |---|---|---|
-| Streaming synthesis | Return audio as chunked stream instead of buffered response | High |
 | Voice cloning upload | Upload reference audio through the local API (not just UI) | Medium |
 | Batch synthesis | Accept multiple inputs in one request | Medium |
 | SSML support | Pass SSML markup to adapters that support it | Low |

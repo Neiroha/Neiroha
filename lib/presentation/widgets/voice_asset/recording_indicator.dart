@@ -19,7 +19,7 @@ class RecordingIndicator extends StatelessWidget {
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceBright,
+        color: context.colors.raised,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -33,7 +33,9 @@ class RecordingIndicator extends StatelessWidget {
                 height: 22,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.redAccent.withValues(alpha: 0.10 + t * 0.18),
+                  color: context.colors.danger.withValues(
+                    alpha: 0.10 + t * 0.18,
+                  ),
                 ),
                 child: Center(
                   child: Transform.scale(
@@ -44,8 +46,8 @@ class RecordingIndicator extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: active
-                            ? Colors.redAccent.shade200
-                            : Colors.white.withValues(alpha: 0.25),
+                            ? context.colors.danger
+                            : context.fg.withValues(alpha: 0.25),
                       ),
                     ),
                   ),
@@ -64,8 +66,8 @@ class RecordingIndicator extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     color: active
-                        ? Colors.redAccent.shade100
-                        : Colors.white.withValues(alpha: 0.58),
+                        ? context.colors.danger
+                        : context.fg.withValues(alpha: 0.58),
                   ),
                 ),
                 SizedBox(height: 5),
@@ -75,7 +77,7 @@ class RecordingIndicator extends StatelessWidget {
                     height: 5,
                     child: Stack(
                       children: [
-                        Container(color: Colors.white.withValues(alpha: 0.08)),
+                        Container(color: context.fg.withValues(alpha: 0.08)),
                         FractionallySizedBox(
                           widthFactor: level,
                           child: DecoratedBox(
@@ -84,7 +86,7 @@ class RecordingIndicator extends StatelessWidget {
                                 colors: [
                                   AppTheme.accentColor,
                                   level > 0.85
-                                      ? Colors.redAccent
+                                      ? context.colors.danger
                                       : AppTheme.accentColor.withValues(
                                           alpha: 0.72,
                                         ),
@@ -124,7 +126,9 @@ class RecordingTimerRow extends StatelessWidget {
         status,
         style: TextStyle(
           fontSize: 12,
-          color: recording ? Colors.redAccent.shade200 : Colors.white54,
+          color: recording
+              ? context.colors.danger
+              : context.fg.withValues(alpha: 0.54),
         ),
       ),
       Text(

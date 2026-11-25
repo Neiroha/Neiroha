@@ -1,4 +1,5 @@
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
+import 'quick_tts/generate_bar.dart';
 import 'quick_tts/history_list.dart';
 import 'dart:io';
 
@@ -13,12 +14,11 @@ import 'package:neiroha/data/services/synthesis/quick_tts_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
-import 'package:neiroha/data/adapters/speech_http_response.dart';
+import 'package:neiroha/data/ai/protocols/http/speech_http_response.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/actions/browser_speech_message.dart';
 import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
-import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/browser_quick_tts.dart';
 import 'package:neiroha/providers/playback_provider.dart';
@@ -31,7 +31,10 @@ import 'package:neiroha/l10n/generated/app_localizations.dart';
 /// user can test the voice being edited with a single click.
 class QuickTtsPanel extends ConsumerStatefulWidget {
   final db.VoiceAsset? asset;
-  const QuickTtsPanel({super.key, required this.asset});
+
+  /// A larger text box, for when the panel has a column of its own.
+  final bool roomy;
+  const QuickTtsPanel({super.key, required this.asset, this.roomy = false});
 
   @override
   ConsumerState<QuickTtsPanel> createState() => _QuickTtsPanelState();
@@ -113,14 +116,12 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                     : l10n.quickTtsFullPlayback)
               : null,
         ),
+        const Divider(height: 1),
         Expanded(
           child: QuickTtsHistoryList(
             historyAsync: filteredHistory,
             onSave: _saveEntryAsVoiceAsset,
           ),
-        ),
-        const PersistentAudioBar(
-          onlyForSourceTag: voiceBankQuickTestPlaybackSource,
         ),
         if (kIsWeb)
           Padding(
@@ -138,7 +139,18 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
-        _buildGenerateBar(canGenerate ? () => _generate(asset, stream) : null),
+        QuickTtsGenerateBar(
+          controller: _textController,
+          generating: _generating,
+          roomy: widget.roomy,
+          onGenerate: canGenerate ? () => _generate(asset, stream) : null,
+          onStop: () {
+            _cancellation?.cancel();
+            ref
+                .read(playbackNotifierProvider.notifier)
+                .stopIfSourceTag(voiceBankQuickTestPlaybackSource);
+          },
+        ),
       ],
     );
   }
@@ -151,13 +163,13 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
           Icon(
             Icons.graphic_eq_rounded,
             size: 40,
-            color: Colors.white.withValues(alpha: 0.1),
+            color: context.fg.withValues(alpha: 0.1),
           ),
           SizedBox(height: 10),
           Text(
             AppLocalizations.of(context).uiSelectACharacterToQuickTest,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.4),
+              color: context.fg.withValues(alpha: 0.4),
               fontSize: 12,
             ),
           ),
@@ -172,8 +184,10 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
     required String? mode,
   }) {
     final hasHistory = (historyAsync.value ?? []).isNotEmpty;
+    // As tall as the voice bank's other column headers, so they line up.
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
+      height: 52,
+      padding: const EdgeInsets.fromLTRB(16, 0, 12, 0),
       child: Row(
         children: [
           Icon(Icons.graphic_eq_rounded, size: 16, color: AppTheme.accentColor),
@@ -181,10 +195,9 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
           Text(
             AppLocalizations.of(context).uiQUICKTEST,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
-              color: Colors.white.withValues(alpha: 0.5),
+              color: context.fg.withValues(alpha: 0.7),
             ),
           ),
           SizedBox(width: 8),
@@ -194,7 +207,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.4),
+                color: context.fg.withValues(alpha: 0.4),
               ),
             ),
           ),
@@ -231,7 +244,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                       }
                     },
                     style: TextButton.styleFrom(
-                      foregroundColor: Colors.redAccent,
+                      foregroundColor: context.colors.danger,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       minimumSize: const Size(0, 28),
                     ),
@@ -254,7 +267,7 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
                     ),
                     icon: Icon(
                       Icons.delete_sweep_rounded,
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: context.fg.withValues(alpha: 0.4),
                     ),
                   ),
         ],
@@ -333,68 +346,6 @@ class _QuickTtsPanelState extends ConsumerState<QuickTtsPanel> {
         );
       }
     }
-  }
-
-  Widget _buildGenerateBar(VoidCallback? generate) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceBright,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _textController,
-              maxLines: 2,
-              minLines: 1,
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                hintText: AppLocalizations.of(context).uiTypeSomethingToTest,
-                hintStyle: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  fontSize: 13,
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-              ),
-            ),
-          ),
-          if (_generating)
-            IconButton(
-              tooltip: AppLocalizations.of(context).uiStopSynthesis,
-              icon: const Icon(Icons.stop_circle_outlined),
-              onPressed: () {
-                _cancellation?.cancel();
-                ref
-                    .read(playbackNotifierProvider.notifier)
-                    .stopIfSourceTag(voiceBankQuickTestPlaybackSource);
-              },
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.only(right: 6),
-              child: IconButton.filled(
-                tooltip: AppLocalizations.of(context).uiGenerate,
-                onPressed: _textController.text.isEmpty ? null : generate,
-                style: IconButton.styleFrom(
-                  backgroundColor: AppTheme.accentColor,
-                  disabledBackgroundColor: AppTheme.accentColor.withValues(
-                    alpha: 0.3,
-                  ),
-                  minimumSize: const Size(32, 32),
-                ),
-                icon: const Icon(Icons.auto_awesome_rounded, size: 16),
-              ),
-            ),
-        ],
-      ),
-    );
   }
 
   Future<void> _generate(db.VoiceAsset asset, bool stream) async {

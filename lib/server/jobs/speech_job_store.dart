@@ -70,6 +70,10 @@ class SpeechJob {
 
   Map<String, Object?> _record() => {...toJson(), 'body': body};
 
+  /// An unchanging copy, so a listener that reads late still sees the
+  /// state of the moment it was sent.
+  SpeechJob _snapshot() => _fromRecord(jsonDecode(jsonEncode(_record())))!;
+
   static SpeechJob? _fromRecord(Map<String, dynamic> json) {
     final id = json['id'];
     final body = json['body'];
@@ -142,21 +146,32 @@ class SpeechJobStore {
     return limit == null ? all : all.take(limit).toList();
   }
 
-  /// The job now and at every change, until it finishes.
-  Stream<SpeechJob> watch(String id) async* {
+  /// The job now and at every change, until it finishes. Each event is a
+  /// snapshot, and changes are followed from before the first one is sent,
+  /// so a slow reader still gets the final state.
+  Stream<SpeechJob> watch(String id) {
     final job = _jobs[id];
-    if (job == null) return;
+    if (job == null) return const Stream.empty();
+    StreamSubscription<SpeechJob>? changes;
+    final out = StreamController<SpeechJob>(onCancel: () => changes?.cancel());
     var last = (job.status, job.attempt);
-    yield job;
-    if (job.status.finished) return;
-    await for (final changed in _changes.stream) {
+    out.add(job._snapshot());
+    if (job.status.finished) {
+      unawaited(out.close());
+      return out.stream;
+    }
+    changes = _changes.stream.listen((changed) {
       if (changed.id != id || (changed.status, changed.attempt) == last) {
-        continue;
+        return;
       }
       last = (changed.status, changed.attempt);
-      yield changed;
-      if (changed.status.finished) return;
-    }
+      out.add(changed._snapshot());
+      if (changed.status.finished) {
+        unawaited(changes?.cancel());
+        unawaited(out.close());
+      }
+    });
+    return out.stream;
   }
 
   /// Queues [body] and starts it.
@@ -233,7 +248,16 @@ class SpeechJobStore {
       try {
         final result = await running;
         if (!current()) return;
-        await _audio(job.id).writeAsBytes(result.audioBytes, flush: true);
+        // Written aside and moved into place only if this attempt is still
+        // the job's: a cancel or retry during the write wins.
+        final part = File('${_audio(job.id).path}.$attempt.part');
+        await part.writeAsBytes(result.audioBytes, flush: true);
+        if (!current()) {
+          await part.delete().catchError((_) => part);
+          return;
+        }
+        await part.rename(_audio(job.id).path);
+        if (!current()) return; // audio() serves succeeded jobs only
         job
           ..contentType = result.contentType
           ..audioBytes = result.audioBytes.length;

@@ -54,6 +54,10 @@ class _SubtitleStudioScreenState extends ConsumerState<SubtitleStudioScreen> {
   SubtitleFormat _format = SubtitleFormat.srt;
   SubtitleTextMode _textMode = SubtitleTextMode.translation;
   List<SubtitleCue> _cues = const [];
+
+  /// The target language [_cues] were made with: export names and writes
+  /// what was generated, even if the picker changed since.
+  (String, String)? _cuesTarget;
   SubtitleProgress? _progress;
   TtsCancelToken? _cancel;
   String? _error;
@@ -90,6 +94,7 @@ class _SubtitleStudioScreenState extends ConsumerState<SubtitleStudioScreen> {
     final path = _mediaPath;
     if (path == null) return;
     final cancel = TtsCancelToken();
+    final target = _target;
     setState(() {
       _cancel = cancel;
       _error = null;
@@ -99,7 +104,7 @@ class _SubtitleStudioScreenState extends ConsumerState<SubtitleStudioScreen> {
       final pipeline = SubtitlePipeline.fromRouter(
         router,
         MediaPcmDecoder(ref.read(ffmpegServiceProvider)),
-        translate: _target != null,
+        translate: target != null,
         purpose: subtitlePurpose,
       );
       final source = _sourceLang.text.trim();
@@ -107,7 +112,7 @@ class _SubtitleStudioScreenState extends ConsumerState<SubtitleStudioScreen> {
         SubtitleJob(
           path,
           sourceLanguages: source.isEmpty ? const [] : [source],
-          targetLanguage: _target?.$1,
+          targetLanguage: target?.$1,
           context: _context.text.trim(),
         ),
         cancellation: cancel,
@@ -115,7 +120,12 @@ class _SubtitleStudioScreenState extends ConsumerState<SubtitleStudioScreen> {
           if (mounted) setState(() => _progress = progress);
         },
       );
-      if (mounted) setState(() => _cues = cues);
+      if (mounted) {
+        setState(() {
+          _cues = cues;
+          _cuesTarget = target;
+        });
+      }
     } on TtsCancelledException {
       // Cancelled by the user.
     } catch (error) {
@@ -129,8 +139,9 @@ class _SubtitleStudioScreenState extends ConsumerState<SubtitleStudioScreen> {
     final l = AppLocalizations.of(context);
     final media = _mediaPath;
     if (media == null || _cues.isEmpty) return;
-    final mode = _target == null ? SubtitleTextMode.original : _textMode;
-    final suffix = mode == SubtitleTextMode.original ? '' : '.${_target!.$2}';
+    final generated = _cuesTarget;
+    final mode = generated == null ? SubtitleTextMode.original : _textMode;
+    final suffix = mode == SubtitleTextMode.original ? '' : '.${generated!.$2}';
     final target = await pickSavePath(
       fileName:
           '${p.basenameWithoutExtension(media)}$suffix'

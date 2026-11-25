@@ -60,10 +60,17 @@ class AudioFileTranscriber {
       );
     }
     final pcm = await _decoder.decode(path);
-    return AudioInput(
-      wrapPcmAsWav(pcm, sampleRate: 16000),
-      fileName: '${p.basenameWithoutExtension(path)}.wav',
-    );
+    final wav = wrapPcmAsWav(pcm, sampleRate: 16000);
+    // 16 kHz mono is about 1.9 MB a minute: past ~13 minutes even the
+    // re-encoded file is over the limit, and the upload would be refused.
+    if (wav.length > uploadLimitBytes) {
+      throw AiProviderException(
+        'This audio is too long to transcribe in one request (about '
+        '${pcm.length ~/ 32000 ~/ 60} min; the limit is about 13 min). '
+        'Trim it to the part you need first.',
+      );
+    }
+    return AudioInput(wav, fileName: '${p.basenameWithoutExtension(path)}.wav');
   }
 
   MediaPcmDecoder get _decoder =>

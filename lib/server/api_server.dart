@@ -12,12 +12,13 @@ import 'package:neiroha/server/mcp/neiroha_mcp_tools.dart';
 import 'jobs/speech_jobs.dart';
 import 'speech_request_handler.dart';
 import 'tracked_http_server.dart';
+import 'package:neiroha/app_version.dart';
 
 part 'api_server_config.dart';
 
 /// Reported to MCP clients in `serverInfo.version`; keep in sync with the
 /// pubspec version.
-const String neirohaMcpServerVersion = '0.5.1';
+const String neirohaMcpServerVersion = appVersion;
 
 class ApiServer {
   final AppDatabase db;

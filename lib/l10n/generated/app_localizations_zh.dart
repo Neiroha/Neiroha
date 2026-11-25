@@ -180,7 +180,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get keepTtsRunningDisabled => '离开小说阅读器时会停止播放。';
 
   @override
-  String get aboutSubtitle => 'v0.5.1 - AI 音频中间件与配音工作站';
+  String aboutSubtitle(String version) {
+    return 'v$version - AI 音频中间件与配音工作站';
+  }
 
   @override
   String get uiUnassigned => '-- 未分配 --';
@@ -4270,4 +4272,62 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get themeModeDark => '深色';
+
+  @override
+  String get linkCopied => '链接已复制到剪贴板。';
+
+  @override
+  String get updateTitle => '软件更新';
+
+  @override
+  String updateCurrent(String version) {
+    return '当前版本 v$version';
+  }
+
+  @override
+  String get updateChecking => '正在检查更新…';
+
+  @override
+  String updateUpToDate(String version) {
+    return 'v$version 已是最新版本。';
+  }
+
+  @override
+  String get updateCheckFailed => '无法连接 GitHub，请稍后再试。';
+
+  @override
+  String updateAvailableTitle(String version) {
+    return '发现新版本 v$version';
+  }
+
+  @override
+  String updateAvailableBody(String current, String latest) {
+    return '当前为 v$current，可更新到 v$latest。';
+  }
+
+  @override
+  String updatePublished(String date) {
+    return '发布于 $date';
+  }
+
+  @override
+  String get updateSkipVersion => '跳过此版本';
+
+  @override
+  String get updateLater => '稍后';
+
+  @override
+  String get updateDownload => '前往下载';
+
+  @override
+  String get updateCheckNow => '检查更新';
+
+  @override
+  String get updateAutoTitle => '启动时检查更新';
+
+  @override
+  String get updateAutoSubtitle => '打开软件时检查 GitHub 上的最新版本，有新版本时弹窗提醒。';
+
+  @override
+  String get updateReleasesPage => '发布页';
 }

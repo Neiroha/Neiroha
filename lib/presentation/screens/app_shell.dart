@@ -23,6 +23,7 @@ import 'package:neiroha/providers/nav_order_provider.dart';
 import 'voice_bank_screen.dart';
 import 'provider_screen.dart';
 import 'settings_screen.dart';
+import 'package:neiroha/presentation/widgets/update_dialog.dart';
 import 'workspaces/workspaces_native.dart'
     if (dart.library.js_interop) 'workspaces/workspaces_web.dart';
 
@@ -41,12 +42,26 @@ class _AppShellState extends ConsumerState<AppShell> {
   Future<bool> Function()? _phaseTtsExitGuard;
   String? _lastPersistedTabName;
   DateTime? _lastAndroidBackAt;
+  Timer? _updateCheck;
 
   @override
   void initState() {
     super.initState();
     Future.microtask(_loadStartupTab);
     Future.microtask(_loadAppBehaviorSettings);
+    // Once per launch, after the first page has settled. The web build
+    // is always the deployed version, so it does not ask.
+    if (!kIsWeb) {
+      _updateCheck = Timer(const Duration(seconds: 4), () {
+        if (mounted) unawaited(checkForUpdateAtStartup(context, ref));
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _updateCheck?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadStartupTab() async {

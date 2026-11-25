@@ -425,8 +425,8 @@ abstract class AppLocalizations {
   /// No description provided for @aboutSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'v0.5.1 - AI Audio Middleware & Dubbing Workstation'**
-  String get aboutSubtitle;
+  /// **'v{version} - AI Audio Middleware & Dubbing Workstation'**
+  String aboutSubtitle(String version);
 
   /// No description provided for @uiUnassigned.
   ///
@@ -7885,6 +7885,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dark'**
   String get themeModeDark;
+
+  /// No description provided for @linkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied to the clipboard.'**
+  String get linkCopied;
+
+  /// No description provided for @updateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Software update'**
+  String get updateTitle;
+
+  /// No description provided for @updateCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current version v{version}'**
+  String updateCurrent(String version);
+
+  /// No description provided for @updateChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking for updates…'**
+  String get updateChecking;
+
+  /// No description provided for @updateUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'v{version} is the latest version.'**
+  String updateUpToDate(String version);
+
+  /// No description provided for @updateCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach GitHub; try again later.'**
+  String get updateCheckFailed;
+
+  /// No description provided for @updateAvailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Version v{version} is available'**
+  String updateAvailableTitle(String version);
+
+  /// No description provided for @updateAvailableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You have v{current}; v{latest} is ready to download.'**
+  String updateAvailableBody(String current, String latest);
+
+  /// No description provided for @updatePublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Released {date}'**
+  String updatePublished(String date);
+
+  /// No description provided for @updateSkipVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip this version'**
+  String get updateSkipVersion;
+
+  /// No description provided for @updateLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get updateLater;
+
+  /// No description provided for @updateDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get updateDownload;
+
+  /// No description provided for @updateCheckNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Check now'**
+  String get updateCheckNow;
+
+  /// No description provided for @updateAutoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check at startup'**
+  String get updateAutoTitle;
+
+  /// No description provided for @updateAutoSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'When the app opens, look for a newer release on GitHub and say so.'**
+  String get updateAutoSubtitle;
+
+  /// No description provided for @updateReleasesPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Releases page'**
+  String get updateReleasesPage;
 }
 
 class _AppLocalizationsDelegate

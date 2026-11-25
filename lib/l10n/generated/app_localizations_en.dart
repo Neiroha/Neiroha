@@ -198,8 +198,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Novel playback will stop when leaving the reader.';
 
   @override
-  String get aboutSubtitle =>
-      'v0.5.1 - AI Audio Middleware & Dubbing Workstation';
+  String aboutSubtitle(String version) {
+    return 'v$version - AI Audio Middleware & Dubbing Workstation';
+  }
 
   @override
   String get uiUnassigned => '-- Unassigned --';
@@ -4435,4 +4436,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themeModeDark => 'Dark';
+
+  @override
+  String get linkCopied => 'Link copied to the clipboard.';
+
+  @override
+  String get updateTitle => 'Software update';
+
+  @override
+  String updateCurrent(String version) {
+    return 'Current version v$version';
+  }
+
+  @override
+  String get updateChecking => 'Checking for updates…';
+
+  @override
+  String updateUpToDate(String version) {
+    return 'v$version is the latest version.';
+  }
+
+  @override
+  String get updateCheckFailed => 'Could not reach GitHub; try again later.';
+
+  @override
+  String updateAvailableTitle(String version) {
+    return 'Version v$version is available';
+  }
+
+  @override
+  String updateAvailableBody(String current, String latest) {
+    return 'You have v$current; v$latest is ready to download.';
+  }
+
+  @override
+  String updatePublished(String date) {
+    return 'Released $date';
+  }
+
+  @override
+  String get updateSkipVersion => 'Skip this version';
+
+  @override
+  String get updateLater => 'Later';
+
+  @override
+  String get updateDownload => 'Download';
+
+  @override
+  String get updateCheckNow => 'Check now';
+
+  @override
+  String get updateAutoTitle => 'Check at startup';
+
+  @override
+  String get updateAutoSubtitle =>
+      'When the app opens, look for a newer release on GitHub and say so.';
+
+  @override
+  String get updateReleasesPage => 'Releases page';
 }

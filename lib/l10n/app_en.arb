@@ -73,7 +73,7 @@
   "keepTtsRunningSubtitle": "Useful for reading with Novel Reader while checking task progress or settings.",
   "keepTtsRunningEnabled": "TTS will continue when switching screens.",
   "keepTtsRunningDisabled": "Novel playback will stop when leaving the reader.",
-  "aboutSubtitle": "v0.5.1 - AI Audio Middleware & Dubbing Workstation",
+  "aboutSubtitle": "v{version} - AI Audio Middleware & Dubbing Workstation",
   "uiUnassigned": "-- Unassigned --",
   "uiOrUploadANewFile": "— or upload a new file —",
   "uiWillBeRemoved": "\"{name}\" will be removed.",
@@ -2103,5 +2103,66 @@
   "themeSettingsSubtitle": "Follow the system, or always use light or dark.",
   "themeModeSystem": "Auto",
   "themeModeLight": "Light",
-  "themeModeDark": "Dark"
+  "themeModeDark": "Dark",
+  "linkCopied": "Link copied to the clipboard.",
+  "updateTitle": "Software update",
+  "updateCurrent": "Current version v{version}",
+  "@updateCurrent": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateChecking": "Checking for updates…",
+  "updateUpToDate": "v{version} is the latest version.",
+  "@updateUpToDate": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCheckFailed": "Could not reach GitHub; try again later.",
+  "updateAvailableTitle": "Version v{version} is available",
+  "@updateAvailableTitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBody": "You have v{current}; v{latest} is ready to download.",
+  "@updateAvailableBody": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "latest": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePublished": "Released {date}",
+  "@updatePublished": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "updateSkipVersion": "Skip this version",
+  "updateLater": "Later",
+  "updateDownload": "Download",
+  "updateCheckNow": "Check now",
+  "updateAutoTitle": "Check at startup",
+  "updateAutoSubtitle": "When the app opens, look for a newer release on GitHub and say so.",
+  "updateReleasesPage": "Releases page",
+  "@aboutSubtitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  }
 }

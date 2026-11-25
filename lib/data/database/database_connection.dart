@@ -57,7 +57,7 @@ Future<DatabaseConnection> _spawnDatabaseIsolate(String path) async {
 Future<void> _serveDatabase((String, SendPort) start) async {
   final (path, reply) = start;
   final file = File(path);
-  await _bindCloseFunctions();
+  await _bindSqliteFunctions();
   reply.send(
     DriftIsolate.inCurrent(
       () => DatabaseConnection(
@@ -69,20 +69,55 @@ Future<void> _serveDatabase((String, SendPort) start) async {
   );
 }
 
-/// Runs, once and before the real database opens, the SQLite functions that
-/// closing it uses.
+/// Runs, once and before the real database opens, every kind of SQLite
+/// call drift makes: opening, binding and reading each value type, writes
+/// with their row counts, a reused statement, a batch, transactions, an
+/// error, and closing.
 ///
-/// Dart looks each function up the first time it is called. When the app's
-/// files are replaced while it runs (an update or a rebuild), a lookup made
-/// at quit loads a second copy of SQLite that was never initialised, and
-/// closing the real database through it crashes in sqlite3_close. Calling
-/// them now binds them to the copy that opens the database.
-Future<void> _bindCloseFunctions() async {
+/// Dart looks each SQLite function up the first time it is called. When the
+/// app's files are replaced while it runs (an update or a rebuild), a later
+/// first lookup loads a second copy of SQLite that was never initialised,
+/// and handing it the real database crashes (seen in sqlite3_close at
+/// quit). Calling them all now binds them to the copy that opens the file.
+/// Isolates spawned from this one share the bindings.
+Future<void> _bindSqliteFunctions() async {
   final probe = NativeDatabase.memory();
   try {
     await probe.ensureOpen(const _ProbeUser());
-    // A cached statement, so closing also finalises one.
-    await probe.runSelect('SELECT 1', const []);
+    await probe.runCustom(
+      'CREATE TABLE t (i INTEGER, r REAL, s TEXT, b BLOB, n TEXT)',
+    );
+    final args = [
+      1,
+      0.5,
+      'a',
+      Uint8List.fromList(const [1, 2]),
+      null,
+    ];
+    await probe.runInsert('INSERT INTO t VALUES (?, ?, ?, ?, ?)', args);
+    // The same cached statement again: reset and rebind.
+    await probe.runInsert('INSERT INTO t VALUES (?, ?, ?, ?, ?)', args);
+    await probe.runSelect('SELECT * FROM t WHERE i = ?', const [1]);
+    await probe.runUpdate('UPDATE t SET s = ? WHERE i = ?', const ['b', 1]);
+    await probe.runBatched(
+      BatchedStatements(
+        ['DELETE FROM t WHERE i = ?'],
+        [
+          ArgumentsForBatchedStatement(0, const [1]),
+        ],
+      ),
+    );
+    for (final commit in [true, false]) {
+      final transaction = probe.beginTransaction();
+      await transaction.ensureOpen(const _ProbeUser());
+      await transaction.runDelete('DELETE FROM t', const []);
+      await (commit ? transaction.send() : transaction.rollback());
+    }
+    try {
+      await probe.runSelect('SELECT * FROM missing_table', const []);
+    } catch (_) {
+      // Expected: binds the functions that describe an error.
+    }
   } finally {
     await probe.close();
   }

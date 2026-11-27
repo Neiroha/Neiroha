@@ -1,8 +1,8 @@
-import 'package:neiroha/data/adapters/azure_tts_adapter.dart';
-import 'package:neiroha/data/adapters/chat_completions_tts_adapter.dart';
-import 'package:neiroha/data/adapters/gemini_tts_adapter.dart';
-import 'package:neiroha/data/adapters/openai_tts_adapter.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
+import 'package:neiroha/data/ai/providers/azure_speech/tts/azure_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/mimo/tts/chat_completions_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/gemini/tts/gemini_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/openai/tts/openai_tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:neiroha/domain/platform/platform_capabilities.dart';

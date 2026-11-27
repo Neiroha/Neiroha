@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
@@ -9,6 +10,8 @@ import 'package:neiroha/data/services/capabilities/task_profile_repository.dart'
 import 'package:neiroha/data/services/loudness_normalizer.dart';
 import 'package:neiroha/data/services/novel/novel_streaming_service.dart';
 import 'package:neiroha/data/services/synthesis/synthesis_service.dart';
+import 'package:neiroha/data/services/synthesis/voice_chain_runner.dart';
+import 'package:neiroha/domain/synthesis/voice_chain.dart';
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/data/storage/ffmpeg_service.dart';
 import 'package:neiroha/data/storage/path_service.dart';
@@ -202,5 +205,40 @@ void main() {
           .where((f) => f.path.contains('.partial') || f.path.endsWith('.wav')),
       isEmpty,
     );
+  });
+
+  test('a chained character speaks each sentence once', () async {
+    final spoken = <String>[];
+    server.listen((request) async {
+      final body = jsonDecode(await utf8.decoder.bind(request).join());
+      spoken.add(body['input'] as String);
+      // Loud enough to survive the silence trim.
+      request.response.add(
+        Int16List.fromList(List.filled(2400, 8000)).buffer.asUint8List(),
+      );
+      await request.response.close();
+    });
+    TtsQueueService.instance.voiceChains = VoiceChainHook(database).wrap;
+    addTearDown(() => TtsQueueService.instance.voiceChains = null);
+    var source = (await database.getNovelSegments('book')).first;
+    source = source.copyWith(segmentText: '第一句。第二句。第三句。');
+    await database.updateNovelSegment(source);
+    final project = (await database.getNovelProjectById('book'))!.copyWith(
+      autoSliceLongSegments: true,
+      maxSliceChars: 4,
+      sliceOnlyAtPunctuation: true,
+    );
+    final asset = (await service.prepare(project, source)).binding.asset;
+    await VoiceChainHook.save(
+      database,
+      asset.id,
+      const VoiceChain([VoiceChainStep(kind: VoiceChainStepKind.trim)]),
+    );
+    final plan = await service.prepare(project, source);
+    expect(plan.chained, isTrue);
+    await service.generate(plan, cancellation: TtsCancelToken());
+    // Before, the chain wrapped the chunk sequence and each of its
+    // sentences replayed every chunk.
+    expect(spoken, ['第一句。', '第二句。', '第三句。']);
   });
 }

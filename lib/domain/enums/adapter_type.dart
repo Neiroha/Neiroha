@@ -10,7 +10,9 @@ enum AdapterType {
   geminiTts,
   elevenLabs,
   minimaxTts,
-  indexTts;
+  indexTts,
+  irodori,
+  rvc;
 
   String get displayName => switch (this) {
     openaiCompatible => 'OpenAI TTS API Compatible',
@@ -25,6 +27,8 @@ enum AdapterType {
     elevenLabs => 'ElevenLabs',
     minimaxTts => 'MiniMax Speech',
     indexTts => 'IndexTTS 2.5 (WebUI)',
+    irodori => 'Irodori',
+    rvc => 'Neiroha RVC (Voice Conversion)',
   };
 
   String get defaultModel => switch (this) {
@@ -40,6 +44,8 @@ enum AdapterType {
     elevenLabs => 'eleven_v4',
     minimaxTts => 'speech-2.8-hd',
     indexTts => 'auto',
+    irodori => 'default',
+    rvc => 'auto',
   };
 
   /// Whether this adapter type fetches models (synthesis engines) from the API.
@@ -53,6 +59,8 @@ enum AdapterType {
     geminiTts => true,
     elevenLabs => true,
     minimaxTts => true,
+    irodori => true,
+    rvc => true,
     _ => false,
   };
 
@@ -67,6 +75,8 @@ enum AdapterType {
     geminiTts => true,
     elevenLabs => true,
     minimaxTts => true,
+    irodori => true,
+    rvc => true,
     _ => false,
   };
 
@@ -81,6 +91,8 @@ enum AdapterType {
     geminiTts => true,
     elevenLabs => true,
     minimaxTts => true,
+    irodori => true,
+    rvc => true,
     _ => false,
   };
 
@@ -99,8 +111,13 @@ enum AdapterType {
     _ => false,
   };
 
+  /// False for engines that only transform audio (RVC): they serve a VC step,
+  /// never a character's voice.
+  bool get synthesizesSpeech => this != rvc;
+
   /// Whether to show the default model name field in the provider editor.
   bool get showDefaultModelField => switch (this) {
+    rvc => false,
     openaiCompatible => false,
     openaiTts => false,
     chatCompletionsTts => false,
@@ -112,3 +129,7 @@ enum AdapterType {
     _ => true,
   };
 }
+
+/// Whether a provider row can be a character's voice (not audio-only VC).
+bool speaksText(String adapterType) =>
+    AdapterType.values.asNameMap()[adapterType]?.synthesizesSpeech ?? true;

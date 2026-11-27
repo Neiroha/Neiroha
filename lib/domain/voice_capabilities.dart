@@ -1,4 +1,4 @@
-import 'package:neiroha/data/adapters/openai_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/openai/tts/openai_tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 
 /// Which per-call style controls a character's engine understands. Shared by
@@ -21,9 +21,14 @@ abstract final class VoiceCapabilities {
       'elevenLabs' => true,
       'minimaxTts' => true,
       'indexTts' => true,
+      'irodori' => asset.refAudioPath?.trim().isNotEmpty == true,
       _ => false,
     };
   }
+
+  /// A fixed sampling seed, so the same text gives the same take.
+  static bool supportsSeed(String? adapterType) =>
+      const {'cosyvoice', 'gptSovits', 'irodori'}.contains(adapterType);
 
   /// Inline audio tags such as `(紧张|深呼吸)` prefixed to the text.
   static bool supportsAudioTags(db.VoiceAsset asset, db.TtsProvider provider) =>

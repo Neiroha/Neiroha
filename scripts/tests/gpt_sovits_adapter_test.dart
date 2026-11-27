@@ -4,11 +4,64 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neiroha/data/adapters/gpt_sovits_adapter.dart';
-import 'package:neiroha/data/adapters/http_error_message.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/local/gpt_sovits/tts/gpt_sovits_adapter.dart';
+import 'package:neiroha/data/ai/protocols/http/http_error_message.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
+import 'package:neiroha/data/database/app_database.dart' as db;
+import 'package:neiroha/data/services/synthesis/quick_tts_service.dart';
 
 void main() {
+  test(
+    'quick test keeps GPT-SoVITS models and legacy languages distinct',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      final bodies = <Map<String, dynamic>>[];
+      server.listen((request) async {
+        bodies.add(
+          jsonDecode(await utf8.decoder.bind(request).join())
+              as Map<String, dynamic>,
+        );
+        request.response.headers.contentType = ContentType('audio', 'wav');
+        await request.response.close();
+      });
+      final provider = db.TtsProvider(
+        id: 'gpt-sovits',
+        name: 'GPT-SoVITS',
+        adapterType: 'gptSovits',
+        baseUrl: 'http://127.0.0.1:${server.port}',
+        apiKey: '',
+        defaultModelName: 'default',
+        enabled: true,
+        position: 0,
+        maxConcurrency: 1,
+      );
+      for (final model in ['azurlane-voices-v5dev', 'JA']) {
+        final asset = db.VoiceAsset(
+          id: 'voice',
+          name: 'Test voice',
+          providerId: provider.id,
+          modelName: model,
+          taskMode: 'presetVoice',
+          presetVoiceName: 'speaker',
+          speed: 1,
+          enabled: true,
+          loudnessOffsetDb: 0,
+        );
+        final adapter = GptSovitsAdapter(
+          baseUrl: provider.baseUrl,
+          apiKey: provider.apiKey,
+          modelName: model,
+        );
+        await adapter.synthesize(quickTtsRequest(asset, provider, 'Test line'));
+      }
+      expect(bodies.first['model'], 'azurlane-voices-v5dev');
+      expect(bodies.first.containsKey('text_lang'), isFalse);
+      expect(bodies.last['model'], 'default');
+      expect(bodies.last['text_lang'], 'ja');
+    },
+  );
+
   test('model discovery uses OpenAI voice-set models', () async {
     final paths = <String>[];
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/widgets/layout/page_header.dart';
 
 /// Top strip of the Dialog TTS list view: title, subtitle, and the
 /// `New Project` action.
@@ -10,32 +11,18 @@ class ProjectListHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-      child: Row(
-        children: [
-          Text(
-            AppLocalizations.of(context).navDialogTts,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          SizedBox(width: 8),
-          Text(
-            AppLocalizations.of(context).uiMultiCharacterConversations,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 14,
-            ),
-          ),
-          const Spacer(),
-          FilledButton.icon(
-            onPressed: onCreate,
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: Text(AppLocalizations.of(context).uiNewProject),
-          ),
-        ],
-      ),
+    final l10n = AppLocalizations.of(context);
+    return PageHeader(
+      icon: Icons.forum_rounded,
+      title: l10n.navDialogTts,
+      subtitle: l10n.uiMultiCharacterConversations,
+      actions: [
+        FilledButton.icon(
+          onPressed: onCreate,
+          icon: const Icon(Icons.add_rounded, size: 18),
+          label: Text(l10n.uiNewProject),
+        ),
+      ],
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/widgets/layout/window_drag_area.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:neiroha/l10n/generated/app_localizations.dart';
@@ -9,12 +10,13 @@ import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/app_providers.dart';
 
 import 'about_settings.dart';
+import 'appearance_settings.dart';
 import 'api_settings.dart';
 import 'general_settings.dart';
+import 'nav_order_settings.dart';
 import 'media_settings.dart';
 import 'storage_settings.dart';
 import 'task_settings.dart';
-import 'role_skill_settings.dart';
 
 const double _settingsContentMaxWidth = 920;
 
@@ -32,33 +34,37 @@ class SettingsSectionRail extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Container(
-      color: const Color(0xFF12121A),
+      color: context.colors.sidebar,
       child: Column(
         children: [
-          const SizedBox(height: 28),
-          Center(
-            child: Text(
-              l10n.settingsTitle,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.2,
+          WindowDragArea(
+            child: Container(
+              height: 52,
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                l10n.settingsTitle,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 8),
           Expanded(
-            child: ListView.builder(
+            child: ListView(
               padding: EdgeInsets.zero,
-              itemCount: SettingsSection.values.length,
-              itemBuilder: (context, index) {
-                final section = SettingsSection.values[index];
-                return _SettingsSectionTile(
-                  section: section,
-                  selected: section == selected,
-                  label: section.localizedLabel(l10n),
-                  onTap: () => onSelected(section),
-                );
-              },
+              children: [
+                for (final section in SettingsSection.values)
+                  _SettingsSectionTile(
+                    section: section,
+                    selected: section == selected,
+                    label: section.localizedLabel(l10n),
+                    onTap: () => onSelected(section),
+                  ),
+                const Divider(height: 24, indent: 20, endIndent: 20),
+                const _AiServicesLink(),
+              ],
             ),
           ),
         ],
@@ -91,11 +97,11 @@ class _SettingsSectionTileState extends State<_SettingsSectionTile> {
   Widget build(BuildContext context) {
     final selected = widget.selected;
     final foreground = selected
-        ? Colors.white.withValues(alpha: 0.94)
-        : Colors.white.withValues(alpha: _hovering ? 0.82 : 0.68);
+        ? context.fg.withValues(alpha: 0.94)
+        : context.fg.withValues(alpha: _hovering ? 0.82 : 0.68);
     final iconColor = selected
         ? AppTheme.accentColor
-        : Colors.white.withValues(alpha: _hovering ? 0.76 : 0.58);
+        : context.fg.withValues(alpha: _hovering ? 0.76 : 0.58);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovering = true),
@@ -104,9 +110,9 @@ class _SettingsSectionTileState extends State<_SettingsSectionTile> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 130),
-          height: 58,
+          height: 46,
           color: _hovering
-              ? Colors.white.withValues(alpha: 0.025)
+              ? context.fg.withValues(alpha: 0.025)
               : Colors.transparent,
           child: Row(
             children: [
@@ -159,7 +165,7 @@ class SettingsCompactPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Container(
-      color: AppTheme.surfaceDim,
+      color: context.colors.panel,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,6 +190,7 @@ class SettingsCompactPicker extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                 ],
+                const _AiServicesLink(compact: true),
               ],
             ),
           ),
@@ -204,30 +211,33 @@ class SettingsSectionContent extends ConsumerWidget {
     final children = switch (section) {
       SettingsSection.general => const <Widget>[
         LanguageSettingsCard(),
-        SizedBox(height: 12),
+        SizedBox(height: 8),
+        ThemeSettingsCard(),
+        SizedBox(height: 8),
         FontSettingsCard(),
-        SizedBox(height: 12),
+        SizedBox(height: 8),
         StartupSettingsCard(),
-        SizedBox(height: 12),
+        SizedBox(height: 8),
+        NavOrderSettingsCard(),
+        SizedBox(height: 8),
         TaskBehaviorSettingsCard(),
-        SizedBox(height: 12),
+        SizedBox(height: 8),
         HealthCheckTimeoutSettingsCard(),
       ],
       SettingsSection.tasks => const <Widget>[TaskMonitorSettingsCard()],
       SettingsSection.storage when kIsWeb => <Widget>[
         Text(l10n.webStorageDescription),
       ],
-      SettingsSection.api || SettingsSection.media || SettingsSection.roleAi
-          when kIsWeb =>
-        <Widget>[Text(l10n.webFeatureUnavailable)],
-      SettingsSection.roleAi => const <Widget>[RoleSkillSettingsCard()],
+      SettingsSection.api || SettingsSection.media when kIsWeb => <Widget>[
+        Text(l10n.webFeatureUnavailable),
+      ],
       SettingsSection.api => const <Widget>[ApiServerSettingsCard()],
       SettingsSection.storage => <Widget>[
         StorageSettingsCard(startup: ref.watch(storageStartupProvider)),
       ],
       SettingsSection.media => const <Widget>[
         FfmpegSettingsCard(),
-        SizedBox(height: 12),
+        SizedBox(height: 8),
         ExportPrefsSettingsCard(),
       ],
       SettingsSection.about => const <Widget>[AboutSettingsCard()],
@@ -238,10 +248,10 @@ class SettingsSectionContent extends ConsumerWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: _settingsContentMaxWidth),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 22, 24, 32),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
           children: [
             _SettingsPageHeader(section: section),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             ...children,
           ],
         ),
@@ -258,27 +268,66 @@ class _SettingsPageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          section.localizedLabel(l10n),
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.2,
+    return WindowDragArea(
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 52),
+        alignment: Alignment.centerLeft,
+        child: Text.rich(
+          TextSpan(
+            text: section.localizedLabel(l10n),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            children: [
+              const TextSpan(text: '   '),
+              TextSpan(
+                text: section.localizedDescription(l10n),
+                style: TextStyle(
+                  color: context.fg.withValues(alpha: 0.45),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          section.localizedDescription(l10n),
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.48),
-            fontSize: 13,
-          ),
+      ),
+    );
+  }
+}
+
+/// Models and providers live on the AI services page; settings point there
+/// instead of keeping a second copy.
+class _AiServicesLink extends ConsumerWidget {
+  const _AiServicesLink({this.compact = false});
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    void open() =>
+        ref.read(selectedTabProvider.notifier).state = NavTab.providers;
+    if (compact) {
+      return ActionChip(
+        avatar: const Icon(Icons.dns_rounded, size: 16),
+        label: Text(l10n.navProviders),
+        onPressed: open,
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: ListTile(
+        dense: true,
+        leading: const Icon(Icons.dns_rounded, size: 20),
+        title: Text(l10n.navProviders),
+        subtitle: Text(
+          l10n.settingsAiServicesHint,
+          style: const TextStyle(fontSize: 11),
         ),
-      ],
+        trailing: const Icon(Icons.arrow_outward_rounded, size: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        onTap: open,
+      ),
     );
   }
 }

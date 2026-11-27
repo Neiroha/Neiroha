@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 class ProjectSettingsResult {
   final String name;
@@ -86,7 +87,7 @@ Future<ProjectSettingsResult?> showProjectSettingsDialog({
                       ),
                       style: TextStyle(
                         fontSize: 11.5,
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: context.fg.withValues(alpha: 0.5),
                       ),
                     ),
                   ),
@@ -107,7 +108,9 @@ Future<ProjectSettingsResult?> showProjectSettingsDialog({
               ),
               icon: const Icon(Icons.delete_rounded, size: 16),
               label: Text(l10n.uiDelete),
-              style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+              style: TextButton.styleFrom(
+                foregroundColor: context.colors.danger,
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx),

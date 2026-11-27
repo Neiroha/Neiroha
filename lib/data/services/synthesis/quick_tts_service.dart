@@ -1,7 +1,7 @@
+import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'dart:io';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
 import 'package:drift/drift.dart' show Value;
-import 'package:neiroha/data/adapters/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/data/storage/storage_service.dart';
@@ -28,14 +28,24 @@ TtsRequest quickTtsRequest(
   db.TtsProvider provider,
   String text, {
   String? responseFormat,
+  String style = '',
 }) => TtsRequest(
   text: text,
   voice: asset.presetVoiceName ?? asset.name,
+  seed: asset.seed,
+  voiceAssetId: asset.id,
   speed: asset.speed,
   responseFormat: responseFormat,
   presetVoiceName: asset.presetVoiceName,
-  textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
-  voiceInstruction: asset.voiceInstruction,
+  textLang: TtsRequest.legacyTextLanguage(
+    provider.adapterType,
+    asset.modelName,
+  ),
+  // A reply's delivery style adds to the character's own instruction.
+  voiceInstruction: [
+    asset.voiceInstruction?.trim() ?? '',
+    style.trim(),
+  ].where((s) => s.isNotEmpty).join('. ').nullIfEmpty,
   refAudioPath: asset.refAudioPath,
   promptText: asset.promptText,
   promptLang: asset.promptLang,
@@ -109,4 +119,8 @@ class QuickTtsService {
       rethrow;
     }
   }
+}
+
+extension on String {
+  String? get nullIfEmpty => isEmpty ? null : this;
 }

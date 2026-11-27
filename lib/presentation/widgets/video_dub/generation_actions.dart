@@ -149,10 +149,13 @@ extension _VideoDubEditorGenerationActions on _VideoDubEditorState {
             request: TtsRequest(
               text: cue.cueText,
               voice: asset.presetVoiceName ?? asset.name,
+              seed: asset.seed,
+              voiceAssetId: asset.id,
               speed: asset.speed,
-              textLang: provider.adapterType == 'gptSovits'
-                  ? asset.modelName
-                  : null,
+              textLang: TtsRequest.legacyTextLanguage(
+                provider.adapterType,
+                asset.modelName,
+              ),
               presetVoiceName: asset.presetVoiceName,
               voiceInstruction: asset.voiceInstruction,
               refAudioPath: asset.refAudioPath,

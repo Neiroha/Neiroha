@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
+import 'package:neiroha/data/ai/protocols/openai/llm_chat_adapter.dart';
 
 /// Process-safe, shared paid-evaluation ledger. Unknown usage is never refunded.
 /// 2 USD / million total tokens is a conservative guard for Luna standard text

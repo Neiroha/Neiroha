@@ -3,6 +3,7 @@ import 'package:drift/drift.dart'
 import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:neiroha/data/database/schema_version.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/database/database_connection.dart';
 import 'package:neiroha/data/services/novel/character_repository.dart';
@@ -44,7 +45,7 @@ void main() {
       final characters = CharacterRepository(database);
       await characters.saveCharacter(projectId: 'book', name: '林舟');
       await database.close();
-      final backupFile = File('${file.path}.before-v33.bak');
+      final backupFile = File('${file.path}.before-v$neirohaSchemaVersion.bak');
       expect(backupFile.existsSync(), isTrue);
       final backup = NativeDatabase(backupFile);
       await backup.ensureOpen(_Version32());

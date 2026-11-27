@@ -7,13 +7,15 @@ import 'dubbing_intent_fields.dart';
 import 'package:neiroha/domain/novel/dubbing_intent.dart';
 import 'package:neiroha/domain/novel/role_skill_profile.dart';
 import 'package:neiroha/domain/novel/role_models.dart';
-import 'package:neiroha/data/services/capabilities/role_ai_connection.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'model_discover_button.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/data/ai/registry/plugin_registry.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/providers/app_providers.dart';
+import 'package:neiroha/data/services/novel/role_model_choice.dart';
+import 'package:neiroha/providers/ai_capability_providers.dart';
 import 'package:neiroha/providers/novel_role_providers.dart';
 
 class NovelRoleAnalysisControls extends ConsumerStatefulWidget {
@@ -53,11 +55,13 @@ class _NovelRoleAnalysisControlsState
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final providers = (ref.watch(ttsProvidersStreamProvider).value ?? [])
-        .where((p) => p.supportsRoleAi)
+        .where(providerOffersLlm)
         .toList();
     final skillConfig = ref.watch(roleSkillConfigurationProvider);
-    final defaults =
-        (skillConfig.value ?? const RoleSkillConfiguration()).active;
+    final defaults = effectiveRoleProfile(
+      (skillConfig.value ?? const RoleSkillConfiguration()).active,
+      ref.watch(aiCapabilityRouterProvider).value,
+    );
     final saved = ref.watch(
       roleAnalysisCheckpointProvider((
         projectId: widget.projectId,
@@ -100,7 +104,7 @@ class _NovelRoleAnalysisControlsState
         ref.read(roleReviewServiceProvider).isRunning(widget.projectId);
     return ExpansionTile(
       tilePadding: EdgeInsets.zero,
-      leading: const Icon(Icons.psychology_alt_outlined),
+      leading: const Icon(Icons.psychology_alt_rounded),
       title: Text(l.roleAnalysisPanelTitle),
       subtitle: checkpoint == null
           ? null
@@ -212,7 +216,7 @@ class _NovelRoleAnalysisControlsState
           title: Text(l.phaseRoleConnectionSettings),
           children: [
             TextButton.icon(
-              icon: const Icon(Icons.settings_suggest),
+              icon: const Icon(Icons.settings_suggest_rounded),
               label: Text(l.taskProfiles),
               onPressed: running
                   ? null
@@ -285,7 +289,7 @@ class _NovelRoleAnalysisControlsState
     String feedback = '',
   }) async {
     final providers = (ref.read(ttsProvidersStreamProvider).value ?? [])
-        .where((p) => p.supportsRoleAi)
+        .where(providerOffersLlm)
         .toList();
     if (providers.isEmpty || _runToken != null) return;
     final service = ref.read(roleAnalysisServiceProvider);
@@ -296,7 +300,11 @@ class _NovelRoleAnalysisControlsState
           ? await service.checkpoints.load(widget.projectId, widget.chapterId)
           : null;
       if (!mounted || token.isCancelled) return;
-      final defaults = ref.read(roleSkillConfigurationProvider).value?.active;
+      final active = ref.read(roleSkillConfigurationProvider).value?.active;
+      final router = await ref.read(aiCapabilityRouterProvider.future);
+      final defaults = active == null
+          ? null
+          : effectiveRoleProfile(active, router);
       final providerId =
           checkpoint?.providerId ?? _providerId ?? defaults?.providerId;
       final provider =

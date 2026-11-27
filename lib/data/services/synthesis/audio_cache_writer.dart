@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:neiroha/data/adapters/wav_utils.dart';
+import 'package:neiroha/data/ai/protocols/audio/wav_utils.dart';
 import 'package:neiroha/domain/synthesis/tts_event.dart';
 import 'package:uuid/uuid.dart';
 

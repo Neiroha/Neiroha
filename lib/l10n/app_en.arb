@@ -30,7 +30,7 @@
   "navVideoDub": "Video Dub",
   "navVoiceAssets": "Voice Assets",
   "navVoiceBank": "Voice Bank",
-  "navProviders": "Providers",
+  "navProviders": "AI Services",
   "navSettings": "Settings",
   "settingsTitle": "Settings",
   "settingsGeneral": "General",
@@ -73,7 +73,7 @@
   "keepTtsRunningSubtitle": "Useful for reading with Novel Reader while checking task progress or settings.",
   "keepTtsRunningEnabled": "TTS will continue when switching screens.",
   "keepTtsRunningDisabled": "Novel playback will stop when leaving the reader.",
-  "aboutSubtitle": "v0.5.1 - AI Audio Middleware & Dubbing Workstation",
+  "aboutSubtitle": "v{version} - AI Audio Middleware & Dubbing Workstation",
   "uiUnassigned": "-- Unassigned --",
   "uiOrUploadANewFile": "— or upload a new file —",
   "uiWillBeRemoved": "\"{name}\" will be removed.",
@@ -1367,5 +1367,819 @@
   "playbackLoop": "Loop playback",
   "playbackLoopOn": "Loop on",
   "playbackDownload": "Download audio",
-  "playbackMoreActions": "More playback actions"
+  "playbackMoreActions": "More playback actions",
+  "navSubtitles": "Transcribe & Translate",
+  "transcribeFromAudio": "Transcribe the audio into the reference text",
+  "transcribeNeedsStt": "Enable a provider with speech-to-text (e.g. OpenAI, ElevenLabs) to transcribe",
+  "transcribeFilled": "Reference text filled from the audio. Review it, then save.",
+  "transcribeFailed": "Transcription failed: {error}",
+  "@transcribeFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "liveModeRealtime": "Live call",
+  "liveModeCompanion": "AI companion",
+  "liveModeRealtimeHint": "Talk in real time with a Realtime model, like a phone call",
+  "liveModeCompanionHint": "An LLM answers with tools; the character''s own voice speaks",
+  "liveNeedsRealtime": "Needs a provider with a Realtime model (e.g. OpenAI)",
+  "liveNeedsCompanion": "Needs a language model (LLM) service",
+  "liveStateIdle": "Idle",
+  "liveStateConnecting": "Connecting",
+  "liveStateListening": "Listening",
+  "liveStateThinking": "Thinking",
+  "liveStateSpeaking": "Speaking",
+  "liveSettings": "Character live settings",
+  "livePersona": "Persona",
+  "livePersonaHint": "How the character thinks and talks. Empty uses the voice name, description and instruction.",
+  "liveRealtimeVoice": "Realtime voice",
+  "liveDefault": "Default",
+  "liveAllowInterrupt": "Allow interrupting (headphones)",
+  "liveAllowInterruptHint": "Keeps the microphone open while the character speaks. Without headphones it would hear itself.",
+  "subtitlePickMedia": "Choose a video or audio file",
+  "subtitleSourceLanguage": "Spoken language",
+  "subtitleSourceLanguageHint": "Optional, e.g. ja. Empty = detect",
+  "subtitleTargetLanguage": "Translate to",
+  "subtitleNoTranslation": "No translation (transcript only)",
+  "subtitleContext": "Context for the translator",
+  "subtitleContextHint": "Title, names, genre or glossary",
+  "subtitleFormat": "Output format",
+  "subtitleModeOriginal": "Original",
+  "subtitleModeTranslation": "Translation",
+  "subtitleModeBilingual": "Bilingual",
+  "subtitleRun": "Transcribe",
+  "subtitleExport": "Export subtitles",
+  "subtitleSaved": "Saved {path}",
+  "@subtitleSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "subtitlePreview": "Preview",
+  "subtitleEmpty": "Pick a file and run to see the subtitles here.",
+  "subtitleMissingCapability": "not available",
+  "subtitleStageDecoding": "Decoding",
+  "subtitleStageDetecting": "Detecting speech",
+  "subtitleStageTranscribing": "Transcribing",
+  "subtitleStageTranslating": "Translating",
+  "subtitleStageDone": "Done",
+  "modalityText": "Text",
+  "modalityImage": "Image",
+  "modalityAudio": "Audio",
+  "modalityVideo": "Video",
+  "modalityPdf": "PDF",
+  "llmThinkUnknown": "Thinking ?",
+  "llmThinkNone": "No thinking",
+  "llmThinkLevelsUnknown": "Thinking (levels unknown)",
+  "llmThinkLevels": "Thinking {count} levels {from}→{to}",
+  "@llmThinkLevels": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "llmThinkCanDisable": ", can turn off",
+  "llmThinkDefault": "Default: {level}",
+  "@llmThinkDefault": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "llmThinkModes": "Modes: {modes}",
+  "@llmThinkModes": {
+    "placeholders": {
+      "modes": {
+        "type": "String"
+      }
+    }
+  },
+  "llmTools": "Tool calling",
+  "llmToolsNo": "No tool calling",
+  "llmToolsUnknown": "Tool calling ?",
+  "llmToolsParallel": "Can call several tools in one turn",
+  "llmInputsUnknown": "Input ?",
+  "llmSchema": "JSON schema",
+  "llmContext": "{tokens} context",
+  "@llmContext": {
+    "placeholders": {
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
+  "llmSourceCatalog": "Built-in catalog",
+  "llmSourceAccount": "Found in this account",
+  "llmSourceUnlisted": "Built-in catalog · not listed by this account",
+  "llmPickerTitle": "Language models · {provider}",
+  "@llmPickerTitle": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "llmPickerSearch": "Search, or type a model ID",
+  "llmPickerToolsOnly": "Tool calling only",
+  "llmPickerLoading": "Reading the model list…",
+  "llmPickerFound": "The account lists {count} models; traits come from the public catalog.",
+  "@llmPickerFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "llmPickerDenied": "Credentials rejected: {error}",
+  "@llmPickerDenied": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "llmPickerOffline": "No model list from this provider; showing the built-in catalog.",
+  "llmPickerUse": "Use {id}",
+  "@llmPickerUse": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "llmNeedsToolsNo": "This model cannot call tools; role analysis needs tool calling.",
+  "llmNeedsToolsUnknown": "Tool calling unknown; one small test request runs before the first analysis.",
+  "llmProviderDisabled": "(disabled)",
+  "llmProviderHint": "Only providers that offer a language model are listed",
+  "voiceFilterHint": "Filter voices",
+  "voiceMoreHidden": "{count} more — type to filter",
+  "voiceEngineVoices": "{engine} voices",
+  "@voiceMoreHidden": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@voiceEngineVoices": {
+    "placeholders": {
+      "engine": {
+        "type": "String"
+      }
+    }
+  },
+  "navMusic": "Song Studio",
+  "musicModel": "Model",
+  "musicTitle": "Title",
+  "musicTitleHint": "Untitled song",
+  "musicPrompt": "Style & arrangement",
+  "musicPromptHint": "Genre, mood, instruments, vocalist, tempo, length…",
+  "musicLyrics": "Lyrics",
+  "musicLyricsHint": "Leave empty to let the model write them. Section tags such as [Verse] and [Chorus] shape the song.",
+  "musicInstrumental": "Instrumental (no vocals)",
+  "musicLossless": "Lossless WAV when the model offers it",
+  "musicImages": "Reference images",
+  "musicAddImage": "Add image",
+  "musicGenerate": "Compose",
+  "musicGenerating": "Composing… {seconds}s",
+  "musicNoModel": "No enabled provider offers song generation. Add a Google Gemini provider.",
+  "musicEmpty": "Generated songs appear here.",
+  "musicShowInFolder": "Show in folder",
+  "musicSaveAs": "Save as…",
+  "musicDelete": "Delete",
+  "musicReuse": "Reuse settings",
+  "musicNoLyrics": "Instrumental, no lyrics.",
+  "musicWatermark": "Lyria audio carries an inaudible SynthID watermark.",
+  "musicSaved": "Saved to {path}",
+  "@musicGenerating": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "@musicSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "liveRealtimeModel": "Realtime model",
+  "chainTitle": "Processing chain",
+  "chainHint": "Steps wrap the TTS of this character like chained functions: text steps rewrite the line first, voice conversion re-voices the audio after. Applies wherever the character speaks.",
+  "chainInput": "Line",
+  "chainOutput": "Audio",
+  "chainAdd": "Add step",
+  "chainTranslate": "Translate (LLM)",
+  "chainRewrite": "Rewrite (LLM)",
+  "chainConvert": "Voice conversion",
+  "chainTranslateTo": "Translate → {language}",
+  "@chainTranslateTo": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "chainConvertTo": "Re-voice → {voice}",
+  "@chainConvertTo": {
+    "placeholders": {
+      "voice": {
+        "type": "String"
+      }
+    }
+  },
+  "chainTargetLanguage": "Target language",
+  "chainTargetLanguageHint": "e.g. Japanese, English, Cantonese",
+  "chainInstruction": "Instruction",
+  "chainInstructionHint": "e.g. Say it in a calm, old-fashioned tone and keep it short.",
+  "chainTargetVoice": "Target voice",
+  "chainModel": "Model",
+  "chainNoModels": "No enabled provider offers this capability yet.",
+  "chainNeedsSetup": "Needs setup",
+  "chainNoStreaming": "Voice conversion runs sentence by sentence: playback starts once the first sentence is converted. On the web, converters that only return files convert the whole line first.",
+  "retireBadge": "Retires {date}",
+  "@retireBadge": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "retireHint": "{model} stops working on {date}. Switch to {replacement}.",
+  "@retireHint": {
+    "placeholders": {
+      "model": {},
+      "date": {},
+      "replacement": {}
+    }
+  },
+  "retireHintNoReplacement": "{model} stops working on {date}. Pick a model from another provider.",
+  "@retireHintNoReplacement": {
+    "placeholders": {
+      "model": {},
+      "date": {}
+    }
+  },
+  "retireBanner": "{count} characters use models that stop working on {date} ({days} days left).",
+  "@retireBanner": {
+    "placeholders": {
+      "count": {},
+      "date": {},
+      "days": {}
+    }
+  },
+  "retireMigrate": "Migrate",
+  "retireMigrateTitle": "Move characters to replacement models?",
+  "retireMigrateManual": "No replacement runs here; change these in the character inspector:",
+  "retireMigrated": "Moved {count} characters.",
+  "@retireMigrated": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "retireSwitchTo": "Switch to {model}",
+  "@retireSwitchTo": {
+    "placeholders": {
+      "model": {}
+    }
+  },
+  "retireLater": "Later",
+  "chainTrim": "Trim silence",
+  "chainVerify": "ASR check",
+  "chainTrimHint": "Cuts silence at both ends of each sentence and shortens pauses longer than 0.35 s.",
+  "chainVerifyHint": "Transcribes what was spoken, compares it with the line and lists skipped words. Playback is not delayed.",
+  "chainVerifyLanguage": "Recognition language (optional)",
+  "chainCheckMissing": "Heard {score}% · missing: {missing}",
+  "@chainCheckMissing": {
+    "placeholders": {
+      "score": {},
+      "missing": {}
+    }
+  },
+  "chainCheckClean": "Heard {score}% · nothing missing",
+  "@chainCheckClean": {
+    "placeholders": {
+      "score": {}
+    }
+  },
+  "chainCheckFailed": "ASR check failed: {error}",
+  "@chainCheckFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "chainCheckNone": "No ASR check yet; preview the character to run one.",
+  "settingsAiCapabilities": "AI capabilities",
+  "settingsAiCapabilitiesDescription": "Default models, per-capability limits and added models",
+  "capLlm": "Language model",
+  "capTts": "Speech synthesis",
+  "capStt": "Speech recognition",
+  "capRealtime": "Realtime voice",
+  "capTranslate": "Speech translation",
+  "capVc": "Voice conversion",
+  "capVad": "Voice activity",
+  "capMusic": "Music",
+  "capDefaultModel": "Default model",
+  "capAutomatic": "Automatic (first available)",
+  "capConnections": "Connections",
+  "capNoConnections": "No enabled connection offers this capability.",
+  "capLimits": "Limits",
+  "capLimitsTitle": "{capability} limits · {connection}",
+  "@capLimitsTitle": {
+    "placeholders": {
+      "capability": {},
+      "connection": {}
+    }
+  },
+  "capLimitsHint": "Leave a field empty to inherit the connection limit. Each capability queues on its own, so language-model calls do not take speech slots.",
+  "capInherited": "Inherited",
+  "capConcurrency": "Concurrent requests",
+  "capRpm": "Requests / minute",
+  "capRpd": "Requests / day",
+  "capTpm": "Tokens / minute",
+  "capTpd": "Tokens / day",
+  "capAddModel": "Add model",
+  "capModelId": "Model id",
+  "capDisplayName": "Display name (optional)",
+  "capModelRejected": "This connection cannot open model {model}.",
+  "@capModelRejected": {
+    "placeholders": {
+      "model": {}
+    }
+  },
+  "capOff": "Off",
+  "capAll": "All",
+  "inspectorTabBasic": "Basics",
+  "inspectorTabVoice": "Voice",
+  "provTabOverview": "Overview",
+  "provCapabilities": "Capabilities",
+  "provCapUse": "Use {capability} on this connection",
+  "@provCapUse": {
+    "placeholders": {
+      "capability": {}
+    }
+  },
+  "provCapOffHint": "{capability} is off here; features will not route to this connection.",
+  "@provCapOffHint": {
+    "placeholders": {
+      "capability": {}
+    }
+  },
+  "provConnectionOff": "This connection is turned off. Switch it on in the list before features use its models.",
+  "provSetDefault": "Set as default",
+  "provIsDefault": "Default",
+  "provSourceAdded": "Added by you",
+  "provSourceFetched": "Fetched from the account",
+  "provDiscoverLlm": "Discover from account",
+  "provOtherModels": "Other fetched models",
+  "provCheckAll": "Check capabilities",
+  "provHealthOk": "Available",
+  "provHealthFailed": "Failed",
+  "provHealthUnavailable": "Unavailable",
+  "provHealthUnknown": "Unknown",
+  "provHealthNotChecked": "Not checked yet",
+  "provHealthSome": "Some capabilities failed: {list}",
+  "@provHealthSome": {
+    "placeholders": {
+      "list": {}
+    }
+  },
+  "provLimitsConnection": "Connection limits",
+  "provLimitsPerCapability": "Per capability",
+  "provAddPick": "Choose a provider",
+  "provAddHint": "Fill in the address and key on the Overview tab after creating it, then check its capabilities.",
+  "featPresetVoices": "Preset voices",
+  "featInstructions": "Style instructions",
+  "featStreamingOutput": "Streaming",
+  "featCloudClone": "Cloud cloning",
+  "featZeroShotClone": "Zero-shot cloning",
+  "featFileTranscription": "File transcription",
+  "featStreamingTranscription": "Streaming transcription",
+  "featWordTimestamps": "Word timestamps",
+  "featDiarization": "Speaker labels",
+  "featLanguageDetection": "Language detection",
+  "featKeywords": "Keywords",
+  "featAudioOutput": "Audio output",
+  "featTextOutput": "Text output",
+  "featToolCalls": "Tool calls",
+  "featServerVad": "Server VAD",
+  "featInputTranscription": "Input transcript",
+  "featSourceTranscript": "Source transcript",
+  "featStructuredOutput": "Structured output",
+  "featReasoning": "Reasoning",
+  "featVocals": "Vocals",
+  "featTimedLyrics": "Timed lyrics",
+  "featImagePrompt": "Image prompt",
+  "featLosslessOutput": "Lossless output",
+  "featZeroShot": "Zero-shot",
+  "featLocal": "Local",
+  "sidebarExpand": "Expand sidebar",
+  "sidebarCollapse": "Collapse sidebar",
+  "musicSearch": "Search songs",
+  "musicCount": "{count} songs",
+  "@musicCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "musicNoMatch": "No song matches.",
+  "musicStyle": "Style",
+  "musicGenre": "Genre",
+  "musicMood": "Mood",
+  "musicInstruments": "Instruments",
+  "musicVoice": "Vocals",
+  "musicTempo": "Tempo",
+  "musicStyleHint": "Tap a tag to add it to the style; tap again to remove it.",
+  "musicLyricsStats": "{lines} lines · {chars} characters",
+  "@musicLyricsStats": {
+    "placeholders": {
+      "lines": {},
+      "chars": {}
+    }
+  },
+  "musicOptions": "Options",
+  "musicNowPlaying": "Now playing",
+  "musicPlay": "Play",
+  "musicPause": "Pause",
+  "musicLyricsTitle": "Lyrics",
+  "musicSeekHint": "Tap a timed line to jump there.",
+  "musicGenPop": "Pop",
+  "musicGenRock": "Rock",
+  "musicGenElectronic": "Electronic",
+  "musicGenFolk": "Folk",
+  "musicGenChinese": "Chinese traditional",
+  "musicGenJazz": "Jazz",
+  "musicGenHipHop": "Hip-hop",
+  "musicGenLofi": "Lo-fi",
+  "musicGenOrchestral": "Orchestral",
+  "musicGenAnime": "Anime",
+  "musicMoodHappy": "Upbeat",
+  "musicMoodSad": "Melancholy",
+  "musicMoodEpic": "Epic",
+  "musicMoodCalm": "Calm",
+  "musicMoodDreamy": "Dreamy",
+  "musicMoodDark": "Dark",
+  "musicInsPiano": "Piano",
+  "musicInsGuitar": "Acoustic guitar",
+  "musicInsSynth": "Synthesizer",
+  "musicInsStrings": "Strings",
+  "musicInsGuzheng": "Guzheng",
+  "musicInsDrums": "Drums",
+  "musicVoxFemale": "Female vocals",
+  "musicVoxMale": "Male vocals",
+  "musicVoxChoir": "Choir",
+  "musicTempoSlow": "Slow",
+  "musicTempoMid": "Mid-tempo",
+  "musicTempoFast": "Fast",
+  "chainCheckExtra": "Extra: {extra}",
+  "@chainCheckExtra": {
+    "placeholders": {
+      "extra": {}
+    }
+  },
+  "capModelUnavailable": "{model} (unavailable)",
+  "@capModelUnavailable": {
+    "placeholders": {
+      "model": {}
+    }
+  },
+  "capFollowDefault": "Follow default ({model})",
+  "@capFollowDefault": {
+    "placeholders": {
+      "model": {}
+    }
+  },
+  "capFollowDefaultNone": "Follow default",
+  "subtitleModels": "Models",
+  "subtitleTranslateModel": "Translation model",
+  "provHubDefaults": "Default models",
+  "provHubDefaultsHint": "The model each capability uses by default; click a provider to open it",
+  "provHubDefaultsShort": "What each capability runs on",
+  "provHubRoleAiShort": "Profiles, model and stage prompts",
+  "provHubConnections": "Providers",
+  "provHubFeatureModels": "Models chosen by features",
+  "provHubFeatureModelsHint": "These features do not follow the defaults below",
+  "provHubResetFeatureModel": "Follow the default again",
+  "provModelCount": "{count, plural, =1{1 model} other{{count} models}}",
+  "@provModelCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "provConnection": "Connection",
+  "settingsAiServicesHint": "Providers, default models and role AI",
+  "capAutomaticInOrder": "Automatic: in the order below ({model})",
+  "@capAutomaticInOrder": {
+    "placeholders": {
+      "model": {}
+    }
+  },
+  "capAutoOrderHint": "With no default set, the first available connection below and its preferred model are used. Drag the handles to reorder; switched-off connections are skipped.",
+  "capPreferred": "Preferred",
+  "capPreferredModel": "Preferred: {model}",
+  "@capPreferredModel": {
+    "placeholders": {
+      "model": {}
+    }
+  },
+  "capModelAdded": "Added",
+  "capModelOrder": "Model order",
+  "capUseCustomModel": "Use “{model}” on {connection}",
+  "@capUseCustomModel": {
+    "placeholders": {
+      "model": {},
+      "connection": {}
+    }
+  },
+  "provHubConnectionsShort": "{count, plural, =1{1 connection} other{{count} connections}} · {enabled} on",
+  "@provHubConnectionsShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "enabled": {
+        "type": "int"
+      }
+    }
+  },
+  "provProvidersHint": "Tap to open its settings; drag the handle to reorder",
+  "roleAnalysisModelPick": "Analysis model",
+  "roleModelFollowDefault": "Follow the default LLM ({model})",
+  "@roleModelFollowDefault": {
+    "placeholders": {
+      "model": {}
+    }
+  },
+  "roleModelHint": "Role assignment checks and corrects itself through function calling. Type to search; a picked model is tested at once.",
+  "roleToolChecking": "Testing function calling…",
+  "roleToolSupported": "Supports function calling",
+  "roleToolUnsupported": "No function calling: role assignment cannot correct itself, pick another model",
+  "roleToolUnknown": "Function calling not tested yet",
+  "roleToolFailed": "Function calling test failed: {error}",
+  "@roleToolFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "roleToolTest": "Test",
+  "provAvailableModels": "Models you can add · {count}",
+  "@provAvailableModels": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "provAvailableModelsHint": "Listed by the model catalog or your account. Added models appear in the defaults, the model order and every model picker; starring one as the default adds it too.",
+  "quickTtsSendHint": "Enter to generate, Shift+Enter for a new line",
+  "voiceRequired": "Choose a voice",
+  "voiceNotForModel": "{model} does not offer the voice {voice}; choose another",
+  "@voiceNotForModel": {
+    "placeholders": {
+      "voice": {
+        "type": "String"
+      },
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "bankSwitch": "Switch voice bank",
+  "bankActions": "Voice bank actions",
+  "paneCharacterSettings": "Character settings",
+  "navOrderReset": "Restore default",
+  "navOrderTitle": "Sidebar",
+  "navOrderSubtitle": "Drag to reorder, and use the eye to hide pages you don''t use; AI services and Settings stay at the bottom.",
+  "navOrderHidden": "Hidden",
+  "navOrderHiddenCount": "{count, plural, =1{1 page hidden} other{{count} pages hidden}}; Restore default shows them all.",
+  "@navOrderHiddenCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "navOrderHide": "Hide {page} from the sidebar",
+  "@navOrderHide": {
+    "placeholders": {
+      "page": {
+        "type": "String"
+      }
+    }
+  },
+  "navOrderShow": "Show {page} in the sidebar",
+  "@navOrderShow": {
+    "placeholders": {
+      "page": {
+        "type": "String"
+      }
+    }
+  },
+  "navCharacterChat": "Character Chat",
+  "chatNew": "New chat",
+  "chatListEmpty": "No chats yet. Start one with a character.",
+  "chatPick": "Pick a chat, or start a new one",
+  "chatCharacter": "Character",
+  "chatEngine": "Mode",
+  "chatTitleOptional": "Title (optional)",
+  "chatNoCharacters": "Add a character in the Voice Bank first.",
+  "chatDeleteConfirm": "Delete \"{title}\" and all of its messages?",
+  "@chatDeleteConfirm": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "chatComposerHint": "Message {name}",
+  "@chatComposerHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatMicStart": "Talk (microphone)",
+  "chatMicStop": "Stop listening",
+  "chatMicUnavailable": "Speaking needs speech recognition and VAD services",
+  "chatCallStart": "Start call",
+  "chatCallEnd": "Hang up",
+  "chatEmptyCompanion": "Type a message, or turn on the microphone and talk. {name} answers in their own voice.",
+  "@chatEmptyCompanion": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatEmptyRealtime": "Start the call and just talk; {name} answers in real time. You can type too.",
+  "@chatEmptyRealtime": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatToolTime": "Checked the time",
+  "chatToolRemember": "Remembered: {fact}",
+  "@chatToolRemember": {
+    "placeholders": {
+      "fact": {
+        "type": "String"
+      }
+    }
+  },
+  "chatToolForget": "Forgot: {fact}",
+  "@chatToolForget": {
+    "placeholders": {
+      "fact": {
+        "type": "String"
+      }
+    }
+  },
+  "chatToolOther": "Used {name}",
+  "@chatToolOther": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatMemory": "Memory",
+  "chatMemoryEmpty": "Nothing remembered yet. Tell the character something about yourself.",
+  "chatLlmModel": "Chat model",
+  "chatUseTools": "Let the character use tools",
+  "chatUseToolsHint": "Check the time and remember what you tell them. The model must support function calling.",
+  "chatEmotion": "{emotion, select, happy{happy} sad{sad} angry{angry} surprised{surprised} shy{shy} serious{serious} playful{playful} other{calm}}",
+  "@chatEmotion": {
+    "placeholders": {
+      "emotion": {
+        "type": "String"
+      }
+    }
+  },
+  "chatReplay": "Play again",
+  "chatStopReplay": "Stop",
+  "chatPanelPersona": "Persona",
+  "chatPersonaHint": "Who the character is: personality, way of speaking, relationship with you. Empty uses the default below.",
+  "chatPersonaDefault": "Default persona",
+  "chatPanelModel": "Model",
+  "chatPanelVoice": "Voice",
+  "chatModelFeatures": "Capabilities",
+  "chatFeatureTools": "Tools",
+  "chatFeatureStructured": "Structured reply",
+  "chatFeatureTranscribe": "Transcribes you",
+  "chatFeatureVad": "Turn detection",
+  "chatFeatureUnknown": "Capabilities unknown; tools are tried and dropped if refused",
+  "chatToolsUnsupported": "This model has no tools; the character just talks.",
+  "chatVoiceChain": "Chain: {steps}",
+  "@chatVoiceChain": {
+    "placeholders": {
+      "steps": {
+        "type": "String"
+      }
+    }
+  },
+  "chatVoiceNoChain": "No processing chain",
+  "chatVoiceChainHint": "Translation, rewriting and voice conversion are set in the character''s processing chain in the Voice Bank.",
+  "chatVoiceRealtimeHint": "A call speaks with the Realtime voice; the chain''s voice conversion is applied to it.",
+  "chatAppliesNextCall": "Changes apply the next time you start a call.",
+  "chatChainConverts": "Voice conversion from the processing chain",
+  "themeSettingsTitle": "Theme",
+  "themeSettingsSubtitle": "Follow the system, or always use light or dark.",
+  "themeModeSystem": "Auto",
+  "themeModeLight": "Light",
+  "themeModeDark": "Dark",
+  "linkCopied": "Link copied to the clipboard.",
+  "updateTitle": "Software update",
+  "updateCurrent": "Current version v{version}",
+  "@updateCurrent": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateChecking": "Checking for updates…",
+  "updateUpToDate": "v{version} is the latest version.",
+  "@updateUpToDate": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCheckFailed": "Could not reach GitHub; try again later.",
+  "updateAvailableTitle": "Version v{version} is available",
+  "@updateAvailableTitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailableBody": "You have v{current}; v{latest} is ready to download.",
+  "@updateAvailableBody": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "latest": {
+        "type": "String"
+      }
+    }
+  },
+  "updatePublished": "Released {date}",
+  "@updatePublished": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "updateSkipVersion": "Skip this version",
+  "updateLater": "Later",
+  "updateDownload": "Download",
+  "updateCheckNow": "Check now",
+  "updateAutoTitle": "Check at startup",
+  "updateAutoSubtitle": "When the app opens, look for a newer release on GitHub and say so.",
+  "updateReleasesPage": "Releases page",
+  "@aboutSubtitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "novelGenerateChapter": "Generate Chapter",
+  "novelExportChapter": "Export Chapter",
+  "novelExportEachChapter": "Export Each Chapter",
+  "novelExportEachChapterTooltip": "Write one audio file per chapter into a new folder",
+  "novelExportChaptersFolder": "Choose a folder for the chapter files",
+  "novelGenerateChapterBeforeExport": "Generate the cache of “{chapter}” before exporting.",
+  "@novelGenerateChapterBeforeExport": {
+    "placeholders": {
+      "chapter": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceSeed": "Random seed (optional)",
+  "voiceSeedHelper": "Same seed, same text → the same take. Keeps a cloned voice steady across lines. Leave empty for a new take each time.",
+  "voiceSeedInvalid": "Enter a whole number from 0 to 4294967295.",
+  "voiceSeedRandomize": "Pick a random seed"
 }

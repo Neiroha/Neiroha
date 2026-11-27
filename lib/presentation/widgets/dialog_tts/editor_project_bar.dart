@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/widgets/layout/window_drag_area.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
@@ -22,63 +23,66 @@ class EditorProjectBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < _compactWidth;
-        return Container(
-          padding: compact
-              ? const EdgeInsets.fromLTRB(4, 6, 12, 6)
-              : const EdgeInsets.fromLTRB(12, 10, 20, 10),
-          child: Row(
-            children: [
-              IconButton(
-                tooltip: AppLocalizations.of(context).uiBackToProjects,
-                onPressed: onClose,
-                icon: const Icon(Icons.arrow_back_rounded, size: 20),
-              ),
-              if (!compact) ...[
-                SizedBox(width: 4),
-                Icon(
-                  Icons.forum_rounded,
-                  color: AppTheme.accentColor,
-                  size: 18,
+    return WindowDragArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < _compactWidth;
+          return Container(
+            constraints: const BoxConstraints(minHeight: 52),
+            padding: compact
+                ? const EdgeInsets.fromLTRB(4, 6, 12, 6)
+                : const EdgeInsets.fromLTRB(6, 6, 16, 6),
+            child: Row(
+              children: [
+                IconButton(
+                  tooltip: AppLocalizations.of(context).uiBackToProjects,
+                  onPressed: onClose,
+                  icon: const Icon(Icons.arrow_back_rounded, size: 20),
                 ),
-                SizedBox(width: 10),
-              ],
-              Expanded(
-                child: Text(
-                  project.name,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                if (!compact) ...[
+                  SizedBox(width: 4),
+                  Icon(
+                    Icons.forum_rounded,
+                    color: AppTheme.accentColor,
+                    size: 18,
                   ),
-                ),
-              ),
-              if (!compact) ...[
-                SizedBox(width: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceDim,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
+                  SizedBox(width: 10),
+                ],
+                Expanded(
                   child: Text(
-                    AppLocalizations.of(context).uiVoiceCount(voiceCount),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.5),
+                    project.name,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
+                if (!compact) ...[
+                  SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.colors.panel,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      AppLocalizations.of(context).uiVoiceCount(voiceCount),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: context.fg.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
+                ],
               ],
-            ],
-          ),
-        );
-      },
+            ),
+          );
+        },
+      ),
     );
   }
 }

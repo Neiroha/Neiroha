@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:neiroha/data/adapters/minimax_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/minimax/tts/minimax_tts_adapter.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 
 class PresetVoiceStyleFields extends StatelessWidget {

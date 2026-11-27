@@ -118,7 +118,7 @@ class _ModelCapabilityPickerState extends ConsumerState<ModelCapabilityPicker> {
           children: [
             Text('${widget.provider.name} · ${widget.route.name}'),
             TextButton.icon(
-              icon: const Icon(Icons.dns_outlined),
+              icon: const Icon(Icons.dns_rounded),
               label: Text(l.modelReadDeclaration),
               onPressed: _busy
                   ? null

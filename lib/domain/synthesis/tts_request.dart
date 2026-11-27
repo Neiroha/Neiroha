@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:neiroha/domain/enums/adapter_type.dart';
+
 /// Request payload for TTS synthesis, unified across all adapters.
 class TtsRequest {
   final String text;
@@ -26,6 +28,17 @@ class TtsRequest {
   // Audio tag prefix prepended to text, e.g. "(磁性)" or "(兴奋|颤抖)"
   final String? audioTagPrefix;
 
+  /// Voice character this line is spoken by. Lets the synthesis service run
+  /// the character's processing chain (translate → TTS → voice conversion).
+  final String? voiceAssetId;
+
+  /// Fixed sampling seed for engines that take one; null lets the engine
+  /// pick a new one every request.
+  final int? seed;
+
+  /// Largest seed accepted: CosyVoice seeds NumPy, which takes 32 bits.
+  static const maxSeed = 0xFFFFFFFF;
+
   const TtsRequest({
     required this.text,
     required this.voice,
@@ -39,7 +52,57 @@ class TtsRequest {
     this.presetVoiceName,
     this.voiceClonePromptBase64,
     this.audioTagPrefix,
+    this.voiceAssetId,
+    this.seed,
   });
+
+  /// Older GPT-SoVITS characters stored the text language in the model field.
+  static String? legacyTextLanguage(String adapterType, String? modelName) {
+    if (adapterType != AdapterType.gptSovits.name) return null;
+    final language = modelName?.trim().toLowerCase();
+    return const {
+          'auto',
+          'auto_yue',
+          'en',
+          'zh',
+          'ja',
+          'yue',
+          'ko',
+          'all_zh',
+          'all_ja',
+          'all_yue',
+          'all_ko',
+        }.contains(language)
+        ? language
+        : null;
+  }
+
+  /// Same request with [text] replaced (after a chain's text steps).
+  TtsRequest withText(String text) => _copy(text, responseFormat);
+
+  /// Same request asking for [format] (`pcm`, `wav`, …).
+  TtsRequest withFormat(String format) => _copy(text, format);
+
+  /// Same request asking for a whole file instead of streamed raw PCM.
+  TtsRequest asWholeFile() =>
+      responseFormat == 'pcm' ? _copy(text, null) : this;
+
+  TtsRequest _copy(String text, String? format) => TtsRequest(
+    text: text,
+    voice: voice,
+    speed: speed,
+    responseFormat: format,
+    refAudioPath: refAudioPath,
+    promptText: promptText,
+    promptLang: promptLang,
+    textLang: textLang,
+    voiceInstruction: voiceInstruction,
+    presetVoiceName: presetVoiceName,
+    voiceClonePromptBase64: voiceClonePromptBase64,
+    audioTagPrefix: audioTagPrefix,
+    voiceAssetId: voiceAssetId,
+    seed: seed,
+  );
 }
 
 /// Result of a TTS synthesis call.

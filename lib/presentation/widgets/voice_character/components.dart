@@ -10,283 +10,7 @@ import 'package:neiroha/presentation/theme/app_theme.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 
-class VoiceCharacterVoxCpm2ModeSelector extends StatelessWidget {
-  final String? selected;
-  final ValueChanged<String> onChanged;
-
-  const VoiceCharacterVoxCpm2ModeSelector({
-    super.key,
-    required this.selected,
-    required this.onChanged,
-  });
-
-  static const _modes = [
-    (
-      'design',
-      Icons.text_fields_rounded,
-      'Design',
-      'Describe the voice\nin natural language',
-    ),
-    ('clone', Icons.mic_rounded, 'Clone', 'Clone voice from\nreference audio'),
-    (
-      'ultimate_clone',
-      Icons.auto_awesome_rounded,
-      'Ultra Clone',
-      'Clone with prompt\ntranscript + audio',
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: _modes.map((rec) {
-        final (mode, icon, label, hint) = rec;
-        final isSelected = selected == mode;
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(right: mode != 'ultimate_clone' ? 8 : 0),
-            child: InkWell(
-              onTap: () => onChanged(mode),
-              borderRadius: BorderRadius.circular(10),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: isSelected
-                      ? AppTheme.accentColor.withValues(alpha: 0.15)
-                      : AppTheme.surfaceDim,
-                  border: Border.all(
-                    color: isSelected
-                        ? AppTheme.accentColor.withValues(alpha: 0.5)
-                        : Colors.transparent,
-                    width: 1.5,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      icon,
-                      size: 20,
-                      color: isSelected
-                          ? AppTheme.accentColor
-                          : Colors.white.withValues(alpha: 0.5),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      hint,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.white.withValues(alpha: 0.4),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class VoiceCharacterCosyVoiceModeSelector extends StatelessWidget {
-  final String? selected;
-  final ValueChanged<String> onChanged;
-
-  const VoiceCharacterCosyVoiceModeSelector({
-    super.key,
-    required this.selected,
-    required this.onChanged,
-  });
-
-  static const _modes = [
-    (
-      'zero_shot',
-      Icons.mic_rounded,
-      'Zero Shot',
-      'Clone voice from\nreference audio',
-    ),
-    (
-      'cross_lingual',
-      Icons.translate_rounded,
-      'Cross Lingual',
-      'Cross-language\nvoice synthesis',
-    ),
-    (
-      'instruct',
-      Icons.text_fields_rounded,
-      'Instruct',
-      'Control voice via\ntext instructions',
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: _modes.map((rec) {
-        final (mode, icon, label, hint) = rec;
-        final isSelected = selected == mode;
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(right: mode != 'instruct' ? 8 : 0),
-            child: InkWell(
-              onTap: () => onChanged(mode),
-              borderRadius: BorderRadius.circular(10),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: isSelected
-                      ? AppTheme.accentColor.withValues(alpha: 0.15)
-                      : AppTheme.surfaceDim,
-                  border: Border.all(
-                    color: isSelected
-                        ? AppTheme.accentColor.withValues(alpha: 0.5)
-                        : Colors.transparent,
-                    width: 1.5,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      icon,
-                      size: 20,
-                      color: isSelected
-                          ? AppTheme.accentColor
-                          : Colors.white.withValues(alpha: 0.5),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      hint,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.white.withValues(alpha: 0.4),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class VoiceCharacterGptSovitsModeSelector extends StatelessWidget {
-  final String? selected;
-  final ValueChanged<String> onChanged;
-
-  const VoiceCharacterGptSovitsModeSelector({
-    super.key,
-    required this.selected,
-    required this.onChanged,
-  });
-
-  static const _modes = [
-    (
-      'trained',
-      Icons.record_voice_over_rounded,
-      'Trained',
-      'Use a saved\nspeaker profile',
-    ),
-    ('clone', Icons.mic_rounded, 'Clone', 'Clone voice from\nreference audio'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: _modes.map((rec) {
-        final (mode, icon, label, hint) = rec;
-        final isSelected = selected == mode;
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(right: mode != 'clone' ? 8 : 0),
-            child: InkWell(
-              onTap: () => onChanged(mode),
-              borderRadius: BorderRadius.circular(10),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: isSelected
-                      ? AppTheme.accentColor.withValues(alpha: 0.15)
-                      : AppTheme.surfaceDim,
-                  border: Border.all(
-                    color: isSelected
-                        ? AppTheme.accentColor.withValues(alpha: 0.5)
-                        : Colors.transparent,
-                    width: 1.5,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      icon,
-                      size: 20,
-                      color: isSelected
-                          ? AppTheme.accentColor
-                          : Colors.white.withValues(alpha: 0.5),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      hint,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.white.withValues(alpha: 0.4),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
+part 'mode_selectors.dart';
 
 class VoiceCharacterRefAudioPicker extends ConsumerWidget {
   final String? path;
@@ -312,12 +36,12 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceDim,
+          color: context.colors.panel,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: path != null
-                ? Colors.green.withValues(alpha: 0.4)
-                : Colors.white.withValues(alpha: 0.1),
+                ? context.colors.success.withValues(alpha: 0.4)
+                : context.fg.withValues(alpha: 0.1),
           ),
         ),
         child: path == null
@@ -326,20 +50,18 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
                 children: [
                   Icon(
                     Icons.upload_file_rounded,
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: context.fg.withValues(alpha: 0.4),
                   ),
                   SizedBox(width: 10),
                   Text(
                     AppLocalizations.of(context).uiClickToSelectAudioFile,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
-                    ),
+                    style: TextStyle(color: context.fg.withValues(alpha: 0.4)),
                   ),
                 ],
               )
             : Row(
                 children: [
-                  const Icon(Icons.audio_file_rounded, color: Colors.green),
+                  Icon(Icons.audio_file_rounded, color: context.colors.success),
                   SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -357,7 +79,7 @@ class VoiceCharacterRefAudioPicker extends ConsumerWidget {
                           AppLocalizations.of(context).uiTapToChange,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.3),
+                            color: context.fg.withValues(alpha: 0.3),
                           ),
                         ),
                       ],
@@ -418,12 +140,13 @@ class VoiceCharacterAvatar extends StatelessWidget {
     }
     return CircleAvatar(
       radius: radius,
-      backgroundColor: selected
-          ? AppTheme.accentColor
-          : const Color(0xFF2A2A36),
+      backgroundColor: selected ? AppTheme.accentColor : context.colors.divider,
       child: Text(
         name.isNotEmpty ? name[0].toUpperCase() : '?',
-        style: TextStyle(fontSize: radius * 0.75, color: Colors.white),
+        style: TextStyle(
+          fontSize: radius * 0.75,
+          color: selected ? Colors.white : context.fg,
+        ),
       ),
     );
   }
@@ -460,7 +183,7 @@ class VoiceCharacterSectionLabel extends StatelessWidget {
       fontSize: 11,
       fontWeight: FontWeight.w600,
       letterSpacing: 1.2,
-      color: Colors.white.withValues(alpha: 0.4),
+      color: context.fg.withValues(alpha: 0.4),
     ),
   );
 }
@@ -563,7 +286,7 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
                     ? Icons.arrow_drop_up_rounded
                     : Icons.arrow_drop_down_rounded,
                 size: 20,
-                color: Colors.white.withValues(alpha: 0.4),
+                color: context.fg.withValues(alpha: 0.4),
               ),
             ),
             child: Text(
@@ -571,8 +294,8 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
               style: TextStyle(
                 fontSize: 14,
                 color: widget.selected != null
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: 0.4),
+                    ? context.fg
+                    : context.fg.withValues(alpha: 0.4),
               ),
             ),
           ),
@@ -603,9 +326,9 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
           Container(
             height: 200,
             decoration: BoxDecoration(
-              color: AppTheme.surfaceDim,
+              color: context.colors.panel,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              border: Border.all(color: context.fg.withValues(alpha: 0.08)),
             ),
             child: _filtered.isEmpty
                 ? Center(
@@ -613,7 +336,7 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
                       'No match "${_searchCtrl.text}"',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: context.fg.withValues(alpha: 0.4),
                       ),
                     ),
                   )
@@ -651,7 +374,7 @@ class _VoiceSearchPickerState extends State<VoiceCharacterVoiceSearchPicker> {
                                     fontSize: 13,
                                     color: isSelected
                                         ? AppTheme.accentColor
-                                        : Colors.white.withValues(alpha: 0.85),
+                                        : context.fg.withValues(alpha: 0.85),
                                     fontWeight: isSelected
                                         ? FontWeight.w600
                                         : FontWeight.normal,

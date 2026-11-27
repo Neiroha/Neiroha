@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// Result of [showCueEditDialog]. `autoTts` / `autoSync` are only set
 /// when the dialog was rendered with `showAutoSwitches: true` (the
@@ -150,8 +151,8 @@ Future<CueEdit?> showCueEditDialog({
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
                       errorMsg!,
-                      style: const TextStyle(
-                        color: Colors.redAccent,
+                      style: TextStyle(
+                        color: context.colors.danger,
                         fontSize: 12,
                       ),
                     ),
@@ -380,7 +381,7 @@ Future<bool> showClearCuesConfirmDialog(BuildContext context) async {
           child: Text(AppLocalizations.of(context).uiCancel),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+          style: FilledButton.styleFrom(backgroundColor: context.colors.danger),
           onPressed: () => Navigator.pop(ctx, true),
           child: Text(AppLocalizations.of(context).uiClear),
         ),

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
+import 'package:neiroha/data/ai/protocols/openai/llm_chat_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/capabilities/capability_repository.dart';
 import 'package:neiroha/data/services/capabilities/role_ai_model.dart';
@@ -45,11 +45,8 @@ class RoleAnalysisService {
       RoleAnalysisCheckpointStore(database);
   bool isRunning(String projectId) => _active.containsKey(projectId);
   void pause(String projectId) => _active[projectId]?.cancel();
-  void dispose() {
-    for (final token in _active.values) {
-      token.cancel();
-    }
-  }
+  void dispose() => _active.values.forEach(_cancel);
+  static void _cancel(TtsCancelToken token) => token.cancel();
 
   Future<void> run({
     required String projectId,
@@ -175,6 +172,7 @@ class RoleAnalysisService {
       progress();
       try {
         final result = await queue.enqueue(
+          capability: AiCapability.llm,
           provider: provider,
           source: 'Novel role analysis',
           label: checkpoint.stage,

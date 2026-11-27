@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:neiroha/data/adapters/llm_chat_adapter.dart';
+import 'package:neiroha/data/ai/protocols/openai/llm_chat_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/domain/novel/role_direction.dart';
@@ -81,6 +81,7 @@ class RoleDirectionService {
         ? {'type': 'string', 'enum': voices.map((v) => v.id).toList()}
         : {'type': 'string', 'maxLength': 500};
     final result = await queue.enqueue(
+      capability: AiCapability.llm,
       provider: provider,
       source: 'Novel director',
       label: task.name,

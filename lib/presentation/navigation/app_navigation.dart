@@ -4,11 +4,14 @@ import 'package:flutter_riverpod/legacy.dart';
 enum NavTab {
   novelReader(Icons.menu_book_rounded, 'Novel Reader'),
   dialogTts(Icons.forum_rounded, 'Dialog TTS'),
+  characterChat(Icons.record_voice_over_rounded, 'Character Chat'),
   phaseTts(Icons.auto_stories_rounded, 'Phase TTS'),
   videoDub(Icons.movie_filter_rounded, 'Video Dub'),
+  subtitles(Icons.subtitles_rounded, 'Transcribe & Translate'),
+  music(Icons.queue_music_rounded, 'Song Studio'),
   voiceAssets(Icons.library_music_rounded, 'Voice Assets'),
   voiceBank(Icons.people_alt_rounded, 'Voice Bank'),
-  providers(Icons.dns_rounded, 'Providers'),
+  providers(Icons.dns_rounded, 'AI Services'),
   settings(Icons.settings_rounded, 'Settings');
 
   final IconData icon;
@@ -16,7 +19,14 @@ enum NavTab {
   const NavTab(this.icon, this.label);
 
   bool get requiresDesktop => switch (this) {
-    novelReader || dialogTts || phaseTts || videoDub || voiceAssets => true,
+    novelReader ||
+    dialogTts ||
+    characterChat ||
+    phaseTts ||
+    videoDub ||
+    subtitles ||
+    music ||
+    voiceAssets => true,
     voiceBank || providers || settings => false,
   };
 
@@ -31,11 +41,6 @@ enum NavTab {
 
 enum SettingsSection {
   general(Icons.tune_rounded, 'General', 'Startup and workspace behavior'),
-  roleAi(
-    Icons.psychology_alt_rounded,
-    'Role assignment AI',
-    'Profiles, stage prompts and defaults',
-  ),
   tasks(
     Icons.task_alt_rounded,
     'Tasks',

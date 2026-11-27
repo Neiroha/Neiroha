@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:ui' show AppExitResponse;
 import 'package:neiroha/providers/playback_provider.dart';
 import 'package:neiroha/providers/novel_role_providers.dart';
@@ -5,20 +7,25 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/data/services/synthesis/voice_chain_runner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'data/database/app_database.dart' show AppDatabaseStorageQueries;
+import 'data/database/app_database.dart'
+    show AppDatabaseAiQueries, AppDatabaseStorageQueries;
 import 'data/storage/path_service.dart';
 import 'l10n/app_locale.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'presentation/screens/app_shell.dart';
 import 'presentation/theme/app_font.dart';
 import 'presentation/theme/app_theme.dart';
+import 'data/services/transcription/media_pcm_decoder.dart';
+import 'providers/ai_capability_providers.dart';
 import 'providers/app_providers.dart';
 import 'server/api_server.dart';
+import 'package:neiroha/presentation/theme/app_theme_mode.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,8 +44,12 @@ void main() async {
   // OS app-support dir otherwise).
   await PathService.instance.init();
 
-  if (Platform.isWindows) {
+  // Page headers drag the window through window_manager; on macOS it must
+  // be initialized too, or startDragging dereferences a nil window.
+  if (Platform.isWindows || Platform.isMacOS) {
     await windowManager.ensureInitialized();
+  }
+  if (Platform.isWindows) {
     const windowOptions = WindowOptions(
       title: 'Neiroha',
       titleBarStyle: TitleBarStyle.hidden,
@@ -62,17 +73,60 @@ class NeirohaApp extends ConsumerStatefulWidget {
 
 class _NeirohaAppState extends ConsumerState<NeirohaApp> {
   late final AppLifecycleListener _lifecycle;
+  late final StreamSubscription<Object?> _capabilityLimits;
   Future<void>? _webSettings;
   @override
   void initState() {
     super.initState();
+    // Every app synthesis path runs the character's processing chain.
+    // Desktop decodes encoded engines with FFmpeg so they stream by sentence.
+    final ffmpeg = ref.read(ffmpegServiceProvider);
+    final decoder = kIsWeb ? null : MediaPcmDecoder(ffmpeg);
+    final chains = VoiceChainHook(
+      ref.read(databaseProvider),
+      decode: decoder == null
+          ? null
+          : (bytes, format) =>
+                decodeSpeechBytes(decoder, bytes, format.extension),
+      decodeAvailable: ffmpeg.isAvailable,
+    );
+    ref.read(ttsQueueServiceProvider)
+      ..voiceChains = chains.wrap
+      ..hasVoiceChain = chains.applies;
+    // Queue lanes follow the per-capability limits as they are edited.
+    _capabilityLimits = ref
+        .read(databaseProvider)
+        .watchConnectionCapabilities()
+        .listen(ref.read(ttsQueueServiceProvider).setCapabilityLimits);
+    // Public model facts (models.dev): cached copy now, refresh daily.
+    unawaited(startModelCatalogRefresh(ref));
     _lifecycle = AppLifecycleListener(
       onExitRequested: () async {
         if (kIsWeb) return AppExitResponse.exit;
         ref.read(roleAnalysisServiceProvider).dispose();
         ref.read(roleReviewServiceProvider).dispose();
-        await ref.read(playbackNotifierProvider.notifier).stop();
-        await ref.read(apiServerProvider).stop();
+        // Each step is bounded: a step that fails or hangs must not keep
+        // the app from quitting. Timings go to logs/last_exit.log, written
+        // before and after every step so a crash shows where it happened.
+        final log = <String>['started'];
+        _writeExitLog(log);
+        await _exitStep(
+          'playback',
+          ref.read(playbackNotifierProvider.notifier).stop,
+          log,
+        );
+        await _exitStep('api server', ref.read(apiServerProvider).stop, log);
+        await _exitStep('capability limits', _capabilityLimits.cancel, log);
+        // Close SQLite before the engine ends the process: left open, its
+        // finalizer can run while the process tears down and crash in
+        // sqlite3Close.
+        await _exitStep(
+          'database',
+          ref.read(databaseProvider).closeConnection,
+          log,
+          timeout: const Duration(seconds: 5),
+        );
+        _writeExitLog(log..add('done'));
         return AppExitResponse.exit;
       },
     );
@@ -84,9 +138,47 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
     }
   }
 
+  static Future<void> _exitStep(
+    String name,
+    Future<void> Function() step,
+    List<String> log, {
+    Duration timeout = const Duration(seconds: 2),
+  }) async {
+    final watch = Stopwatch()..start();
+    log.add('$name: running');
+    _writeExitLog(log);
+    log.removeLast();
+    var outcome = 'ok';
+    try {
+      await step().timeout(timeout);
+    } on TimeoutException {
+      outcome = 'timed out';
+    } catch (error) {
+      outcome = 'failed: $error';
+    }
+    log.add('$name: ${watch.elapsedMilliseconds} ms, $outcome');
+    _writeExitLog(log);
+  }
+
+  /// Records how the last quit went, to trace a step that hangs.
+  static void _writeExitLog(List<String> log) {
+    try {
+      final file = File(
+        '${PathService.instance.dataRoot.path}/logs/last_exit.log',
+      );
+      file.parent.createSync(recursive: true);
+      file.writeAsStringSync(
+        '${DateTime.now().toIso8601String()}\n${log.join('\n')}\n',
+      );
+    } catch (_) {
+      // Logging must never block quitting.
+    }
+  }
+
   @override
   void dispose() {
     _lifecycle.dispose();
+    unawaited(_capabilityLimits.cancel());
     super.dispose();
   }
 
@@ -110,6 +202,7 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
     final db = ref.read(databaseProvider);
     final storedLocale = await db.getSetting(AppLocaleSettings.localeKey);
     final storedFont = await db.getSetting(AppFontSettings.fontModeKey);
+    final storedTheme = await db.getSetting(AppThemeSettings.themeModeKey);
     final locale = AppLocaleSettings.parse(storedLocale);
     await db.localizeStarterContent(AppLocaleSettings.storageValue(locale));
     if (!mounted) return;
@@ -117,17 +210,23 @@ class _NeirohaAppState extends ConsumerState<NeirohaApp> {
     ref.read(appFontModeProvider.notifier).state = AppFontMode.parse(
       storedFont,
     );
+    ref.read(appThemeModeProvider.notifier).state = AppThemeSettings.parse(
+      storedTheme,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final locale = ref.watch(appLocaleProvider);
     final fontMode = ref.watch(appFontModeProvider);
+    final themeMode = ref.watch(appThemeModeProvider);
     return MaterialApp(
       title: 'Neiroha',
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark(fontMode: fontMode),
+      theme: AppTheme.light(fontMode: fontMode),
+      darkTheme: AppTheme.dark(fontMode: fontMode),
+      themeMode: themeMode,
       locale: locale,
       supportedLocales: AppLocaleSettings.supportedLocales,
       localizationsDelegates: const [

@@ -1,6 +1,6 @@
 # SQLite 数据库迁移
 
-应用使用 Drift 与 SQLite 的 `PRAGMA user_version`。当前 schema 是 **v33**，与应用发行版号独立。
+应用使用 Drift 与 SQLite 的 `PRAGMA user_version`。当前 schema 是 **v37**，与应用发行版号独立。
 
 | 入口 | 职责 |
 | --- | --- |
@@ -25,6 +25,10 @@
 | v25–v27 | `be6af9d` 增加 Provider 并发及配额列。`68b8d55` 修复缺失的表与配额列。`0f56082` 增加小说播放间隔。 |
 | v29–v32 | `d4811fc` 调整旧默认 Provider 参数。`3794e7f` 补充默认 Provider。`f216cc8` 增加响度及合并设置。`643164b` 新增默认 OpenAI 官方连接。 |
 | v33 | `a323573` 增加小说角色、标注、声音绑定和编辑记录。 |
+| v34 | `feat/ai-capability-layer` 增加 `voice_asset_settings`、`connection_capabilities`、`provider_models`、`capability_defaults`，并把 `voice.chain.*`、`dialog.live.*` 设置迁入 `voice_asset_settings`。 |
+| v35 | `a9bae7c` 为 `connection_capabilities` 增加 `position`、`model_order`（按能力排列连接与模型）。 |
+| v36 | `b63f566` 增加 `chat_sessions`、`chat_messages`（角色聊天）。 |
+| v37 | 为 `voice_assets` 增加可空的 `seed`（角色固定随机种子，[Issue #13](https://github.com/Neiroha/Neiroha/issues/13)）。 |
 
 v3、v7、v11、v28 没有独立的 schema 提交。v8、v10、v15 提升了版本号，生成的表结构未变化。升级表保留这些空步骤，方便解释旧文件的版本号。早期新库种子数据仍由初始化负责。
 

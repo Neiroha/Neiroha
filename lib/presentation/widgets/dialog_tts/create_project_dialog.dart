@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/widgets/project_creation_dialog.dart';
 
 /// Result of [showCreateDialogTtsProjectDialog].
 class CreateDialogProjectResult {
@@ -16,69 +17,12 @@ Future<CreateDialogProjectResult?> showCreateDialogTtsProjectDialog({
   required BuildContext context,
   required List<db.VoiceBank> banks,
 }) async {
-  final nameCtrl = TextEditingController();
-  String selectedBankId = banks.first.id;
-
-  try {
-    final result = await showDialog<CreateDialogProjectResult>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(AppLocalizations.of(context).uiNewDialogTTSProject),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context).uiProjectName,
-                ),
-              ),
-              SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context).navVoiceBank,
-                ),
-                isExpanded: true,
-                initialValue: selectedBankId,
-                items: banks
-                    .map(
-                      (b) => DropdownMenuItem(value: b.id, child: Text(b.name)),
-                    )
-                    .toList(),
-                onChanged: (v) {
-                  if (v != null) {
-                    setDialogState(() => selectedBankId = v);
-                  }
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(AppLocalizations.of(context).uiCancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(
-                ctx,
-                CreateDialogProjectResult(
-                  name: nameCtrl.text,
-                  bankId: selectedBankId,
-                ),
-              ),
-              child: Text(AppLocalizations.of(context).uiCreate),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (result == null) return null;
-    final trimmed = result.name.trim();
-    if (trimmed.isEmpty) return null;
-    return CreateDialogProjectResult(name: trimmed, bankId: result.bankId);
-  } finally {
-    nameCtrl.dispose();
-  }
+  final result = await showProjectCreationDialog(
+    context: context,
+    title: AppLocalizations.of(context).uiNewDialogTTSProject,
+    banks: banks,
+  );
+  return result == null
+      ? null
+      : CreateDialogProjectResult(name: result.name, bankId: result.bankId);
 }

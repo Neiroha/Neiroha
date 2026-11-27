@@ -11,6 +11,7 @@ import 'package:neiroha/providers/app_providers.dart';
 
 import 'settings_shared.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 // ───────────────────────────── Storage card ─────────────────────────────
 
@@ -108,7 +109,9 @@ class StorageSettingsCard extends ConsumerWidget {
               title: AppLocalizations.of(context).uiClearAllArchivedAudio,
               subtitle: AppLocalizations.of(context).uiText,
               trailing: TextButton(
-                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                style: TextButton.styleFrom(
+                  foregroundColor: context.colors.danger,
+                ),
                 onPressed: () => _clearAll(context, ref),
                 child: Text(AppLocalizations.of(context).uiClear2),
               ),
@@ -279,7 +282,7 @@ class _ClearAudioDialogState extends State<_ClearAudioDialog> {
           child: Text(AppLocalizations.of(context).uiCancel),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+          style: FilledButton.styleFrom(backgroundColor: context.colors.danger),
           onPressed: canConfirm ? () => Navigator.pop(context, true) : null,
           child: Text(AppLocalizations.of(context).uiClearAudio),
         ),

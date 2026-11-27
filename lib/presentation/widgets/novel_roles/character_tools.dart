@@ -31,7 +31,7 @@ class NovelCharacterTools extends ConsumerWidget {
       spacing: 8,
       children: [
         TextButton.icon(
-          icon: const Icon(Icons.tune),
+          icon: const Icon(Icons.tune_rounded),
           label: Text(l.roleStyleMatrix),
           onPressed: () => showDialog<void>(
             context: context,
@@ -45,7 +45,7 @@ class NovelCharacterTools extends ConsumerWidget {
           ),
         ),
         TextButton.icon(
-          icon: const Icon(Icons.person_add_alt),
+          icon: const Icon(Icons.person_add_alt_rounded),
           label: Text(l.roleSplitCharacter),
           onPressed: () => showDialog<void>(
             context: context,

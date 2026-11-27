@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import 'tables.dart';
+import 'ai_tables.dart';
+import 'chat_tables.dart';
 import 'novel_role_tables.dart';
 import 'database_connection.dart'
     if (dart.library.js_interop) 'database_connection_web.dart';
@@ -15,6 +19,8 @@ part 'queries/tts.dart';
 part 'queries/projects.dart';
 part 'queries/novel.dart';
 part 'queries/storage.dart';
+part 'queries/ai.dart';
+part 'queries/chat.dart';
 
 @DriftDatabase(
   tables: [
@@ -41,6 +47,12 @@ part 'queries/storage.dart';
     SubtitleCues,
     AudioTracks,
     TimelineClips,
+    VoiceAssetSettings,
+    ConnectionCapabilities,
+    ProviderModels,
+    CapabilityDefaults,
+    ChatSessions,
+    ChatMessages,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -53,4 +65,15 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => databaseMigrationStrategy(this);
+
+  /// Closes the SQLite connection without waiting for stream queries to
+  /// finish. [close] waits until every watcher has seen its stream end,
+  /// and Riverpod pauses the watchers of providers nobody is looking at,
+  /// so on quit it could wait forever and leave SQLite to be closed by its
+  /// finalizer while the process exits, which crashes. It also waits for
+  /// the SQLite isolate to exit, as drift answers before the file is shut.
+  Future<void> closeConnection() async {
+    await executor.close();
+    await databaseIsolatesExited();
+  }
 }

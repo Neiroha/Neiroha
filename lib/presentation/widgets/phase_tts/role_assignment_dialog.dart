@@ -296,19 +296,19 @@ class _TextRoleAssignmentDialogState extends State<TextRoleAssignmentDialog> {
             if (token != null)
               action(
                 l.phaseRoleStop,
-                Icons.stop,
+                Icons.stop_rounded,
                 token.isCancelled ? null : () => setState(token.cancel),
               ),
             if (!busy && preview == null && plan != null)
               action(
                 l.phaseRoleBackToPreview,
-                Icons.preview_outlined,
+                Icons.preview_rounded,
                 () => setState(() => _showPreview = true),
               ),
             if (!busy && preview == null)
               action(
                 l.phaseRoleAnalyze,
-                Icons.auto_awesome_outlined,
+                Icons.auto_awesome_rounded,
                 withinLimit &&
                         _providerId != null &&
                         _model.text.trim().isNotEmpty
@@ -320,12 +320,12 @@ class _TextRoleAssignmentDialogState extends State<TextRoleAssignmentDialog> {
             if (preview != null) ...[
               action(
                 l.phaseRoleAdjustIntent,
-                Icons.tune,
+                Icons.tune_rounded,
                 () => setState(() => _showPreview = false),
               ),
               action(
                 l.phaseRoleApply,
-                Icons.check,
+                Icons.check_rounded,
                 () => _apply(preview),
                 primary: true,
               ),
@@ -359,7 +359,7 @@ class _TextRoleAssignmentDialogState extends State<TextRoleAssignmentDialog> {
                   IconButton(
                     tooltip: l.uiClose,
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close_rounded),
                   ),
               ],
             ),

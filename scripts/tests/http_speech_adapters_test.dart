@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neiroha/data/adapters/azure_tts_adapter.dart';
-import 'package:neiroha/data/adapters/chat_completions_tts_adapter.dart';
-import 'package:neiroha/data/adapters/elevenlabs_adapter.dart';
-import 'package:neiroha/data/adapters/gemini_tts_adapter.dart';
-import 'package:neiroha/data/adapters/minimax_tts_adapter.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/azure_speech/tts/azure_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/mimo/tts/chat_completions_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/elevenlabs/tts/elevenlabs_adapter.dart';
+import 'package:neiroha/data/ai/providers/gemini/tts/gemini_tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/minimax/tts/minimax_tts_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
 import 'package:neiroha/domain/synthesis/tts_event.dart';

@@ -13,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 /// - `{voiceAssetRoot}/dialog_tts/{project}/`
 /// - `{voiceAssetRoot}/novel_reader/{project}/`
 /// - `{voiceAssetRoot}/voice_character_ref/`
+/// - `{voiceAssetRoot}/songs/`
 ///
 /// `{root}` is the executable directory when writable (portable mode),
 /// otherwise falls back to the OS app-support dir. macOS always uses the
@@ -152,6 +153,10 @@ class PathService {
     return dir;
   }
 
+  /// Generated songs (music capability): audio + `.lrc` + `.json` sidecar.
+  Future<Directory> songsDir() =>
+      _ensure(Directory(p.join(voiceAssetRoot.path, 'songs')));
+
   Future<Directory> avatarsDir() =>
       _ensure(Directory(p.join(_dataRoot.path, 'avatars')));
 
@@ -182,6 +187,17 @@ class PathService {
     final dir = await phaseTtsDir(projectSlug);
     return File(p.join(dir.path, 'phase_segment_settings.json'));
   }
+
+  /// Recorded replies of one character chat.
+  Future<Directory> chatAudioDir(String sessionId) => _ensure(
+    Directory(
+      p.join(
+        voiceAssetRoot.path,
+        'chats',
+        sanitizeSegment(sessionId, fallback: 'chat'),
+      ),
+    ),
+  );
 
   Future<Directory> dialogTtsDir(String projectName) => _ensure(
     Directory(

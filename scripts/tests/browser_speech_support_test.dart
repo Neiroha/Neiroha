@@ -1,9 +1,9 @@
+import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neiroha/data/adapters/azure_tts_adapter.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/azure_speech/tts/azure_tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart';
 import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
 import 'package:neiroha/data/services/synthesis/quick_tts_service.dart';

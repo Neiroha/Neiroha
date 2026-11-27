@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:neiroha/domain/synthesis/voice_chain.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/novel/annotation_repository.dart';
 import 'package:neiroha/data/services/novel/character_repository.dart';
@@ -245,6 +246,44 @@ void main() {
       expect(
         key(asset.copyWith(presetVoiceName: const Value('other'))),
         isNot(original),
+      );
+      // A processing chain changes the audio; an inactive one does not.
+      String chained(VoiceChain chain) => NovelAudioFingerprint.build(
+        project: project,
+        segment: segments[0],
+        asset: asset,
+        provider: provider,
+        chainSignature: chain.signature,
+      );
+      const translate = VoiceChainStep(
+        kind: VoiceChainStepKind.translate,
+        targetLanguage: 'Japanese',
+      );
+      expect(chained(VoiceChain.empty), original);
+      expect(
+        chained(
+          const VoiceChain([
+            VoiceChainStep(
+              kind: VoiceChainStepKind.translate,
+              targetLanguage: 'Japanese',
+              enabled: false,
+            ),
+          ]),
+        ),
+        original,
+      );
+      final japanese = chained(const VoiceChain([translate]));
+      expect(japanese, isNot(original));
+      expect(
+        chained(
+          const VoiceChain([
+            VoiceChainStep(
+              kind: VoiceChainStepKind.translate,
+              targetLanguage: 'English',
+            ),
+          ]),
+        ),
+        isNot(japanese),
       );
       final reference = await Directory.systemTemp.createTemp('novel_ref_');
       addTearDown(() => reference.delete(recursive: true));

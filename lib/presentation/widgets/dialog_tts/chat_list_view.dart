@@ -4,6 +4,7 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/presentation/widgets/dialog_tts/chat_bubble.dart';
 import 'package:neiroha/providers/playback_provider.dart';
 import 'package:neiroha/l10n/generated/app_localizations.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// Scrolling, reorderable list of [ChatBubble]s for a Dialog TTS project.
 ///
@@ -147,13 +148,13 @@ class _EmptyState extends StatelessWidget {
           Icon(
             Icons.chat_bubble_outline_rounded,
             size: 48,
-            color: Colors.white.withValues(alpha: 0.15),
+            color: context.fg.withValues(alpha: 0.15),
           ),
           SizedBox(height: 12),
           Text(
             AppLocalizations.of(context).uiAddDialogLinesBelow,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.3),
+              color: context.fg.withValues(alpha: 0.3),
               fontSize: 13,
             ),
           ),

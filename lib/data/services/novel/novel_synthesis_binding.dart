@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/domain/capabilities/task_profile.dart';
@@ -7,6 +9,10 @@ class NovelSynthesisBinding {
   final db.VoiceAsset asset;
   final db.TtsProvider provider;
   final TaskProfile? profile;
+
+  /// The task profile as cache-key input; empty without one.
+  String get profileSignature =>
+      profile == null ? '' : jsonEncode(profile!.toJson());
   static NovelSynthesisBinding resolve(
     db.VoiceAsset asset,
     db.TtsProvider provider,

@@ -63,7 +63,7 @@ class _NovelCharacterListState extends ConsumerState<NovelCharacterList> {
             ),
             IconButton(
               tooltip: l.roleAddCharacter,
-              icon: const Icon(Icons.person_add_alt),
+              icon: const Icon(Icons.person_add_alt_rounded),
               onPressed: () => _edit(),
             ),
           ],
@@ -83,7 +83,11 @@ class _NovelCharacterListState extends ConsumerState<NovelCharacterList> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.circle, color: Color(character.color), size: 9),
+                    Icon(
+                      Icons.circle_rounded,
+                      color: Color(character.color),
+                      size: 9,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -92,13 +96,13 @@ class _NovelCharacterListState extends ConsumerState<NovelCharacterList> {
                     ),
                     IconButton(
                       tooltip: l.roleRename,
-                      icon: const Icon(Icons.edit_outlined, size: 16),
+                      icon: const Icon(Icons.edit_rounded, size: 16),
                       onPressed: () => _edit(character),
                     ),
                     if (widget.roles.characters.length > 1)
                       PopupMenuButton<String>(
                         tooltip: l.roleMerge,
-                        icon: const Icon(Icons.merge_type, size: 18),
+                        icon: const Icon(Icons.merge_type_rounded, size: 18),
                         itemBuilder: (_) => [
                           for (final target in widget.roles.characters)
                             if (target.id != character.id)

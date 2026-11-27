@@ -1,8 +1,8 @@
+import 'package:neiroha/data/ai/registry/tts_adapter_factory.dart';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:neiroha/data/adapters/tts_adapter.dart';
-import 'package:neiroha/data/adapters/wav_utils.dart';
+import 'package:neiroha/data/ai/protocols/audio/wav_utils.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/tts_queue_service.dart';
 import 'package:neiroha/domain/synthesis/streaming_audio_sink.dart';
@@ -37,6 +37,41 @@ class SynthesisService {
 
   static const sessionAudioLimit = 32 * 1024 * 1024;
 
+  /// The character's processing chain around [adapter], read when the
+  /// task starts (current settings and capabilities).
+  ///
+  /// Whether a chain applies is decided once the queue admits the task: a
+  /// chained task's lease takes only a concurrency slot, and every request
+  /// the chain sends (each sentence, or the whole line) is counted in full
+  /// right when it goes out, with the text actually sent. Waits end with
+  /// the chain's own cancellation.
+  Future<TtsAdapter> _chained(
+    TtsAdapter adapter,
+    TtsRequest request,
+    db.TtsProvider provider,
+    TtsCancelToken cancellation,
+    _ChainDecision decision,
+  ) async {
+    // Whether to chain was decided at admission: a chain switched on while
+    // queued does not wrap an adapter planned without it (a novel's fixed
+    // audio sequence) and is not counted twice.
+    if (await decision.leaseCounted) return adapter;
+    final wrapped =
+        await queue.voiceChains?.call(
+          adapter,
+          request,
+          beforeRequest: (next, token) =>
+              queue.accountContinuation(provider, next, token),
+        ) ??
+        adapter;
+    // The chain was switched off after queueing: its one request still
+    // counts.
+    if (identical(wrapped, adapter)) {
+      await queue.accountContinuation(provider, request, cancellation);
+    }
+    return wrapped;
+  }
+
   Future<TtsResult> collectInMemory({
     required db.TtsProvider provider,
     required TtsRequest request,
@@ -44,50 +79,60 @@ class SynthesisService {
     String? modelName,
     TtsAdapter? adapter,
     StreamingAudioSink? sink,
-  }) => queue.enqueue(
-    provider: provider,
-    source: 'Quick TTS',
-    label: request.text,
-    estimatedTokens: queue.estimateTokens(request),
-    cancelToken: cancellation,
-    interactive: true,
-    task: () async {
-      final transport = adapter ?? synthesisAdapter(provider, modelName, null);
-      final buffer = BytesBuilder(copy: false);
-      try {
-        final audio = await _readAudio(
-          transport,
+  }) {
+    final decision = _ChainDecision(queue, request);
+    return queue.enqueue(
+      provider: provider,
+      source: 'Quick TTS',
+      label: request.text,
+      estimatedTokens: queue.estimateTokens(request),
+      cancelToken: cancellation,
+      interactive: true,
+      selfAccounting: decision.decide,
+      task: () async {
+        final transport = await _chained(
+          adapter ?? synthesisAdapter(provider, modelName, null),
           request,
+          provider,
           cancellation,
-          onStarted: (format) async => await sink?.open(format),
-          onChunk: (bytes) async {
-            if (buffer.length + bytes.length > sessionAudioLimit - 44) {
-              throw const FormatException('Audio exceeded the 32 MiB limit.');
-            }
-            buffer.add(bytes);
-            await sink?.add(bytes);
-          },
+          decision,
         );
-        await sink?.finish();
-        cancellation.throwIfCancelled();
-        final bytes = buffer.takeBytes();
-        final format = audio.format;
-        return TtsResult(
-          audioBytes: format.encoding == AudioEncoding.pcmS16le
-              ? wrapPcmAsWav(
-                  bytes,
-                  sampleRate: format.sampleRate!,
-                  channels: format.channels!,
-                )
-              : bytes,
-          contentType: format.contentType,
-        );
-      } catch (_) {
-        await sink?.stop();
-        rethrow;
-      }
-    },
-  );
+        final buffer = BytesBuilder(copy: false);
+        try {
+          final audio = await _readAudio(
+            transport,
+            request,
+            cancellation,
+            onStarted: (format) async => await sink?.open(format),
+            onChunk: (bytes) async {
+              if (buffer.length + bytes.length > sessionAudioLimit - 44) {
+                throw const FormatException('Audio exceeded the 32 MiB limit.');
+              }
+              buffer.add(bytes);
+              await sink?.add(bytes);
+            },
+          );
+          await sink?.finish();
+          cancellation.throwIfCancelled();
+          final bytes = buffer.takeBytes();
+          final format = audio.format;
+          return TtsResult(
+            audioBytes: format.encoding == AudioEncoding.pcmS16le
+                ? wrapPcmAsWav(
+                    bytes,
+                    sampleRate: format.sampleRate!,
+                    channels: format.channels!,
+                  )
+                : bytes,
+            contentType: format.contentType,
+          );
+        } catch (_) {
+          await sink?.stop();
+          rethrow;
+        }
+      },
+    );
+  }
 
   /// File-oriented callers share event validation, cancellation and the cache
   /// writer. The temporary completed file is owned and removed by this call.
@@ -134,37 +179,46 @@ class SynthesisService {
     TtsAdapter? adapter,
     TaskProfile? profile,
     void Function()? onFirstAudio,
-  }) => queue.enqueue(
-    provider: provider,
-    source: source,
-    label: label ?? request.text,
-    estimatedTokens: queue.estimateTokens(request),
-    cancelToken: cancellation,
-    interactive: interactive,
-    task: () async {
-      final transport =
-          adapter ?? synthesisAdapter(provider, modelName, profile);
-      final receipt = await _consume(
-        transport,
-        request,
-        outputBase,
-        cancellation,
-        sink,
-        onFirstAudio,
-      );
-      try {
-        await capabilities?.markSuccess(
+  }) {
+    final decision = _ChainDecision(queue, request);
+    return queue.enqueue(
+      provider: provider,
+      source: source,
+      label: label ?? request.text,
+      estimatedTokens: queue.estimateTokens(request),
+      cancelToken: cancellation,
+      interactive: interactive,
+      selfAccounting: decision.decide,
+      task: () async {
+        final transport = await _chained(
+          adapter ?? synthesisAdapter(provider, modelName, profile),
+          request,
           provider,
-          profile?.model ?? ttsAdapterModel(provider, modelName),
-          transport.serviceRoute,
-          ['speech', if (transport.streamsAudioFor(request)) 'streaming'],
+          cancellation,
+          decision,
         );
-      } catch (_) {
-        /* Optional capability metadata cannot invalidate audio. */
-      }
-      return receipt;
-    },
-  );
+        final receipt = await _consume(
+          transport,
+          request,
+          outputBase,
+          cancellation,
+          sink,
+          onFirstAudio,
+        );
+        try {
+          await capabilities?.markSuccess(
+            provider,
+            profile?.model ?? ttsAdapterModel(provider, modelName),
+            transport.serviceRoute,
+            ['speech', if (transport.streamsAudioFor(request)) 'streaming'],
+          );
+        } catch (_) {
+          /* Optional capability metadata cannot invalidate audio. */
+        }
+        return receipt;
+      },
+    );
+  }
 
   Future<SynthesisReceipt> _consume(
     TtsAdapter adapter,
@@ -283,5 +337,30 @@ class SynthesisService {
       firstAudio: firstAudio,
       completion: completed,
     );
+  }
+}
+
+/// Whether a task's requests are counted by its processing chain, asked by
+/// the queue only after it accepts the task.
+class _ChainDecision {
+  _ChainDecision(this.queue, this.request);
+  final TtsQueueService queue;
+  final TtsRequest request;
+  Future<bool>? _chained;
+
+  /// Without a cheap check, any installed chain hook decides (it counts a
+  /// single request itself when it does not wrap).
+  Future<bool> decide() => _chained =
+      queue.hasVoiceChain?.call(request) ??
+      Future.value(queue.voiceChains != null);
+
+  /// True when the lease counted the task's request (no chain, or the
+  /// check failed): the task then runs without a chain.
+  Future<bool> get leaseCounted async {
+    try {
+      return !await (_chained ?? Future.value(false));
+    } catch (_) {
+      return true;
+    }
   }
 }

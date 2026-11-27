@@ -91,7 +91,7 @@ class _LiveSentencePreviewButtonState
       visualDensity: VisualDensity.compact,
       constraints: const BoxConstraints.tightFor(width: 30, height: 30),
       icon: Icon(
-        playing ? Icons.stop_circle_outlined : Icons.play_circle_outline,
+        playing ? Icons.stop_circle_rounded : Icons.play_circle_outline_rounded,
         size: 20,
       ),
       onPressed: widget.disabled || widget.voiceId == null

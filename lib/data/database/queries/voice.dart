@@ -63,6 +63,14 @@ extension AppDatabaseVoiceQueries on AppDatabase {
     await (delete(
       quickTtsHistories,
     )..where((t) => t.voiceAssetId.equals(id))).go();
+    // Chats with the character go with it.
+    final chats = selectOnly(chatSessions)
+      ..addColumns([chatSessions.id])
+      ..where(chatSessions.voiceAssetId.equals(id));
+    await (delete(
+      chatMessages,
+    )..where((t) => t.sessionId.isInQuery(chats))).go();
+    await (delete(chatSessions)..where((t) => t.voiceAssetId.equals(id))).go();
     await deleteSetting(_quickTtsStreamingKey(id));
     return (delete(voiceAssets)..where((t) => t.id.equals(id))).go();
   }

@@ -1,3 +1,4 @@
+import 'package:neiroha/domain/enums/adapter_type.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -22,7 +23,10 @@ void openCreateCharacterDialog(
   final capabilities = ref.read(platformCapabilitiesProvider);
   final enabledProviders = allProviders
       .where(
-        (p) => p.enabled && capabilities.supportsAdapterName(p.adapterType),
+        (p) =>
+            p.enabled &&
+            speaksText(p.adapterType) &&
+            capabilities.supportsAdapterName(p.adapterType),
       )
       .toList();
   if (enabledProviders.isEmpty) {

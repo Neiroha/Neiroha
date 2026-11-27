@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:neiroha/presentation/widgets/ai/model_retirement_widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart'
@@ -11,15 +12,18 @@ import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/l10n/localized_labels.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/layout/window_drag_area.dart';
+import 'package:neiroha/presentation/widgets/layout/windows_caption_bar.dart';
 import 'package:neiroha/presentation/widgets/persistent_audio_bar.dart';
 import 'package:neiroha/presentation/widgets/sidebar.dart';
 import 'package:neiroha/providers/app_providers.dart';
 import 'package:neiroha/providers/playback_provider.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:neiroha/providers/nav_order_provider.dart';
 
 import 'voice_bank_screen.dart';
 import 'provider_screen.dart';
 import 'settings_screen.dart';
+import 'package:neiroha/presentation/widgets/update_dialog.dart';
 import 'workspaces/workspaces_native.dart'
     if (dart.library.js_interop) 'workspaces/workspaces_web.dart';
 
@@ -38,12 +42,26 @@ class _AppShellState extends ConsumerState<AppShell> {
   Future<bool> Function()? _phaseTtsExitGuard;
   String? _lastPersistedTabName;
   DateTime? _lastAndroidBackAt;
+  Timer? _updateCheck;
 
   @override
   void initState() {
     super.initState();
     Future.microtask(_loadStartupTab);
     Future.microtask(_loadAppBehaviorSettings);
+    // Once per launch, after the first page has settled. The web build
+    // is always the deployed version, so it does not ask.
+    if (!kIsWeb) {
+      _updateCheck = Timer(const Duration(seconds: 4), () {
+        if (mounted) unawaited(checkForUpdateAtStartup(context, ref));
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _updateCheck?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadStartupTab() async {
@@ -54,10 +72,15 @@ class _AppShellState extends ConsumerState<AppShell> {
         : null;
     if (!mounted) return;
 
-    final startupTab =
-        NavTab.fromName(lastStored) ??
-        NavTab.fromName(stored) ??
-        AppNavigationSettings.defaultStartupTab;
+    // A page hidden from the sidebar is not opened at startup.
+    final layout = await ref.read(navOrderProvider.future);
+    if (!mounted) return;
+    final startupTab = navShownTab(
+      layout,
+      NavTab.fromName(lastStored) ??
+          NavTab.fromName(stored) ??
+          AppNavigationSettings.defaultStartupTab,
+    );
     _visitedTabs.add(startupTab);
     ref.read(selectedTabProvider.notifier).state = startupTab;
     unawaited(_storeLastTab(startupTab));
@@ -89,17 +112,19 @@ class _AppShellState extends ConsumerState<AppShell> {
     final playbackSourceTag = ref.watch(
       playbackNotifierProvider.select((state) => state.sourceTag),
     );
-    // Dialog/Phase render their own inline players, so the global bottom bar
-    // is suppressed there to avoid a double UI.
-    // Voice Bank quick tests also render inline above the test input.
+    // Dialog TTS keeps its player above the chat input, so the global bottom
+    // bar is suppressed there to avoid a double UI. Phase TTS previews and
+    // Voice Bank quick tests play through this bar.
     final showGlobalPlayer =
         selectedTab != NavTab.dialogTts &&
-        selectedTab != NavTab.phaseTts &&
         selectedTab != NavTab.novelReader &&
         (continueTtsAcrossScreens ||
-            !isNovelReaderPlaybackSource(playbackSourceTag)) &&
-        !(selectedTab == NavTab.voiceBank &&
-            playbackSourceTag == voiceBankQuickTestPlaybackSource);
+            !isNovelReaderPlaybackSource(playbackSourceTag));
+    final globalPlayer = !showGlobalPlayer
+        ? null
+        : !kIsWeb && Platform.isWindows
+        ? const PersistentAudioBar()
+        : const SafeArea(top: false, child: PersistentAudioBar());
 
     return PopScope(
       canPop: kIsWeb || !Platform.isAndroid,
@@ -111,6 +136,11 @@ class _AppShellState extends ConsumerState<AppShell> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final compact = constraints.maxWidth < _compactShellBreakpoint;
+          final chrome = ref.watch(windowChromeProvider);
+          final macInset = chrome == WindowChrome.macos
+              ? _macTitleBarInset
+              : 0.0;
+          final windows = chrome == WindowChrome.windows;
           return Scaffold(
             key: _scaffoldKey,
             drawerEnableOpenDragGesture: compact,
@@ -122,7 +152,13 @@ class _AppShellState extends ConsumerState<AppShell> {
                 : null,
             body: Column(
               children: [
-                if (!kIsWeb && Platform.isWindows) const _WindowsTitleBar(),
+                if (compact && windows)
+                  WindowsCaptionBar(
+                    title: AppLocalizations.of(context).appTitle,
+                    color: context.colors.sidebar,
+                  ),
+                if (compact && macInset > 0)
+                  Container(height: macInset, color: context.colors.sidebar),
                 if (compact)
                   _MobileTopBar(
                     selectedTab: selectedTab,
@@ -137,19 +173,36 @@ class _AppShellState extends ConsumerState<AppShell> {
                             children: [
                               Sidebar(
                                 selected: selectedTab,
+                                topInset: macInset,
                                 onTabChanged: (tab) =>
                                     unawaited(_switchTab(tab)),
                               ),
                               const VerticalDivider(width: 1, thickness: 1),
-                              Expanded(child: _buildPageStack(selectedTab)),
+                              // Pages run to the top edge: the traffic
+                              // lights sit over the sidebar, and page
+                              // headers double as the window's drag area.
+                              // The banner and player stay right of the
+                              // sidebar so it keeps the full height.
+                              Expanded(
+                                child: Column(
+                                  children: [
+                                    // Windows: caption buttons right of the
+                                    // sidebar, as macOS keeps its lights
+                                    // over it.
+                                    if (windows) const WindowsCaptionBar(),
+                                    Expanded(
+                                      child: _buildPageStack(selectedTab),
+                                    ),
+                                    const RetirementBanner(),
+                                    ?globalPlayer,
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
                         ),
                 ),
-                if (showGlobalPlayer)
-                  !kIsWeb && Platform.isWindows
-                      ? const PersistentAudioBar()
-                      : const SafeArea(top: false, child: PersistentAudioBar()),
+                if (compact) ...[const RetirementBanner(), ?globalPlayer],
               ],
             ),
           );
@@ -271,7 +324,7 @@ class _MobileTopBar extends StatelessWidget {
       bottom: false,
       child: Container(
         height: 52,
-        color: AppTheme.sidebarBg,
+        color: context.colors.sidebar,
         child: Row(
           children: [
             IconButton(
@@ -297,105 +350,6 @@ class _MobileTopBar extends StatelessWidget {
   }
 }
 
-class _WindowsTitleBar extends StatelessWidget {
-  const _WindowsTitleBar();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 32,
-      color: AppTheme.sidebarBg,
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onPanStart: (_) => windowManager.startDragging(),
-              onDoubleTap: () async {
-                if (await windowManager.isMaximized()) {
-                  windowManager.unmaximize();
-                } else {
-                  windowManager.maximize();
-                }
-              },
-              child: Padding(
-                padding: EdgeInsets.only(left: 12),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    AppLocalizations.of(context).appTitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white54,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          _TitleBarButton(icon: Icons.minimize, onTap: windowManager.minimize),
-          _TitleBarButton(
-            icon: Icons.crop_square,
-            onTap: () async {
-              if (await windowManager.isMaximized()) {
-                windowManager.unmaximize();
-              } else {
-                windowManager.maximize();
-              }
-            },
-          ),
-          _TitleBarButton(
-            icon: Icons.close,
-            onTap: windowManager.close,
-            isClose: true,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TitleBarButton extends StatefulWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool isClose;
-
-  const _TitleBarButton({
-    required this.icon,
-    required this.onTap,
-    this.isClose = false,
-  });
-
-  @override
-  State<_TitleBarButton> createState() => _TitleBarButtonState();
-}
-
-class _TitleBarButtonState extends State<_TitleBarButton> {
-  bool _hovering = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovering = true),
-      onExit: (_) => setState(() => _hovering = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Container(
-          width: 46,
-          height: 32,
-          color: _hovering
-              ? (widget.isClose
-                    ? Colors.red
-                    : Colors.white.withValues(alpha: 0.1))
-              : Colors.transparent,
-          child: Icon(
-            widget.icon,
-            size: 16,
-            color: Colors.white.withValues(alpha: _hovering ? 0.9 : 0.6),
-          ),
-        ),
-      ),
-    );
-  }
-}
+/// macOS draws its traffic lights over the content (transparent title bar,
+/// see MainFlutterWindow.swift); the sidebar keeps that strip free.
+const double _macTitleBarInset = 28;

@@ -305,7 +305,7 @@ class _RecordDialogState extends State<RecordDialog>
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Text(
                   _initError!,
-                  style: TextStyle(color: Colors.orange.shade300, fontSize: 13),
+                  style: TextStyle(color: context.colors.warning, fontSize: 13),
                 ),
               )
             else ...[
@@ -371,9 +371,7 @@ class _RecordDialogState extends State<RecordDialog>
             ),
             label: Text(_phase == _Phase.recording ? 'Stop' : 'Record'),
             style: _phase == _Phase.recording
-                ? FilledButton.styleFrom(
-                    backgroundColor: Colors.redAccent.shade400,
-                  )
+                ? FilledButton.styleFrom(backgroundColor: context.colors.danger)
                 : null,
           ),
       ],
@@ -386,7 +384,7 @@ class _RecordDialogState extends State<RecordDialog>
         AppLocalizations.of(context).uiDefaultMicrophone,
         style: TextStyle(
           fontSize: 12,
-          color: Colors.white.withValues(alpha: 0.5),
+          color: context.fg.withValues(alpha: 0.5),
         ),
       );
     }
@@ -438,7 +436,7 @@ class _RecordDialogState extends State<RecordDialog>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceBright,
+        color: context.colors.raised,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -471,9 +469,9 @@ class _RecordDialogState extends State<RecordDialog>
           ),
           Text(
             '${_fmt(_previewPos)} / ${_fmt(dur)}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: Colors.white54,
+              color: context.fg.withValues(alpha: 0.54),
               fontFeatures: [FontFeature.tabularFigures()],
             ),
           ),

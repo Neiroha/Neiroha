@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/widgets/dialog_tts/voice_picker.dart';
+import 'package:neiroha/presentation/theme/app_colors.dart';
 
 /// Right-pane settings panel for the Dialog TTS editor.
 ///
@@ -53,7 +54,7 @@ class SettingsPanel extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          left: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+          left: BorderSide(color: context.fg.withValues(alpha: 0.06)),
         ),
       ),
       child: Column(
@@ -64,30 +65,34 @@ class SettingsPanel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _section(AppLocalizations.of(context).uiSTATS),
+                _section(context, AppLocalizations.of(context).uiSTATS),
                 const SizedBox(height: 8),
                 _statTile(
+                  context,
                   icon: Icons.format_list_bulleted_rounded,
                   label: AppLocalizations.of(context).uiLines,
                   value: '${lines.length}',
                 ),
                 _statTile(
+                  context,
                   icon: Icons.task_alt_rounded,
                   label: AppLocalizations.of(context).uiGenerated,
                   value: '$ready / ${lines.length}',
                 ),
                 _statTile(
+                  context,
                   icon: Icons.pending_actions_rounded,
                   label: AppLocalizations.of(context).uiPending,
                   value: '$pending',
                 ),
                 _statTile(
+                  context,
                   icon: Icons.timer_rounded,
                   label: AppLocalizations.of(context).uiTotalLength,
                   value: _formatDuration(totalSec),
                 ),
                 const SizedBox(height: 20),
-                _section(AppLocalizations.of(context).uiSETTINGS),
+                _section(context, AppLocalizations.of(context).uiSETTINGS),
                 const SizedBox(height: 4),
                 _ToggleRow(
                   icon: Icons.bolt_rounded,
@@ -108,7 +113,7 @@ class SettingsPanel extends StatelessWidget {
                   onChanged: autoGenerateOnSend ? onToggleAutoPlay : null,
                 ),
                 const SizedBox(height: 20),
-                _section(AppLocalizations.of(context).uiGENERATION),
+                _section(context, AppLocalizations.of(context).uiGENERATION),
                 const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
@@ -162,19 +167,20 @@ class SettingsPanel extends StatelessWidget {
     );
   }
 
-  Widget _section(String label) {
+  Widget _section(BuildContext context, String label) {
     return Text(
       label,
       style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w600,
         letterSpacing: 1.2,
-        color: Colors.white.withValues(alpha: 0.4),
+        color: context.fg.withValues(alpha: 0.4),
       ),
     );
   }
 
-  Widget _statTile({
+  Widget _statTile(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required String value,
@@ -183,14 +189,14 @@ class SettingsPanel extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.4)),
+          Icon(icon, size: 14, color: context.fg.withValues(alpha: 0.4)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.55),
+                color: context.fg.withValues(alpha: 0.55),
               ),
             ),
           ),
@@ -242,7 +248,7 @@ class _ToggleRow extends StatelessWidget {
               Icon(
                 icon,
                 size: 16,
-                color: Colors.white.withValues(alpha: disabled ? 0.2 : 0.55),
+                color: context.fg.withValues(alpha: disabled ? 0.2 : 0.55),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -254,7 +260,7 @@ class _ToggleRow extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: Colors.white.withValues(
+                        color: context.fg.withValues(
                           alpha: disabled ? 0.3 : 0.85,
                         ),
                       ),
@@ -263,7 +269,7 @@ class _ToggleRow extends StatelessWidget {
                       sublabel,
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withValues(
+                        color: context.fg.withValues(
                           alpha: disabled ? 0.2 : 0.4,
                         ),
                       ),

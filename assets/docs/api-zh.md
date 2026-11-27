@@ -5,7 +5,7 @@
 Neiroha 在两个层面上暴露音频 API：
 
 1. **本地 API 服务器** (`lib/server/api_server.dart`) — 一个与 OpenAI 兼容的 HTTP 服务器，通过配置的声音角色代理 TTS 请求，并以活跃音色库（Voice Bank）为作用域
-2. **上游适配器层** (`lib/data/adapters/`) — 与外部 TTS 后端通信的客户端适配器
+2. **上游适配器层** (`lib/data/ai/`) — 服务商插件与外部 TTS 后端通信的客户端适配器
 
 ---
 
@@ -48,6 +48,8 @@ API 以**音色库（Voice Bank）**作为 `model` 的抽象层：
 | `GET` | `/speakers` | 列出激活音色库中的声音（SillyTavern 格式） | **已实现** |
 | `GET` | `/health` | 服务器健康检查 | **已实现** |
 | `POST` | `/mcp` | 供 AI Agent 使用的 MCP 端点 | **已实现** |
+| `POST` / `GET` / `DELETE` | `/v1/jobs…` | 异步合成任务（见下文） | **已实现** |
+| `GET` | `/v1/audio/speech/:id` | 按任务 ID 取回音频 | **已实现** |
 
 ### `POST /v1/audio/speech`
 
@@ -71,6 +73,9 @@ API 以**音色库（Voice Bank）**作为 `model` 的抽象层：
 | `model` | string | 否 | 音色库名称 — 将声音查找限定在该库的成员范围内 |
 | `speed` | number | 否 | 播放速度倍数（默认：1.0） |
 | `response_format` | string | 否 | 输出格式提示，传递给上游适配器 |
+| `stream` | boolean | 否 | 为 `true` 时以分块 PCM 返回（须配合 `response_format: "pcm"`，详见 [开发说明](streaming-and-roles-zh.md#本地-api-增量-pcm)） |
+| `apply_chain` | boolean | 否 | Neiroha 扩展：是否运行角色的处理链（翻译 / 改写 / 变声），默认 `true` |
+| `seed` | integer | 否 | Neiroha 扩展：随机种子（0–4294967295），用于 CosyVoice、GPT-SoVITS、Irodori；默认取角色设置的种子 |
 
 **声音解析顺序：**
 1. 如果提供了 `model`，则找到该名称的激活音色库，并在其成员中查找声音
@@ -146,6 +151,38 @@ API 以**音色库（Voice Bank）**作为 `model` 的抽象层：
 }
 ```
 
+### 异步任务 `/v1/jobs`
+
+请求体与 `POST /v1/audio/speech` 相同（不支持 `stream`）。创建时即解析音色，音色不存在立即返回 404；任务随后经全局 TTS 队列合成，遵守同一服务商限额。任务与音频保存在数据目录 `api_jobs/`，应用重启后仍可查询；重启前未完成的任务标记为 `failed`。保留最近 200 个已完成任务。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| `POST` | `/v1/jobs` | 创建任务，返回 `202` 与任务对象（`Location` 头指向任务） |
+| `GET` | `/v1/jobs?limit=` | 列出任务，最新在前 |
+| `GET` | `/v1/jobs/:id` | 任务状态 |
+| `DELETE` | `/v1/jobs/:id` | 取消排队 / 运行中的任务；已结束的任务则删除 |
+| `POST` | `/v1/jobs/:id/retry` | 已结束的任务以新 attempt 重跑；运行中返回 `409` |
+| `GET` | `/v1/jobs/:id/events` | SSE（`event: status`），每次状态变化推送任务对象，结束后关闭 |
+| `GET` | `/v1/jobs/:id/audio`、`/v1/audio/speech/:id` | 成功任务的音频；未完成返回 `409` |
+
+任务对象：
+
+```json
+{
+  "id": "6f0c…",
+  "object": "speech.job",
+  "status": "succeeded",
+  "attempt": 1,
+  "input": "你好",
+  "voice": "Narrator",
+  "created_at": "2026-11-24T08:00:00.000Z",
+  "updated_at": "2026-11-24T08:00:02.000Z",
+  "result": {"content_type": "audio/wav", "bytes": 96044, "url": "/v1/audio/speech/6f0c…"}
+}
+```
+
+`status` 取值：`queued`、`running`、`succeeded`、`failed`（附 `error`）、`cancelled`。
+
 ### 供 AI Agent 使用的 MCP 端点（`/mcp`）
 
 同一服务器在 `POST /mcp` 上以 Streamable HTTP 方式提供 [Model Context Protocol](https://modelcontextprotocol.io)
@@ -163,7 +200,7 @@ API 以**音色库（Voice Bank）**作为 `model` 的抽象层：
 claude mcp add --transport http neiroha http://127.0.0.1:8976/mcp
 ```
 
-工具列表与英文文档一致（`get_overview`、`create_provider`、`create_voice_character`、`import_audio_track`、`synthesize_speech`、`import_subtitles`、`update_subtitle_cues`、`generate_video_dub_audio`、`normalize_video_dub_loudness`、`export_video_dub` 等共 35 个）。音量相关：`update_voice_bank` 的 `loudness_target_lufs` 设定语音库基准响度，角色的 `loudness_offset_db` 设定相对偏移（如旁白 `-3`），`create_video_dub_project` 的 `auto_normalize_loudness` 让新生成的片段自动统一音量；`normalize_video_dub_loudness` 统一已有片段并保留原件，`restore: true` 可一键还原。服务商 API Key 通过 MCP 只写不读（`list_providers` 仅返回 `has_api_key`）。配套的英文 Agent 技能见 [`assets/skills/neiroha-dubbing/SKILL.md`](../skills/neiroha-dubbing/SKILL.md)。
+工具列表与英文文档一致（`get_overview`、`create_provider`、`create_voice_character`、`import_audio_track`、`synthesize_speech`、`import_subtitles`、`update_subtitle_cues`、`generate_video_dub_audio`、`normalize_video_dub_loudness`、`export_video_dub` 等共 35 个）。音量相关：`update_voice_bank` 的 `loudness_target_lufs` 设定语音库基准响度，角色的 `loudness_offset_db` 设定相对偏移（如旁白 `-3`），`create_video_dub_project` 的 `auto_normalize_loudness` 让新生成的片段自动统一音量；`normalize_video_dub_loudness` 统一已有片段并保留原件，`restore: true` 可一键还原。`synthesize_speech` 与视频配音生成默认运行角色处理链，`synthesize_speech` 可用 `apply_chain: false` 关闭。服务商 API Key 通过 MCP 只写不读（`list_providers` 仅返回 `has_api_key`）。配套的英文 Agent 技能见 [`assets/skills/neiroha-dubbing/SKILL.md`](../skills/neiroha-dubbing/SKILL.md)。
 ---
 
 ## 2. 上游适配器层
@@ -442,18 +479,12 @@ Neiroha 暂未发布 IndexTTS 一键包，本适配器对接社区一键整合�
 
 | 方法 | 路径 | 说明 | 优先级 |
 |---|---|---|---|
-| `POST` | `/v1/jobs` | 创建持久化异步 TTS 任务 | 高 |
-| `GET` | `/v1/jobs/:id` | 查看任务状态、进度和结果元数据 | 高 |
-| `DELETE` | `/v1/jobs/:id` | 取消排队/运行中的任务 | 高 |
-| `POST` | `/v1/jobs/:id/retry` | 将失败或完成的任务作为新 attempt 重试 | 中 |
-| `GET` | `/v1/jobs/:id/events` | 可选 SSE 进度流 | 中 |
-| `GET` | `/v1/audio/speech/:id` | 通过 ID 检索之前生成的音频 | 中 |
+| — | — | 当前无（异步任务已实现，见第 1 节） | — |
 
 ### 缺少的适配器功能
 
 | 功能 | 说明 | 优先级 |
 |---|---|---|
-| 流式合成 | 以分块流而非缓冲响应返回音频 | 高 |
 | 声音克隆上传 | 通过本地 API 上传参考音频（而非仅通过 UI） | 中 |
 | 批量合成 | 一次请求接受多个输入 | 中 |
 | SSML 支持 | 将 SSML 标记传递给支持的适配器 | 低 |

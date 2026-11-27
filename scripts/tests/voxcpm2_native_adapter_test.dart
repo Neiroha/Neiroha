@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
-import 'package:neiroha/data/adapters/voxcpm2_native_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
+import 'package:neiroha/data/ai/providers/local/voxcpm2/tts/voxcpm2_native_adapter.dart';
 
 void main() {
   test('synthesis prefers the Neiroha native JSON endpoint', () async {

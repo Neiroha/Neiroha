@@ -8,7 +8,6 @@ import 'package:neiroha/providers/novel_role_providers.dart';
 import 'package:neiroha/data/services/novel/novel_voice_resolution.dart';
 import 'package:neiroha/data/services/novel/novel_audio_fingerprint.dart';
 import 'dart:async';
-import 'dart:convert';
 import 'package:neiroha/domain/capabilities/task_profile.dart';
 import 'package:neiroha/data/services/novel/novel_synthesis_binding.dart';
 import 'package:neiroha/domain/synthesis/tts_cancellation.dart';
@@ -21,7 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:neiroha/presentation/actions/file_dialogs.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/audio_merge_service.dart';
 import 'package:neiroha/data/services/loudness_normalizer.dart';
@@ -34,6 +33,7 @@ import 'package:neiroha/l10n/generated/app_localizations.dart';
 import 'package:neiroha/presentation/actions/voice_health_warning.dart';
 import 'package:neiroha/presentation/navigation/app_navigation.dart';
 import 'package:neiroha/presentation/theme/app_theme.dart';
+import 'package:neiroha/presentation/widgets/layout/page_header.dart';
 import 'package:neiroha/presentation/widgets/export_progress.dart';
 import 'package:neiroha/presentation/widgets/loudness_normalize_dialog.dart';
 import 'package:neiroha/presentation/widgets/project_card_grid.dart';
@@ -46,10 +46,20 @@ import 'package:uuid/uuid.dart';
 
 part '../widgets/novel_reader/editor.dart';
 part '../widgets/novel_reader/playback.dart';
+part '../widgets/novel_reader/generation.dart';
+part '../widgets/novel_reader/book_export.dart';
 part '../widgets/novel_reader/chapters.dart';
+part '../widgets/novel_reader/chapter_edit_pane.dart';
 part '../widgets/novel_reader/reader_pane.dart';
+part '../widgets/novel_reader/reader_pane_parts.dart';
 part '../widgets/novel_reader/controls.dart';
+part '../widgets/novel_reader/controls_widgets.dart';
+part '../widgets/novel_reader/chapter_picker.dart';
 part '../widgets/novel_reader/settings_panel.dart';
+part '../widgets/novel_reader/settings_controls.dart';
+part '../widgets/novel_reader/output_buttons.dart';
+part '../widgets/novel_reader/dialogue_rules_dialog.dart';
+part '../widgets/novel_reader/text_filter_rules_dialog.dart';
 part '../widgets/novel_reader/project_shell.dart';
 
 /// Lightweight novel reader: import text chapters, read them comfortably, and
@@ -209,6 +219,8 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
         : narratorId;
     final id = const Uuid().v4();
     final now = DateTime.now();
+    // A new book starts on the reading theme closest to the app's look.
+    final readerTheme = mounted && !context.isDark ? 'paper' : 'dark';
     await dbx.insertNovelProject(
       db.NovelProjectsCompanion(
         id: Value(id),
@@ -216,7 +228,7 @@ class _NovelReaderScreenState extends ConsumerState<NovelReaderScreen> {
         bankId: Value(result.bankId),
         narratorVoiceAssetId: Value(narratorId),
         dialogueVoiceAssetId: Value(dialogueId),
-        readerTheme: const Value('dark'),
+        readerTheme: Value(readerTheme),
         createdAt: Value(now),
         updatedAt: Value(now),
       ),

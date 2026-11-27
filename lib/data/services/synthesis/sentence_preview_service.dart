@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:drift/drift.dart';
-import 'package:neiroha/data/adapters/tts_adapter.dart';
+import 'package:neiroha/data/ai/core/tts_adapter.dart';
 import 'package:neiroha/data/database/app_database.dart' as db;
 import 'package:neiroha/data/services/auto_loudness_service.dart';
 import 'package:neiroha/data/services/phase_segment_settings_file.dart';
@@ -89,10 +89,15 @@ class SentencePreviewService {
       request: TtsRequest(
         text: source.text,
         voice: asset.presetVoiceName ?? asset.name,
+        seed: asset.seed,
+        voiceAssetId: asset.id,
         presetVoiceName: asset.presetVoiceName,
         speed: asset.speed,
         responseFormat: provider.adapterType == 'openaiTts' ? 'pcm' : null,
-        textLang: provider.adapterType == 'gptSovits' ? asset.modelName : null,
+        textLang: TtsRequest.legacyTextLanguage(
+          provider.adapterType,
+          asset.modelName,
+        ),
         voiceInstruction:
             VoiceCapabilities.supportsVoiceInstruction(asset, provider)
             ? instruction?.isNotEmpty == true

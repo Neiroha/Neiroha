@@ -86,7 +86,7 @@ void main() {
         tester,
         ResizableSplitPane(
           initialLeftFraction: 0.68,
-          compactRightIcon: Icons.people_outline,
+          compactRightIcon: Icons.people_outline_rounded,
           compactRightLabel: '角色校对',
           left: const SizedBox.expand(key: reader),
           rightBuilder: (_) => NovelRoleReviewPanel(
@@ -108,7 +108,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(320, 568));
       await tester.pumpAndSettle();
       expect(controls, findsNothing);
-      await tester.tap(find.byIcon(Icons.people_outline));
+      await tester.tap(find.byIcon(Icons.people_outline_rounded));
       await tester.pumpAndSettle();
       await tester.tap(find.text('AI 自动分角色'));
       await tester.pumpAndSettle();

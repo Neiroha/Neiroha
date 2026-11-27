@@ -49,7 +49,7 @@ class QuickTtsPlaybackSetting extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
-              const Icon(Icons.graphic_eq, size: 16),
+              const Icon(Icons.graphic_eq_rounded, size: 16),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -59,7 +59,7 @@ class QuickTtsPlaybackSetting extends ConsumerWidget {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
-              const Icon(Icons.expand_more, size: 18),
+              const Icon(Icons.expand_more_rounded, size: 18),
             ],
           ),
         ),

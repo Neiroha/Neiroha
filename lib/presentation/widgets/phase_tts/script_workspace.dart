@@ -179,7 +179,7 @@ class _PhaseScriptWorkspaceState extends ConsumerState<PhaseScriptWorkspace> {
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: context.fg.withValues(alpha: 0.4),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -191,7 +191,7 @@ class _PhaseScriptWorkspaceState extends ConsumerState<PhaseScriptWorkspace> {
                       ).phaseCharCount(value.text.characters.length),
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withValues(alpha: 0.35),
+                        color: context.fg.withValues(alpha: 0.35),
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
@@ -250,9 +250,9 @@ class _PhaseScriptWorkspaceState extends ConsumerState<PhaseScriptWorkspace> {
         hintText: AppLocalizations.of(
           context,
         ).uiPasteYourNovelTextHereUseAutoSplitToBreakItInto,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.25)),
+        hintStyle: TextStyle(color: context.fg.withValues(alpha: 0.25)),
         filled: true,
-        fillColor: AppTheme.surfaceDim,
+        fillColor: context.colors.panel,
       ),
     );
   }
@@ -290,8 +290,10 @@ class _SplitToolbar extends StatelessWidget {
         selectedId != null && enabled.any((rule) => rule.id == selectedId)
         ? selectedId
         : (enabled.isNotEmpty ? enabled.first.id : null);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 4,
+      runSpacing: 6,
       children: [
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 220),
@@ -299,6 +301,7 @@ class _SplitToolbar extends StatelessWidget {
             child: DropdownButton<String>(
               value: activeId,
               isDense: true,
+              isExpanded: true,
               hint: Text(
                 AppLocalizations.of(context).uiNoRule,
                 style: TextStyle(fontSize: 12),
@@ -327,7 +330,6 @@ class _SplitToolbar extends StatelessWidget {
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minHeight: 32, minWidth: 32),
         ),
-        SizedBox(width: 4),
         FilledButton.tonalIcon(
           onPressed: enabled.isEmpty ? null : onRun,
           icon: const Icon(Icons.splitscreen_rounded, size: 16),

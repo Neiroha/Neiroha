@@ -47,7 +47,11 @@
     "CREATE TABLE \"novel_annotations\" (\"segment_id\" TEXT NOT NULL REFERENCES novel_segments (id) ON DELETE CASCADE, \"project_id\" TEXT NOT NULL REFERENCES novel_projects (id) ON DELETE CASCADE, \"text_revision\" TEXT NOT NULL, \"character_id\" TEXT NULL REFERENCES novel_characters (id) ON DELETE SET NULL, \"kind\" TEXT NOT NULL DEFAULT 'narrator', \"voice_asset_id\" TEXT NULL, \"instruction\" TEXT NULL, \"locked\" INTEGER NOT NULL DEFAULT 0 CHECK (\"locked\" IN (0, 1)), \"review_state\" TEXT NOT NULL DEFAULT 'pending', \"reason\" TEXT NOT NULL DEFAULT '', \"change_id\" TEXT NOT NULL, PRIMARY KEY (\"segment_id\"))",
     "CREATE TABLE \"novel_voice_bindings\" (\"character_id\" TEXT NOT NULL REFERENCES novel_characters (id) ON DELETE CASCADE, \"chapter_id\" TEXT NOT NULL DEFAULT '', \"voice_asset_id\" TEXT NOT NULL REFERENCES voice_assets (id) ON DELETE CASCADE, \"instruction\" TEXT NULL, PRIMARY KEY (\"character_id\", \"chapter_id\"))",
     "CREATE TABLE \"novel_role_edits\" (\"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, \"project_id\" TEXT NOT NULL REFERENCES novel_projects (id) ON DELETE CASCADE, \"payload\" TEXT NOT NULL, \"created_at\" INTEGER NOT NULL)",
-    "CREATE TABLE \"novel_projects\" (\"id\" TEXT NOT NULL, \"name\" TEXT NOT NULL, \"bank_id\" TEXT NOT NULL REFERENCES voice_banks (id), \"narrator_voice_asset_id\" TEXT NULL, \"dialogue_voice_asset_id\" TEXT NULL, \"reader_theme\" TEXT NOT NULL DEFAULT 'dark', \"font_size\" REAL NOT NULL DEFAULT 20.0, \"line_height\" REAL NOT NULL DEFAULT 1.75, \"current_global_index\" INTEGER NOT NULL DEFAULT 0, \"created_at\" INTEGER NOT NULL, \"updated_at\" INTEGER NOT NULL, \"folder_slug\" TEXT NULL, PRIMARY KEY (\"id\"))"
+    "CREATE TABLE \"novel_projects\" (\"id\" TEXT NOT NULL, \"name\" TEXT NOT NULL, \"bank_id\" TEXT NOT NULL REFERENCES voice_banks (id), \"narrator_voice_asset_id\" TEXT NULL, \"dialogue_voice_asset_id\" TEXT NULL, \"reader_theme\" TEXT NOT NULL DEFAULT 'dark', \"font_size\" REAL NOT NULL DEFAULT 20.0, \"line_height\" REAL NOT NULL DEFAULT 1.75, \"current_global_index\" INTEGER NOT NULL DEFAULT 0, \"created_at\" INTEGER NOT NULL, \"updated_at\" INTEGER NOT NULL, \"folder_slug\" TEXT NULL, PRIMARY KEY (\"id\"))",
+    "CREATE TABLE \"voice_asset_settings\" (\"voice_asset_id\" TEXT NOT NULL REFERENCES voice_assets (id) ON DELETE CASCADE, \"chain_json\" TEXT NULL, \"live_json\" TEXT NULL, PRIMARY KEY (\"voice_asset_id\"))",
+    "CREATE TABLE \"connection_capabilities\" (\"connection_id\" TEXT NOT NULL REFERENCES tts_providers (id) ON DELETE CASCADE, \"capability\" TEXT NOT NULL, \"enabled\" INTEGER NOT NULL DEFAULT 1 CHECK (\"enabled\" IN (0, 1)), \"max_concurrency\" INTEGER NULL, \"requests_per_minute\" INTEGER NULL, \"requests_per_day\" INTEGER NULL, \"tokens_per_minute\" INTEGER NULL, \"tokens_per_day\" INTEGER NULL, \"service_override\" TEXT NULL, PRIMARY KEY (\"connection_id\", \"capability\"))",
+    "CREATE TABLE \"provider_models\" (\"id\" TEXT NOT NULL, \"connection_id\" TEXT NOT NULL REFERENCES tts_providers (id) ON DELETE CASCADE, \"model_id\" TEXT NOT NULL, \"capability\" TEXT NOT NULL, \"route\" TEXT NULL, \"display_name\" TEXT NULL, \"features_json\" TEXT NOT NULL DEFAULT '[]', \"lifecycle\" TEXT NULL, \"shutdown_at\" INTEGER NULL, \"source\" TEXT NOT NULL DEFAULT 'manual', \"enabled\" INTEGER NOT NULL DEFAULT 1 CHECK (\"enabled\" IN (0, 1)), PRIMARY KEY (\"id\"), UNIQUE (\"connection_id\", \"model_id\", \"capability\"))",
+    "CREATE TABLE \"capability_defaults\" (\"capability\" TEXT NOT NULL, \"purpose\" TEXT NOT NULL DEFAULT '', \"connection_id\" TEXT NOT NULL REFERENCES tts_providers (id) ON DELETE CASCADE, \"model_id\" TEXT NOT NULL, PRIMARY KEY (\"capability\", \"purpose\"))"
   ],
   "versions": {
     "1": {
@@ -539,6 +543,38 @@
         28,
         25,
         29
+      ]
+    },
+    "34": {
+      "commit": "feat/ai-capability-layer (v34 AI capability tables)",
+      "ddl": [
+        18,
+        35,
+        1,
+        37,
+        38,
+        8,
+        3,
+        20,
+        39,
+        30,
+        40,
+        32,
+        33,
+        43,
+        44,
+        45,
+        46,
+        41,
+        24,
+        42,
+        28,
+        25,
+        29,
+        48,
+        49,
+        50,
+        51
       ]
     }
   }

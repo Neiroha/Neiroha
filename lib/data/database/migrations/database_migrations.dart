@@ -29,6 +29,10 @@ import 'v030.dart';
 import 'v031.dart';
 import 'v032.dart';
 import 'v033.dart';
+import 'v034.dart';
+import 'v035.dart';
+import 'v036.dart';
+import 'v037.dart';
 
 typedef _MigrationStep = Future<void> Function(SchemaEditor);
 
@@ -67,6 +71,10 @@ const _steps = <int, _MigrationStep?>{
   31: upgradeToV31,
   32: upgradeToV32,
   33: upgradeToV33,
+  34: upgradeToV34,
+  35: upgradeToV35,
+  36: upgradeToV36,
+  37: upgradeToV37,
 };
 
 MigrationStrategy databaseMigrationStrategy(AppDatabase db) =>

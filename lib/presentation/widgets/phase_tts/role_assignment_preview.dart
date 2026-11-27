@@ -110,7 +110,7 @@ class _RoleAssignmentPreviewState extends State<RoleAssignmentPreview> {
                         setState(() => _query = v.trim().toLowerCase()),
                     decoration: InputDecoration(
                       isDense: true,
-                      prefixIcon: const Icon(Icons.search),
+                      prefixIcon: const Icon(Icons.search_rounded),
                       hintText: l.phaseRoleSearch,
                     ),
                   ),
@@ -244,7 +244,7 @@ class _RolePreviewRow extends StatelessWidget {
         ),
         trailing: IconButton(
           tooltip: l.phaseRoleEditSegment,
-          icon: const Icon(Icons.edit_outlined),
+          icon: const Icon(Icons.edit_rounded),
           onPressed: edit,
         ),
       ),

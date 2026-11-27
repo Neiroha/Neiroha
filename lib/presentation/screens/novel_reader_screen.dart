@@ -57,6 +57,7 @@ part '../widgets/novel_reader/controls_widgets.dart';
 part '../widgets/novel_reader/chapter_picker.dart';
 part '../widgets/novel_reader/settings_panel.dart';
 part '../widgets/novel_reader/settings_controls.dart';
+part '../widgets/novel_reader/output_buttons.dart';
 part '../widgets/novel_reader/dialogue_rules_dialog.dart';
 part '../widgets/novel_reader/text_filter_rules_dialog.dart';
 part '../widgets/novel_reader/project_shell.dart';

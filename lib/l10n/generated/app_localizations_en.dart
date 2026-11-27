@@ -4495,4 +4495,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateReleasesPage => 'Releases page';
+
+  @override
+  String get novelGenerateChapter => 'Generate Chapter';
+
+  @override
+  String get novelExportChapter => 'Export Chapter';
+
+  @override
+  String get novelExportEachChapter => 'Export Each Chapter';
+
+  @override
+  String get novelExportEachChapterTooltip =>
+      'Write one audio file per chapter into a new folder';
+
+  @override
+  String get novelExportChaptersFolder =>
+      'Choose a folder for the chapter files';
+
+  @override
+  String novelGenerateChapterBeforeExport(String chapter) {
+    return 'Generate the cache of “$chapter” before exporting.';
+  }
 }

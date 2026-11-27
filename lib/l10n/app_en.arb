@@ -2164,5 +2164,18 @@
         "type": "String"
       }
     }
+  },
+  "novelGenerateChapter": "Generate Chapter",
+  "novelExportChapter": "Export Chapter",
+  "novelExportEachChapter": "Export Each Chapter",
+  "novelExportEachChapterTooltip": "Write one audio file per chapter into a new folder",
+  "novelExportChaptersFolder": "Choose a folder for the chapter files",
+  "novelGenerateChapterBeforeExport": "Generate the cache of “{chapter}” before exporting.",
+  "@novelGenerateChapterBeforeExport": {
+    "placeholders": {
+      "chapter": {
+        "type": "String"
+      }
+    }
   }
 }

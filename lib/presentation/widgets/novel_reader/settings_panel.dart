@@ -4,6 +4,9 @@ class _NovelSettingsPane extends StatelessWidget {
   final db.NovelProject project;
   final List<db.VoiceAsset> bankAssets;
   final List<db.NovelSegment> segments;
+
+  /// The chapter open in the reader; "this chapter" actions act on it.
+  final String? chapterId;
   final Set<String> generatingSegmentIds;
   final bool importing;
   final bool exporting;
@@ -30,14 +33,17 @@ class _NovelSettingsPane extends StatelessWidget {
   final ValueChanged<String> onCacheCurrentColorChanged;
   final ValueChanged<String> onCacheStaleColorChanged;
   final ValueChanged<double> onCacheHighlightOpacityChanged;
-  final VoidCallback? onGenerateAll;
-  final VoidCallback? onExport;
+
+  /// Generates missing audio of the open chapter (true) or the whole book.
+  final ValueChanged<bool>? onGenerate;
+  final ValueChanged<_NovelExportScope>? onExport;
   final VoidCallback? onNormalize;
 
   const _NovelSettingsPane({
     required this.project,
     required this.bankAssets,
     required this.segments,
+    required this.chapterId,
     required this.generatingSegmentIds,
     required this.importing,
     required this.exporting,
@@ -64,7 +70,7 @@ class _NovelSettingsPane extends StatelessWidget {
     required this.onCacheCurrentColorChanged,
     required this.onCacheStaleColorChanged,
     required this.onCacheHighlightOpacityChanged,
-    required this.onGenerateAll,
+    required this.onGenerate,
     required this.onExport,
     required this.onNormalize,
   });
@@ -180,16 +186,10 @@ class _NovelSettingsPane extends StatelessWidget {
             ],
           ),
           SizedBox(height: 8),
-          FilledButton.icon(
-            onPressed: generatingAll || importing ? null : onGenerateAll,
-            icon: generatingAll
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.download_done_rounded, size: 17),
-            label: Text(AppLocalizations.of(context).uiGenerateBook),
+          _NovelGenerateButtons(
+            busy: generatingAll,
+            onGenerate: generatingAll || importing ? null : onGenerate,
+            canGenerateChapter: chapterId != null,
           ),
           SizedBox(height: 8),
           Text(
@@ -205,16 +205,13 @@ class _NovelSettingsPane extends StatelessWidget {
           ),
           SizedBox(height: 18),
           _PanelTitle(AppLocalizations.of(context).sectionOutput),
-          OutlinedButton.icon(
-            onPressed: hasAudio && !exporting ? onExport : null,
-            icon: exporting
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.ios_share_rounded, size: 17),
-            label: Text(AppLocalizations.of(context).uiExportBook),
+          _NovelExportButtons(
+            busy: exporting,
+            onExport: hasAudio && !exporting ? onExport : null,
+            chapterHasAudio: segments.any(
+              (s) =>
+                  s.chapterId == chapterId && s.audioPath != null && !s.missing,
+            ),
           ),
           SizedBox(height: 8),
           Tooltip(

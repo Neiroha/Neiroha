@@ -4330,4 +4330,24 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get updateReleasesPage => '发布页';
+
+  @override
+  String get novelGenerateChapter => '生成本章';
+
+  @override
+  String get novelExportChapter => '导出本章';
+
+  @override
+  String get novelExportEachChapter => '逐章导出';
+
+  @override
+  String get novelExportEachChapterTooltip => '每章导出为一个音频文件，存入新建的文件夹';
+
+  @override
+  String get novelExportChaptersFolder => '选择存放各章音频的文件夹';
+
+  @override
+  String novelGenerateChapterBeforeExport(String chapter) {
+    return '请先生成「$chapter」的缓存再导出。';
+  }
 }

@@ -7981,6 +7981,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Releases page'**
   String get updateReleasesPage;
+
+  /// No description provided for @novelGenerateChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Chapter'**
+  String get novelGenerateChapter;
+
+  /// No description provided for @novelExportChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Chapter'**
+  String get novelExportChapter;
+
+  /// No description provided for @novelExportEachChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Each Chapter'**
+  String get novelExportEachChapter;
+
+  /// No description provided for @novelExportEachChapterTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Write one audio file per chapter into a new folder'**
+  String get novelExportEachChapterTooltip;
+
+  /// No description provided for @novelExportChaptersFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a folder for the chapter files'**
+  String get novelExportChaptersFolder;
+
+  /// No description provided for @novelGenerateChapterBeforeExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate the cache of “{chapter}” before exporting.'**
+  String novelGenerateChapterBeforeExport(String chapter);
 }
 
 class _AppLocalizationsDelegate

@@ -1372,5 +1372,11 @@
   "updateCheckNow": "检查更新",
   "updateAutoTitle": "启动时检查更新",
   "updateAutoSubtitle": "打开软件时检查 GitHub 上的最新版本，有新版本时弹窗提醒。",
-  "updateReleasesPage": "发布页"
+  "updateReleasesPage": "发布页",
+  "novelGenerateChapter": "生成本章",
+  "novelExportChapter": "导出本章",
+  "novelExportEachChapter": "逐章导出",
+  "novelExportEachChapterTooltip": "每章导出为一个音频文件，存入新建的文件夹",
+  "novelExportChaptersFolder": "选择存放各章音频的文件夹",
+  "novelGenerateChapterBeforeExport": "请先生成「{chapter}」的缓存再导出。"
 }

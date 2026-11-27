@@ -1,143 +1,262 @@
 part of '../../screens/novel_reader_screen.dart';
 
+/// What an export of the novel covers.
+enum _NovelExportScope {
+  /// The chapter open in the reader, as one file.
+  chapter,
+
+  /// Every chapter in reading order, as one file.
+  book,
+
+  /// One file per chapter, written into a folder.
+  eachChapter,
+}
+
+/// What deciding whether a segment's cache is current needs, loaded once
+/// per export.
+typedef _NovelExportContext = ({
+  List<NovelTextFilterRule> rules,
+  String rulesSignature,
+  Map<String, db.VoiceAsset> bankAssets,
+  Map<String, db.TtsProvider> providers,
+});
+
+/// One audio file of an export: the cached clips of its segments in order.
+class _NovelExportFile {
+  const _NovelExportFile(this.inputs, this.segments);
+  final List<String> inputs;
+  final List<db.NovelSegment> segments;
+}
+
 extension _NovelReaderEditorExport on _NovelReaderEditorState {
-  Future<void> _exportBook(
+  Future<void> _export(
+    _NovelExportScope scope,
     db.NovelProject project,
-    List<db.NovelSegment> segments,
-  ) async {
+    List<db.NovelSegment> segments, {
+    required List<db.NovelChapter> chapters,
+    required db.NovelChapter? chapter,
+  }) async {
+    if (_exporting) return;
     _updateState(() => _exporting = true);
-    final l10n = AppLocalizations.of(context);
     try {
-      final ordered = [...segments]
-        ..sort((a, b) => a.globalIndex.compareTo(b.globalIndex));
-      final textFilterRules = await ref
-          .read(novelTextFilterRulesServiceProvider)
-          .load();
-      final textFilterSignature = NovelTextFilterRulesService.signature(
-        textFilterRules,
-      );
-      final dbx = ref.read(databaseProvider);
-      final members = await dbx.getBankMembers(project.bankId);
-      final allAssets = await dbx.getAllVoiceAssets();
-      final providers = await dbx.getAllProviders();
-      final allAssetMap = {for (final asset in allAssets) asset.id: asset};
-      final bankAssets = {
-        for (final member in members)
-          if (allAssetMap[member.voiceAssetId] != null)
-            member.voiceAssetId: allAssetMap[member.voiceAssetId]!,
-      };
-      final providerMap = {
-        for (final provider in providers) provider.id: provider,
-      };
-      final requiredSegments = [
-        for (final segment in ordered)
-          if (!_shouldSkipSegmentForTts(project, segment, textFilterRules))
-            segment,
-      ];
-      final inputs = [
-        for (final segment in requiredSegments)
-          if (_segmentAudioIsCurrent(
+      switch (scope) {
+        case _NovelExportScope.book:
+          await _exportOneFile(
             project,
-            segment,
-            bankAssets,
-            providerMap,
-            textFilterRules,
-            textFilterSignature,
-          ))
-            segment.audioPath!,
-      ];
-      if (requiredSegments.isEmpty) {
-        _snack(l10n.uiNoReadableSegmentsToExport);
-        return;
-      }
-      if (inputs.length != requiredSegments.length) {
-        _snack(l10n.uiGenerateFullBookCacheBeforeExporting);
-        return;
-      }
-      final capabilities = ref.read(platformCapabilitiesProvider);
-      if (!capabilities.supportsLocalAudioMuxing) {
-        _snack(l10n.uiFFmpegUnavailableOnPlatform(capabilities.platformLabel));
-        return;
-      }
-      final ffmpeg = ref.read(ffmpegServiceProvider);
-      if (!await ffmpeg.isAvailable()) {
-        _snack(l10n.uiFFmpegIsRequiredForExportConfigureItInSettings);
-        return;
-      }
-      var outPath = await pickSavePath(
-        dialogTitle: l10n.uiExportNovelAudio,
-        fileName:
-            '${PathService.sanitizeSegment(project.name)}_${PathService.formatTimestamp()}.wav',
-        type: FileType.audio,
-      );
-      if (outPath == null || outPath.isEmpty) return;
-      if (p.extension(outPath).isEmpty) outPath = '$outPath.wav';
-      final outFile = File(outPath);
-      if (!await outFile.parent.exists()) {
-        await outFile.parent.create(recursive: true);
-      }
-      // Match what the reader plays: the same gap between segments, with
-      // short de-click fades at every cut.
-      final options = AudioMergeOptions(
-        gapSeconds: project.playbackGapSeconds,
-        fadeInMs: project.playbackGapSeconds > 0 ? 10 : 0,
-        fadeOutMs: project.playbackGapSeconds > 0 ? 30 : 0,
-      );
-      if (!options.isPlain) {
-        await _exportBookWithSpacing(inputs, outPath, options);
-        return;
-      }
-      final listFile = File(
-        p.join(
-          outFile.parent.path,
-          '.novel_concat_${DateTime.now().microsecondsSinceEpoch}.txt',
-        ),
-      );
-      try {
-        await listFile.writeAsString(_concatFileList(inputs), flush: true);
-        final args = [
-          '-y',
-          '-f',
-          'concat',
-          '-safe',
-          '0',
-          '-i',
-          listFile.path,
-          '-c:a',
-          _audioCodecForExt(p.extension(outPath).toLowerCase()),
-          outPath,
-        ];
-        final ffmpegPath = await ffmpeg.resolvePath();
-        if (!mounted) return;
-        final result = await runFfmpegWithProgress(
-          context: context,
-          ffmpegPath: ffmpegPath,
-          args: args,
-          totalDurationMs: _totalDurationMs(requiredSegments),
-          taskLabel: l10n.uiExportingNovelAudio,
-        );
-        if (!mounted) return;
-        if (result.success) {
-          await showExportSuccessDialog(context: context, filePath: outPath);
-        } else if (result.cancelled) {
-          _snack(l10n.uiExportCancelled);
-        } else {
-          _snack(l10n.uiExportFailed(result.stderrTail));
-        }
-      } finally {
-        try {
-          if (await listFile.exists()) await listFile.delete();
-        } catch (_) {}
+            segments,
+            fileStem: PathService.sanitizeSegment(project.name),
+          );
+        case _NovelExportScope.chapter:
+          if (chapter == null) return;
+          await _exportOneFile(
+            project,
+            [
+              for (final s in segments)
+                if (s.chapterId == chapter.id) s,
+            ],
+            fileStem: _chapterFileStem(project, chapter, chapters),
+            chapter: chapter,
+          );
+        case _NovelExportScope.eachChapter:
+          await _exportEachChapter(project, segments, chapters);
       }
     } finally {
       if (mounted) _updateState(() => _exporting = false);
     }
   }
 
-  Future<void> _exportBookWithSpacing(
-    List<String> inputs,
-    String outPath,
+  Future<_NovelExportContext> _loadExportContext(
+    db.NovelProject project,
+  ) async {
+    final rules = await ref.read(novelTextFilterRulesServiceProvider).load();
+    final dbx = ref.read(databaseProvider);
+    final members = await dbx.getBankMembers(project.bankId);
+    final allAssets = {
+      for (final asset in await dbx.getAllVoiceAssets()) asset.id: asset,
+    };
+    return (
+      rules: rules,
+      rulesSignature: NovelTextFilterRulesService.signature(rules),
+      bankAssets: {
+        for (final member in members)
+          member.voiceAssetId: ?allAssets[member.voiceAssetId],
+      },
+      providers: {
+        for (final provider in await dbx.getAllProviders())
+          provider.id: provider,
+      },
+    );
+  }
+
+  /// The cached clips of [segments] in reading order. Empty when none is
+  /// readable; null when a readable segment still needs generating.
+  _NovelExportFile? _exportFile(
+    db.NovelProject project,
+    List<db.NovelSegment> segments,
+    _NovelExportContext cache,
+  ) {
+    final ordered = [...segments]
+      ..sort((a, b) => a.globalIndex.compareTo(b.globalIndex));
+    final readable = [
+      for (final segment in ordered)
+        if (!_shouldSkipSegmentForTts(project, segment, cache.rules)) segment,
+    ];
+    final inputs = <String>[];
+    for (final segment in readable) {
+      if (!_segmentAudioIsCurrent(
+        project,
+        segment,
+        cache.bankAssets,
+        cache.providers,
+        cache.rules,
+        cache.rulesSignature,
+      )) {
+        return null;
+      }
+      inputs.add(segment.audioPath!);
+    }
+    return _NovelExportFile(inputs, readable);
+  }
+
+  /// Whether FFmpeg can merge here; says why not when it cannot.
+  Future<bool> _canMergeAudio() async {
+    final l10n = AppLocalizations.of(context);
+    final capabilities = ref.read(platformCapabilitiesProvider);
+    if (!capabilities.supportsLocalAudioMuxing) {
+      _snack(l10n.uiFFmpegUnavailableOnPlatform(capabilities.platformLabel));
+      return false;
+    }
+    if (!await ref.read(ffmpegServiceProvider).isAvailable()) {
+      _snack(l10n.uiFFmpegIsRequiredForExportConfigureItInSettings);
+      return false;
+    }
+    return true;
+  }
+
+  /// Gap and de-click fades matching what the reader plays.
+  AudioMergeOptions _exportMergeOptions(db.NovelProject project) =>
+      AudioMergeOptions(
+        gapSeconds: project.playbackGapSeconds,
+        fadeInMs: project.playbackGapSeconds > 0 ? 10 : 0,
+        fadeOutMs: project.playbackGapSeconds > 0 ? 30 : 0,
+      );
+
+  String _chapterFileStem(
+    db.NovelProject project,
+    db.NovelChapter chapter,
+    List<db.NovelChapter> chapters,
+  ) {
+    final ordered = [...chapters]
+      ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+    final number = (ordered.indexWhere((c) => c.id == chapter.id) + 1)
+        .toString()
+        .padLeft(ordered.length.toString().length.clamp(2, 4), '0');
+    return '${PathService.sanitizeSegment(project.name)}_${number}_'
+        '${PathService.sanitizeSegment(chapter.title, fallback: number)}';
+  }
+
+  Future<void> _exportOneFile(
+    db.NovelProject project,
+    List<db.NovelSegment> segments, {
+    required String fileStem,
+    db.NovelChapter? chapter,
+  }) async {
+    final l10n = AppLocalizations.of(context);
+    final file = _exportFile(
+      project,
+      segments,
+      await _loadExportContext(project),
+    );
+    if (!mounted) return;
+    if (file == null) {
+      _snack(
+        chapter == null
+            ? l10n.uiGenerateFullBookCacheBeforeExporting
+            : l10n.novelGenerateChapterBeforeExport(chapter.title),
+      );
+      return;
+    }
+    if (file.inputs.isEmpty) {
+      _snack(l10n.uiNoReadableSegmentsToExport);
+      return;
+    }
+    if (!await _canMergeAudio() || !mounted) return;
+    var outPath = await pickSavePath(
+      dialogTitle: l10n.uiExportNovelAudio,
+      fileName: '${fileStem}_${PathService.formatTimestamp()}.wav',
+      type: FileType.audio,
+    );
+    if (outPath == null || outPath.isEmpty || !mounted) return;
+    if (p.extension(outPath).isEmpty) outPath = '$outPath.wav';
+    final outFile = File(outPath);
+    if (!await outFile.parent.exists()) {
+      await outFile.parent.create(recursive: true);
+    }
+    final options = _exportMergeOptions(project);
+    if (!options.isPlain) {
+      await _mergeWithProgress([(file.inputs, outPath)], options, outPath);
+      return;
+    }
+    await _concatWithProgress(file, outPath);
+  }
+
+  /// One file per chapter that has readable text, named by its position.
+  Future<void> _exportEachChapter(
+    db.NovelProject project,
+    List<db.NovelSegment> segments,
+    List<db.NovelChapter> chapters,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final cache = await _loadExportContext(project);
+    final ordered = [...chapters]
+      ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+    final files = <(db.NovelChapter, _NovelExportFile)>[];
+    for (final chapter in ordered) {
+      final file = _exportFile(project, [
+        for (final s in segments)
+          if (s.chapterId == chapter.id) s,
+      ], cache);
+      if (file == null) {
+        _snack(l10n.novelGenerateChapterBeforeExport(chapter.title));
+        return;
+      }
+      if (file.inputs.isNotEmpty) files.add((chapter, file));
+    }
+    if (files.isEmpty) {
+      _snack(l10n.uiNoReadableSegmentsToExport);
+      return;
+    }
+    if (!await _canMergeAudio() || !mounted) return;
+    final dir = await FilePicker.getDirectoryPath(
+      dialogTitle: l10n.novelExportChaptersFolder,
+    );
+    if (dir == null || dir.isEmpty || !mounted) return;
+    final folder = p.join(
+      dir,
+      '${PathService.sanitizeSegment(project.name)}_'
+      '${PathService.formatTimestamp()}',
+    );
+    await _mergeWithProgress(
+      [
+        for (final (chapter, file) in files)
+          (
+            file.inputs,
+            p.join(
+              folder,
+              '${_chapterFileStem(project, chapter, chapters)}.wav',
+            ),
+          ),
+      ],
+      _exportMergeOptions(project),
+      folder,
+    );
+  }
+
+  /// Writes each (clips, output) job in turn under one progress dialog.
+  Future<void> _mergeWithProgress(
+    List<(List<String>, String)> jobs,
     AudioMergeOptions options,
+    String shownPath,
   ) async {
     final l10n = AppLocalizations.of(context);
     final merger = ref.read(audioMergeServiceProvider);
@@ -147,16 +266,19 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
       taskLabel: l10n.uiExportingNovelAudio,
       task: (report, cancelled) async {
         try {
-          await merger.merge(
-            inputs: inputs,
-            outputPath: outPath,
-            options: options,
-            encoderArgs: LoudnessNormalizer.encoderArgsFor(
-              p.extension(outPath).toLowerCase(),
-            ),
-            onProgress: report,
-            isCancelled: cancelled,
-          );
+          for (var i = 0; i < jobs.length; i++) {
+            final (inputs, outPath) = jobs[i];
+            await merger.merge(
+              inputs: inputs,
+              outputPath: outPath,
+              options: options,
+              encoderArgs: LoudnessNormalizer.encoderArgsFor(
+                p.extension(outPath).toLowerCase(),
+              ),
+              onProgress: (v) => report((i + v) / jobs.length),
+              isCancelled: cancelled,
+            );
+          }
         } on AudioMergeCancelled {
           // Reported through the return value.
         } catch (e) {
@@ -170,7 +292,57 @@ extension _NovelReaderEditorExport on _NovelReaderEditorState {
     } else if (!completed) {
       _snack(l10n.uiExportCancelled);
     } else {
-      await showExportSuccessDialog(context: context, filePath: outPath);
+      await showExportSuccessDialog(context: context, filePath: shownPath);
+    }
+  }
+
+  /// Joins the clips without re-rendering them (no gap, no fades).
+  Future<void> _concatWithProgress(
+    _NovelExportFile file,
+    String outPath,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final ffmpeg = ref.read(ffmpegServiceProvider);
+    final listFile = File(
+      p.join(
+        File(outPath).parent.path,
+        '.novel_concat_${DateTime.now().microsecondsSinceEpoch}.txt',
+      ),
+    );
+    try {
+      await listFile.writeAsString(_concatFileList(file.inputs), flush: true);
+      final ffmpegPath = await ffmpeg.resolvePath();
+      if (!mounted) return;
+      final result = await runFfmpegWithProgress(
+        context: context,
+        ffmpegPath: ffmpegPath,
+        args: [
+          '-y',
+          '-f',
+          'concat',
+          '-safe',
+          '0',
+          '-i',
+          listFile.path,
+          '-c:a',
+          _audioCodecForExt(p.extension(outPath).toLowerCase()),
+          outPath,
+        ],
+        totalDurationMs: _totalDurationMs(file.segments),
+        taskLabel: l10n.uiExportingNovelAudio,
+      );
+      if (!mounted) return;
+      if (result.success) {
+        await showExportSuccessDialog(context: context, filePath: outPath);
+      } else if (result.cancelled) {
+        _snack(l10n.uiExportCancelled);
+      } else {
+        _snack(l10n.uiExportFailed(result.stderrTail));
+      }
+    } finally {
+      try {
+        if (await listFile.exists()) await listFile.delete();
+      } catch (_) {}
     }
   }
 

@@ -274,6 +274,7 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
                     project: project,
                     bankAssets: bankAssets,
                     segments: segments,
+                    chapterId: visibleChapterId,
                     generatingSegmentIds: _generatingSegmentIds,
                     importing: _importing,
                     exporting: _exporting,
@@ -375,19 +376,27 @@ class _NovelReaderEditorState extends ConsumerState<_NovelReaderEditor> {
                         updatedAt: DateTime.now(),
                       ),
                     ),
-                    onGenerateAll: segments.isEmpty || bankAssets.isEmpty
+                    onGenerate: segments.isEmpty || bankAssets.isEmpty
                         ? null
-                        : () => unawaited(
+                        : (chapterOnly) => unawaited(
                             _generateAllMissing(
                               project,
-                              segments,
+                              chapterOnly ? chapterSegments : segments,
                               bankAssets,
                               force: false,
                             ),
                           ),
                     onExport: segments.isEmpty || _exporting
                         ? null
-                        : () => unawaited(_exportBook(project, segments)),
+                        : (scope) => unawaited(
+                            _export(
+                              scope,
+                              project,
+                              segments,
+                              chapters: chapters,
+                              chapter: visibleChapter,
+                            ),
+                          ),
                     onNormalize: () {
                       _stopNovel();
                       unawaited(

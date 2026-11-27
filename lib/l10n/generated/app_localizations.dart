@@ -8017,6 +8017,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Generate the cache of “{chapter}” before exporting.'**
   String novelGenerateChapterBeforeExport(String chapter);
+
+  /// No description provided for @voiceSeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Random seed (optional)'**
+  String get voiceSeed;
+
+  /// No description provided for @voiceSeedHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Same seed, same text → the same take. Keeps a cloned voice steady across lines. Leave empty for a new take each time.'**
+  String get voiceSeedHelper;
+
+  /// No description provided for @voiceSeedInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a whole number from 0 to 4294967295.'**
+  String get voiceSeedInvalid;
+
+  /// No description provided for @voiceSeedRandomize.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a random seed'**
+  String get voiceSeedRandomize;
 }
 
 class _AppLocalizationsDelegate

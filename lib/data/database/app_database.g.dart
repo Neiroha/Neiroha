@@ -1544,6 +1544,15 @@ class $VoiceAssetsTable extends VoiceAssets
     requiredDuringInsert: false,
     defaultValue: const Constant(0.0),
   );
+  static const VerificationMeta _seedMeta = const VerificationMeta('seed');
+  @override
+  late final GeneratedColumn<int> seed = GeneratedColumn<int>(
+    'seed',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1565,6 +1574,7 @@ class $VoiceAssetsTable extends VoiceAssets
     enabled,
     folderSlug,
     loudnessOffsetDb,
+    seed,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1721,6 +1731,12 @@ class $VoiceAssetsTable extends VoiceAssets
         ),
       );
     }
+    if (data.containsKey('seed')) {
+      context.handle(
+        _seedMeta,
+        seed.isAcceptableOrUnknown(data['seed']!, _seedMeta),
+      );
+    }
     return context;
   }
 
@@ -1806,6 +1822,10 @@ class $VoiceAssetsTable extends VoiceAssets
         DriftSqlType.double,
         data['${effectivePrefix}loudness_offset_db'],
       )!,
+      seed: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}seed'],
+      ),
     );
   }
 
@@ -1835,6 +1855,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
   final bool enabled;
   final String? folderSlug;
   final double loudnessOffsetDb;
+  final int? seed;
   const VoiceAsset({
     required this.id,
     required this.name,
@@ -1855,6 +1876,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     required this.enabled,
     this.folderSlug,
     required this.loudnessOffsetDb,
+    this.seed,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1902,6 +1924,9 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
       map['folder_slug'] = Variable<String>(folderSlug);
     }
     map['loudness_offset_db'] = Variable<double>(loudnessOffsetDb);
+    if (!nullToAbsent || seed != null) {
+      map['seed'] = Variable<int>(seed);
+    }
     return map;
   }
 
@@ -1950,6 +1975,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
           ? const Value.absent()
           : Value(folderSlug),
       loudnessOffsetDb: Value(loudnessOffsetDb),
+      seed: seed == null && nullToAbsent ? const Value.absent() : Value(seed),
     );
   }
 
@@ -1980,6 +2006,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
       enabled: serializer.fromJson<bool>(json['enabled']),
       folderSlug: serializer.fromJson<String?>(json['folderSlug']),
       loudnessOffsetDb: serializer.fromJson<double>(json['loudnessOffsetDb']),
+      seed: serializer.fromJson<int?>(json['seed']),
     );
   }
   @override
@@ -2005,6 +2032,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
       'enabled': serializer.toJson<bool>(enabled),
       'folderSlug': serializer.toJson<String?>(folderSlug),
       'loudnessOffsetDb': serializer.toJson<double>(loudnessOffsetDb),
+      'seed': serializer.toJson<int?>(seed),
     };
   }
 
@@ -2028,6 +2056,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     bool? enabled,
     Value<String?> folderSlug = const Value.absent(),
     double? loudnessOffsetDb,
+    Value<int?> seed = const Value.absent(),
   }) => VoiceAsset(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -2058,6 +2087,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     enabled: enabled ?? this.enabled,
     folderSlug: folderSlug.present ? folderSlug.value : this.folderSlug,
     loudnessOffsetDb: loudnessOffsetDb ?? this.loudnessOffsetDb,
+    seed: seed.present ? seed.value : this.seed,
   );
   VoiceAsset copyWithCompanion(VoiceAssetsCompanion data) {
     return VoiceAsset(
@@ -2106,6 +2136,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
       loudnessOffsetDb: data.loudnessOffsetDb.present
           ? data.loudnessOffsetDb.value
           : this.loudnessOffsetDb,
+      seed: data.seed.present ? data.seed.value : this.seed,
     );
   }
 
@@ -2130,7 +2161,8 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
           ..write('speed: $speed, ')
           ..write('enabled: $enabled, ')
           ..write('folderSlug: $folderSlug, ')
-          ..write('loudnessOffsetDb: $loudnessOffsetDb')
+          ..write('loudnessOffsetDb: $loudnessOffsetDb, ')
+          ..write('seed: $seed')
           ..write(')'))
         .toString();
   }
@@ -2156,6 +2188,7 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
     enabled,
     folderSlug,
     loudnessOffsetDb,
+    seed,
   );
   @override
   bool operator ==(Object other) =>
@@ -2179,7 +2212,8 @@ class VoiceAsset extends DataClass implements Insertable<VoiceAsset> {
           other.speed == this.speed &&
           other.enabled == this.enabled &&
           other.folderSlug == this.folderSlug &&
-          other.loudnessOffsetDb == this.loudnessOffsetDb);
+          other.loudnessOffsetDb == this.loudnessOffsetDb &&
+          other.seed == this.seed);
 }
 
 class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
@@ -2202,6 +2236,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
   final Value<bool> enabled;
   final Value<String?> folderSlug;
   final Value<double> loudnessOffsetDb;
+  final Value<int?> seed;
   final Value<int> rowid;
   const VoiceAssetsCompanion({
     this.id = const Value.absent(),
@@ -2223,6 +2258,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     this.enabled = const Value.absent(),
     this.folderSlug = const Value.absent(),
     this.loudnessOffsetDb = const Value.absent(),
+    this.seed = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VoiceAssetsCompanion.insert({
@@ -2245,6 +2281,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     this.enabled = const Value.absent(),
     this.folderSlug = const Value.absent(),
     this.loudnessOffsetDb = const Value.absent(),
+    this.seed = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -2270,6 +2307,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     Expression<bool>? enabled,
     Expression<String>? folderSlug,
     Expression<double>? loudnessOffsetDb,
+    Expression<int>? seed,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2292,6 +2330,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
       if (enabled != null) 'enabled': enabled,
       if (folderSlug != null) 'folder_slug': folderSlug,
       if (loudnessOffsetDb != null) 'loudness_offset_db': loudnessOffsetDb,
+      if (seed != null) 'seed': seed,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2316,6 +2355,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     Value<bool>? enabled,
     Value<String?>? folderSlug,
     Value<double>? loudnessOffsetDb,
+    Value<int?>? seed,
     Value<int>? rowid,
   }) {
     return VoiceAssetsCompanion(
@@ -2338,6 +2378,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
       enabled: enabled ?? this.enabled,
       folderSlug: folderSlug ?? this.folderSlug,
       loudnessOffsetDb: loudnessOffsetDb ?? this.loudnessOffsetDb,
+      seed: seed ?? this.seed,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2402,6 +2443,9 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
     if (loudnessOffsetDb.present) {
       map['loudness_offset_db'] = Variable<double>(loudnessOffsetDb.value);
     }
+    if (seed.present) {
+      map['seed'] = Variable<int>(seed.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2430,6 +2474,7 @@ class VoiceAssetsCompanion extends UpdateCompanion<VoiceAsset> {
           ..write('enabled: $enabled, ')
           ..write('folderSlug: $folderSlug, ')
           ..write('loudnessOffsetDb: $loudnessOffsetDb, ')
+          ..write('seed: $seed, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -18140,6 +18185,7 @@ typedef $$VoiceAssetsTableCreateCompanionBuilder =
       Value<bool> enabled,
       Value<String?> folderSlug,
       Value<double> loudnessOffsetDb,
+      Value<int?> seed,
       Value<int> rowid,
     });
 typedef $$VoiceAssetsTableUpdateCompanionBuilder =
@@ -18163,6 +18209,7 @@ typedef $$VoiceAssetsTableUpdateCompanionBuilder =
       Value<bool> enabled,
       Value<String?> folderSlug,
       Value<double> loudnessOffsetDb,
+      Value<int?> seed,
       Value<int> rowid,
     });
 
@@ -18405,6 +18452,11 @@ class $$VoiceAssetsTableFilterComposer
 
   ColumnFilters<double> get loudnessOffsetDb => $composableBuilder(
     column: $table.loudnessOffsetDb,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get seed => $composableBuilder(
+    column: $table.seed,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -18681,6 +18733,11 @@ class $$VoiceAssetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get seed => $composableBuilder(
+    column: $table.seed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TtsProvidersTableOrderingComposer get providerId {
     final $$TtsProvidersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -18791,6 +18848,9 @@ class $$VoiceAssetsTableAnnotationComposer
     column: $table.loudnessOffsetDb,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get seed =>
+      $composableBuilder(column: $table.seed, builder: (column) => column);
 
   $$TtsProvidersTableAnnotationComposer get providerId {
     final $$TtsProvidersTableAnnotationComposer composer = $composerBuilder(
@@ -19024,6 +19084,7 @@ class $$VoiceAssetsTableTableManager
                 Value<bool> enabled = const Value.absent(),
                 Value<String?> folderSlug = const Value.absent(),
                 Value<double> loudnessOffsetDb = const Value.absent(),
+                Value<int?> seed = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VoiceAssetsCompanion(
                 id: id,
@@ -19045,6 +19106,7 @@ class $$VoiceAssetsTableTableManager
                 enabled: enabled,
                 folderSlug: folderSlug,
                 loudnessOffsetDb: loudnessOffsetDb,
+                seed: seed,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -19068,6 +19130,7 @@ class $$VoiceAssetsTableTableManager
                 Value<bool> enabled = const Value.absent(),
                 Value<String?> folderSlug = const Value.absent(),
                 Value<double> loudnessOffsetDb = const Value.absent(),
+                Value<int?> seed = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VoiceAssetsCompanion.insert(
                 id: id,
@@ -19089,6 +19152,7 @@ class $$VoiceAssetsTableTableManager
                 enabled: enabled,
                 folderSlug: folderSlug,
                 loudnessOffsetDb: loudnessOffsetDb,
+                seed: seed,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

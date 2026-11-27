@@ -26,6 +26,10 @@ abstract final class VoiceCapabilities {
     };
   }
 
+  /// A fixed sampling seed, so the same text gives the same take.
+  static bool supportsSeed(String? adapterType) =>
+      const {'cosyvoice', 'gptSovits', 'irodori'}.contains(adapterType);
+
   /// Inline audio tags such as `(紧张|深呼吸)` prefixed to the text.
   static bool supportsAudioTags(db.VoiceAsset asset, db.TtsProvider provider) =>
       isMimoTtsModel(asset, provider);

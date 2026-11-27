@@ -71,6 +71,10 @@ extension _CharacterVoiceTab on _CharacterInspectorState {
       value: _loudnessOffsetDb,
       onChanged: (v) => _update(() => _loudnessOffsetDb = v),
     ),
+    if (VoiceCapabilities.supportsSeed(selected?.adapterType)) ...[
+      SizedBox(height: 12),
+      CharacterSeedField(controller: _seedCtrl),
+    ],
     SizedBox(height: 20),
 
     // ── Mode-specific fields ─────────────────────────────────────────────

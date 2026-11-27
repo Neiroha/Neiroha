@@ -172,6 +172,11 @@ extension _VoiceTools on NeirohaMcpTools {
           'instruction': _str('New style / emotion / design text.'),
           'speed': _num('New speed.'),
           'loudness_offset_db': _num('New loudness offset in dB (-12..12).'),
+          'seed': _int(
+            'Fixed sampling seed (0..4294967295) for CosyVoice, GPT-SoVITS '
+            'and Irodori, so the voice stays the same across lines; -1 '
+            'clears it (a new seed every request).',
+          ),
           'enabled': _bool('Enable / disable.'),
         },
         required: ['character_id'],

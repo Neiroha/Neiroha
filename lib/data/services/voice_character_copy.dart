@@ -31,6 +31,7 @@ Future<String> duplicateVoiceCharacter(
         speed: Value(asset.speed),
         enabled: Value(asset.enabled),
         loudnessOffsetDb: Value(asset.loudnessOffsetDb),
+        seed: Value(asset.seed),
       ),
     );
     for (final slot in db.CharacterSettingSlot.values) {

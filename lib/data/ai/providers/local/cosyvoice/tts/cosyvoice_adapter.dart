@@ -95,6 +95,7 @@ class CosyVoiceAdapter extends TtsAdapter {
     if (request.promptLang != null && request.promptLang!.isNotEmpty) {
       body['prompt_lang'] = request.promptLang;
     }
+    if (request.seed != null) body['seed'] = request.seed;
 
     try {
       final response = await _dio.post('cosyvoice/speech', data: body);
@@ -145,6 +146,7 @@ class CosyVoiceAdapter extends TtsAdapter {
       if (request.voiceInstruction != null &&
           request.voiceInstruction!.isNotEmpty)
         'instruct_text': request.voiceInstruction,
+      if (request.seed != null) 'seed': request.seed,
     });
 
     try {

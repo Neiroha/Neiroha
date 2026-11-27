@@ -9,6 +9,7 @@ import 'package:neiroha/data/database/app_database.dart' as db;
 /// Editing the character's processing chain does ([VoiceChain.signature]);
 /// `chain-v2` drops caches from before 0.6.0, when a chained streamed
 /// segment could be spoken more than once.
+/// A character's seed counts only once set, so older caches stay current.
 class NovelAudioFingerprint {
   static final Map<String, ({int size, int modified, String digest})>
   _references = {};
@@ -43,6 +44,6 @@ class NovelAudioFingerprint {
         );
       }
     }
-    return 'novel-v2:${sha256.convert(utf8.encode(jsonEncode([segment.segmentText, textFilterSignature, project.autoSliceLongSegments, project.sliceOnlyAtPunctuation, project.maxSliceChars, provider.baseUrl, provider.adapterType, asset.modelName ?? provider.defaultModelName, asset.presetVoiceName ?? asset.name, asset.speed, instruction ?? asset.voiceInstruction, reference, asset.promptText, asset.promptLang, if (protocolSignature.isNotEmpty) protocolSignature, if (chainSignature.isNotEmpty) 'chain-v2:$chainSignature'])))}';
+    return 'novel-v2:${sha256.convert(utf8.encode(jsonEncode([segment.segmentText, textFilterSignature, project.autoSliceLongSegments, project.sliceOnlyAtPunctuation, project.maxSliceChars, provider.baseUrl, provider.adapterType, asset.modelName ?? provider.defaultModelName, asset.presetVoiceName ?? asset.name, asset.speed, instruction ?? asset.voiceInstruction, reference, asset.promptText, asset.promptLang, if (protocolSignature.isNotEmpty) protocolSignature, if (chainSignature.isNotEmpty) 'chain-v2:$chainSignature', if (asset.seed != null) 'seed:${asset.seed}'])))}';
   }
 }

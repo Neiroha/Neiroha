@@ -4350,4 +4350,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String novelGenerateChapterBeforeExport(String chapter) {
     return '请先生成「$chapter」的缓存再导出。';
   }
+
+  @override
+  String get voiceSeed => '随机种子（可选）';
+
+  @override
+  String get voiceSeedHelper => '种子与文本相同时生成结果一致，可让克隆音色前后句保持统一；留空则每次随机。';
+
+  @override
+  String get voiceSeedInvalid => '请输入 0 到 4294967295 之间的整数。';
+
+  @override
+  String get voiceSeedRandomize => '随机生成一个种子';
 }

@@ -15,8 +15,10 @@ import 'package:neiroha/data/services/synthesis/browser_speech_support.dart';
 import 'package:neiroha/data/services/synthesis/quick_tts_service.dart';
 import 'package:neiroha/data/storage/path_service.dart';
 import 'package:neiroha/domain/enums/adapter_type.dart';
+import 'package:neiroha/domain/voice_capabilities.dart';
 import 'editable_character_avatar.dart';
 import 'character_model_field.dart';
+import 'character_seed_field.dart';
 import 'quick_tts_playback_setting.dart';
 import 'character_inspector_parts.dart';
 import 'voice_chain_editor.dart';
@@ -51,6 +53,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
   late TextEditingController _voiceNameCtrl;
   late TextEditingController _modelNameCtrl;
   late TextEditingController _speedCtrl;
+  late TextEditingController _seedCtrl;
   late TextEditingController _promptTextCtrl;
   late TextEditingController _promptLangCtrl;
   late TextEditingController _textLangCtrl;
@@ -89,6 +92,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
     _voiceNameCtrl = TextEditingController(text: a.presetVoiceName ?? '');
     _modelNameCtrl = TextEditingController(text: a.modelName ?? '');
     _speedCtrl = TextEditingController(text: a.speed.toString());
+    _seedCtrl = TextEditingController(text: a.seed?.toString() ?? '');
     _promptTextCtrl = TextEditingController(text: a.promptText ?? '');
     _promptLangCtrl = TextEditingController(text: a.promptLang ?? '');
     _textLangCtrl = TextEditingController(text: a.modelName ?? 'zh');
@@ -106,6 +110,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
     _voiceNameCtrl.dispose();
     _modelNameCtrl.dispose();
     _speedCtrl.dispose();
+    _seedCtrl.dispose();
     _promptTextCtrl.dispose();
     _promptLangCtrl.dispose();
     _textLangCtrl.dispose();
@@ -367,6 +372,14 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
       ).showSnackBar(SnackBar(content: Text(voiceProblem)));
       return;
     }
+    final (seed, seedValid) = parseCharacterSeed(_seedCtrl.text);
+    if (!seedValid) {
+      setState(() => _tab = InspectorTab.voice);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).voiceSeedInvalid)),
+      );
+      return;
+    }
     setState(() => _saving = true);
 
     final speed = double.tryParse(_speedCtrl.text) ?? 1.0;
@@ -392,6 +405,7 @@ class _CharacterInspectorState extends ConsumerState<CharacterInspector> {
       modelName: Value(modelName),
       speed: speed,
       loudnessOffsetDb: _loudnessOffsetDb,
+      seed: Value(seed),
       presetVoiceName: Value(
         _voiceNameCtrl.text.trim().isEmpty ? null : _voiceNameCtrl.text.trim(),
       ),

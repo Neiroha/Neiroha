@@ -229,6 +229,7 @@ extension _PhaseEditorGeneration on _PhaseTtsScreenState {
             request: TtsRequest(
               text: seg.segmentText,
               voice: asset.presetVoiceName ?? asset.name,
+              seed: asset.seed,
               voiceAssetId: asset.id,
               speed: asset.speed,
               textLang: TtsRequest.legacyTextLanguage(

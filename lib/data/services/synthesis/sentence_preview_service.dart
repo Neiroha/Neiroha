@@ -89,6 +89,7 @@ class SentencePreviewService {
       request: TtsRequest(
         text: source.text,
         voice: asset.presetVoiceName ?? asset.name,
+        seed: asset.seed,
         voiceAssetId: asset.id,
         presetVoiceName: asset.presetVoiceName,
         speed: asset.speed,

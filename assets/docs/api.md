@@ -77,6 +77,7 @@ OpenAI-compatible TTS endpoint. Resolves voice by name (optionally scoped to a b
 | `response_format` | string | no | Output format hint passed to upstream adapter |
 | `stream` | boolean | no | `true` returns chunked PCM (requires `response_format: "pcm"`) |
 | `apply_chain` | boolean | no | Neiroha extension: run the character's processing chain (translate / rewrite / voice conversion); default `true` |
+| `seed` | integer | no | Neiroha extension: sampling seed (0–4294967295) for CosyVoice, GPT-SoVITS and Irodori; defaults to the character's seed, if set |
 
 **Voice resolution order:**
 1. If `model` is provided, find the active bank with that name and look up the voice within its members

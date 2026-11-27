@@ -30,6 +30,7 @@ extension _JsonViews on NeirohaMcpTools {
     'instruction': a.voiceInstruction,
     'speed': a.speed,
     'loudness_offset_db': a.loudnessOffsetDb,
+    'seed': a.seed,
     'enabled': a.enabled,
   };
 

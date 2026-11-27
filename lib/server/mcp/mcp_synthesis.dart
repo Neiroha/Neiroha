@@ -32,6 +32,7 @@ TtsRequest characterSpeechRequest(
 }) => TtsRequest(
   text: text,
   voice: asset.presetVoiceName ?? asset.name,
+  seed: asset.seed,
   speed: speed ?? asset.speed,
   textLang: TtsRequest.legacyTextLanguage(
     provider.adapterType,

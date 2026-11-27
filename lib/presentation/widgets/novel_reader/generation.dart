@@ -315,6 +315,7 @@ extension _NovelReaderEditorSynthesis on _NovelReaderEditorState {
           request: TtsRequest(
             text: text,
             voice: asset.presetVoiceName ?? asset.name,
+            seed: asset.seed,
             voiceAssetId: asset.id,
             speed: asset.speed,
             responseFormat: preferWav ? 'wav' : 'mp3',

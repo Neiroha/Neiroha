@@ -49,10 +49,19 @@ Future<ResolvedSpeech> resolveSpeech(
   if (provider == null) {
     throw const SpeechApiException(500, 'Provider not found for voice');
   }
+  // Neiroha extension: `seed` overrides the character's own seed.
+  final seed = json['seed'];
+  if (seed != null && (seed is! int || seed < 0 || seed > TtsRequest.maxSeed)) {
+    throw const SpeechApiException(
+      400,
+      'seed must be an integer from 0 to ${TtsRequest.maxSeed}',
+    );
+  }
   return ResolvedSpeech(
     asset,
     provider,
     TtsRequest(
+      seed: seed as int? ?? asset.seed,
       text: input,
       voice: voice,
       speed: (json['speed'] as num?)?.toDouble() ?? 1.0,

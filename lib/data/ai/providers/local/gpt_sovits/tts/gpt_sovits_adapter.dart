@@ -57,6 +57,7 @@ class GptSovitsAdapter extends TtsAdapter {
       if (request.responseFormat != null)
         'response_format': request.responseFormat,
       if (_textLang(request) != null) 'text_lang': _textLang(request),
+      if (request.seed != null) 'seed': request.seed,
     };
 
     final response = await _dio.post(
@@ -82,6 +83,7 @@ class GptSovitsAdapter extends TtsAdapter {
       'speed': request.speed,
       'text_split_method': 'cut5',
       'batch_size': 1,
+      if (request.seed != null) 'seed': request.seed,
     };
 
     if (request.promptText != null && request.promptText!.isNotEmpty) {

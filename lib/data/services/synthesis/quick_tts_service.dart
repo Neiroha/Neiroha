@@ -32,6 +32,7 @@ TtsRequest quickTtsRequest(
 }) => TtsRequest(
   text: text,
   voice: asset.presetVoiceName ?? asset.name,
+  seed: asset.seed,
   voiceAssetId: asset.id,
   speed: asset.speed,
   responseFormat: responseFormat,

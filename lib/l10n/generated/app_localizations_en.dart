@@ -4517,4 +4517,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String novelGenerateChapterBeforeExport(String chapter) {
     return 'Generate the cache of “$chapter” before exporting.';
   }
+
+  @override
+  String get voiceSeed => 'Random seed (optional)';
+
+  @override
+  String get voiceSeedHelper =>
+      'Same seed, same text → the same take. Keeps a cloned voice steady across lines. Leave empty for a new take each time.';
+
+  @override
+  String get voiceSeedInvalid => 'Enter a whole number from 0 to 4294967295.';
+
+  @override
+  String get voiceSeedRandomize => 'Pick a random seed';
 }

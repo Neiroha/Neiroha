@@ -149,6 +149,7 @@ extension _VideoDubEditorGenerationActions on _VideoDubEditorState {
             request: TtsRequest(
               text: cue.cueText,
               voice: asset.presetVoiceName ?? asset.name,
+              seed: asset.seed,
               voiceAssetId: asset.id,
               speed: asset.speed,
               textLang: TtsRequest.legacyTextLanguage(

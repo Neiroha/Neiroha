@@ -32,6 +32,13 @@ class TtsRequest {
   /// the character's processing chain (translate → TTS → voice conversion).
   final String? voiceAssetId;
 
+  /// Fixed sampling seed for engines that take one; null lets the engine
+  /// pick a new one every request.
+  final int? seed;
+
+  /// Largest seed accepted: CosyVoice seeds NumPy, which takes 32 bits.
+  static const maxSeed = 0xFFFFFFFF;
+
   const TtsRequest({
     required this.text,
     required this.voice,
@@ -46,6 +53,7 @@ class TtsRequest {
     this.voiceClonePromptBase64,
     this.audioTagPrefix,
     this.voiceAssetId,
+    this.seed,
   });
 
   /// Older GPT-SoVITS characters stored the text language in the model field.
@@ -93,6 +101,7 @@ class TtsRequest {
     voiceClonePromptBase64: voiceClonePromptBase64,
     audioTagPrefix: audioTagPrefix,
     voiceAssetId: voiceAssetId,
+    seed: seed,
   );
 }
 

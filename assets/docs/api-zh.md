@@ -75,6 +75,7 @@ API 以**音色库（Voice Bank）**作为 `model` 的抽象层：
 | `response_format` | string | 否 | 输出格式提示，传递给上游适配器 |
 | `stream` | boolean | 否 | 为 `true` 时以分块 PCM 返回（须配合 `response_format: "pcm"`，详见 [开发说明](streaming-and-roles-zh.md#本地-api-增量-pcm)） |
 | `apply_chain` | boolean | 否 | Neiroha 扩展：是否运行角色的处理链（翻译 / 改写 / 变声），默认 `true` |
+| `seed` | integer | 否 | Neiroha 扩展：随机种子（0–4294967295），用于 CosyVoice、GPT-SoVITS、Irodori；默认取角色设置的种子 |
 
 **声音解析顺序：**
 1. 如果提供了 `model`，则找到该名称的激活音色库，并在其成员中查找声音

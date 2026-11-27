@@ -2177,5 +2177,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "voiceSeed": "Random seed (optional)",
+  "voiceSeedHelper": "Same seed, same text → the same take. Keeps a cloned voice steady across lines. Leave empty for a new take each time.",
+  "voiceSeedInvalid": "Enter a whole number from 0 to 4294967295.",
+  "voiceSeedRandomize": "Pick a random seed"
 }

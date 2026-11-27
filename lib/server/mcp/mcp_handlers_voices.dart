@@ -288,6 +288,7 @@ extension _VoiceHandlers on NeirohaMcpTools {
       loudnessOffsetDb:
           _num0(args, 'loudness_offset_db')?.clamp(-12.0, 12.0) ??
           a.loudnessOffsetDb,
+      seed: args.containsKey('seed') ? Value(_seedArg(args)) : Value(a.seed),
       enabled: _bool0(args, 'enabled') ?? a.enabled,
     );
     await db.updateVoiceAsset(updated);
@@ -344,4 +345,14 @@ extension _VoiceHandlers on NeirohaMcpTools {
         'audio_base64': base64Encode(await File(result.path).readAsBytes()),
     };
   }
+}
+
+/// `seed` of update_voice_character: null or -1 clears it.
+int? _seedArg(Map<String, dynamic> args) {
+  final seed = _int0(args, 'seed');
+  if (seed == null || seed == -1) return null;
+  if (seed < 0 || seed > TtsRequest.maxSeed) {
+    throw ArgumentError('seed must be from 0 to ${TtsRequest.maxSeed}, or -1');
+  }
+  return seed;
 }

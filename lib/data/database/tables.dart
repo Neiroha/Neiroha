@@ -91,6 +91,10 @@ class VoiceAssets extends Table {
   // Per-character loudness offset (dB) on top of the bank target, e.g. a
   // narrator a few dB under the cast.
   RealColumn get loudnessOffsetDb => real().withDefault(const Constant(0.0))();
+  // Fixed sampling seed sent to engines that take one (CosyVoice,
+  // GPT-SoVITS, Irodori), so a cloned voice stays the same across lines.
+  // Null: the engine picks a new seed every request.
+  IntColumn get seed => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

@@ -1378,5 +1378,9 @@
   "novelExportEachChapter": "逐章导出",
   "novelExportEachChapterTooltip": "每章导出为一个音频文件，存入新建的文件夹",
   "novelExportChaptersFolder": "选择存放各章音频的文件夹",
-  "novelGenerateChapterBeforeExport": "请先生成「{chapter}」的缓存再导出。"
+  "novelGenerateChapterBeforeExport": "请先生成「{chapter}」的缓存再导出。",
+  "voiceSeed": "随机种子（可选）",
+  "voiceSeedHelper": "种子与文本相同时生成结果一致，可让克隆音色前后句保持统一；留空则每次随机。",
+  "voiceSeedInvalid": "请输入 0 到 4294967295 之间的整数。",
+  "voiceSeedRandomize": "随机生成一个种子"
 }

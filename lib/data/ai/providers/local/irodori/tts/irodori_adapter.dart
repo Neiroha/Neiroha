@@ -92,6 +92,7 @@ class IrodoriAdapter extends TtsAdapter {
                 'input': request.text,
                 'speed': request.speed,
                 'response_format': format,
+                if (request.seed != null) 'seed': request.seed,
               },
               options: Options(responseType: ResponseType.bytes),
             )
@@ -150,6 +151,7 @@ class IrodoriAdapter extends TtsAdapter {
         'speed': request.speed,
         'response_format': format,
         if (caption != null && caption.isNotEmpty) 'caption': caption,
+        if (request.seed != null) 'seed': request.seed,
       }),
       options: Options(responseType: ResponseType.bytes),
     );
